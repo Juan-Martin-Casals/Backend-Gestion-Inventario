@@ -52,11 +52,11 @@ public class Cliente {
         this.idCliente = idCliente;
     }
 
-    public String getNomrbe() {
+    public String getNombre() {
         return nombre;
     }
 
-    public void setNomrbe(String nomrbe) {
+    public void setNombre(String nomrbe) {
         this.nombre = nomrbe;
     }
 
