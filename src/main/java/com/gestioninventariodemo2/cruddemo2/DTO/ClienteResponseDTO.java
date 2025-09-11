@@ -9,13 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DetalleVentaRequestDTO{
+public class ClienteResponseDTO {
 
-    private Long productoId;
-    private int cantidad;
-    
-
-
-    
+    private String nombre;
+    private String apellido;
 
 }

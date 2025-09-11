@@ -7,9 +7,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "ProductoProveedor")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class ProductoProveedor {
 
     @Id
@@ -24,38 +32,5 @@ public class ProductoProveedor {
     @JoinColumn(name = "idProveedor")
     private Proveedor proveedor;
 
-    public ProductoProveedor() {
-    }
-
-    public ProductoProveedor(Producto producto, Proveedor proveedor) {
-        this.producto = producto;
-        this.proveedor = proveedor;
-    }
-
-    public Long getIdProductoProveedor() {
-        return idProductoProveedor;
-    }
-
-    public void setIdProductoProveedor(Long idProductoProveedor) {
-        this.idProductoProveedor = idProductoProveedor;
-    }
-
-    public Producto getProducto() {
-        return producto;
-    }
-
-    public void setProducto(Producto producto) {
-        this.producto = producto;
-    }
-
-    public Proveedor getProveedor() {
-        return proveedor;
-    }
-
-    public void setProveedor(Proveedor proveedor) {
-        this.proveedor = proveedor;
-    }
-
-    
 
 }

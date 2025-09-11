@@ -8,94 +8,39 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "usuarios")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@EqualsAndHashCode(of = "idUsuario")
 public class Usuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idUsuario;
 
-    @Column(name = "nombre")
+    @Column(name = "nombre", nullable= false)
     private String nombre;
 
-    @Column(name = "apellido")
+    @Column(name = "apellido", nullable = false)
     private String apellido;
 
-    @Column(name = "email", unique = true)
+    @Column(name = "email", unique = true, nullable = false)
     private String email;
 
-    @Column(name = "contraseña")
+    @Column(name = "contrasena", nullable = false)
     private String contrasena;
 
     @ManyToOne
-    @JoinColumn(name = "idRol")
+    @JoinColumn(name = "idRol", nullable = false)
     private Rol rol;
-
-    public Usuario() {
-    }
-
-    public Usuario(String nombre, String apellido, String email, String contrasena, Rol rol) {
-        this.nombre = nombre;
-        this.apellido = apellido;
-        this.email = email;
-        this.contrasena = contrasena;
-        this.rol = rol;
-    }
-
-    public Long getIdUsuario() {
-        return idUsuario;
-    }
-
-    public void setIdUsuario(Long idUsuario) {
-        this.idUsuario = idUsuario;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public String getApellido() {
-        return apellido;
-    }
-
-    public void setApellido(String apellido) {
-        this.apellido = apellido;
-    }
-
-    public String getEmail() {
-        return email;
-    }
-
-    public void setEmail(String email) {
-        this.email = email;
-    }
-
-    public String getContrasena() {
-        return contrasena;
-    }
-
-    public void setContrasena(String contrasena) {
-        this.contrasena = contrasena;
-    }
-
-    public Rol getRol() {
-        return rol;
-    }
-
-    public void setRol(Rol rol) {
-        this.rol = rol;
-    }
-
-    
-
-
-
-
-
 }
+

@@ -1,5 +1,7 @@
 package com.gestioninventariodemo2.cruddemo2.DTO;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,13 +11,12 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DetalleVentaRequestDTO{
+public class ProveedorResponseDTO {
 
-    private Long productoId;
-    private int cantidad;
-    
-
-
-    
+    private String nombre;
+    private String telefono;
+    private String email;
+    private String direccion;
+    private List<String> productos;
 
 }

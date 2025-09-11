@@ -1,72 +1,118 @@
 package com.gestioninventariodemo2.cruddemo2.Services;
 
 import java.time.LocalDate;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
 import java.util.List;
 
 
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.gestioninventariodemo2.cruddemo2.DTO.DetalleVentaRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.VentaRequestDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.VentaResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.Cliente;
 import com.gestioninventariodemo2.cruddemo2.Model.DetalleVenta;
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
+import com.gestioninventariodemo2.cruddemo2.Model.Stock;
+import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
 import com.gestioninventariodemo2.cruddemo2.Model.Venta;
-import com.gestioninventariodemo2.cruddemo2.Repository.ClienteRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.ProductoRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.UsuarioRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.VentaRepository;
 
+
+import lombok.RequiredArgsConstructor;
+
 @Service
+@RequiredArgsConstructor
 public class VentaService {
 
-    @Autowired
-    private ClienteRepository clienteRepository;
 
-    @Autowired
-    private ProductoRepository productoRepository;
 
-    @Autowired
-    private VentaRepository ventaRepository;
 
-    public Venta registrarVenta(VentaRequestDTO ventaRequestDTO){
-// 1️⃣ Cliente
-        Cliente cliente = clienteRepository.findByDni(ventaRequestDTO.getCliente().getDni())
-                .orElseGet(() -> {
-                    Cliente nuevoCliente = new Cliente();
-                    nuevoCliente.setDni(ventaRequestDTO.getCliente().getDni());
-                    nuevoCliente.setNombre(ventaRequestDTO.getCliente().getNombre());
-                    nuevoCliente.setApellido(ventaRequestDTO.getCliente().getApellido());
-                    nuevoCliente.setTelefono(ventaRequestDTO.getCliente().getTelefono());
-                    return clienteRepository.save(nuevoCliente);
-                });
+        private final ProductoRepository productoRepository;
+        private final VentaRepository ventaRepository;
+        private final UsuarioRepository usuarioRepository;
 
-        // 2️⃣ Venta
+        @Transactional
+        public VentaResponseDTO registrarVenta(VentaRequestDTO dto) {
+    // Validar que haya al menos un detalle
+        if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
+        throw new IllegalArgumentException("La venta debe tener al menos un producto");
+        }
+
+    // Validar cliente
+        if (dto.getCliente() == null ||
+        dto.getCliente().getNombre() == null || dto.getCliente().getNombre().isBlank()) {
+        throw new IllegalArgumentException("Debe ingresar el nombre del cliente");
+        }
+
+    // Validar usuario
+        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
+        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
+    // Crear cliente
+        Cliente cliente = Cliente.builder()
+        .nombre(dto.getCliente().getNombre())
+        .apellido(dto.getCliente().getApellido())
+        .dni(dto.getCliente().getDni())
+        .telefono(dto.getCliente().getTelefono())
+        .build();
+
+    // Crear venta
         Venta venta = new Venta();
         venta.setFecha(LocalDate.now());
+        venta.setUsuario(usuario);
         venta.setCliente(cliente);
 
-        // 3️⃣ Detalles de venta
-        List<DetalleVenta> detalles = ventaRequestDTO.getDetalles().stream().map(det -> {
-            Producto producto = productoRepository.findById(det.getProductoId())
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + det.getProductoId()));
+        List<DetalleVenta> detalles = new ArrayList<>();
 
-            DetalleVenta detalle = new DetalleVenta();
-            detalle.setProducto(producto);
-            detalle.setCantidad(det.getCantidad());
-            detalle.setSubtotal(producto.getPrecio() * det.getCantidad());
-            detalle.setVenta(venta);
+        for (DetalleVentaRequestDTO detDto : dto.getDetalles()) {
+        Producto producto = productoRepository.findById(detDto.getProductoId())
+        .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado"));
 
-            return detalle;
-        }).collect(Collectors.toList());
+        // Validar stock disponible
+        Stock stock = producto.getStocks().get(0); // asumimos un solo stock por producto
+        if (detDto.getCantidad() > stock.getStockActual()) {
+        throw new IllegalArgumentException("Stock insuficiente para el producto: " + producto.getNombre());
+        }
+
+        // Actualizar stock
+        stock.setStockActual(stock.getStockActual() - detDto.getCantidad());
+
+        // Crear detalle
+        DetalleVenta det = new DetalleVenta();
+        det.setProducto(producto);
+        det.setCantidad(detDto.getCantidad());
+        det.setPrecioUnitario(producto.getPrecio());
+        det.setSubtotal(producto.getPrecio() * detDto.getCantidad());
+        det.setVenta(venta);
+
+        detalles.add(det);
+        }
 
         venta.setDetalleVentas(detalles);
 
-        // 4️⃣ Calcular total
-        double total = detalles.stream().mapToDouble(DetalleVenta::getSubtotal).sum();
+    // Calcular total
+        double total = detalles.stream()
+        .mapToDouble(DetalleVenta::getSubtotal)
+        .sum();
         venta.setTotal(total);
 
-        // 5️⃣ Guardar venta completa
-        return ventaRepository.save(venta);
-    }
+        ventaRepository.save(venta);
+
+        return toVentaResponseDTO(venta);
+}
+
+
+private VentaResponseDTO toVentaResponseDTO(Venta venta) {
+        return VentaResponseDTO.builder()
+        .fecha(venta.getFecha())
+        .total(venta.getTotal())
+        .build();
+}
+
+
 }

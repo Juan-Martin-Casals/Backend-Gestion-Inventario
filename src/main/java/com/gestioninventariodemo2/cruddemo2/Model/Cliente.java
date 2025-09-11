@@ -9,9 +9,17 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "clientes")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Cliente {
 
     @Id
@@ -33,65 +41,6 @@ public class Cliente {
     @OneToMany(mappedBy = "cliente")
     private List<Venta>ventas;
 
-    public Cliente() {
-    }
 
-    public Cliente(String nombre, String apellido, String dni, String telefono, List<Venta> ventas) {
-        this.nombre = nombre;
-        this.apellido = apellido;
-        this.dni = dni;
-        this.telefono = telefono;
-        this.ventas = ventas;
-    }
-
-    public Long getIdCliente() {
-        return idCliente;
-    }
-
-    public void setIdCliente(Long idCliente) {
-        this.idCliente = idCliente;
-    }
-
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nomrbe) {
-        this.nombre = nomrbe;
-    }
-
-    public String getApellido() {
-        return apellido;
-    }
-
-    public void setApellido(String apellido) {
-        this.apellido = apellido;
-    }
-
-    public String getDni() {
-        return dni;
-    }
-
-    public void setDni(String dni) {
-        this.dni = dni;
-    }
-
-    public String getTelefono() {
-        return telefono;
-    }
-
-    public void setTelefono(String telefono) {
-        this.telefono = telefono;
-    }
-
-    public List<Venta> getVentas() {
-        return ventas;
-    }
-
-    public void setVentas(List<Venta> ventas) {
-        this.ventas = ventas;
-    }
-
-    
 
 }

@@ -1,0 +1,61 @@
+package com.gestioninventariodemo2.cruddemo2.Controller;
+
+import java.util.List;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorRequestDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorResponseDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorUpdateDTO;
+import com.gestioninventariodemo2.cruddemo2.Model.Proveedor;
+import com.gestioninventariodemo2.cruddemo2.Services.ProveedorService;
+
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/proveedores")
+@RequiredArgsConstructor
+public class ProveedorController {
+
+    private final ProveedorService proveedorService;
+
+    @PostMapping
+    public ResponseEntity<ProveedorResponseDTO> registrarProveedor(@RequestBody ProveedorRequestDTO dto){
+        Proveedor nuevoProveedor = proveedorService.registrarProveedor(dto);
+        ProveedorResponseDTO response = proveedorService.mapToDTO(nuevoProveedor);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @GetMapping
+    public ResponseEntity<List<ProveedorResponseDTO>> listarProveedores() {
+    List<ProveedorResponseDTO> proveedores = proveedorService.listarProveedores();
+    return ResponseEntity.ok(proveedores);
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ProveedorResponseDTO> updateProveedor(@PathVariable Long id,@RequestBody ProveedorUpdateDTO dto) {
+
+    ProveedorResponseDTO actualizado = proveedorService.updateProveedor(id, dto);
+    return ResponseEntity.ok(actualizado);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProveedor(@PathVariable Long id) {
+    proveedorService.deleteProveedor(id);
+    return ResponseEntity.noContent().build();
+    }
+
+
+
+
+
+}

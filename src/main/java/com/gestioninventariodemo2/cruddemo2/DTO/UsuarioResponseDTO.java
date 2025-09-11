@@ -9,13 +9,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DetalleVentaRequestDTO{
-
-    private Long productoId;
-    private int cantidad;
+public class UsuarioResponseDTO {
+    
+    private String nombre;
+    private String apellido;
+    private String email;
+    private String descripcionRol;
     
 
-
-    
 
 }
+

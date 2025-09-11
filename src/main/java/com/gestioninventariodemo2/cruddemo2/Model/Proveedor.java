@@ -1,7 +1,9 @@
 package com.gestioninventariodemo2.cruddemo2.Model;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -9,9 +11,17 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "Proveedor")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class Proveedor {
     
     @Id
@@ -21,63 +31,22 @@ public class Proveedor {
     @Column(name = "Nombre")
     private String nombre;
 
-    @Column(name = "Datos_Contacto")
-    private String datosContacto;
+    @Column(name = "Telefono")
+    private String telefono;
 
-    @OneToMany(mappedBy = "Proveedor")
-    private List<Compra>compras;
+    @Column(name = "Email")
+    private String email;
 
-    @OneToMany(mappedBy = "Proveedor")
-    private List<ProductoProveedor>productoProveedors;
+    @Column(name = "Direccion")
+    private String direccion;
 
-    public Proveedor() {
-    }
 
-    public Proveedor(String nombre, String datosContacto) {
-        this.nombre = nombre;
-        this.datosContacto = datosContacto;
-    }
+    @OneToMany(mappedBy = "proveedor", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Compra>compras = new ArrayList<>();
 
-    public Long getIdProveedor() {
-        return idProveedor;
-    }
+    @OneToMany(mappedBy = "proveedor", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ProductoProveedor>productoProveedor = new ArrayList<>();
 
-    public void setIdProveedor(Long idProveedor) {
-        this.idProveedor = idProveedor;
-    }
 
-    public String getNombre() {
-        return nombre;
-    }
-
-    public void setNombre(String nombre) {
-        this.nombre = nombre;
-    }
-
-    public String getDatosContacto() {
-        return datosContacto;
-    }
-
-    public void setDatosContacto(String datosContacto) {
-        this.datosContacto = datosContacto;
-    }
-
-    public List<Compra> getCompras() {
-        return compras;
-    }
-
-    public void setCompras(List<Compra> compras) {
-        this.compras = compras;
-    }
-
-    public List<ProductoProveedor> getProductoProveedors() {
-        return productoProveedors;
-    }
-
-    public void setProductoProveedors(List<ProductoProveedor> productoProveedors) {
-        this.productoProveedors = productoProveedors;
-    }
-
-    
 
 }

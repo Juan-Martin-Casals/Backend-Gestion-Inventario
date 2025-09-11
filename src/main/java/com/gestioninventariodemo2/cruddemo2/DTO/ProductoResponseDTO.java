@@ -9,13 +9,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DetalleVentaRequestDTO{
+public class ProductoResponseDTO {
 
-    private Long productoId;
-    private int cantidad;
-    
-
-
-    
+    private String nombre;
+    private String categoria;
+    private String descripcion;
+    private double precio;
 
 }

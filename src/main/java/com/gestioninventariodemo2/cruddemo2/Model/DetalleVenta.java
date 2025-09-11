@@ -8,9 +8,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "detalle_venta")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class DetalleVenta {
 
     @Id
@@ -27,7 +35,7 @@ public class DetalleVenta {
     private double subtotal;
 
     @ManyToOne
-    @JoinColumn(name = "idVenta")
+    @JoinColumn(name = "idVenta", nullable = false)
     private Venta venta;
 
     @ManyToOne
@@ -35,66 +43,5 @@ public class DetalleVenta {
     private Producto producto;
     
 
-    public DetalleVenta() {
-    }
-
-    public DetalleVenta(int cantidad, double precioUnitario, Venta venta, Producto producto) {
-        this.cantidad = cantidad;
-        this.precioUnitario = precioUnitario;
-        this.venta = venta;
-        this.producto = producto;
-    }
-
-    public Long getIdDetalleVenta() {
-        return idDetalleVenta;
-    }
-
-    public void setIdDetalleVenta(Long idDetalleVenta) {
-        this.idDetalleVenta = idDetalleVenta;
-    }
-
-    public int getCantidad() {
-        return cantidad;
-    }
-
-    public void setCantidad(int cantidad) {
-        this.cantidad = cantidad;
-    }
-
-    public double getPrecioUnitario() {
-        return precioUnitario;
-    }
-
-    public void setPrecioUnitario(double precioUnitario) {
-        this.precioUnitario = precioUnitario;
-    }
-
-    public double getSubtotal() {
-        return subtotal;
-    }
-
-        public void setSubtotal(double subtotal) {
-        this.subtotal = subtotal;
-    }
-
-
-    public Venta getVenta() {
-        return venta;
-    }
-
-    public void setVenta(Venta venta) {
-        this.venta = venta;
-    }
-
-    public Producto getProducto() {
-        return producto;
-    }
-
-    public void setProducto(Producto producto) {
-        this.producto = producto;
-    }
-
-
-    
 
 }
