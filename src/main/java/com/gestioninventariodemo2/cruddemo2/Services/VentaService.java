@@ -3,13 +3,13 @@ package com.gestioninventariodemo2.cruddemo2.Services;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-
-
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.gestioninventariodemo2.cruddemo2.DTO.DetalleVentaRequestDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.ProductoVentaDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.VentaRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.VentaResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.Cliente;
@@ -32,12 +32,13 @@ public class VentaService {
 
 
 
-        private final ProductoRepository productoRepository;
-        private final VentaRepository ventaRepository;
-        private final UsuarioRepository usuarioRepository;
 
-        @Transactional
-        public VentaResponseDTO registrarVenta(VentaRequestDTO dto) {
+    private final ProductoRepository productoRepository;
+    private final VentaRepository ventaRepository;
+    private final UsuarioRepository usuarioRepository;
+
+    @Transactional
+    public VentaResponseDTO registrarVenta(VentaRequestDTO dto) {
     // Validar que haya al menos un detalle
         if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
         throw new IllegalArgumentException("La venta debe tener al menos un producto");
@@ -104,15 +105,30 @@ public class VentaService {
         ventaRepository.save(venta);
 
         return toVentaResponseDTO(venta);
-}
+    }
 
+    public List<VentaResponseDTO> listarVentas() {
+        return ventaRepository.findAll().stream()
+                .map(this::toVentaResponseDTO)
+                .collect(Collectors.toList());
+    }
 
-private VentaResponseDTO toVentaResponseDTO(Venta venta) {
-        return VentaResponseDTO.builder()
+    private VentaResponseDTO toVentaResponseDTO(Venta venta) {
+    return VentaResponseDTO.builder()
         .fecha(venta.getFecha())
+        .nombreCliente(venta.getCliente().getNombre())
+        .apellidoCliente(venta.getCliente().getApellido())
         .total(venta.getTotal())
+        .productos(
+            venta.getDetalleVentas().stream()
+                .map(det -> ProductoVentaDTO.builder()
+                    .nombreProducto(det.getProducto().getNombre())
+                    .cantidad(det.getCantidad())
+                    .build()
+                )
+                .collect(Collectors.toList())
+        )
         .build();
-}
-
+    }
 
 }

@@ -29,7 +29,7 @@ public class InformeService {
     return resumen;
     }
 
-     public InformeDashboardDTO obtenerDashboard() {
+    public InformeDashboardDTO obtenerDashboard() {
         LocalDate primerDiaMes = LocalDate.now().withDayOfMonth(1);
         LocalDate hoy = LocalDate.now();
 
@@ -41,11 +41,11 @@ public class InformeService {
             .recaudacionMes(ventaRepository.sumRecaudacionEnRango(primerDiaMes, hoy))
             .productoMasVendidoMes(
                 ventaRepository.obtenerProductoMasVendidoEnRango(primerDiaMes, hoy)
-                               .stream().findFirst().orElse(null)
+                            .stream().findFirst().orElse(null)
             )
             .productoMenosVendidoMes(
                 ventaRepository.obtenerProductoMenosVendidoEnRango(primerDiaMes, hoy)
-                               .stream().findFirst().orElse(null)
+                            .stream().findFirst().orElse(null)
             )
             .build();
     }

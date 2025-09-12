@@ -52,7 +52,7 @@ public class UsuarioService {
         throw new IllegalArgumentException("Ya existe un usuario con este correo");
     }
 
-    try {
+
         Rol rol = rolRepository.findById(dto.getIdRol())
                 .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
 
@@ -67,9 +67,7 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
         return toResponseDTO(usuario);
 
-    } catch (Exception e) {
-        throw new RuntimeException("Error al registrar el usuario, intente nuevamente");
-    }
+
 }
 
 

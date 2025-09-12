@@ -49,7 +49,7 @@ public class ProveedorService {
         throw new IllegalArgumentException("Ya existe un proveedor registrado con ese email");
     }
 
-    try {
+
         Proveedor proveedor = Proveedor.builder()
             .nombre(dto.getNombre())
             .telefono(dto.getTelefono())
@@ -74,13 +74,9 @@ public class ProveedorService {
         }
 
         return proveedorRepository.save(proveedor);
-
-    } catch (Exception e) {
-        throw new RuntimeException("Error al registrar el proveedor, intente nuevamente");
-    }
     }
 
-
+    @Transactional(readOnly = true)
     public List<ProveedorResponseDTO> listarProveedores() {
     return proveedorRepository.findAll().stream()
         .map(this::mapToDTO) // usamos el mapper que ya tenés
