@@ -75,7 +75,7 @@ public class VentaService {
         .orElseThrow(() -> new IllegalArgumentException("Producto no encontrado"));
 
         // Validar stock disponible
-        Stock stock = producto.getStocks().get(0); // asumimos un solo stock por producto
+        Stock stock = producto.getStocks().get(0);
         if (detDto.getCantidad() > stock.getStockActual()) {
         throw new IllegalArgumentException("Stock insuficiente para el producto: " + producto.getNombre());
         }

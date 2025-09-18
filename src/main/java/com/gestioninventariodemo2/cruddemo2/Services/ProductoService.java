@@ -39,7 +39,7 @@ public class ProductoService {
         throw new IllegalArgumentException("El precio debe ser un valor numérico válido");
     }
 
-    try {
+
         // Crear producto
         Producto producto = Producto.builder()
                 .nombre(dto.getNombre())
@@ -62,9 +62,6 @@ public class ProductoService {
 
         return producto;
 
-    } catch (Exception e) {
-        throw new RuntimeException("Error al registrar el producto, intente nuevamente");
-    }
     }
     
     @Transactional(readOnly = true)

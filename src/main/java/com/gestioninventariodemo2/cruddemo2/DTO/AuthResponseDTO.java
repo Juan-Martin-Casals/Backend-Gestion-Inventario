@@ -1,9 +1,5 @@
 package com.gestioninventariodemo2.cruddemo2.DTO;
 
-
-
-import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,13 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class VentaRequestDTO{
+public class AuthResponseDTO {
 
-
-    private ClienteRequestDTO cliente;
-    private List<DetalleVentaRequestDTO> detalles;
-    private Long usuarioId;
-
-    
+    private String token;
+    private Long expired;
 
 }

@@ -84,7 +84,7 @@ public class ProveedorService {
     }
 
     @Transactional
-    public ProveedorResponseDTO updateProveedor(Long id, ProveedorUpdateDTO dto) {
+    public ProveedorResponseDTO actualizarProveedor(Long id, ProveedorUpdateDTO dto) {
     Proveedor proveedor = proveedorRepository.findById(id)
         .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado con id: " + id));
 
@@ -120,12 +120,12 @@ public class ProveedorService {
     }
 
     Proveedor actualizado = proveedorRepository.save(proveedor);
-    return mapToDTO(actualizado); // tu mapper que devuelve solo nombres
+    return mapToDTO(actualizado);
     }
 
 
     @Transactional
-    public void deleteProveedor(Long id) {
+    public void eliminarProveedor(Long id) {
         Proveedor proveedor = proveedorRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado con id: " + id));
             proveedorRepository.delete(proveedor);

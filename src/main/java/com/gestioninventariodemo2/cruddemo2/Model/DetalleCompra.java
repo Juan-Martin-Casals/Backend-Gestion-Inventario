@@ -8,9 +8,17 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "Detalle_Compra")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class DetalleCompra {
 
     @Id
@@ -31,56 +39,6 @@ public class DetalleCompra {
     @JoinColumn(name = "idCompra")
     private Compra compra;
 
-    public DetalleCompra(int cantidad, double precioUnitario, Producto producto, Compra compra) {
-        this.cantidad = cantidad;
-        this.precioUnitario = precioUnitario;
-        this.producto = producto;
-        this.compra = compra;
-    }
 
-    public DetalleCompra() {
-    }
-
-    public Long getIdDetalleCompra() {
-        return idDetalleCompra;
-    }
-
-    public void setIdDetalleCompra(Long idDetalleCompra) {
-        this.idDetalleCompra = idDetalleCompra;
-    }
-
-    public int getCantidad() {
-        return cantidad;
-    }
-
-    public void setCantidad(int cantidad) {
-        this.cantidad = cantidad;
-    }
-
-    public double getPrecioUnitario() {
-        return precioUnitario;
-    }
-
-    public void setPrecioUnitario(double precioUnitario) {
-        this.precioUnitario = precioUnitario;
-    }
-
-    public Producto getProducto() {
-        return producto;
-    }
-
-    public void setProducto(Producto producto) {
-        this.producto = producto;
-    }
-
-    public Compra getCompra() {
-        return compra;
-    }
-
-    public void setCompra(Compra compra) {
-        this.compra = compra;
-    }
-
-    
 
 }

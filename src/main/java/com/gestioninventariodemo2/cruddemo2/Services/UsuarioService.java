@@ -66,9 +66,7 @@ public class UsuarioService {
 
         usuarioRepository.save(usuario);
         return toResponseDTO(usuario);
-
-
-}
+    }
 
 
     //LISTAR A LOS USARIOS AL FRONT OCULTANDO SU ID Y CONTRASEÑA

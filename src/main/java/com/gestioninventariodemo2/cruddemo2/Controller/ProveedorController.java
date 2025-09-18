@@ -42,15 +42,15 @@ public class ProveedorController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProveedorResponseDTO> updateProveedor(@PathVariable Long id,@RequestBody ProveedorUpdateDTO dto) {
+    public ResponseEntity<ProveedorResponseDTO> actualizarProveedor(@PathVariable Long id,@RequestBody ProveedorUpdateDTO dto) {
 
-    ProveedorResponseDTO actualizado = proveedorService.updateProveedor(id, dto);
+    ProveedorResponseDTO actualizado = proveedorService.actualizarProveedor(id, dto);
     return ResponseEntity.ok(actualizado);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteProveedor(@PathVariable Long id) {
-    proveedorService.deleteProveedor(id);
+    public ResponseEntity<Void> eliminarProveedor(@PathVariable Long id) {
+    proveedorService.eliminarProveedor(id);
     return ResponseEntity.noContent().build();
     }
 
