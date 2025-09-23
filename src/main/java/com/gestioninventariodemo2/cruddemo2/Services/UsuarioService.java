@@ -3,7 +3,7 @@ package com.gestioninventariodemo2.cruddemo2.Services;
 import java.util.List;
 
 
-
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
-
+    private final PasswordEncoder passwordEncoder;
     private final RolRepository rolRepository;
 
     @Transactional
@@ -60,7 +60,7 @@ public class UsuarioService {
                 .nombre(dto.getNombre())
                 .apellido(dto.getApellido())
                 .email(dto.getEmail())
-                .contrasena(dto.getContrasena())
+                .contrasena(passwordEncoder.encode(dto.getContrasena()))
                 .rol(rol)
                 .build();
 

@@ -24,7 +24,9 @@ public class AuthController {
     public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO loginRequestDTO){
         UserDetails userDetails = authenticationService.authenticate(loginRequestDTO.getEmail(), loginRequestDTO.getContrasena());
         String tokenValue = authenticationService.generateToken(userDetails);
-        AuthResponseDTO authResponseDTO = AuthResponseDTO.builder().token(tokenValue).expired(86400L).build();
+        AuthResponseDTO authResponseDTO = AuthResponseDTO.builder()
+                .token(tokenValue)
+                .expired(86400L).build();
         return ResponseEntity.ok(authResponseDTO);
     }
 

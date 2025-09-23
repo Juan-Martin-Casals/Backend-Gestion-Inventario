@@ -38,6 +38,12 @@ public class AuthenticationServiceImpl implements AuthenticationService{
     @Override
     public String generateToken(UserDetails userDetails) {
         Map<String, Object> claims = new HashMap<>();
+        String rol = userDetails.getAuthorities().stream()
+                .findFirst()
+                .map(auth -> auth.getAuthority())
+                .orElse("USER");
+        claims.put("rol", rol);
+
         return Jwts.builder()
         .setClaims(claims)
         .setSubject(userDetails.getUsername())
@@ -54,8 +60,18 @@ public class AuthenticationServiceImpl implements AuthenticationService{
 
     @Override
     public UserDetails validateToken(String token) {
-        return null;
+        String username = extractUsername(token);
+        return usuarioDetailsService.loadUserByUsername(username);
 
+    }
+
+    private String extractUsername(String token){
+        Claims claims = Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+        return  claims.getSubject();
     }
 
 }
