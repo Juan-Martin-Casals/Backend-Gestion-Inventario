@@ -6,5 +6,7 @@ public interface AuthenticationService {
     UserDetails authenticate(String email, String contrasena);
     String generateToken(UserDetails userDetails);
     UserDetails validateToken(String token);
+    String getRol(UserDetails userDetails);
+
 
 }

@@ -50,7 +50,7 @@ public class Usuario implements UserDetails{
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority("ROL" + rol.getDescripcion()));
+        return List.of(new SimpleGrantedAuthority("ROL_" + rol.getDescripcion().toUpperCase()));
     }
 
     @Override

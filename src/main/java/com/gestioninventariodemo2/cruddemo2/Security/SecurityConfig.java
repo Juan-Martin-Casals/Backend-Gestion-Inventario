@@ -15,6 +15,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
 public class SecurityConfig {
@@ -35,8 +37,8 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/auth/**").permitAll()
-                    .requestMatchers("/api/usuarios/**").hasRole("ADMIN")
-                    .anyRequest().permitAll() // 🔒 todas las requests requieren autenticación
+                    .requestMatchers("/api/usuarios/**").permitAll()
+                    .anyRequest().permitAll()
             )
             .csrf(csrf -> csrf.disable())
             .sessionManagement(session ->
@@ -44,6 +46,20 @@ public class SecurityConfig {
             ).addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+
+    @Bean
+    public WebMvcConfigurer corsConfigurer() {
+        return new WebMvcConfigurer() {
+            @Override
+            public void addCorsMappings(CorsRegistry registry) {
+                registry.addMapping("/**")
+                        .allowedOrigins("http://localhost") // dominio de tu XAMPP
+                        .allowedMethods("GET", "POST", "PUT", "DELETE")
+                        .allowCredentials(true); // 🔹 importante para cookies
+            }
+        };
     }
 
     @Bean

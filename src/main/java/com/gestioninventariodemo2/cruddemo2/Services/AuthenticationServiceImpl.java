@@ -8,6 +8,7 @@ import java.util.Map;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -63,6 +64,19 @@ public class AuthenticationServiceImpl implements AuthenticationService{
         String username = extractUsername(token);
         return usuarioDetailsService.loadUserByUsername(username);
 
+    }
+
+    @Override
+    public String getRol(UserDetails userDetails) {
+        for(GrantedAuthority authority : userDetails.getAuthorities()){
+            String rol = authority.getAuthority();
+            if (rol.equals("ROL_ADMINISTRADOR")){
+                return "ADMINISTRADOR";
+            }else if (rol.equals("ROL_EMPLEADO")){
+                return "EMPLEADO";
+            }
+        }
+        return "DESCONOCIDO";
     }
 
     private String extractUsername(String token){

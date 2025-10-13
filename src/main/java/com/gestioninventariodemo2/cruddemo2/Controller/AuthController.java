@@ -1,5 +1,7 @@
 package com.gestioninventariodemo2.cruddemo2.Controller;
 
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,12 +23,32 @@ public class AuthController {
     private final AuthenticationService authenticationService;
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO loginRequestDTO){
-        UserDetails userDetails = authenticationService.authenticate(loginRequestDTO.getEmail(), loginRequestDTO.getContrasena());
+    public ResponseEntity<AuthResponseDTO> login(@RequestBody LoginRequestDTO loginRequestDTO, HttpServletResponse response){
+        UserDetails userDetails = authenticationService.authenticate(
+                loginRequestDTO.getEmail(),
+                loginRequestDTO.getContrasena()
+        );
+
         String tokenValue = authenticationService.generateToken(userDetails);
+
+
+        // Crear cookie HTTP-only
+        Cookie cookie = new Cookie("token", tokenValue);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(false); // true si estás usando HTTPS
+        cookie.setPath("/");     // cookie válida para toda la app
+        cookie.setMaxAge(86400); // duración en segundos (1 día)
+        response.addCookie(cookie);
+
+        // 4. Obtener rol
+        String rol = authenticationService.getRol(userDetails);
+
+
+        // 5. Devolver solo el rol en el body
         AuthResponseDTO authResponseDTO = AuthResponseDTO.builder()
-                .token(tokenValue)
-                .expired(86400L).build();
+                .rol(rol)
+                .build();
+
         return ResponseEntity.ok(authResponseDTO);
     }
 
