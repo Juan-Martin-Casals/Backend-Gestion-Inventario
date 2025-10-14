@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Inventario - Panel Empleado</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>Gestión Inventario</h3>
+                <p>Navegación</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" data-section="principal" class="active"><i class="fas fa-home"></i> Principal</a></li>
+                <li><a href="#" data-section="ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
+                <li><a href="#" data-section="stock"><i class="fas fa-warehouse"></i> Stock</a></li>
+                <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+            </ul>
+        </aside>
+
+        <!-- Contenido principal -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="header-left">
+                    <div class="header-title">
+                        <i class="fas fa-file-alt"></i>
+                        <h2>Principal</h2>
+                    </div>
+                </div>
+                <div class="user-info">
+                    <i class="fas fa-user"></i>
+                    <div>
+                        <span>Usuario</span>
+                        <span>Empleado</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Sección Principal (Dashboard) -->
+            <section id="principal-section" class="spa-section">
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>5</h3>
+                            <p>Total Productos</p>
+                        </div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>1</h3>
+                            <p>Productos Agotados</p>
+                        </div>
+                    </div>
+                    <div class="stat-card alert">
+                        <div class="stat-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>2</h3>
+                            <p>Stock Bajo</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="low-stock-section">
+                    <h3>Productos Agotados</h3>
+                    <p>Productos que necesitan reposición urgente</p>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Nombre Producto</td>
+                                    <td>Ejemplo Categoría</td>
+                                    <td>Descripción del producto agotado</td>
+                                </tr>
+                                <tr>
+                                    <td>Nombre Producto</td>
+                                    <td>Ejemplo Categoría</td>
+                                    <td>Descripción del producto agotado</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Ventas -->
+            <section id="ventas-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h3>Ventas</h3>
+                </div>
+
+                <div class="form-section">
+                    <h4>+ Registrar Nueva Venta</h4>
+                    <p>Complete los datos para registrar una nueva venta</p>
+                    <form class="sale-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Fecha</label>
+                                <input type="date" value="2025-06-30">
+                            </div>
+                            <div class="form-group">
+                                <label>Nombre del Cliente</label>
+                                <input type="text" placeholder="Ingrese el nombre del cliente">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Apellido del Cliente:</label>
+                                <input type="text" name="apellido_cliente" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono del Cliente:</label>
+                                <input type="text" name="telefono_cliente" required>
+                            </div>
+                            <div class="form-group">
+                                <label>DNI del Cliente:</label>
+                                <input type="text" name="dni_cliente" required>
+                            </div>
+                        </div>
+
+                        <div class="product-selection">
+                            <h5><i class="fas fa-box"></i> Selección de Producto</h5>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Producto</label>
+                                    <div class="product-search-container">
+                                        <input type="text" id="product-search"
+                                            placeholder="Buscar producto por nombre..." class="product-search-input">
+                                        <div id="product-results" class="product-results" style="display: none;">
+                                            <!-- Los resultados se cargarán dinámicamente -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Cantidad</label>
+                                    <input type="number" value="1" min="1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="total-section">
+                            <h4>$ Total: $0.00</h4>
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-plus"></i>
+                            Registrar Venta
+                        </button>
+                    </form>
+                </div>
+
+                <div class="table-section">
+                    <h4>Ventas Registradas</h4>
+                    <p>Historial de ventas realizadas</p>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Productos</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>30-06-2025</td>
+                                    <td>María García</td>
+                                    <td>Libro "El Principito" x1</td>
+                                    <td>$15.99</td>
+                                </tr>
+                                <tr>
+                                    <td>29-06-2025</td>
+                                    <td>Carlos López</td>
+                                    <td>Cuaderno A4 100 hojas x2, Lapicera Bic Cristal x3</td>
+                                    <td>$26.97</td>
+                                </tr>
+                                <tr>
+                                    <td>28-06-2025</td>
+                                    <td>Ana Martínez</td>
+                                    <td>Resaltador Amarillo x2, Goma de Borrar x1</td>
+                                    <td>$8.25</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+
+
+            <!-- Sección Stock -->
+            <section id="stock-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h3>Stock</h3>
+                    <p>Administrar inventario de productos</p>
+                </div>
+
+                <div class="search-section">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Buscar productos por nombre...">
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Descripción</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Libro "El Principito"</td>
+                                    <td>Libros</td>
+                                    <td>Clásico de la literatura universal</td>
+                                    <td>$15.99</td>
+                                    <td><span class="stock-badge good">5</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Lapicera Bic Cristal</td>
+                                    <td>Útiles Escolares</td>
+                                    <td>Lapicera azul de uso escolar</td>
+                                    <td>$2.50</td>
+                                    <td><span class="stock-badge empty">0</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Cuaderno A4 100 hojas</td>
+                                    <td>Papelería</td>
+                                    <td>Cuaderno rayado tamaño A4</td>
+                                    <td>$8.99</td>
+                                    <td><span class="stock-badge low">2</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Resaltador Amarillo</td>
+                                    <td>Útiles Escolares</td>
+                                    <td>Resaltador fluorescente amarillo</td>
+                                    <td>$3.50</td>
+                                    <td><span class="stock-badge good">8</span></td>
+                                </tr>
+                                <tr>
+                                    <td>Goma de Borrar</td>
+                                    <td>Útiles Escolares</td>
+                                    <td>Goma de borrar blanca</td>
+                                    <td>$1.25</td>
+                                    <td><span class="stock-badge low">1</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal de confirmación de salida -->
+    <div id="logout-modal" class="modal">
+        <div class="modal-content">
+            <h3>Confirmar Salida</h3>
+            <p>¿Estás seguro de que deseas cerrar sesión?</p>
+            <div class="modal-buttons">
+                <button id="confirm-logout" class="btn-danger">Sí, Salir</button>
+                <button id="cancel-logout" class="btn-outline">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/empleado.js"></script>
+    <script src="js/empleado-ventas.js"></script>
+</body>
+
+</html>

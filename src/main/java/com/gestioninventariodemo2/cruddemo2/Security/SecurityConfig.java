@@ -36,6 +36,7 @@ public class SecurityConfig {
                                                    JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
+                    .requestMatchers("/", "/*.html", "/css/**", "/js/**", "/images/**").permitAll()
                     .requestMatchers("/auth/**").permitAll()
                     .requestMatchers("/api/usuarios/**").permitAll()
                     .anyRequest().permitAll()

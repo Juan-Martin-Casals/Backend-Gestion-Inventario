@@ -1,0 +1,1741 @@
+/* Reset y configuración base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f5f5f5;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Login Page */
+.login-container {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    padding: 30px;
+    max-width: 400px;
+    width: 90%;
+    margin: 20px auto;
+    text-align: center;
+    max-height: 95vh;
+    overflow-y: auto;
+}
+
+/* Contenedor de login específicamente más abajo */
+#login-container {
+    margin: 0 auto;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.login-container h1 {
+    color: #333;
+    margin-bottom: 8px;
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.login-sub {
+    color: #666;
+    margin-bottom: 20px;
+    font-size: 13px;
+}
+
+.login-form-unique {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.login-form-unique label {
+    text-align: left;
+    color: #333;
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.login-form-unique input,
+.login-form-unique select {
+    padding: 10px 14px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color 0.3s;
+}
+
+.login-form-unique input:focus,
+.login-form-unique select:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.login-form-unique button {
+    background: #007bff;
+    color: #fff;
+    border: none;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.login-form-unique button:hover {
+    background: #0056b3;
+}
+
+.login-info {
+    margin-top: 20px;
+    color: #666;
+    font-size: 12px;
+}
+
+.register-link {
+    margin-top: 15px;
+    color: #666;
+    font-size: 13px;
+}
+
+.register-link a {
+    color: #007bff;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.register-link a:hover {
+    text-decoration: underline;
+}
+
+/* Estilos para el botón limpiar en el formulario de registro */
+.clear-btn {
+    background: #6c757d !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 10px !important;
+    border-radius: 8px !important;
+    font-size: 15px !important;
+    font-weight: 500 !important;
+    cursor: pointer !important;
+    margin-top: 10px !important;
+    width: 100% !important;
+    transition: background-color 0.3s !important;
+}
+
+.clear-btn:hover {
+    background: #5a6268 !important;
+}
+
+/* Estilos para campos de contraseña */
+.password-field-container {
+    position: relative;
+    width: 100%;
+}
+
+.password-field-container input {
+    width: 100%;
+    padding-right: 45px;
+    box-sizing: border-box;
+}
+
+.password-toggle-btn {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: #007bff;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 5px 6px;
+    font-size: 12px;
+    z-index: 10;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.password-toggle-btn:hover {
+    background: #0056b3;
+}
+
+/* Dashboard Layout */
+.dashboard-container {
+    display: flex;
+    min-height: 100vh;
+    background: #f5f5f5;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 250px;
+    background: #fff;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    padding: 20px 0;
+}
+
+.sidebar-header {
+    padding: 0 20px 20px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+.sidebar-header h3 {
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.sidebar-header p {
+    color: #666;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.sidebar-menu {
+    list-style: none;
+}
+
+.sidebar-menu li {
+    margin-bottom: 5px;
+}
+
+.sidebar-menu a {
+    display: flex;
+    align-items: center;
+    padding: 12px 20px;
+    color: #666;
+    text-decoration: none;
+    font-size: 14px;
+    transition: all 0.3s;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-menu a:hover,
+.sidebar-menu a.active {
+    background: #f8f9fa;
+    color: #333;
+    border-left-color: #007bff;
+}
+
+.sidebar-menu a i {
+    margin-right: 12px;
+    width: 16px;
+    text-align: center;
+}
+
+/* Main Content */
+.main-content {
+    flex: 1;
+    background: #f5f5f5;
+}
+
+.main-header {
+    background: #fff;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-title i {
+    color: #666;
+    font-size: 16px;
+}
+
+.header-title h2 {
+    color: #333;
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #666;
+    font-size: 14px;
+}
+
+.user-info i {
+    font-size: 16px;
+}
+
+.user-info div {
+    display: flex;
+    flex-direction: column;
+}
+
+.user-info div span:first-child {
+    font-weight: 500;
+}
+
+/* Dashboard Stats */
+.dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    padding: 30px;
+}
+
+.stat-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    background: #e3f2fd;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #1976d2;
+    font-size: 20px;
+}
+
+.stat-card.warning .stat-icon {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.stat-card.alert .stat-icon {
+    background: #fff8e1;
+    color: #fbc02d;
+}
+
+.stat-content h3 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.stat-content p {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+}
+
+/* Section Headers */
+.section-header {
+    padding: 30px 30px 20px;
+}
+
+.section-header h3 {
+    color: #333;
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+
+.section-header p {
+    color: #666;
+    font-size: 14px;
+}
+
+/* Form Sections */
+.form-section {
+    background: #fff;
+    margin: 0 30px 20px;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-section h4 {
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.form-section p {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    color: #333;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+/* Buttons */
+.btn-primary,
+.btn-secondary,
+.btn-outline,
+.btn-danger {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-primary {
+    background: #007bff;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #0056b3;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: #fff;
+}
+
+.btn-secondary:hover {
+    background: #545b62;
+}
+
+/* Estilos para botones dentro de form-group para alineación */
+.form-group .btn-secondary {
+    height: 44px;
+    margin-top: 24px;
+    align-self: flex-end;
+    width: 100%;
+    padding: 12px 16px;
+}
+
+/* Estilos para búsqueda de productos */
+.product-search-container {
+    position: relative;
+    width: 100%;
+}
+
+.product-search-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color 0.3s;
+}
+
+.product-search-input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.product-results {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.product-result-item {
+    padding: 12px 16px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s;
+}
+
+.product-result-item:hover {
+    background-color: #f8f9fa;
+}
+
+.product-result-item:last-child {
+    border-bottom: none;
+}
+
+.product-result-item.selected {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.product-result-name {
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.product-result-details {
+    font-size: 12px;
+    color: #666;
+}
+
+.product-result-item.selected .product-result-details {
+    color: #e6f3ff;
+}
+
+.btn-outline {
+    background: transparent;
+    color: #6c757d;
+    border: 1px solid #6c757d;
+}
+
+.btn-outline:hover {
+    background: #6c757d;
+    color: #fff;
+}
+
+.btn-danger {
+    background: #dc3545;
+    color: #fff;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    color: #666;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.btn-icon:hover {
+    background: #f8f9fa;
+    color: #333;
+}
+
+/* Product Selection */
+.product-selection {
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+    margin-top: 20px;
+}
+
+.product-selection h5 {
+    color: #333;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.total-section {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.total-section h4 {
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0;
+}
+
+/* Table Sections */
+.table-section {
+    background: #fff;
+    margin: 0 30px 20px;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.table-section h4 {
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.table-section p {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.table-container {
+    overflow-x: auto;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.data-table th {
+    background: #f8f9fa;
+    color: #333;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 15px 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+.data-table td {
+    padding: 15px 12px;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    color: #333;
+}
+
+.data-table tr:last-child td {
+    border-bottom: none;
+}
+
+.data-table tr:hover {
+    background: #f8f9fa;
+}
+
+/* Status Badges */
+.status-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.status-badge.low {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.stock-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.stock-badge.good {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.stock-badge.low {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.stock-badge.empty {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+/* Search Section */
+.search-section {
+    padding: 0 30px 20px;
+}
+
+.search-box {
+    position: relative;
+    max-width: 400px;
+}
+
+.search-box i {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #666;
+}
+
+.search-box input {
+    width: 100%;
+    padding: 12px 16px 12px 45px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+/* Low Stock Section */
+.low-stock-section {
+    background: #fff;
+    margin: 0 30px 20px;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.low-stock-section h3 {
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+.low-stock-section p {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+/* Filters Section */
+.filters-section {
+    background: #fff;
+    margin: 0 30px 20px;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.filters-section h4 {
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filters-section p {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+.filters-buttons {
+    display: flex;
+    gap: 15px;
+    margin-top: 20px;
+    justify-content: flex-end;
+}
+
+.filters-buttons button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.filters-buttons .btn-outline {
+    background: transparent;
+    color: #6c757d;
+    border: 1px solid #6c757d;
+}
+
+.filters-buttons .btn-outline:hover {
+    background: #6c757d;
+    color: #fff;
+}
+
+.filters-buttons .btn-primary {
+    background: #007bff;
+    color: #fff;
+    border: none;
+}
+
+.filters-buttons .btn-primary:hover {
+    background: #0056b3;
+}
+
+/* Stats Cards for Reports */
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    padding: 0 30px 20px;
+}
+
+
+/* Compact styling for the Sales summary shown in Principal (Ventas - Resumen) */
+.sales-dashboard .stats-cards {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    padding: 0 30px 18px;
+}
+
+.sales-dashboard .stat-card {
+    padding: 14px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    text-align: center;
+    min-height: 100px;
+}
+
+.sales-dashboard .stat-icon {
+    width: 44px;
+    height: 44px;
+    border-radius: 10px;
+    font-size: 18px;
+    margin: 0;
+}
+
+.sales-dashboard .stat-content h3 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0;
+    line-height: 1;
+}
+
+.sales-dashboard .stat-content p {
+    font-size: 13px;
+    color: #666;
+    margin: 0;
+}
+
+.sales-dashboard .stat-content small {
+    display: block;
+    font-size: 12px;
+    color: #999;
+    margin-top: 4px;
+}
+
+/* Make sure the sales summary scales a bit tighter on small screens */
+@media (max-width: 768px) {
+    .sales-dashboard .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 0 20px 16px;
+    }
+
+    .sales-dashboard .stat-card {
+        min-height: 90px;
+        padding: 12px;
+    }
+}
+
+.stats-cards .stat-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+.stats-cards .stat-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    margin: 0 auto 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+.stats-cards .stat-icon.blue {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.stats-cards .stat-icon.green {
+    background: #e8f5e8;
+    color: #2e7d32;
+}
+
+.stats-cards .stat-icon.purple {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.stats-cards .stat-icon.orange {
+    background: #fff3e0;
+    color: #f57c00;
+}
+
+.stats-cards .stat-icon.red {
+    background: #ffebee;
+    color: #d32f2f;
+}
+
+.stats-cards .stat-icon.gold {
+    background: #fff8e1;
+    color: #f57f17;
+}
+
+.stats-cards .stat-icon.silver {
+    background: #f5f5f5;
+    color: #757575;
+}
+
+.stats-cards .stat-content h3 {
+    font-size: 24px;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.stats-cards .stat-content p {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.stats-cards .stat-content small {
+    color: #999;
+    font-size: 12px;
+}
+
+/* Reports Section */
+.reports-section {
+    padding: 0 30px 20px;
+}
+
+.report-item {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.report-item h4 {
+    color: #333;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.report-item p {
+    color: #666;
+    font-size: 14px;
+    margin: 0;
+}
+
+.report-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 10px;
+}
+
+.report-content .amount {
+    font-weight: 600;
+    color: #333;
+}
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: #fff;
+    margin: 3% auto;
+    padding: 30px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.modal-content h3 {
+    color: #333;
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 15px;
+}
+
+.modal-content p {
+    color: #666;
+    font-size: 14px;
+    margin-bottom: 25px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.modal-buttons button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+/* SPA Sections */
+.spa-section {
+    display: none;
+}
+
+.spa-section:first-child {
+    display: block;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        padding: 15px;
+    }
+
+    .sidebar-menu {
+        display: flex;
+        overflow-x: auto;
+        gap: 10px;
+    }
+
+    .sidebar-menu li {
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    .sidebar-menu a {
+        padding: 10px 15px;
+        white-space: nowrap;
+    }
+
+    .main-header {
+        padding: 15px 20px;
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    .dashboard-stats {
+        grid-template-columns: 1fr;
+        padding: 20px;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+
+    .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+        padding: 0 20px 20px;
+    }
+
+    .form-section,
+    .table-section,
+    .low-stock-section,
+    .filters-section {
+        margin: 0 20px 20px;
+    }
+
+    .section-header {
+        padding: 20px 20px 15px;
+    }
+
+    .search-section {
+        padding: 0 20px 20px;
+    }
+
+    .reports-section {
+        padding: 0 20px 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .modal-content {
+        margin: 10% auto;
+        padding: 20px;
+    }
+
+    .modal-buttons {
+        flex-direction: column;
+    }
+
+    /* Optimizaciones para formularios de login en móviles */
+    .login-container {
+        margin: 10px auto;
+        padding: 20px;
+        max-height: 98vh;
+    }
+
+    #login-container {
+        margin: 40px auto 10px auto;
+    }
+
+    .login-container h1 {
+        font-size: 22px;
+        margin-bottom: 6px;
+    }
+
+    .login-sub {
+        font-size: 12px;
+        margin-bottom: 15px;
+    }
+
+    .login-form-unique {
+        gap: 12px;
+    }
+
+    .login-form-unique input,
+    .login-form-unique select {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
+    .login-form-unique button {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .register-link {
+        margin-top: 12px;
+        font-size: 12px;
+    }
+}
+
+/* Estilos específicos para el modal de edición */
+#edit-product-modal .modal-content {
+    max-width: 600px;
+    width: 90%;
+    position: relative;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    margin: 2% auto;
+}
+
+#edit-product-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+#edit-product-modal .modal-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#edit-product-modal .modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+#edit-product-modal .modal-close:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.edit-product-form {
+    padding: 20px 0;
+}
+
+.edit-product-form .form-group {
+    margin-bottom: 20px;
+}
+
+.edit-product-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.edit-product-form textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.edit-product-form .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+/* Responsive para el modal de edición */
+@media (max-width: 768px) {
+    #edit-product-modal .modal-content {
+        width: 95%;
+        margin: 5px auto;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .edit-product-form .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .edit-product-form .modal-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .edit-product-form .modal-buttons button {
+        width: 100%;
+    }
+
+    #edit-product-modal .modal-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    #edit-product-modal .modal-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+}
+
+/* Ajustes adicionales para pantallas pequeñas */
+@media (max-width: 480px) {
+    .modal-content {
+        margin: 2% auto;
+        padding: 20px;
+    }
+
+    #edit-product-modal .modal-content {
+        margin: 3px auto;
+        padding: 15px;
+        max-height: 95vh;
+    }
+}
+
+/* Estilos para badges de rol de usuarios */
+.status-badge.admin {
+    background: transparent;
+    color: #333;
+    padding: 0;
+    border-radius: 0;
+    font-size: 14px;
+    font-weight: normal;
+    text-shadow: none;
+    box-shadow: none;
+}
+
+.status-badge.empleado {
+    background: transparent;
+    color: #333;
+    padding: 0;
+    border-radius: 0;
+    font-size: 14px;
+    font-weight: normal;
+    text-shadow: none;
+    box-shadow: none;
+}
+
+/* Estilos para el formulario de usuarios */
+.user-form {
+    background: #f8f9fa;
+    padding: 25px;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+    margin-bottom: 30px;
+}
+
+.user-form .form-group {
+    margin-bottom: 20px;
+}
+
+.user-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.user-form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #333;
+}
+
+.user-form input,
+.user-form select {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.user-form input:focus,
+.user-form select:focus {
+    outline: none;
+    border-color: #007bff;
+    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.user-form button[type="submit"] {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-size: 16px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.user-form button[type="submit"]:hover {
+    background: #0056b3;
+}
+
+/* Responsive para el formulario de usuarios */
+@media (max-width: 768px) {
+    .user-form .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .user-form {
+        padding: 20px;
+    }
+}
+
+/* Estilos específicos para el modal de edición de proveedores */
+#edit-proveedor-modal .modal-content {
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    margin: 5% auto;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+#edit-proveedor-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+#edit-proveedor-modal .modal-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#edit-proveedor-modal .modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+#edit-proveedor-modal .modal-close:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.edit-proveedor-form {
+    padding: 20px 0;
+}
+
+.edit-proveedor-form .form-group {
+    margin-bottom: 20px;
+}
+
+.edit-proveedor-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.edit-proveedor-form textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.edit-proveedor-form .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+/* Responsive para el modal de edición de proveedores */
+@media (max-width: 768px) {
+    #edit-proveedor-modal .modal-content {
+        width: 95%;
+        margin: 5px auto;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .edit-proveedor-form .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .edit-proveedor-form .modal-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .edit-proveedor-form .modal-buttons button {
+        width: 100%;
+    }
+
+    #edit-proveedor-modal .modal-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    #edit-proveedor-modal .modal-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+}
+
+/* Ajustes adicionales para pantallas pequeñas del modal de proveedores */
+@media (max-width: 480px) {
+    #edit-proveedor-modal .modal-content {
+        margin: 3px auto;
+        padding: 15px;
+        max-height: 95vh;
+    }
+}
+
+/* Estilos específicos para el modal de edición de usuarios */
+#edit-usuario-modal .modal-content {
+    max-width: 500px;
+    width: 90%;
+    position: relative;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    margin: 5% auto;
+    max-height: 85vh;
+    overflow-y: auto;
+}
+
+#edit-usuario-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 20px;
+}
+
+#edit-usuario-modal .modal-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#edit-usuario-modal .modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+    padding: 0;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+#edit-usuario-modal .modal-close:hover {
+    background-color: #f0f0f0;
+    color: #333;
+}
+
+.edit-usuario-form {
+    padding: 20px 0;
+}
+
+.edit-usuario-form .form-group {
+    margin-bottom: 20px;
+}
+
+.edit-usuario-form .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.edit-usuario-form .modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 15px;
+    margin-top: 30px;
+    padding-top: 20px;
+    border-top: 1px solid #eee;
+}
+
+/* Responsive para el modal de edición de usuarios */
+@media (max-width: 768px) {
+    #edit-usuario-modal .modal-content {
+        width: 95%;
+        margin: 5px auto;
+        max-height: 90vh;
+        overflow-y: auto;
+    }
+
+    .edit-usuario-form .form-row {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .edit-usuario-form .modal-buttons {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .edit-usuario-form .modal-buttons button {
+        width: 100%;
+    }
+
+    #edit-usuario-modal .modal-header {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    #edit-usuario-modal .modal-close {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
+}
+
+/* Ajustes adicionales para pantallas pequeñas del modal de usuarios */
+@media (max-width: 480px) {
+    #edit-usuario-modal .modal-content {
+        margin: 3px auto;
+        padding: 15px;
+        max-height: 95vh;
+    }
+}
+
+/* Principal dashboard: show low-stock table and make KPI cards even and aligned */
+#principal-section .low-stock-section {
+    display: block;
+    /* mostrar la tabla de productos agotados */
+}
+
+#principal-section .dashboard-stats {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 20px;
+    padding: 20px 30px;
+    align-items: stretch;
+}
+
+#principal-section .dashboard-stats .stat-card {
+    padding: 20px;
+    min-height: 120px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+}
+
+/* Force icons and content to align vertically centered and consistent */
+#principal-section .dashboard-stats .stat-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    font-size: 20px;
+}
+
+#principal-section .dashboard-stats .stat-content h3 {
+    font-size: 26px;
+    margin-bottom: 4px;
+}
+
+#principal-section .dashboard-stats .stat-content p {
+    font-size: 14px;
+    color: #666;
+    margin: 0;
+}
+
+
+/* --- ESTILOS PARA MENSAJES DE VALIDACIÓN --- */
+
+/* Estilo para los mensajes de error debajo de cada campo (ej: "Complete este campo") */
+.error-message {
+    color: #e74c3c; /* Rojo para errores */
+    font-size: 12px;
+    margin-top: 5px;
+    font-weight: 500;
+}
+
+/* Contenedor del mensaje general del formulario */
+.form-message {
+    margin-top: 15px;
+    padding: 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    text-align: center;
+    border: 1px solid transparent;
+}
+
+/* Estilo para el mensaje de éxito (verde) */
+.form-message.success {
+    color: #27ae60; /* Verde oscuro */
+    background-color: #e9f7ef; /* Fondo verde muy claro */
+    border-color: #a3d9b8;
+}
+
+/* Estilo para el mensaje de error general (rojo) */
+.form-message.error {
+    color: #c0392b; /* Rojo oscuro */
+    background-color: #fbeae9; /* Fondo rojo muy claro */
+    border-color: #f1c0bc;
+}

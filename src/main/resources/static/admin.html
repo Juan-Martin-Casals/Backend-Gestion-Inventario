@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Inventario - Panel Administrador</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div class="dashboard-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h3>Gestión Inventario</h3>
+                <p>Navegación</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="#" data-section="principal" class="active"><i class="fas fa-home"></i> Principal</a></li>
+                <li><a href="#" data-section="productos"><i class="fas fa-box"></i> Productos</a></li>
+                <li><a href="#" data-section="proveedores"><i class="fas fa-user"></i> Proveedores</a></li>
+                <li><a href="#" data-section="usuarios"><i class="fas fa-users"></i> Usuarios</a></li>
+                <li><a href="#" data-section="ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
+                <li><a href="#" data-section="informes"><i class="fas fa-chart-bar"></i> Informes</a></li>
+                <li><a href="#" data-section="stock"><i class="fas fa-warehouse"></i> Stock</a></li>
+                <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
+            </ul>
+        </aside>
+
+        <!-- Contenido principal -->
+        <main class="main-content">
+            <header class="main-header">
+                <div class="header-left">
+                    <div class="header-title">
+                        <i class="fas fa-file-alt"></i>
+                        <h2 id="section-title">Principal</h2>
+                    </div>
+                </div>
+                <div class="user-info">
+                    <i class="fas fa-user"></i>
+                    <div>
+                        <span>Usuario</span>
+                        <span>Administrador</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Sección Principal (Dashboard) -->
+            <section id="principal-section" class="spa-section">
+                <!-- Resumen de Ventas colocado en la parte superior para verse al entrar -->
+                <div class="sales-dashboard" style="margin-bottom:18px;">
+                    <h3>Ventas - Resumen</h3>
+                    <div class="stats-cards">
+                        <div class="stat-card">
+                            <div class="stat-icon blue">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="ventas-mes-count">0</h3>
+                                <p>Ventas del Mes</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon green">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="ventas-historicas-count">0</h3>
+                                <p>Ventas Históricas</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <i class="fas fa-cube"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="productos-mes-count">0</h3>
+                                <p>Productos Vendidos (Mes)</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon red">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="recaudacion-mes-amount">$0.00</h3>
+                                <p>Recaudación del Mes</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="dashboard-stats">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>5</h3>
+                            <p>Total Productos</p>
+                        </div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>2</h3>
+                            <p>Productos Agotados</p>
+                        </div>
+                    </div>
+                    <div class="stat-card alert">
+                        <div class="stat-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3>2</h3>
+                            <p>Stock Bajo</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="low-stock-section">
+                    <h3>Productos Agotados</h3>
+                    <p>Productos que necesitan reposición urgente</p>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Descripción</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Nombre Producto</td>
+                                    <td>Ejemplo Categoría</td>
+                                    <td>Descripción del producto agotado</td>
+                                </tr>
+                                <tr>
+                                    <td>Nombre Producto</td>
+                                    <td>Ejemplo Categoría</td>
+                                    <td>Descripción del producto agotado</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </section>
+
+            <section id="productos-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h3>Productos</h3>
+                </div>
+
+                <div class="form-section">
+                    <h4>Registrar Nuevo Producto</h4>
+                    <form id="product-form" class="product-form" novalidate>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="product-name">Nombre del Producto</label>
+                                <input type="text" id="product-name" name="nombre" placeholder="Ingrese el nombre del producto">
+                                <div class="error-message" id="name-error"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-category">Categoría</label>
+                                <input type="text" id="product-category" name="categoria" placeholder="Ingrese la categoría">
+                                <div class="error-message" id="category-error"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="product-description">Descripción</label>
+                            <textarea id="product-description" name="descripcion" placeholder="Descripción del producto"></textarea>
+                            <div class="error-message" id="description-error"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="product-price">Precio</label>
+                                <input type="text" id="product-price" name="precio" placeholder="0.00">
+                                <div class="error-message" id="price-error"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-stock">Stock Actual</label>
+                                <input type="number" id="product-stock" name="stock" min="0" value="0" placeholder="Cantidad en stock">
+                                <div class="error-message" id="stock-error"></div>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                            <i class="fas fa-plus"></i>
+                            Registrar Producto
+                        </button>
+                    </form>
+                    <p id="form-general-message" class="form-message"></p>
+                </div>
+
+                <div class="table-section">
+                    <h4>Productos Registrados</h4>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Descripción</th>
+                                <th>Precio</th>
+                                <th>Stock</th>
+                                <!-- CAMBIO: Columna "Acciones" eliminada -->
+                            </tr>
+                            </thead>
+                            <tbody id="product-table-body">
+                            <!-- Las filas se cargarán aquí dinámicamente -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Proveedores -->
+            <section id="proveedores-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h3>Proveedores</h3>
+                    <p>Total de proveedores registrados: 3</p>
+                </div>
+
+                <div class="form-section">
+                    <h4>Registrar Nuevo Proveedor</h4>
+                    <form class="supplier-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nombre del Proveedor</label>
+                                <input type="text" placeholder="Nombre proveedor">
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono</label>
+                                <input type="text" placeholder="123456789">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" placeholder="email@ejemplo.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Dirección</label>
+                                <textarea placeholder="Dirección completa"></textarea>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Información de Productos</label>
+                            <textarea
+                                placeholder="Descripción de los productos que ofrece este proveedor (ej: electrónicos, ropa, alimentos, etc.)"></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                            <i class="fas fa-plus"></i>
+                            Registrar Proveedor
+                        </button>
+                    </form>
+                </div>
+
+                <div class="table-section">
+                    <h4>Proveedores Registrados</h4>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Teléfono</th>
+                                    <th>Email</th>
+                                    <th>Dirección</th>
+                                    <th>Productos</th>
+                                    <th>Acciones</th> <!-- Nueva columna -->
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Nombre proveedor</td>
+                                    <td>123456789</td>
+                                    <td>email@ejemplo.com</td>
+                                    <td>Direccion Ejemplo</td>
+                                    <td>Electrónicos y accesorios</td>
+                                    <td>
+                                        <button class="btn-icon btn-edit-proveedor"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon btn-delete-proveedor"><i
+                                                class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Nombre proveedor</td>
+                                    <td>123456789</td>
+                                    <td>email@ejemplo.com</td>
+                                    <td>Direccion Ejemplo</td>
+                                    <td>Ropa y calzado</td>
+                                    <td>
+                                        <button class="btn-icon btn-edit-proveedor"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon btn-delete-proveedor"><i
+                                                class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Nombre proveedor</td>
+                                    <td>123456789</td>
+                                    <td>email@ejemplo.com</td>
+                                    <td>Direccion Ejemplo</td>
+                                    <td>Alimentos y bebidas</td>
+                                    <td>
+                                        <button class="btn-icon btn-edit-proveedor"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon btn-delete-proveedor"><i
+                                                class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Usuarios -->
+            <section id="usuarios-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h3>Usuarios</h3>
+                    <p>Gestionar usuarios del sistema</p>
+                </div>
+
+                <div class="form-section">
+                    <h4>Registrar Nuevo Usuario</h4>
+                    <!-- Añadido clase user-form para que el JS de gestión de usuarios la encuentre -->
+                    <form class="product-form user-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nombre</label>
+                                <input type="text" placeholder="Ingrese el nombre">
+                            </div>
+                            <div class="form-group">
+                                <label>Apellido</label>
+                                <input type="text" placeholder="Ingrese el apellido">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" placeholder="correo@ejemplo.com">
+                            </div>
+                            <div class="form-group">
+                                <label>Rol</label>
+                                <select>
+                                    <option value="">Selecciona rol</option>
+                                    <option value="admin">Administrador</option>
+                                    <option value="empleado">Empleado</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Agrupamos las contraseñas para que queden una debajo de la otra -->
+                        <div class="form-row">
+                            <div class="form-group" style="width:100%">
+                                <label>Contraseña</label>
+                                <input type="password" placeholder="Ingrese la contraseña">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group" style="width:100%">
+                                <label>Confirmar Contraseña</label>
+                                <input type="password" placeholder="Confirme la contraseña">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                            <i class="fas fa-plus"></i>
+                            Registrar Usuario
+                        </button>
+                    </form>
+                </div>
+
+                <div class="table-section">
+                    <h4>Usuarios Registrados</h4>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Apellido</th>
+                                    <th>Email</th>
+                                    <th>Rol</th>
+                                    <th>Fecha Registro</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Admin</td>
+                                    <td>Demo</td>
+                                    <td>admin@demo.com</td>
+                                    <td><span class="status-badge admin">Administrador</span></td>
+                                    <td>01-01-2024</td>
+                                    <td>
+                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon btn-delete-usuario"><i
+                                                class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Empleado</td>
+                                    <td>Demo</td>
+                                    <td>empleado@demo.com</td>
+                                    <td><span class="status-badge empleado">Empleado</span></td>
+                                    <td>01-01-2024</td>
+                                    <td>
+                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon btn-delete-usuario"><i
+                                                class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Juan</td>
+                                    <td>Pérez</td>
+                                    <td>juan.perez@empresa.com</td>
+                                    <td><span class="status-badge empleado">Empleado</span></td>
+                                    <td>15-06-2024</td>
+                                    <td>
+                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon btn-delete-usuario"><i
+                                                class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Ventas -->
+            <section id="ventas-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h3>Ventas</h3>
+                </div>
+
+                <div class="form-section">
+                    <h4>+ Registrar Nueva Venta</h4>
+                    <p>Complete los datos para registrar una nueva venta</p>
+                    <form class="sale-form">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Fecha</label>
+                                <input type="date" value="2025-06-30">
+                            </div>
+                            <div class="form-group">
+                                <label>Nombre del Cliente</label>
+                                <input type="text" placeholder="Ingrese el nombre del cliente">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Apellido del Cliente:</label>
+                                <input type="text" name="apellido_cliente" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Teléfono del Cliente:</label>
+                                <input type="text" name="telefono_cliente" required>
+                            </div>
+                            <div class="form-group">
+                                <label>DNI del Cliente:</label>
+                                <input type="text" name="dni_cliente" required>
+                            </div>
+                        </div>
+
+                        <div class="product-selection">
+                            <h5><i class="fas fa-box"></i> Selección de Producto</h5>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Producto</label>
+                                    <div class="product-search-container">
+                                        <input type="text" id="product-search"
+                                            placeholder="Buscar producto por nombre..." class="product-search-input">
+                                        <div id="product-results" class="product-results" style="display: none;">
+                                            <!-- Los resultados se cargarán dinámicamente -->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Cantidad</label>
+                                    <input type="number" value="1" min="1">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="total-section">
+                            <h4>$ Total: $0.00</h4>
+                        </div>
+
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-plus"></i>
+                            Registrar Venta
+                        </button>
+                    </form>
+                </div>
+
+                <div class="table-section">
+                    <h4>Ventas Registradas</h4>
+                    <p>Historial de ventas realizadas</p>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Cliente</th>
+                                    <th>Productos</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>30-06-2025</td>
+                                    <td>Nombre Cliente</td>
+                                    <td>Nombre Producto x1</td>
+                                    <td>$1299.99</td>
+                                </tr>
+                                <tr>
+                                    <td>30-06-2025</td>
+                                    <td>Nombre Cliente</td>
+                                    <td>Nombre Producto x2, Nombre Producto x1</td>
+                                    <td>$329.97</td>
+                                </tr>
+                                <tr>
+                                    <td>30-06-2025</td>
+                                    <td>Nombre Cliente</td>
+                                    <td>Nombre Producto x2</td>
+                                    <td>$799.98</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Sección Informes -->
+            <section id="informes-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h3>Informes</h3>
+                </div>
+
+                <div class="filters-section">
+                    <h4><i class="fas fa-search"></i> Filtros de Búsqueda</h4>
+                    <p>Filtre los reportes por rango de fechas</p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Fecha de Inicio</label>
+                            <input type="date" id="fecha-inicio" placeholder="dd/mm/aaaa">
+                        </div>
+                        <div class="form-group">
+                            <label>Fecha de Fin</label>
+                            <input type="date" id="fecha-fin" placeholder="dd/mm/aaaa">
+                        </div>
+                    </div>
+                    <div class="filters-buttons">
+                        <button type="button" class="btn-outline">
+                            <i class="fas fa-eraser"></i>
+                            Limpiar Filtros
+                        </button>
+                        <button type="button" class="btn-primary" id="buscar-filtros">
+                            <i class="fas fa-search"></i>
+                            Buscar
+                        </button>
+                        <button type="button" class="btn-primary" id="exportar-pdf">
+                            <i class="fas fa-file-pdf"></i>
+                            Exportar PDF
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Informes: las tarjetas se muestran solo en Principal (moved) -->
+
+
+
+            </section>
+
+            <!-- Sección Stock -->
+            <section id="stock-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h3>Stock</h3>
+                    <p>Administrar inventario de productos</p>
+                </div>
+
+                <div class="search-section">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Buscar productos por nombre...">
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Descripción</th>
+                                    <th>Precio</th>
+                                    <th>Stock</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Nombre Producto</td>
+                                    <td>Categoria Ejemplo</td>
+                                    <td>Descripción Ejemplo</td>
+                                    <td>$1299.99</td>
+                                    <td><span class="stock-badge good">5</span></td>
+                                    <td>
+                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon btn-delete-usuario"><i
+                                                class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Nombre Producto</td>
+                                    <td>Categoria Ejemplo</td>
+                                    <td>Descripción Ejemplo</td>
+                                    <td>$89.99</td>
+                                    <td><span class="stock-badge empty">0</span></td>
+                                    <td>
+                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon btn-delete-usuario"><i
+                                                class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Nombre Producto</td>
+                                    <td>Categoria Ejemplo</td>
+                                    <td>Descripción Ejemplo</td>
+                                    <td>$149.99</td>
+                                    <td><span class="stock-badge low">2</span></td>
+                                    <td>
+                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon btn-delete-usuario"><i
+                                                class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Nombre Producto</td>
+                                    <td>Categoria Ejemplo</td>
+                                    <td>Descripción Ejemplo</td>
+                                    <td>$399.99</td>
+                                    <td><span class="stock-badge good">8</span></td>
+                                    <td>
+                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon btn-delete-usuario"><i
+                                                class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Nombre Producto</td>
+                                    <td>Categoria Ejemplo</td>
+                                    <td>Descripción Ejemplo</td>
+                                    <td>$299.99</td>
+                                    <td><span class="stock-badge low">1</span></td>
+                                    <td>
+                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
+                                        <button class="btn-icon btn-delete-usuario"><i
+                                                class="fas fa-trash"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal de confirmación de salida -->
+    <div id="logout-modal" class="modal">
+        <div class="modal-content">
+            <h3>Confirmar Salida</h3>
+            <p>¿Estás seguro de que deseas cerrar sesión?</p>
+            <div class="modal-buttons">
+                <button id="confirm-logout" class="btn-danger">Sí, Salir</button>
+                <button id="cancel-logout" class="btn-outline">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Edición de Producto -->
+    <div id="edit-product-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar Producto</h3>
+                <button class="modal-close" id="close-edit-modal">&times;</button>
+            </div>
+            <form id="edit-product-form" class="edit-product-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-nombre">Nombre del Producto</label>
+                        <input type="text" id="edit-nombre" name="nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-categoria">Categoría</label>
+                        <input type="text" id="edit-categoria" name="categoria" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-descripcion">Descripción</label>
+                    <textarea id="edit-descripcion" name="descripcion" rows="3" required></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-precio">Precio</label>
+                        <input type="number" id="edit-precio" name="precio" step="0.01" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-stock">Agregar Stock</label>
+                        <input type="number" id="edit-stock" name="stock" min="0" required>
+                    </div>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-secondary" id="cancel-edit">Cancelar</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i>
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Edición de Proveedor -->
+    <div id="edit-proveedor-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar Proveedor</h3>
+                <button class="modal-close" id="close-edit-proveedor-modal">&times;</button>
+            </div>
+            <form id="edit-proveedor-form" class="edit-proveedor-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-proveedor-nombre">Nombre del Proveedor</label>
+                        <input type="text" id="edit-proveedor-nombre" name="nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-proveedor-telefono">Teléfono</label>
+                        <input type="text" id="edit-proveedor-telefono" name="telefono" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-proveedor-email">Email</label>
+                        <input type="email" id="edit-proveedor-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-proveedor-direccion">Dirección</label>
+                        <textarea id="edit-proveedor-direccion" name="direccion" rows="2" required></textarea>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-proveedor-productos">Información de Productos</label>
+                    <textarea id="edit-proveedor-productos" name="productos" rows="3" required></textarea>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-secondary" id="cancel-edit-proveedor">Cancelar</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i>
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Edición de Usuario -->
+    <div id="edit-usuario-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar Usuario</h3>
+                <button class="modal-close" id="close-edit-usuario-modal">&times;</button>
+            </div>
+            <form id="edit-usuario-form" class="edit-usuario-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-usuario-nombre">Nombre</label>
+                        <input type="text" id="edit-usuario-nombre" name="nombre" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-usuario-apellido">Apellido</label>
+                        <input type="text" id="edit-usuario-apellido" name="apellido" required>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-usuario-email">Email</label>
+                        <input type="email" id="edit-usuario-email" name="email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-usuario-rol">Rol</label>
+                        <select id="edit-usuario-rol" name="rol" required>
+                            <option value="">Selecciona rol</option>
+                            <option value="admin">Administrador</option>
+                            <option value="empleado">Empleado</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-usuario-fecha">Fecha de Registro</label>
+                    <input type="date" id="edit-usuario-fecha" name="fecha" required>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" class="btn-secondary" id="cancel-edit-usuario">Cancelar</button>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i>
+                        Guardar Cambios
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/productos.js"></script>
+    <script src="js/admin.js"></script>
+    <script src="js/principal.js"></script>
+</body>
+
+</html>

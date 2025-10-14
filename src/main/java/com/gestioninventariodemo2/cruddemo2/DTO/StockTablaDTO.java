@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class StockTablaDTO {
-
+    
     private String nombre;
     private String categoria;
     private String descripcion;
