@@ -1739,3 +1739,195 @@ body {
     background-color: #fbeae9; /* Fondo rojo muy claro */
     border-color: #f1c0bc;
 }
+
+
+/* --- ESTILOS PARA EL MULTI-SELECT MEJORADO --- */
+
+/* Ocultamos el select original, que solo guarda los datos */
+#proveedorProductosSelect {
+    display: none;
+}
+
+/* Contenedor principal del componente. Usamos position: relative
+   para que el menú de opciones se posicione correctamente dentro de él. */
+.form-group {
+    position: relative;
+}
+
+/* El contenedor que se ve como un campo de texto */
+.custom-multi-select-container {
+    display: flex;
+    flex-wrap: wrap; /* Permite que los tags pasen a la siguiente línea si no hay espacio */
+    align-items: center;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    cursor: text;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* Efecto visual cuando el usuario hace clic o se enfoca en el componente */
+.custom-multi-select-container:focus-within {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+/* Contenedor de las etiquetas */
+.tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px; /* Espacio entre etiquetas */
+}
+
+/* Estilo de cada etiqueta (tag) */
+.tag {
+    display: flex;
+    align-items: center;
+    background-color: #007bff;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+/* La 'x' para eliminar la etiqueta */
+.tag-close {
+    margin-left: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    transition: transform 0.2s;
+}
+.tag-close:hover {
+    transform: scale(1.2);
+}
+
+/* El campo de texto donde el usuario escribe */
+.custom-select-input {
+    border: none;
+    outline: none;
+    flex-grow: 1; /* Ocupa el espacio restante */
+    min-width: 150px; /* Ancho mínimo antes de que los tags salten de línea */
+    padding: 5px;
+    font-size: 16px;
+}
+
+/* Contenedor del menú desplegable (dropdown) */
+.options-container {
+    display: none; /* Oculto por defecto */
+    position: absolute; /* CLAVE: Para que flote sobre el contenido */
+    top: 100%; /* Se posiciona justo debajo del contenedor principal */
+    left: 0;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 1000; /* Asegura que esté por encima de otros elementos */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-top: 4px; /* Pequeño espacio entre el input y el dropdown */
+}
+
+/* Estilo para cada opción del menú */
+.option {
+    padding: 12px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.option:hover {
+    background-color: #f0f0f0;
+}
+
+/* --- ESTILOS PARA EL MULTI-SELECT CON TAGS DEBAJO --- */
+
+/* El select oculto no cambia */
+#proveedorProductosSelect {
+    display: none;
+}
+
+/* El .form-group sigue siendo el ancla para el menú desplegable */
+.form-group {
+    position: relative;
+}
+
+/* Contenedor de la barra de búsqueda (ahora solo contiene el input) */
+.custom-multi-select-container {
+    display: flex;
+    align-items: center;
+    padding: 8px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #fff;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.custom-multi-select-container:focus-within {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+}
+
+/* El input de búsqueda ahora ocupa todo el espacio de su contenedor */
+.custom-select-input {
+    border: none;
+    outline: none;
+    width: 100%; /* Ocupa todo el ancho */
+    padding: 5px;
+    font-size: 16px;
+}
+
+/* ¡NUEVO! El contenedor para las etiquetas que aparecen debajo */
+.tags-container-below {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px; /* Espacio entre etiquetas */
+    margin-top: 12px; /* Espacio entre la barra de búsqueda y las etiquetas */
+    padding: 5px 0; /* Un poco de espacio vertical */
+}
+
+/* El estilo de la etiqueta individual no necesita cambios */
+.tag {
+    display: flex;
+    align-items: center;
+    background-color: #007bff;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 14px;
+    font-weight: 500;
+}
+
+.tag-close {
+    margin-left: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+}
+
+/* El menú desplegable (dropdown) no necesita cambios */
+.options-container {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: white;
+    max-height: 220px;
+    overflow-y: auto;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    margin-top: 4px;
+}
+
+.option {
+    padding: 12px 15px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+.option:hover {
+    background-color: #f0f0f0;
+}

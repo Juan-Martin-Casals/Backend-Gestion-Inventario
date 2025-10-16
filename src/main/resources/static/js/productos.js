@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const descriptionInput = document.getElementById('product-description');
     const priceInput = document.getElementById('product-price');
     const stockInput = document.getElementById('product-stock');
-    const generalMessage = document.getElementById('form-general-message');
+    const generalMessage = document.getElementById('form-general-message-producto');
 
     // ===============================
     // URLs DE LA API
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     // LÓGICA DEL FORMULARIO DE REGISTRO
     // ===============================
-     if (productForm) {
+    if (productForm) {
         productForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 

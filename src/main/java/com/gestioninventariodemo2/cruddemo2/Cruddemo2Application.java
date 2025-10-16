@@ -1,6 +1,5 @@
 package com.gestioninventariodemo2.cruddemo2;
 
-import com.gestioninventariodemo2.cruddemo2.DTO.LoginRequestDTO;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 

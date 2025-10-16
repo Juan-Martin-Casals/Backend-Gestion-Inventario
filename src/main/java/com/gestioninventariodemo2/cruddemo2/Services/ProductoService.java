@@ -10,6 +10,7 @@ import com.gestioninventariodemo2.cruddemo2.DTO.ActualizarProductoDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoActualizadoDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoResponseDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.ProductoSelectDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.StockTablaDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
 import com.gestioninventariodemo2.cruddemo2.Model.Stock;
@@ -89,6 +90,7 @@ public class ProductoService {
                     stockActual = p.getStocks().get(0).getStockActual();
                 }
                 return StockTablaDTO.builder()
+                        .id(p.getIdProducto())
                         .nombre(p.getNombre())
                         .categoria(p.getCategoria())
                         .descripcion(p.getDescripcion())
@@ -97,7 +99,21 @@ public class ProductoService {
                         .build();
             })
             .toList();
-}
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductoSelectDTO> listarProductosSelect() {
+    return productoRepository.findAll()
+            .stream()
+            .map(p -> {
+                return ProductoSelectDTO.builder()
+                        .id(p.getIdProducto())
+                        .nombre(p.getNombre())
+
+                        .build();
+            })
+            .toList();
+    }
 
 
     @Transactional
@@ -162,6 +178,13 @@ public class ProductoService {
         .categoria(producto.getCategoria())
         .descripcion(producto.getDescripcion())
         .precio(producto.getPrecio())
+        .build();
+    }
+
+    public ProductoSelectDTO mapDto(Producto producto) {
+    return ProductoSelectDTO.builder()
+        .id(producto.getIdProducto())
+        .nombre(producto.getNombre())
         .build();
     }
 

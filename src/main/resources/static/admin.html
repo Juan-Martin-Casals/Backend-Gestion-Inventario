@@ -194,7 +194,7 @@
                             Registrar Producto
                         </button>
                     </form>
-                    <p id="form-general-message" class="form-message"></p>
+                    <p id="form-general-message-producto" class="form-message"></p>
                 </div>
 
                 <div class="table-section">
@@ -208,11 +208,10 @@
                                 <th>Descripción</th>
                                 <th>Precio</th>
                                 <th>Stock</th>
-                                <!-- CAMBIO: Columna "Acciones" eliminada -->
                             </tr>
                             </thead>
                             <tbody id="product-table-body">
-                            <!-- Las filas se cargarán aquí dinámicamente -->
+
                             </tbody>
                         </table>
                     </div>
@@ -221,102 +220,82 @@
 
             <!-- Sección Proveedores -->
             <section id="proveedores-section" class="spa-section" style="display:none">
-                <div class="section-header">
-                    <h3>Proveedores</h3>
-                    <p>Total de proveedores registrados: 3</p>
-                </div>
 
-                <div class="form-section">
-                    <h4>Registrar Nuevo Proveedor</h4>
-                    <form class="supplier-form">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Nombre del Proveedor</label>
-                                <input type="text" placeholder="Nombre proveedor">
-                            </div>
-                            <div class="form-group">
-                                <label>Teléfono</label>
-                                <input type="text" placeholder="123456789">
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Email</label>
-                                <input type="email" placeholder="email@ejemplo.com">
-                            </div>
-                            <div class="form-group">
-                                <label>Dirección</label>
-                                <textarea placeholder="Dirección completa"></textarea>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Información de Productos</label>
-                            <textarea
-                                placeholder="Descripción de los productos que ofrece este proveedor (ej: electrónicos, ropa, alimentos, etc.)"></textarea>
-                        </div>
-                        <button type="submit" class="btn-primary" style="margin-top: 20px;">
-                            <i class="fas fa-plus"></i>
-                            Registrar Proveedor
-                        </button>
-                    </form>
-                </div>
+    <div class="section-header">
+        <h3>Proveedores</h3>
+    </div>
 
-                <div class="table-section">
-                    <h4>Proveedores Registrados</h4>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Teléfono</th>
-                                    <th>Email</th>
-                                    <th>Dirección</th>
-                                    <th>Productos</th>
-                                    <th>Acciones</th> <!-- Nueva columna -->
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Nombre proveedor</td>
-                                    <td>123456789</td>
-                                    <td>email@ejemplo.com</td>
-                                    <td>Direccion Ejemplo</td>
-                                    <td>Electrónicos y accesorios</td>
-                                    <td>
-                                        <button class="btn-icon btn-edit-proveedor"><i class="fas fa-edit"></i></button>
-                                        <button class="btn-icon btn-delete-proveedor"><i
-                                                class="fas fa-trash"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Nombre proveedor</td>
-                                    <td>123456789</td>
-                                    <td>email@ejemplo.com</td>
-                                    <td>Direccion Ejemplo</td>
-                                    <td>Ropa y calzado</td>
-                                    <td>
-                                        <button class="btn-icon btn-edit-proveedor"><i class="fas fa-edit"></i></button>
-                                        <button class="btn-icon btn-delete-proveedor"><i
-                                                class="fas fa-trash"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Nombre proveedor</td>
-                                    <td>123456789</td>
-                                    <td>email@ejemplo.com</td>
-                                    <td>Direccion Ejemplo</td>
-                                    <td>Alimentos y bebidas</td>
-                                    <td>
-                                        <button class="btn-icon btn-edit-proveedor"><i class="fas fa-edit"></i></button>
-                                        <button class="btn-icon btn-delete-proveedor"><i
-                                                class="fas fa-trash"></i></button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+    <div class="form-section">
+        <h4>Registrar Nuevo Proveedor</h4>
+        <form id="proveedor-form" class="supplier-form" novalidate>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="proveedorNombre">Nombre del Proveedor</label>
+                    <input type="text" id="proveedorNombre" name="nombre" placeholder="Nombre proveedor">
+                    <div class="error-message" id="errorNombre"></div>
                 </div>
-            </section>
+                <div class="form-group">
+                    <label for="proveedorTelefono">Teléfono</label>
+                    <input type="text" id="proveedorTelefono" name="telefono" placeholder="123456789">
+                    <div class="error-message" id="errorTelefono"></div>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="proveedorEmail">Email</label>
+                    <input type="email" id="proveedorEmail" name="email" placeholder="email@ejemplo.com">
+                    <div class="error-message" id="errorEmail"></div>
+                </div>
+                <div class="form-group">
+                    <label for="proveedorDireccion">Dirección</label>
+                    <input type="text" id="proveedorDireccion" name="direccion" placeholder="Dirección completa">
+                    <div class="error-message" id="errorDireccion"></div>
+                </div>
+            </div>
+            <div class="form-group">
+    <label for="proveedorProductosSelect">Productos que Ofrece</label>
+    
+    <div id="productos-multi-select-container" class="custom-multi-select-container">
+    <input type="text" id="productos-select-input" class="custom-select-input" placeholder="Buscar y seleccionar productos...">
+</div>
+
+<div id="tags-container" class="tags-container-below">
+    </div>
+    <div id="productos-options-container" class="options-container">
+        </div>
+
+    <select id="proveedorProductosSelect" name="productosIds" multiple>
+        </select>
+    <div class="error-message" id="proveedorProductosError"></div>
+</div>
+            <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                <i class="fas fa-plus"></i>
+                Registrar Proveedor
+            </button>
+        </form>
+        <p id="form-general-message-proveedor" class="form-message"></p>
+    </div>
+
+    <div class="table-section">
+        <h4>Proveedores Registrados</h4>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Teléfono</th>
+                        <th>Email</th>
+                        <th>Dirección</th>
+                        <th>Productos</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="proveedor-tabla">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
             <!-- Sección Usuarios -->
             <section id="usuarios-section" class="spa-section" style="display:none">
@@ -819,9 +798,11 @@
         </div>
     </div>
 
-    <script src="js/productos.js"></script>
+
     <script src="js/admin.js"></script>
     <script src="js/principal.js"></script>
+    <script src="js/productos.js"></script>
+    <script src="js/proveedor.js"></script>
 </body>
 
 </html>

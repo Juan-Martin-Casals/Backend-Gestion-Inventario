@@ -30,50 +30,50 @@ public class ProveedorService {
     private final ProductoRepository productoRepository;
 
     @Transactional
-    public Proveedor registrarProveedor(ProveedorRequestDTO dto) {
-    // Validar campos obligatorios
-    if (dto.getNombre() == null || dto.getNombre().isBlank() ||
-        dto.getTelefono() == null || dto.getTelefono().isBlank() ||
-        dto.getEmail() == null || dto.getEmail().isBlank() ||
-        dto.getDireccion() == null || dto.getDireccion().isBlank()) {
-        throw new IllegalArgumentException("Todos los campos son obligatorios");
-    }
-
-    // Validar formato de email
-    if (!dto.getEmail().matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
-        throw new IllegalArgumentException("El email debe tener un formato válido");
-    }
-
-    // Verificar si ya existe un proveedor con ese email
-    if (proveedorRepository.existsByEmail(dto.getEmail())) {
-        throw new IllegalArgumentException("Ya existe un proveedor registrado con ese email");
-    }
-
+    // CORRECCIÓN 1: El método ahora devuelve el DTO de respuesta.
+    public ProveedorResponseDTO registrarProveedor(ProveedorRequestDTO dto) {
+        // Tu lógica de validación (está bien como la tenías)
+        if (dto.getNombre() == null || dto.getNombre().isBlank() ||
+            dto.getTelefono() == null || dto.getTelefono().isBlank() ||
+            dto.getEmail() == null || dto.getEmail().isBlank() ||
+            dto.getDireccion() == null || dto.getDireccion().isBlank()) {
+            throw new IllegalArgumentException("Todos los campos son obligatorios");
+        }
+        if (!dto.getEmail().matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
+            throw new IllegalArgumentException("El email debe tener un formato válido");
+        }
+        if (proveedorRepository.existsByEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("Ya existe un proveedor registrado con ese email");
+        }
 
         Proveedor proveedor = Proveedor.builder()
-            .nombre(dto.getNombre())
-            .telefono(dto.getTelefono())
-            .email(dto.getEmail())
-            .direccion(dto.getDireccion())
-            .build();
+                .nombre(dto.getNombre())
+                .telefono(dto.getTelefono())
+                .email(dto.getEmail())
+                .direccion(dto.getDireccion())
+                .build();
 
         proveedor.setProductoProveedor(new ArrayList<>());
 
-        if (dto.getProductosId() != null && !dto.getProductosId().isEmpty()) {
-            for (Long idProd : dto.getProductosId()) {
+        // Usamos el nombre de campo corregido 'productosIds'
+        if (dto.getProductosIds() != null && !dto.getProductosIds().isEmpty()) {
+            for (Long idProd : dto.getProductosIds()) {
                 Producto producto = productoRepository.findById(idProd)
-                    .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + idProd));
+                        .orElseThrow(() -> new RuntimeException("Producto no encontrado: " + idProd));
 
                 ProductoProveedor pp = ProductoProveedor.builder()
-                    .producto(producto)
-                    .proveedor(proveedor)
-                    .build();
+                        .producto(producto)
+                        .proveedor(proveedor)
+                        .build();
 
                 proveedor.getProductoProveedor().add(pp);
             }
         }
 
-        return proveedorRepository.save(proveedor);
+        Proveedor proveedorGuardado = proveedorRepository.save(proveedor);
+
+        // CORRECCIÓN 2: Devolvemos el DTO mapeado.
+        return mapToDTO(proveedorGuardado);
     }
 
     @Transactional(readOnly = true)
@@ -133,18 +133,19 @@ public class ProveedorService {
 
 
     public ProveedorResponseDTO mapToDTO(Proveedor proveedor) {
-    List<String> nombresProductos = proveedor.getProductoProveedor().stream()
-        .map(pp -> pp.getProducto().getNombre()) // solo el nombre
-        .collect(Collectors.toList());
+        List<String> nombresProductos = proveedor.getProductoProveedor().stream()
+            .map(pp -> pp.getProducto().getNombre())
+            .collect(Collectors.toList());
 
-    return ProveedorResponseDTO.builder()
-        .nombre(proveedor.getNombre())
-        .telefono(proveedor.getTelefono())
-        .email(proveedor.getEmail())
-        .direccion(proveedor.getDireccion())
-        .productos(nombresProductos)
-        .build();
-}
+        return ProveedorResponseDTO.builder()
+            .nombre(proveedor.getNombre())
+            .telefono(proveedor.getTelefono())
+            .email(proveedor.getEmail())
+            .direccion(proveedor.getDireccion())
+            // CORRECCIÓN 3: El campo en el builder ahora coincide con el DTO.
+            .productos(nombresProductos)
+            .build();
+    }
 }
 
 

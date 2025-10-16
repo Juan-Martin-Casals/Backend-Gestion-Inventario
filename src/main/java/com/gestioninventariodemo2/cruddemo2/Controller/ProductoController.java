@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoResponseDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.ProductoSelectDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
 import com.gestioninventariodemo2.cruddemo2.Services.ProductoService;
 
@@ -37,6 +38,12 @@ public class ProductoController {
     @GetMapping
     public ResponseEntity<List<ProductoResponseDTO>> listarProductos(){
         List<ProductoResponseDTO> productos = productoService.listarProductos();
+        return ResponseEntity.ok(productos);
+    }
+
+    @GetMapping("/select")
+    public ResponseEntity<List<ProductoSelectDTO>> listarProductosSelect(){
+        List<ProductoSelectDTO> productos = productoService.listarProductosSelect();
         return ResponseEntity.ok(productos);
     }
 

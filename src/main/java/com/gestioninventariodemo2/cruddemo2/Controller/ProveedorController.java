@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorUpdateDTO;
-import com.gestioninventariodemo2.cruddemo2.Model.Proveedor;
 import com.gestioninventariodemo2.cruddemo2.Services.ProveedorService;
 
 import lombok.RequiredArgsConstructor;
@@ -28,13 +27,14 @@ public class ProveedorController {
 
     private final ProveedorService proveedorService;
 
-    @PostMapping
-    public ResponseEntity<ProveedorResponseDTO> registrarProveedor(@RequestBody ProveedorRequestDTO dto){
-        Proveedor nuevoProveedor = proveedorService.registrarProveedor(dto);
-        ProveedorResponseDTO response = proveedorService.mapToDTO(nuevoProveedor);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
-    }
-
+@PostMapping
+public ResponseEntity<ProveedorResponseDTO> registrarProveedor(@RequestBody ProveedorRequestDTO dto) {
+    // 1. Llama al servicio y guarda el resultado directamente en una variable del tipo correcto.
+    ProveedorResponseDTO responseDTO = proveedorService.registrarProveedor(dto);
+    
+    // 2. Devuelve ese DTO en la respuesta.
+    return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+}
     @GetMapping
     public ResponseEntity<List<ProveedorResponseDTO>> listarProveedores() {
     List<ProveedorResponseDTO> proveedores = proveedorService.listarProveedores();
