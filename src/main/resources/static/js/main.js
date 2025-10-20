@@ -86,12 +86,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 body: JSON.stringify(loginData),
             });
 
-            const data = await response.json();
 
-            if (!response.ok) {
-                // Si el servidor responde con un error (ej. 401)
-                throw new Error(data.message || "Credenciales inválidas ❌");
-            }
+
+if (!response.ok) {
+            // Leemos la respuesta como TEXTO, ya que podría no ser JSON
+            const errorText = await response.text(); 
+            // Lanzamos un error con el mensaje del backend para que lo capture el catch()
+            throw new Error(errorText || "Credenciales inválidas ❌");
+        }
+
+        // Si la respuesta SÍ fue exitosa (código 200), la leemos como JSON
+        const data = await response.json();
 
             // Si todo sale bien, el backend devuelve el rol
             const userRole = data.rol;
