@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         confirmLogoutBtn.addEventListener('click', () => {
-            window.location.href = 'login.html';
+            window.location.href = 'index.html';
         });
 
         window.addEventListener('click', (e) => {
