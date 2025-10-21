@@ -1,5 +1,7 @@
 package com.gestioninventariodemo2.cruddemo2.Model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -8,6 +10,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.Transient;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -31,10 +34,14 @@ public class DetalleCompra {
     @Column(name = "Precio_Unitario")
     private double precioUnitario;
 
+    @Transient
+    private double nuevoPrecioVenta;
+
     @ManyToOne
     @JoinColumn(name = "idProducto")
     private Producto producto;
 
+    
     @ManyToOne
     @JoinColumn(name = "idCompra")
     private Compra compra;

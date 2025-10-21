@@ -11,7 +11,6 @@
 
 <body>
     <div class="dashboard-container">
-        <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
                 <h3>Gestión Inventario</h3>
@@ -21,6 +20,7 @@
                 <li><a href="#" data-section="principal" class="active"><i class="fas fa-home"></i> Principal</a></li>
                 <li><a href="#" data-section="productos"><i class="fas fa-box"></i> Productos</a></li>
                 <li><a href="#" data-section="proveedores"><i class="fas fa-user"></i> Proveedores</a></li>
+                <li><a href="#" data-section="compras"><i class="fas fa-shopping-bag"></i> Compras</a></li>
                 <li><a href="#" data-section="usuarios"><i class="fas fa-users"></i> Usuarios</a></li>
                 <li><a href="#" data-section="ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
                 <li><a href="#" data-section="informes"><i class="fas fa-chart-bar"></i> Informes</a></li>
@@ -29,7 +29,6 @@
             </ul>
         </aside>
 
-        <!-- Contenido principal -->
         <main class="main-content">
             <header class="main-header">
                 <div class="header-left">
@@ -47,9 +46,7 @@
                 </div>
             </header>
 
-            <!-- Sección Principal (Dashboard) -->
             <section id="principal-section" class="spa-section">
-                <!-- Resumen de Ventas colocado en la parte superior para verse al entrar -->
                 <div class="sales-dashboard" style="margin-bottom:18px;">
                     <div class="stats-cards">
                         <div class="stat-card">
@@ -216,92 +213,191 @@
                 </div>
             </section>
 
-            <!-- Sección Proveedores -->
             <section id="proveedores-section" class="spa-section" style="display:none">
 
-    <div class="section-header">
-    </div>
-
-    <div class="form-section">
-        <h4>Registrar Nuevo Proveedor</h4>
-        <form id="proveedor-form" class="supplier-form" novalidate>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="proveedorNombre">Nombre del Proveedor</label>
-                    <input type="text" id="proveedorNombre" name="nombre" placeholder="Nombre proveedor">
-                    <div class="error-message" id="errorNombre"></div>
+                <div class="section-header">
                 </div>
-                <div class="form-group">
-                    <label for="proveedorTelefono">Teléfono</label>
-                    <input type="text" id="proveedorTelefono" name="telefono" placeholder="123456789">
-                    <div class="error-message" id="errorTelefono"></div>
+            
+                <div class="form-section">
+                    <h4>Registrar Nuevo Proveedor</h4>
+                    <form id="proveedor-form" class="supplier-form" novalidate>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="proveedorNombre">Nombre del Proveedor</label>
+                                <input type="text" id="proveedorNombre" name="nombre" placeholder="Nombre proveedor">
+                                <div class="error-message" id="errorNombre"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="proveedorTelefono">Teléfono</label>
+                                <input type="text" id="proveedorTelefono" name="telefono" placeholder="123456789">
+                                <div class="error-message" id="errorTelefono"></div>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="proveedorEmail">Email</label>
+                                <input type="email" id="proveedorEmail" name="email" placeholder="email@ejemplo.com">
+                                <div class="error-message" id="errorEmail"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="proveedorDireccion">Dirección</label>
+                                <input type="text" id="proveedorDireccion" name="direccion" placeholder="Dirección completa">
+                                <div class="error-message" id="errorDireccion"></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="proveedorProductosSelect">Productos que Ofrece</label>
+                            
+                            <div id="productos-multi-select-container" class="custom-multi-select-container">
+                                <input type="text" id="productos-select-input" class="custom-select-input" placeholder="Buscar y seleccionar productos...">
+                            </div>
+                        
+                            <div id="tags-container" class="tags-container-below">
+                            </div>
+                            <div id="productos-options-container" class="options-container">
+                            </div>
+                        
+                            <select id="proveedorProductosSelect" name="productosIds" multiple>
+                            </select>
+                            <div class="error-message" id="proveedorProductosError"></div>
+                        </div>
+                        <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                            <i class="fas fa-plus"></i>
+                            Registrar Proveedor
+                        </button>
+                    </form>
+                    <p id="form-general-message-proveedor" class="form-message"></p>
                 </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="proveedorEmail">Email</label>
-                    <input type="email" id="proveedorEmail" name="email" placeholder="email@ejemplo.com">
-                    <div class="error-message" id="errorEmail"></div>
+            
+                <div class="table-section">
+                    <h4>Proveedores Registrados</h4>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Teléfono</th>
+                                    <th>Email</th>
+                                    <th>Dirección</th>
+                                    <th>Productos</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="proveedor-tabla">
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                <div class="form-group">
-                    <label for="proveedorDireccion">Dirección</label>
-                    <input type="text" id="proveedorDireccion" name="direccion" placeholder="Dirección completa">
-                    <div class="error-message" id="errorDireccion"></div>
+            </section>
+
+            <section id="compras-section" class="spa-section" style="display:none">
+                <div class="section-header">
                 </div>
-            </div>
-            <div class="form-group">
-    <label for="proveedorProductosSelect">Productos que Ofrece</label>
-    
-    <div id="productos-multi-select-container" class="custom-multi-select-container">
-    <input type="text" id="productos-select-input" class="custom-select-input" placeholder="Buscar y seleccionar productos...">
-</div>
 
-<div id="tags-container" class="tags-container-below">
-    </div>
-    <div id="productos-options-container" class="options-container">
-        </div>
+                <div class="form-section">
+                    <h4>Registrar Nueva Compra</h4>
+                    <form id="compra-form" class="sale-form" novalidate>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="compra-fecha">Fecha de Compra</label>
+                                <input type="date" id="compra-fecha" value="">
+                                <div class="error-message" id="errorCompraFecha"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="compra-proveedor">Proveedor</label>
+                                <select id="compra-proveedor" name="proveedor">
+                                    <option value="">Seleccione un proveedor...</option>
+                                    </select>
+                                <div class="error-message" id="errorCompraProveedor"></div>
+                            </div>
+                        </div>
 
-    <select id="proveedorProductosSelect" name="productosIds" multiple>
-        </select>
-    <div class="error-message" id="proveedorProductosError"></div>
-</div>
-            <button type="submit" class="btn-primary" style="margin-top: 20px;">
-                <i class="fas fa-plus"></i>
-                Registrar Proveedor
-            </button>
-        </form>
-        <p id="form-general-message-proveedor" class="form-message"></p>
-    </div>
+                        <div class="product-selection">
+                            <h5><i class="fas fa-box"></i> Detalle de la Compra</h5>
+                            
+                        <div class="form-group">
+                            <label for="compraProductosSelect">Producto comprado</label>
+                            
+                            <div id="productos-multi-select-container" class="custom-multi-select-container">
+                                <input type="text" id="productos-select-input" class="custom-select-input" placeholder="Buscar y seleccionar producto...">
+                            </div>
+                        
+                            <div id="tags-container" class="tags-container-below">
+                            </div>
+                            <div id="productos-options-container" class="options-container">
+                            </div>
+                        
+                            <select id="compraProductosSelect" name="productosIds" multiple>
+                            </select>
+                            <div class="error-message" id="proveedorProductosError"></div>
+                        </div>
 
-    <div class="table-section">
-        <h4>Proveedores Registrados</h4>
-        <div class="table-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Teléfono</th>
-                        <th>Email</th>
-                        <th>Dirección</th>
-                        <th>Productos</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="proveedor-tabla">
-                    </tbody>
-            </table>
-        </div>
-    </div>
-</section>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="compra-cantidad">Cantidad Comprada</label>
+                                    <input type="number" id="compra-cantidad" value="1" min="1">
+                                    <div class="error-message" id="errorCompraCantidad"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="compra-venta-unit">Nuevo Precio Venta (Unit.)</label>
+                                    <input type="text" id="compra-venta-unit" placeholder="0.00">
+                                    <div class="error-message" id="errorCompraVenta"></div>
+                                </div>
+                            </div>
+                            
+                        </div>
 
-            <!-- Sección Usuarios -->
+
+                        <div class="total-section">
+                            <h4 id="compra-total-display">$ Total Compra: $0.00</h4>
+                        </div>
+                        
+                        <button type="submit" class="btn-primary" style="margin-top: 10px;">
+                            <i class="fas fa-save"></i>
+                            Registrar Compra
+                        </button>
+                    </form>
+                    <p id="form-general-message-compra" class="form-message"></p>
+                </div>
+
+                <div class="table-section">
+                    <h4>Compras Registradas</h4>
+                    <p>Historial de compras a proveedores</p>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Proveedor</th>
+                                    <th>Productos</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="compras-historial-tabla-body">
+                                <tr>
+                                    <td>01-07-2025</td>
+                                    <td>Proveedor A</td>
+                                    <td>Producto X (x10), Producto Y (x20)</td>
+                                    <td>$1500.00</td>
+                                </tr>
+                                <tr>
+                                    <td>30-06-2025</td>
+                                    <td>Proveedor B</td>
+                                    <td>Producto Z (x50)</td>
+                                    <td>$800.00</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <section id="usuarios-section" class="spa-section" style="display:none">
                 <div class="section-header">
                 </div>
 
                 <div class="form-section">
                     <h4>Registrar Nuevo Usuario</h4>
-                    <!-- Añadido clase user-form para que el JS de gestión de usuarios la encuentre -->
                     <form class="product-form user-form">
                         <div class="form-row">
                             <div class="form-group">
@@ -329,7 +425,6 @@
                             </div>
                         </div>
 
-                        <!-- Agrupamos las contraseñas para que queden una debajo de la otra -->
                         <div class="form-row">
                             <div class="form-group" style="width:100%">
                                 <label>Contraseña</label>
@@ -407,7 +502,6 @@
                 </div>
             </section>
 
-            <!-- Sección Ventas -->
             <section id="ventas-section" class="spa-section" style="display:none">
                 <div class="section-header">
                 </div>
@@ -450,8 +544,7 @@
                                         <input type="text" id="product-search"
                                             placeholder="Buscar producto por nombre..." class="product-search-input">
                                         <div id="product-results" class="product-results" style="display: none;">
-                                            <!-- Los resultados se cargarán dinámicamente -->
-                                        </div>
+                                            </div>
                                     </div>
                                 </div>
                                 <div class="form-group">
@@ -510,7 +603,6 @@
                 </div>
             </section>
 
-            <!-- Sección Informes -->
             <section id="informes-section" class="spa-section" style="display:none">
                 <div class="section-header">
                 </div>
@@ -544,13 +636,8 @@
                     </div>
                 </div>
 
-                <!-- Informes: las tarjetas se muestran solo en Principal (moved) -->
+                </section>
 
-
-
-            </section>
-
-            <!-- Sección Stock -->
             <section id="stock-section" class="spa-section" style="display:none">
                 <div class="section-header">
 
@@ -645,7 +732,6 @@
         </main>
     </div>
 
-    <!-- Modal de confirmación de salida -->
     <div id="logout-modal" class="modal">
         <div class="modal-content">
             <h3>Confirmar Salida</h3>
@@ -657,7 +743,6 @@
         </div>
     </div>
 
-    <!-- Modal de Edición de Producto -->
     <div id="edit-product-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -700,7 +785,6 @@
         </div>
     </div>
 
-    <!-- Modal de Edición de Proveedor -->
     <div id="edit-proveedor-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -743,7 +827,6 @@
         </div>
     </div>
 
-    <!-- Modal de Edición de Usuario -->
     <div id="edit-usuario-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -795,6 +878,8 @@
     <script src="js/principal.js"></script>
     <script src="js/productos.js"></script>
     <script src="js/proveedor.js"></script>
-</body>
+    <script src="js/compras.js"></script>
+    
+    </body>
 
 </html>

@@ -3,6 +3,9 @@ package com.gestioninventariodemo2.cruddemo2.Model;
 import java.time.LocalDate;
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -35,15 +38,13 @@ public class Compra {
     @Column(name = "total")
     private double total;
 
-    @ManyToOne
-    @JoinColumn(name = "idUsuario")
-    private Usuario usuario;
 
     @ManyToOne
     @JoinColumn(name = "idProveedor")
     private Proveedor proveedor;
 
-    @OneToMany(mappedBy = "compra")
+
+    @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL)
     private List<DetalleCompra>detalleCompras;
 
 
