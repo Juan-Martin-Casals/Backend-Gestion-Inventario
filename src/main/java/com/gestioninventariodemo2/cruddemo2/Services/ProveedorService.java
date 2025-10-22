@@ -138,6 +138,7 @@ public class ProveedorService {
             .collect(Collectors.toList());
 
         return ProveedorResponseDTO.builder()
+            .id(proveedor.getIdProveedor())
             .nombre(proveedor.getNombre())
             .telefono(proveedor.getTelefono())
             .email(proveedor.getEmail())

@@ -1349,10 +1349,9 @@ body {
 
 /* Estilos para el formulario de usuarios */
 .user-form {
-    background: #f8f9fa;
+
     padding: 25px;
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
+
     margin-bottom: 30px;
 }
 

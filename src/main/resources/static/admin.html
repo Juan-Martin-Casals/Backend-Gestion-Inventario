@@ -290,107 +290,119 @@
                 </div>
             </section>
 
-            <section id="compras-section" class="spa-section" style="display:none">
-                <div class="section-header">
+<section id="compras-section" class="spa-section" style="display:none">
+    <div class="section-header">
+    </div>
+
+    <div class="form-section">
+        <h4>Registrar Nueva Compra</h4>
+        <form id="compra-form" class="sale-form" novalidate>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="compra-fecha">Fecha de Compra</label>
+                    <input type="date" id="compra-fecha" value="">
+                    <div class="error-message" id="errorCompraFecha"></div>
                 </div>
-
-                <div class="form-section">
-                    <h4>Registrar Nueva Compra</h4>
-                    <form id="compra-form" class="sale-form" novalidate>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="compra-fecha">Fecha de Compra</label>
-                                <input type="date" id="compra-fecha" value="">
-                                <div class="error-message" id="errorCompraFecha"></div>
-                            </div>
-                            <div class="form-group">
-                                <label for="compra-proveedor">Proveedor</label>
-                                <select id="compra-proveedor" name="proveedor">
-                                    <option value="">Seleccione un proveedor...</option>
-                                    </select>
-                                <div class="error-message" id="errorCompraProveedor"></div>
-                            </div>
-                        </div>
-
-                        <div class="product-selection">
-                            <h5><i class="fas fa-box"></i> Detalle de la Compra</h5>
-                            
-                        <div class="form-group">
-                            <label for="compraProductosSelect">Producto comprado</label>
-                            
-                            <div id="productos-multi-select-container" class="custom-multi-select-container">
-                                <input type="text" id="productos-select-input" class="custom-select-input" placeholder="Buscar y seleccionar producto...">
-                            </div>
-                        
-                            <div id="tags-container" class="tags-container-below">
-                            </div>
-                            <div id="productos-options-container" class="options-container">
-                            </div>
-                        
-                            <select id="compraProductosSelect" name="productosIds" multiple>
-                            </select>
-                            <div class="error-message" id="proveedorProductosError"></div>
-                        </div>
-
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="compra-cantidad">Cantidad Comprada</label>
-                                    <input type="number" id="compra-cantidad" value="1" min="1">
-                                    <div class="error-message" id="errorCompraCantidad"></div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="compra-venta-unit">Nuevo Precio Venta (Unit.)</label>
-                                    <input type="text" id="compra-venta-unit" placeholder="0.00">
-                                    <div class="error-message" id="errorCompraVenta"></div>
-                                </div>
-                            </div>
-                            
-                        </div>
-
-
-                        <div class="total-section">
-                            <h4 id="compra-total-display">$ Total Compra: $0.00</h4>
-                        </div>
-                        
-                        <button type="submit" class="btn-primary" style="margin-top: 10px;">
-                            <i class="fas fa-save"></i>
-                            Registrar Compra
-                        </button>
-                    </form>
-                    <p id="form-general-message-compra" class="form-message"></p>
+                <div class="form-group">
+                    <label for="compra-proveedor">Proveedor</label>
+                    <select id="compra-proveedor" name="proveedor">
+                        <option value="">Seleccione un proveedor...</option>
+                        </select>
+                    <div class="error-message" id="errorCompraProveedor"></div>
                 </div>
+            </div>
 
-                <div class="table-section">
-                    <h4>Compras Registradas</h4>
-                    <p>Historial de compras a proveedores</p>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Fecha</th>
-                                    <th>Proveedor</th>
-                                    <th>Productos</th>
-                                    <th>Total</th>
-                                </tr>
-                            </thead>
-                            <tbody id="compras-historial-tabla-body">
-                                <tr>
-                                    <td>01-07-2025</td>
-                                    <td>Proveedor A</td>
-                                    <td>Producto X (x10), Producto Y (x20)</td>
-                                    <td>$1500.00</td>
-                                </tr>
-                                <tr>
-                                    <td>30-06-2025</td>
-                                    <td>Proveedor B</td>
-                                    <td>Producto Z (x50)</td>
-                                    <td>$800.00</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+            <div class="product-selection">
+    <h5><i class="fas fa-box"></i> Detalle de la Compra</h5>
+    
+    <div class="form-row">
+        <div class="form-group" style="flex: 2;">
+            <label for="compra-producto-select">Producto</label>
+            <select id="compra-producto-select">
+                <option value="">Seleccione un producto...</option>
+                </select>
+            <div class="error-message" id="errorCompraProducto"></div>
+        </div>
+        <div class="form-group" style="flex: 1;">
+            <label for="compra-cantidad">Cantidad</label>
+            <input type="number" id="compra-cantidad" value="1" min="1">
+            <div class="error-message" id="errorCompraCantidad"></div>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-group">
+            <label for="compra-costo-unit">Precio de Costo (Unit.)</label>
+            <input type="text" id="compra-costo-unit" placeholder="0.00">
+            <div class="error-message" id="errorCompraCosto"></div>
+        </div>
+        <div class="form-group">
+            <label for="compra-venta-unit">Nuevo Precio Venta (Unit.)</label>
+            <input type="text" id="compra-venta-unit" placeholder="0.00">
+            <div class="error-message" id="errorCompraVenta"></div>
+        </div>
+    </div>
+
+    <button type="button" id="add-detalle-btn" class="btn-secondary" style="margin-top: 10px;">
+        <i class="fas fa-plus"></i>
+        Agregar Producto al Detalle
+    </button>
+    <div class="error-message" id="errorDetalleGeneral"></div>
+
+    <div class="table-container" style="margin-top: 20px;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Costo Unit.</th>
+                    <th>Venta Unit.</th>
+                    <th>Subtotal</th>
+                    <th>Quitar</th>
+                </tr>
+            </thead>
+            <tbody id="compra-detalle-temporal">
+                </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="4" style="text-align: right; font-weight: bold;">TOTAL COMPRA:</td>
+                    <td id="compra-total-display" style="font-weight: bold;">$0.00</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+
+            
+            <button type="submit" class="btn-primary" style="margin-top: 10px;">
+                <i class="fas fa-save"></i>
+                Registrar Compra
+            </button>
+        </form>
+        <p id="form-general-message-compra" class="form-message"></p>
+    </div>
+
+    <div class="table-section">
+    <h4>Compras Registradas</h4>
+    <p>Historial de compras a proveedores</p>
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Proveedor</th>
+                    <th>Productos</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody id="compras-historial-tabla-body">
+                </tbody>
+        </table>
+    </div>
+</div>
+</section>
 
             <section id="usuarios-section" class="spa-section" style="display:none">
                 <div class="section-header">

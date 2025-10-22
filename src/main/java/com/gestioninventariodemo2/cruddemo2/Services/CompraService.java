@@ -1,39 +1,47 @@
 package com.gestioninventariodemo2.cruddemo2.Services;
 
+// Importaciones de DTOs
+import com.gestioninventariodemo2.cruddemo2.DTO.CompraRequestDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.DetalleCompraRequestDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.CompraResponseDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.DetalleCompraResponseDTO;
+
+// Importaciones de Modelos (Entidades)
+import com.gestioninventariodemo2.cruddemo2.Model.Compra;
+import com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra;
+import com.gestioninventariodemo2.cruddemo2.Model.Proveedor;
+import com.gestioninventariodemo2.cruddemo2.Model.Producto;
+import com.gestioninventariodemo2.cruddemo2.Model.Stock;
+
+// Importaciones de Repositorios
+import com.gestioninventariodemo2.cruddemo2.Repository.CompraRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.ProveedorRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.ProductoRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.StockRepository;
+
+// Importaciones de Spring y Java
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.springframework.stereotype.Service;
-
-import com.gestioninventariodemo2.cruddemo2.DTO.CompraRequestDTO;
-import com.gestioninventariodemo2.cruddemo2.DTO.CompraResponseDTO;
-import com.gestioninventariodemo2.cruddemo2.DTO.DetalleCompraRequestDTO;
-import com.gestioninventariodemo2.cruddemo2.DTO.DetalleCompraResponseDTO;
-import com.gestioninventariodemo2.cruddemo2.Model.Compra;
-import com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra;
-import com.gestioninventariodemo2.cruddemo2.Model.Producto;
-import com.gestioninventariodemo2.cruddemo2.Model.Proveedor;
-import com.gestioninventariodemo2.cruddemo2.Model.Stock;
-import com.gestioninventariodemo2.cruddemo2.Repository.CompraRepository;
-import com.gestioninventariodemo2.cruddemo2.Repository.ProductoRepository;
-import com.gestioninventariodemo2.cruddemo2.Repository.ProveedorRepository;
-import com.gestioninventariodemo2.cruddemo2.Repository.StockRepository;
-
-import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
-
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor // Inyecta los repositorios finales
+@Transactional // Aplica transaccionalidad a todos los métodos públicos
 public class CompraService {
 
+    // Inyección de dependencias (se hacen automáticamente por @RequiredArgsConstructor)
     private final CompraRepository compraRepository;
-    private final StockRepository stockRepository;
-    private final ProductoRepository productoRepository;
     private final ProveedorRepository proveedorRepository;
+    private final ProductoRepository productoRepository;
+    private final StockRepository stockRepository;
 
-@Transactional
+    /**
+     * Registra una nueva compra, sus detalles, y actualiza el stock y precios.
+     */
     public Compra registrarCompra(CompraRequestDTO dto) {
         
         // 1. Crear la entidad Compra
@@ -44,7 +52,7 @@ public class CompraService {
             .orElseThrow(() -> new RuntimeException("Proveedor no encontrado con ID: " + dto.getIdProveedor()));
         compra.setProveedor(proveedor);
 
-        // 3. Asignar fecha (con la lógica que preferiste)
+        // 3. Asignar fecha (con la lógica de @JsonFormat o LocalDate.now())
         compra.setFecha(dto.getFecha() != null ? dto.getFecha() : LocalDate.now());
 
         // 4. Mapear DTOs de Detalle a Entidades de Detalle
@@ -77,63 +85,63 @@ public class CompraService {
         // 6. Guardar la Compra y sus Detalles (¡Cascade hace la magia!)
         Compra compraGuardada = compraRepository.save(compra);
 
-        // 7. Actualizar Stock y Precio de Venta (usando los DTOs)
-        // (Este paso se hace después de guardar para asegurar la transacción)
+        // 7. Actualizar Stock y Precio de Venta (¡¡CÓDIGO CORREGIDO!!)
         for (DetalleCompraRequestDTO detalleDto : dto.getDetalleCompras()) {
             
-            // --- A. Actualizar Precio de Venta ---
+            // --- 1. BUSCAMOS EL PRODUCTO REAL UNA SOLA VEZ ---
+            Producto productoDB = productoRepository.findById(detalleDto.getIdProducto())
+                .orElseThrow(() -> new RuntimeException("Producto (para stock/precio) no encontrado con ID: " + detalleDto.getIdProducto()));
+            
+            // --- 2. Actualizar Precio de Venta ---
+            // Solo actualiza si se envió un precio de venta válido
             if (detalleDto.getNuevoPrecioVenta() > 0) {
-                // Volvemos a buscar el producto (o podríamos haberlo guardado en un map)
-                Producto productoDB = productoRepository.findById(detalleDto.getIdProducto()).get();
                 productoDB.setPrecio(detalleDto.getNuevoPrecioVenta());
-                productoRepository.save(productoDB); // Guarda en 'Producto'
+                productoRepository.save(productoDB); // Guarda el precio actualizado en 'Producto'
             }
 
-            // --- B. Actualizar Stock ---
-            Producto productoAfectado = new Producto(); // Solo necesitamos el ID para la búsqueda
-            productoAfectado.setIdProducto(detalleDto.getIdProducto());
-            
-            Stock stockDelProducto = stockRepository.findByProducto(productoAfectado)
-                .orElseThrow(() -> new RuntimeException("Stock no encontrado para producto: " + detalleDto.getIdProducto()));
+            // --- 3. Actualizar Stock ---
+            // Buscamos el stock usando el producto REAL (productoDB)
+            Stock stockDelProducto = stockRepository.findByProducto(productoDB)
+                .orElseThrow(() -> new RuntimeException("Stock no encontrado para producto: " + productoDB.getNombre()));
             
             int stockNuevo = stockDelProducto.getStockActual() + detalleDto.getCantidad();
             stockDelProducto.setStockActual(stockNuevo);
-            stockRepository.save(stockDelProducto); // Guarda en 'Stock'
+            stockRepository.save(stockDelProducto); // Guarda el stock actualizado en 'Stock'
         }
 
         return compraGuardada; // Devuelve la entidad completa
     }
 
-
+    /**
+     * Lista todas las compras registradas con un formato simplificado.
+     */
     public List<CompraResponseDTO> listarTodasLasCompras() {
-        return compraRepository.findAll()
-                .stream()
-                .map(this::mapToCompraDTO) 
-                .collect(Collectors.toList());
+        // Usamos findAll() (o puedes ordenarlas por fecha, ej: findAllByOrderByFechaDesc())
+        return compraRepository.findAll() 
+            .stream()
+            .map(this::mapToCompraDTO) 
+            .collect(Collectors.toList());
     }
 
-
-    // --- MÉTODO HELPER (AYUDANTE) ACTUALIZADO ---
-
+    /**
+     * Método helper para convertir la Entidad Compra a CompraResponseDTO.
+     */
     private CompraResponseDTO mapToCompraDTO(Compra compra) {
         
-        // 1. Mapear los detalles (ahora simplificados)
+        // 1. Mapear los detalles
         List<DetalleCompraResponseDTO> detalleDTO = compra.getDetalleCompras().stream()
-                .map(detalle -> DetalleCompraResponseDTO.builder()
-                        .cantidad(detalle.getCantidad())
-                        .nombreProducto(detalle.getProducto().getNombre())
-                        // Quitamos los otros campos
-                        .build()
-                ).collect(Collectors.toList());
+            .map(detalle -> DetalleCompraResponseDTO.builder()
+                .cantidad(detalle.getCantidad())
+                .nombreProducto(detalle.getProducto().getNombre())
+                .build()
+            ).collect(Collectors.toList());
 
-        // 2. Mapear la compra principal (ahora simplificada)
+        // 2. Mapear la compra principal
         return CompraResponseDTO.builder()
-                .fecha(compra.getFecha())
-                .total(compra.getTotal())
-                .nombreProveedor(compra.getProveedor().getNombre())
-                .productosComprados(detalleDTO) // Usamos el nuevo nombre de lista
-                // Quitamos idCompra
-                .build();
+            .fecha(compra.getFecha())
+            .total(compra.getTotal())
+            .nombreProveedor(compra.getProveedor().getNombre())
+            .productosComprados(detalleDTO)
+            .build();
     }
-
 }
