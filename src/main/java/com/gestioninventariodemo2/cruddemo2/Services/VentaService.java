@@ -117,7 +117,6 @@ public class VentaService {
     return VentaResponseDTO.builder()
         .fecha(venta.getFecha())
         .nombreCliente(venta.getCliente().getNombre())
-        .apellidoCliente(venta.getCliente().getApellido())
         .total(venta.getTotal())
         .productos(
             venta.getDetalleVentas().stream()

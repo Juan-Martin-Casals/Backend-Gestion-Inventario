@@ -16,7 +16,6 @@ public class VentaResponseDTO {
 
     private LocalDate fecha;
     private String nombreCliente;
-    private String apellidoCliente;
     private double total;
     private List<ProductoVentaDTO> productos;
 

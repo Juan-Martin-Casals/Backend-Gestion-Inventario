@@ -96,7 +96,7 @@ public class UsuarioService {
         usuario.setNombre(dto.getNombre());
         usuario.setApellido(dto.getApellido());
         usuario.setEmail(dto.getEmail());
-        usuario.setContrasena(dto.getContrasena());
+        usuario.setContrasena(passwordEncoder.encode(dto.getContrasena()));
         usuario.setRol(rol);
 
         usuarioRepository.save(usuario);

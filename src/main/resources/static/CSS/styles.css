@@ -1347,76 +1347,7 @@ body {
     box-shadow: none;
 }
 
-/* Estilos para el formulario de usuarios */
-.user-form {
 
-    padding: 25px;
-
-    margin-bottom: 30px;
-}
-
-.user-form .form-group {
-    margin-bottom: 20px;
-}
-
-.user-form .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 20px;
-    margin-bottom: 20px;
-}
-
-.user-form label {
-    display: block;
-    margin-bottom: 8px;
-    font-weight: 500;
-    color: #333;
-}
-
-.user-form input,
-.user-form select {
-    width: 100%;
-    padding: 10px 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: border-color 0.3s;
-}
-
-.user-form input:focus,
-.user-form select:focus {
-    outline: none;
-    border-color: #007bff;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-}
-
-.user-form button[type="submit"] {
-    background: #007bff;
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.user-form button[type="submit"]:hover {
-    background: #0056b3;
-}
-
-/* Responsive para el formulario de usuarios */
-@media (max-width: 768px) {
-    .user-form .form-row {
-        grid-template-columns: 1fr;
-        gap: 15px;
-    }
-
-    .user-form {
-        padding: 20px;
-    }
-}
 
 /* Estilos específicos para el modal de edición de proveedores */
 #edit-proveedor-modal .modal-content {
@@ -1708,6 +1639,10 @@ body {
 
 
 /* --- ESTILOS PARA MENSAJES DE VALIDACIÓN --- */
+
+.input-error {
+    border-color: #e74c3c !important; /* Rojo para resaltar el campo con error */
+}
 
 /* Estilo para los mensajes de error debajo de cada campo (ej: "Complete este campo") */
 .error-message {
