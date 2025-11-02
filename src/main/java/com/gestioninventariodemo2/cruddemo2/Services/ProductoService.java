@@ -107,8 +107,9 @@ public class ProductoService {
             .stream()
             .map(p -> {
                 return ProductoSelectDTO.builder()
-                        .id(p.getIdProducto())
-                        .nombre(p.getNombre())
+                        .idProducto(p.getIdProducto())
+                        .nombreProducto(p.getNombre())
+                        .precioVenta(p.getPrecio())
 
                         .build();
             })
@@ -183,8 +184,9 @@ public class ProductoService {
 
     public ProductoSelectDTO mapDto(Producto producto) {
     return ProductoSelectDTO.builder()
-        .id(producto.getIdProducto())
-        .nombre(producto.getNombre())
+        .idProducto(producto.getIdProducto())
+        .nombreProducto(producto.getNombre())
+        .precioVenta(producto.getPrecio())
         .build();
     }
 

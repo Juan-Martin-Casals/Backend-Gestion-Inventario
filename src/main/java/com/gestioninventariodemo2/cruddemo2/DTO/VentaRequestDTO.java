@@ -2,6 +2,7 @@ package com.gestioninventariodemo2.cruddemo2.DTO;
 
 
 
+import java.time.LocalDate;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -18,7 +19,7 @@ public class VentaRequestDTO{
 
     private ClienteRequestDTO cliente;
     private List<DetalleVentaRequestDTO> detalles;
-    private Long usuarioId;
+    private LocalDate fecha;
 
     
 

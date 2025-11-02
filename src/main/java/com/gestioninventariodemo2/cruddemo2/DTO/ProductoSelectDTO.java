@@ -10,7 +10,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class ProductoSelectDTO {
-    private Long id;
-    private String nombre;
+    private Long idProducto;
+    private String nombreProducto;
+    private Double precioVenta;
     
 }

@@ -494,7 +494,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="fecha-venta">Fecha</label>
-                    <input type="date" id="fecha-venta" value="2025-06-30">
+                    <input type="date" id="fecha-venta">
                     <div class="error-message" id="errorFechaVenta"></div>
                 </div>
                 <div class="form-group">
@@ -507,17 +507,17 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="apellido-cliente">Apellido del Cliente:</label>
-                    <input type="text" id="apellido-cliente" name="apellido_cliente" required>
+                    <input type="text" id="apellido-cliente" name="apellido_cliente" >
                     <div class="error-message" id="errorApellidoCliente"></div>
                 </div>
                 <div class="form-group">
                     <label for="telefono-cliente">Teléfono del Cliente:</label>
-                    <input type="text" id="telefono-cliente" name="telefono_cliente" required>
+                    <input type="text" id="telefono-cliente" name="telefono_cliente" >
                     <div class="error-message" id="errorTelefonoCliente"></div>
                 </div>
                 <div class="form-group">
                     <label for="dni-cliente">DNI del Cliente:</label>
-                    <input type="text" id="dni-cliente" name="dni_cliente" required>
+                    <input type="text" id="dni-cliente" name="dni_cliente" >
                     <div class="error-message" id="errorDniCliente"></div>
                 </div>
             </div>
@@ -539,7 +539,28 @@
                         <div class="error-message" id="errorCompraCantidad"></div>
                     </div>
                 </div>
-            </div>
+                <button type="button" id="btn-agregar-producto" class="btn-secondary">
+        <i class="fas fa-plus"></i>
+        Agregar Producto a la Venta
+    </button>
+    <div class="error-message" id="errorDetalleGeneral"></div>
+
+    <div class="table-container" style="margin-top: 20px;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Producto</th>
+                    <th>Cantidad</th>
+                    <th>Precio Unit.</th>
+                    <th>Subtotal</th>
+                    <th>Quitar</th>
+                </tr>
+            </thead>
+            <tbody id="venta-detalle-temporal">
+            </tbody>
+        </table>
+    </div>
+    </div>
 
             <div class="total-section">
                 <h4 id="total-venta">$ Total: $0.00</h4>
@@ -558,33 +579,9 @@
         <p>Historial de ventas realizadas</p>
         <div class="table-container">
             <table class="data-table" id="tabla-ventas">
-                <thead>
-                    <tr>
-                        <th>Fecha</th>
-                        <th>Cliente</th>
-                        <th>Productos</th>
-                        <th>Total</th>
-                    </tr>
+
                 </thead>
                 <tbody>
-                    <tr>
-                        <td>30-06-2025</td>
-                        <td>Nombre Cliente</td>
-                        <td>Nombre Producto x1</td>
-                        <td>$1299.99</td>
-                    </tr>
-                    <tr>
-                        <td>30-06-2025</td>
-                        <td>Nombre Cliente</td>
-                        <td>Nombre Producto x2, Nombre Producto x1</td>
-                        <td>$329.97</td>
-                    </tr>
-                    <tr>
-                        <td>30-06-2025</td>
-                        <td>Nombre Cliente</td>
-                        <td>Nombre Producto x2</td>
-                        <td>$799.98</td>
-                    </tr>
                 </tbody>
             </table>
         </div>

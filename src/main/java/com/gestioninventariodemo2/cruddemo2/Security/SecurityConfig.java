@@ -1,6 +1,6 @@
 package com.gestioninventariodemo2.cruddemo2.Security;
 
-import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
+
 import com.gestioninventariodemo2.cruddemo2.Repository.UsuarioRepository;
 import com.gestioninventariodemo2.cruddemo2.Services.AuthenticationService;
 import com.gestioninventariodemo2.cruddemo2.Services.UsuarioDetailsService;
@@ -9,14 +9,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
 
 @Configuration
 public class SecurityConfig {
@@ -38,7 +36,10 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/", "/*.html", "/css/**", "/js/**", "/images/**").permitAll()
                     .requestMatchers("/auth/**").permitAll()
+
                     .requestMatchers("/api/usuarios/**").permitAll()
+                    .requestMatchers("/api/ventas/**").permitAll()
+                    .requestMatchers("/api/productos/**").permitAll()
                     .anyRequest().permitAll()
             )
             .csrf(csrf -> csrf.disable())
@@ -50,18 +51,7 @@ public class SecurityConfig {
     }
 
 
-    @Bean
-    public WebMvcConfigurer corsConfigurer() {
-        return new WebMvcConfigurer() {
-            @Override
-            public void addCorsMappings(CorsRegistry registry) {
-                registry.addMapping("/**")
-                        .allowedOrigins("http://localhost") // dominio de tu XAMPP
-                        .allowedMethods("GET", "POST", "PUT", "DELETE")
-                        .allowCredentials(true); // 🔹 importante para cookies
-            }
-        };
-    }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

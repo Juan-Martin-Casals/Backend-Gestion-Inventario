@@ -26,7 +26,7 @@ public class VentaController {
     private final VentaService ventaService;
 
     @PostMapping
-    public ResponseEntity<VentaResponseDTO> registrarVenta(@RequestBody VentaRequestDTO dto){
+    public ResponseEntity<VentaResponseDTO> registrarVenta(@RequestBody VentaRequestDTO dto ){
         VentaResponseDTO nuevaVenta = ventaService.registrarVenta(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaVenta);
     }

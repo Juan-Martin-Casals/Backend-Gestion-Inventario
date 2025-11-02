@@ -1,6 +1,5 @@
 package com.gestioninventariodemo2.cruddemo2.Services;
 
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -16,10 +15,8 @@ import com.gestioninventariodemo2.cruddemo2.Model.Cliente;
 import com.gestioninventariodemo2.cruddemo2.Model.DetalleVenta;
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
 import com.gestioninventariodemo2.cruddemo2.Model.Stock;
-import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
 import com.gestioninventariodemo2.cruddemo2.Model.Venta;
 import com.gestioninventariodemo2.cruddemo2.Repository.ProductoRepository;
-import com.gestioninventariodemo2.cruddemo2.Repository.UsuarioRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.VentaRepository;
 
 
@@ -35,7 +32,6 @@ public class VentaService {
 
     private final ProductoRepository productoRepository;
     private final VentaRepository ventaRepository;
-    private final UsuarioRepository usuarioRepository;
 
     @Transactional
     public VentaResponseDTO registrarVenta(VentaRequestDTO dto) {
@@ -51,8 +47,7 @@ public class VentaService {
         }
 
     // Validar usuario
-        Usuario usuario = usuarioRepository.findById(dto.getUsuarioId())
-        .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado"));
+
 
     // Crear cliente
         Cliente cliente = Cliente.builder()
@@ -64,8 +59,7 @@ public class VentaService {
 
     // Crear venta
         Venta venta = new Venta();
-        venta.setFecha(LocalDate.now());
-        venta.setUsuario(usuario);
+        venta.setFecha(dto.getFecha());
         venta.setCliente(cliente);
 
         List<DetalleVenta> detalles = new ArrayList<>();
