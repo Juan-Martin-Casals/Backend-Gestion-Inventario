@@ -12,11 +12,17 @@ import com.gestioninventariodemo2.cruddemo2.DTO.ProductoRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoSelectDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.StockTablaDTO;
+import com.gestioninventariodemo2.cruddemo2.Exception.SoftDeleteException;
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
+import com.gestioninventariodemo2.cruddemo2.Model.ProductoProveedor;
 import com.gestioninventariodemo2.cruddemo2.Model.Stock;
+import com.gestioninventariodemo2.cruddemo2.Repository.DetalleCompraRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.DetalleVentaRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.ProductoProveedorRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.ProductoRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.StockRepository;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -25,7 +31,9 @@ public class ProductoService {
 
     private final ProductoRepository productoRepository;
     private final StockRepository stockRepository;
-
+    private final DetalleVentaRepository detalleVentaRepository;
+    private final DetalleCompraRepository detalleCompraRepository;
+    private final ProductoProveedorRepository productoProveedorRepository;
     @Transactional
     public Producto crearProducto(ProductoRequestDTO dto) {
     // Validación de campos obligatorios
@@ -35,10 +43,7 @@ public class ProductoService {
         throw new IllegalArgumentException("Debe completar todos los campos");
     }
 
-    // Validación de precio
-    if (dto.getPrecio() <= 0) {
-        throw new IllegalArgumentException("El precio debe ser un valor numérico válido");
-    }
+
 
 
         // Crear producto
@@ -46,20 +51,19 @@ public class ProductoService {
                 .nombre(dto.getNombre())
                 .categoria(dto.getCategoria())
                 .descripcion(dto.getDescripcion())
-                .precio(dto.getPrecio())
+                .estado("ACTIVO")
                 .build();
 
         productoRepository.save(producto);
 
-        // Crear stock asociado
-        Stock stock = Stock.builder()
-                .stockMinimo(5)
-                .stockMaximo(100)
-                .stockActual(dto.getStockActual())
-                .producto(producto)
-                .build();
 
-        stockRepository.save(stock);
+        // 2. Crear registro de Stock inicial con 0
+        Stock stockInicial = Stock.builder()
+                .producto(producto) // Relaciona el stock con el nuevo producto
+                .stockActual(0)     // Stock inicial en 0
+                .build();
+        
+        stockRepository.save(stockInicial);
 
         return producto;
 
@@ -81,7 +85,7 @@ public class ProductoService {
 
     @Transactional(readOnly = true)
     public List<StockTablaDTO> mostrarTablaStock() {
-    return productoRepository.findAll()
+    return productoRepository.findAllByEstado("ACTIVO")
             .stream()
             .map(p -> {
                 int stockActual = 0;
@@ -103,7 +107,7 @@ public class ProductoService {
 
     @Transactional(readOnly = true)
     public List<ProductoSelectDTO> listarProductosSelect() {
-    return productoRepository.findAll()
+    return productoRepository.findAllByEstado("ACTIVO")
             .stream()
             .map(p -> {
                 return ProductoSelectDTO.builder()
@@ -126,15 +130,6 @@ public class ProductoService {
         throw new IllegalArgumentException("Todos los campos obligatorios deben estar completos");
     }
 
-    // Validar precio
-    if (dto.getPrecio() <= 0) {
-        throw new IllegalArgumentException("El precio debe ser un valor numérico válido");
-    }
-
-    // Validar cantidad extra de stock
-    if (dto.getCantidadExtraStock() < 0) {
-        throw new IllegalArgumentException("La cantidad de stock no puede ser negativa");
-    }
 
     Producto producto = productoRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + id));
@@ -142,10 +137,7 @@ public class ProductoService {
     producto.setNombre(dto.getNombre());
     producto.setCategoria(dto.getCategoria());
     producto.setDescripcion(dto.getDescripcion());
-    producto.setPrecio(dto.getPrecio());
 
-    Stock stock = producto.getStocks().get(0);
-    stock.setStockActual(stock.getStockActual() + dto.getCantidadExtraStock());
 
     productoRepository.save(producto);
 
@@ -153,18 +145,48 @@ public class ProductoService {
             .nombre(producto.getNombre())
             .categoria(producto.getCategoria())
             .descripcion(producto.getDescripcion())
-            .precio(producto.getPrecio())
-            .stockActual(stock.getStockActual())
             .build();
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = {IllegalArgumentException.class}) 
     public void eliminarProducto(Long id) {
-        if (!productoRepository.existsById(id)) {
-            throw new RuntimeException("No se puede eliminar. Producto no encontrado con id: " + id);
+    
+    Producto producto = productoRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado con id: " + id));
+
+    // Validamos el uso en las dos tablas
+    boolean usadoEnVenta = detalleVentaRepository.existsByProductoIdProducto(id);
+    boolean usadoEnCompra = detalleCompraRepository.existsByProductoIdProducto(id);
+    boolean asociadoAProveedor = productoProveedorRepository.existsByProductoIdProducto(id); // <-- ¡LA VALIDACIÓN QUE FALTABA!
+    
+    // -----------------------------------------------------------
+    
+   if (usadoEnVenta || usadoEnCompra || asociadoAProveedor) { 
+        // CASO 1: ÉXITO LÓGICO (Soft Delete)
+        producto.setEstado("INACTIVO");
+        productoRepository.save(producto);
+        
+        // Lanzamos la excepción controlada para el Frontend
+        throw new IllegalArgumentException("El producto se marcó como INACTIVO (Está asociado a ventas/compras/proveedores).");
+
+    } else {
+        // CASO 2: BORRADO FÍSICO
+        
+        try {
+            // Si no está en uso, intentamos borrarlo
+            productoRepository.deleteById(id);
+            // Si el DELETE funciona, el método termina aquí y devuelve 204 No Content.
+
+        } catch (Exception e) {
+            // Si falla el borrado FÍSICO por alguna razón (ej. restricción oculta)
+            // Lanzamos una RuntimeException simple para que el GlobalExceptionHandler
+            // lo devuelva como 500. El frontend verá que el borrado falló.
+             throw new RuntimeException("Error inesperado al borrar el producto físicamente: " + e.getMessage(), e);
         }
-        productoRepository.deleteById(id);
     }
+}
+
+
 
     public List<ProductoResponseDTO> buscarPorNombre(String nombre) {
     List<Producto> productos = productoRepository.findByNombreContainingIgnoreCase(nombre);

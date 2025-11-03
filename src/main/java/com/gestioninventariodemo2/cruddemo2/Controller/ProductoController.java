@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoResponseDTO;
@@ -51,8 +52,23 @@ public class ProductoController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarProducto(@PathVariable Long id){
+        try {
+        // Ejecutamos el servicio
         productoService.eliminarProducto(id);
-        return ResponseEntity.noContent().build();
-    }
+        
+        // Si no lanza excepción, es Borrado Físico (SUCCESS 204)
+        return ResponseEntity.noContent().build(); 
 
+    } catch (IllegalArgumentException ex) {
+        // --- ¡CAPTURAMOS LA EXCEPCIÓN DEL SOFT DELETE! ---
+        
+        // Devolvemos 200 OK con el mensaje de la excepción en el cuerpo.
+        // Esto le dice al navegador: "Todo salió bien, aquí está el mensaje".
+        throw new ResponseStatusException(HttpStatus.OK, ex.getMessage()); 
+
+    } catch (RuntimeException ex) {
+        // Para errores inesperados, dejamos que el GlobalExceptionHandler maneje el 500
+        throw ex; 
+    }
+    }
 }

@@ -251,6 +251,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const telefonoCliente = telefonoClienteInput.value.trim();
 
         let isValid = true;
+        if (!fechaVenta) {
+            errorFechaVenta.textContent = 'La fecha es obligatoria.';
+            isValid = false;
+        }
         if (!nombreCliente) {
             errorNombreCliente.textContent = 'El nombre es obligatorio.';
             isValid = false;
@@ -303,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(ventaRequestDTO)
+                body: JSON.stringify(ventaRequestDTO),
             });
 
             if (!response.ok) {

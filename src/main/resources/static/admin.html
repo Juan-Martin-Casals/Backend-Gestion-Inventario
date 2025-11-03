@@ -172,18 +172,6 @@
                             <textarea id="product-description" name="descripcion" placeholder="Descripción del producto"></textarea>
                             <div class="error-message" id="description-error"></div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="product-price">Precio</label>
-                                <input type="text" id="product-price" name="precio" placeholder="0.00">
-                                <div class="error-message" id="price-error"></div>
-                            </div>
-                            <div class="form-group">
-                                <label for="product-stock">Stock Actual</label>
-                                <input type="number" id="product-stock" name="stock" min="0" value="0" placeholder="Cantidad en stock">
-                                <div class="error-message" id="stock-error"></div>
-                            </div>
-                        </div>
                         <button type="submit" class="btn-primary" style="margin-top: 20px;">
                             <i class="fas fa-plus"></i>
                             Registrar Producto
@@ -201,8 +189,6 @@
                                 <th>Nombre</th>
                                 <th>Categoría</th>
                                 <th>Descripción</th>
-                                <th>Precio</th>
-                                <th>Stock</th>
                             </tr>
                             </thead>
                             <tbody id="product-table-body">
@@ -307,74 +293,73 @@
                     <label for="compra-proveedor">Proveedor</label>
                     <select id="compra-proveedor" name="proveedor">
                         <option value="">Seleccione un proveedor...</option>
-                        </select>
+                    </select>
                     <div class="error-message" id="errorCompraProveedor"></div>
                 </div>
             </div>
 
             <div class="product-selection">
-    <h5><i class="fas fa-box"></i> Detalle de la Compra</h5>
-    
-    <div class="form-row">
-        <div class="form-group" style="flex: 2;">
-            <label for="compra-producto-select">Producto</label>
-            <select id="compra-producto-select">
-                <option value="">Seleccione un producto...</option>
-                </select>
-            <div class="error-message" id="errorCompraProducto"></div>
-        </div>
-        <div class="form-group" style="flex: 1;">
-            <label for="compra-cantidad">Cantidad</label>
-            <input type="number" id="compra-cantidad" value="1" min="1">
-            <div class="error-message" id="errorCompraCantidad"></div>
-        </div>
-    </div>
+                <h5><i class="fas fa-box"></i> Detalle de la Compra</h5>
+                
+                <div class="form-row">
+                    <div class="form-group" style="flex: 2;">
+                        <label for="compra-producto-select">Producto</label>
+                        <select id="compra-producto-select">
+                            <option value="">Seleccione un producto...</option>
+                        </select>
+                        <div class="error-message" id="errorCompraProducto"></div>
+                    </div>
+                    
+                    <div class="form-group" style="flex: 1;">
+                        <label for="compra-cantidad">Cantidad</label>
+                        <input type="number" id="compra-cantidad" value="1" min="1">
+                        <div class="error-message" id="errorCompraCantidad"></div>
+                    </div>
+                </div>
 
-    <div class="form-row">
-        <div class="form-group">
-            <label for="compra-costo-unit">Precio de Costo (Unit.)</label>
-            <input type="text" id="compra-costo-unit" placeholder="0.00">
-            <div class="error-message" id="errorCompraCosto"></div>
-        </div>
-        <div class="form-group">
-            <label for="compra-venta-unit">Nuevo Precio Venta (Unit.)</label>
-            <input type="text" id="compra-venta-unit" placeholder="0.00">
-            <div class="error-message" id="errorCompraVenta"></div>
-        </div>
-    </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="compra-costo-unit">Precio de Costo (Unit.)</label>
+                        <input type="text" id="compra-costo-unit" placeholder="0.00">
+                        <div class="error-message" id="errorCompraCosto"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="compra-venta-unit">Nuevo Precio Venta (Unit.)</label>
+                        <input type="text" id="compra-venta-unit" placeholder="0.00">
+                        <div class="error-message" id="errorCompraVenta"></div>
+                    </div>
+                </div>
 
-    <button type="button" id="add-detalle-btn" class="btn-secondary" style="margin-top: 10px;">
-        <i class="fas fa-plus"></i>
-        Agregar Producto al Detalle
-    </button>
-    <div class="error-message" id="errorDetalleGeneral"></div>
+                <button type="button" id="add-detalle-btn" class="btn-secondary" style="margin-top: 10px;">
+                    <i class="fas fa-plus"></i>
+                    Agregar Producto al Detalle
+                </button>
+                <div class="error-message" id="errorDetalleGeneral"></div>
 
-    <div class="table-container" style="margin-top: 20px;">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Costo Unit.</th>
-                    <th>Venta Unit.</th>
-                    <th>Subtotal</th>
-                    <th>Quitar</th>
-                </tr>
-            </thead>
-            <tbody id="compra-detalle-temporal">
-                </tbody>
-            <tfoot>
-                <tr>
-                    <td colspan="4" style="text-align: right; font-weight: bold;">TOTAL COMPRA:</td>
-                    <td id="compra-total-display" style="font-weight: bold;">$0.00</td>
-                    <td></td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-</div>
-
-
+                <div class="table-container" style="margin-top: 20px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Cantidad</th>
+                                <th>Costo Unit.</th>
+                                <th>Venta Unit.</th>
+                                <th>Subtotal</th>
+                                <th>Quitar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="compra-detalle-temporal">
+                            </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4" style="text-align: right; font-weight: bold;">TOTAL COMPRA:</td>
+                                <td id="compra-total-display" style="font-weight: bold;">$0.00</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
             
             <button type="submit" class="btn-primary" style="margin-top: 10px;">
                 <i class="fas fa-save"></i>
@@ -385,23 +370,23 @@
     </div>
 
     <div class="table-section">
-    <h4>Compras Registradas</h4>
-    <p>Historial de compras a proveedores</p>
-    <div class="table-container">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Proveedor</th>
-                    <th>Productos</th>
-                    <th>Total</th>
-                </tr>
-            </thead>
-            <tbody id="compras-historial-tabla-body">
-                </tbody>
-        </table>
+        <h4>Compras Registradas</h4>
+        <p>Historial de compras a proveedores</p>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Proveedor</th>
+                        <th>Productos</th>
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                <tbody id="compras-historial-tabla-body">
+                    </tbody>
+            </table>
+        </div>
     </div>
-</div>
 </section>
 
             <section id="usuarios-section" class="spa-section" style="display:none">
@@ -601,14 +586,16 @@
                         <div class="form-group">
                             <label>Fecha de Inicio</label>
                             <input type="date" id="fecha-inicio" placeholder="dd/mm/aaaa">
+                            <div class="error-message" id="error-fecha-inicio"></div>
                         </div>
                         <div class="form-group">
                             <label>Fecha de Fin</label>
                             <input type="date" id="fecha-fin" placeholder="dd/mm/aaaa">
+                            <div class="error-message" id="error-fecha-fin"></div>
                         </div>
                     </div>
                     <div class="filters-buttons">
-                        <button type="button" class="btn-outline">
+                        <button type="button" class="btn-outline" id="limpiar-filtros">
                             <i class="fas fa-eraser"></i>
                             Limpiar Filtros
                         </button>
@@ -623,99 +610,122 @@
                     </div>
                 </div>
 
+                <div id="reporte-informes" class="reports-section" style="display: none; margin-top: 20px;">
+                    </div>
+
                 </section>
 
             <section id="stock-section" class="spa-section" style="display:none">
-                <div class="section-header">
+    
+    <div class="section-header">
+        <h3>Gestión de Stock</h3>
+        <p>Consultá y administrá el inventario de tus productos.</p>
+    </div>
 
-                </div>
+    <div class="search-section">
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            
+            <input type="text" placeholder="Buscar productos por nombre..." id="stock-search-input">
+        </div>
+    </div>
 
-                <div class="search-section">
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Buscar productos por nombre...">
-                    </div>
-                </div>
+    <div class="table-section">
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                
+                <tbody id="stock-table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+<div class="modal" id="delete-confirm-modal" style="display: none;">
+    <div class="modal-content" style="max-width: 400px; text-align: center;">
+        
+        <h3>Confirmar Eliminación</h3>
+        
+        <p id="delete-modal-message">¿Estás seguro de que querés borrar este producto?</p>
+        
+        <div class="modal-buttons" style="justify-content: center;">
+            <button type="button" class="btn-outline" id="cancel-delete-btn">
+                Cerrar
+            </button>
+            <button type="button" class="btn-danger" id="confirm-delete-btn">
+                Aceptar
+            </button>
+        </div>
 
-                <div class="table-section">
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Categoría</th>
-                                    <th>Descripción</th>
-                                    <th>Precio</th>
-                                    <th>Stock</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Nombre Producto</td>
-                                    <td>Categoria Ejemplo</td>
-                                    <td>Descripción Ejemplo</td>
-                                    <td>$1299.99</td>
-                                    <td><span class="stock-badge good">5</span></td>
-                                    <td>
-                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
-                                        <button class="btn-icon btn-delete-usuario"><i
-                                                class="fas fa-trash"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Nombre Producto</td>
-                                    <td>Categoria Ejemplo</td>
-                                    <td>Descripción Ejemplo</td>
-                                    <td>$89.99</td>
-                                    <td><span class="stock-badge empty">0</span></td>
-                                    <td>
-                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
-                                        <button class="btn-icon btn-delete-usuario"><i
-                                                class="fas fa-trash"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Nombre Producto</td>
-                                    <td>Categoria Ejemplo</td>
-                                    <td>Descripción Ejemplo</td>
-                                    <td>$149.99</td>
-                                    <td><span class="stock-badge low">2</span></td>
-                                    <td>
-                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
-                                        <button class="btn-icon btn-delete-usuario"><i
-                                                class="fas fa-trash"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Nombre Producto</td>
-                                    <td>Categoria Ejemplo</td>
-                                    <td>Descripción Ejemplo</td>
-                                    <td>$399.99</td>
-                                    <td><span class="stock-badge good">8</span></td>
-                                    <td>
-                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
-                                        <button class="btn-icon btn-delete-usuario"><i
-                                                class="fas fa-trash"></i></button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td>Nombre Producto</td>
-                                    <td>Categoria Ejemplo</td>
-                                    <td>Descripción Ejemplo</td>
-                                    <td>$299.99</td>
-                                    <td><span class="stock-badge low">1</span></td>
-                                    <td>
-                                        <button class="btn-icon btn-edit-usuario"><i class="fas fa-edit"></i></button>
-                                        <button class="btn-icon btn-delete-usuario"><i
-                                                class="fas fa-trash"></i></button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+    </div>
+</div>
+
+
+<div class="modal" id="edit-product-modal" style="display: none;">
+    <div class="modal-content" style="max-width: 600px;">
+        <div class="modal-header">
+            <h3><i class="fas fa-edit"></i> Editar Producto</h3>
+            <button class="modal-close" id="edit-modal-close-btn">&times;</button>
+        </div>
+        
+        <form id="edit-product-form">
+    <input type="hidden" id="edit-product-id"> 
+
+    <div class="form-row">
+    <div class="form-group">
+        <label for="edit-nombre">Nombre</label>
+        <input type="text" id="edit-nombre">
+        <div class="error-message" id="error-edit-nombre"></div>
+    </div>
+    <div class="form-group">
+        <label for="edit-categoria">Categoría</label>
+        <input type="text" id="edit-categoria" >
+        <div class="error-message" id="error-edit-categoria"></div>
+    </div>
+</div>
+
+<div class="form-group"> 
+    <label for="edit-descripcion">Descripción</label>
+    <textarea id="edit-descripcion"></textarea>
+    <div class="error-message" id="error-edit-descripcion"></div>
+</div>
+
+<div class="form-row">
+    <div class="form-group">
+        <label for="edit-precio">Precio Venta</label>
+        <input type="number" id="edit-precio" step="0.01" min="0">
+        <div class="error-message" id="error-edit-precio"></div>
+    </div>
+    <div class="form-group">
+        <label for="edit-stock-actual">Stock Actual (Solo Lectura)</label>
+        <input type="text" id="edit-stock-actual" disabled>
+    </div>
+</div>
+
+<div class="form-group"> 
+    <label for="edit-cantidad-ajuste">Ajuste de Stock (Cantidad a añadir/restar)</label>
+    <input type="number" id="edit-cantidad-ajuste" value="0">
+    <div class="error-message" id="error-edit-ajuste"></div>
+</div>
+
+<p id="edit-form-general-message" class="form-message"></p>
+
+    <div class="modal-buttons">
+        <button type="submit" class="btn-primary">Guardar Cambios</button>
+    </div>
+</form>
+
+    </div>
+</div>
         </main>
     </div>
 
@@ -730,136 +740,6 @@
         </div>
     </div>
 
-    <div id="edit-product-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-edit"></i> Editar Producto</h3>
-                <button class="modal-close" id="close-edit-modal">&times;</button>
-            </div>
-            <form id="edit-product-form" class="edit-product-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-nombre">Nombre del Producto</label>
-                        <input type="text" id="edit-nombre" name="nombre" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-categoria">Categoría</label>
-                        <input type="text" id="edit-categoria" name="categoria" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="edit-descripcion">Descripción</label>
-                    <textarea id="edit-descripcion" name="descripcion" rows="3" required></textarea>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-precio">Precio</label>
-                        <input type="number" id="edit-precio" name="precio" step="0.01" min="0" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-stock">Agregar Stock</label>
-                        <input type="number" id="edit-stock" name="stock" min="0" required>
-                    </div>
-                </div>
-                <div class="modal-buttons">
-                    <button type="button" class="btn-secondary" id="cancel-edit">Cancelar</button>
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-save"></i>
-                        Guardar Cambios
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="edit-proveedor-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-edit"></i> Editar Proveedor</h3>
-                <button class="modal-close" id="close-edit-proveedor-modal">&times;</button>
-            </div>
-            <form id="edit-proveedor-form" class="edit-proveedor-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-proveedor-nombre">Nombre del Proveedor</label>
-                        <input type="text" id="edit-proveedor-nombre" name="nombre" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-proveedor-telefono">Teléfono</label>
-                        <input type="text" id="edit-proveedor-telefono" name="telefono" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-proveedor-email">Email</label>
-                        <input type="email" id="edit-proveedor-email" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-proveedor-direccion">Dirección</label>
-                        <textarea id="edit-proveedor-direccion" name="direccion" rows="2" required></textarea>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="edit-proveedor-productos">Información de Productos</label>
-                    <textarea id="edit-proveedor-productos" name="productos" rows="3" required></textarea>
-                </div>
-                <div class="modal-buttons">
-                    <button type="button" class="btn-secondary" id="cancel-edit-proveedor">Cancelar</button>
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-save"></i>
-                        Guardar Cambios
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <div id="edit-usuario-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fas fa-edit"></i> Editar Usuario</h3>
-                <button class="modal-close" id="close-edit-usuario-modal">&times;</button>
-            </div>
-            <form id="edit-usuario-form" class="edit-usuario-form">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-usuario-nombre">Nombre</label>
-                        <input type="text" id="edit-usuario-nombre" name="nombre" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-usuario-apellido">Apellido</label>
-                        <input type="text" id="edit-usuario-apellido" name="apellido" required>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-usuario-email">Email</label>
-                        <input type="email" id="edit-usuario-email" name="email" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-usuario-rol">Rol</label>
-                        <select id="edit-usuario-rol" name="rol" required>
-                            <option value="">Selecciona rol</option>
-                            <option value="admin">Administrador</option>
-                            <option value="empleado">Empleado</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label for="edit-usuario-fecha">Fecha de Registro</label>
-                    <input type="date" id="edit-usuario-fecha" name="fecha" required>
-                </div>
-                <div class="modal-buttons">
-                    <button type="button" class="btn-secondary" id="cancel-edit-usuario">Cancelar</button>
-                    <button type="submit" class="btn-primary">
-                        <i class="fas fa-save"></i>
-                        Guardar Cambios
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
 
     <script src="js/admin.js"></script>
     <script src="js/principal.js"></script>
@@ -868,6 +748,8 @@
     <script src="js/compras.js"></script>
     <script src="js/usuarios.js"></script>
     <script src="js/ventas.js"></script>
+    <script src="js/informes.js"></script>
+    <script src="js/stock.js"></script>
     
     </body>
 

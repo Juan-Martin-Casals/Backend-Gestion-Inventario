@@ -38,6 +38,9 @@ public class Producto {
     @Column(name = "precio")
     private double precio;
 
+    @Column(name = "estado")
+    private String estado;
+
     @OneToMany(mappedBy = "producto")
     private List<DetalleVenta> detalleVentas;
 

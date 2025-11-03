@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const passwordInput = document.getElementById('login-password');
     const passwordToggle = document.getElementById('login-password-toggle');
 
-    // Creamos un elemento para mostrar mensajes (mejor que usar alert())
+    // Creamos un elemento para mostrar mensajes
     const messageContainer = document.createElement('p');
     messageContainer.id = 'login-message';
     loginForm.after(messageContainer);
@@ -16,36 +16,37 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     // Mostrar/ocultar contraseña
     // ===============================
-    passwordToggle.addEventListener('click', function() {
-        const type = passwordInput.type === 'password' ? 'text' : 'password';
-        passwordInput.type = type;
-        this.innerHTML = type === 'password'
-            ? '<i class="fas fa-eye"></i>'
-            : '<i class="fas fa-eye-slash"></i>';
-    });
+    if (passwordToggle) {
+        passwordToggle.addEventListener('click', function() {
+            const type = passwordInput.type === 'password' ? 'text' : 'password';
+            passwordInput.type = type;
+            this.innerHTML = type === 'password'
+                ? '<i class="fas fa-eye"></i>'
+                : '<i class="fas fa-eye-slash"></i>';
+        });
+    }
 
     // ===============================
-    // Validación de campos en tiempo real
+    // Función de Validación (Simplificada para solo verificar)
     // ===============================
     function validateField(field, pattern) {
         const value = field.value.trim();
         const isValid = pattern.test(value);
-        field.style.borderColor = isValid ? '#28a745' : '#dc3545'; // verde o rojo
+        
+        // Solo marcamos el borde al enviar, no al escribir
+        field.style.borderColor = isValid ? '#ddd' : '#dc3545'; // Solo rojo si es inválido
+        
         return isValid;
     }
 
-    emailInput.addEventListener('input', () => {
-        validateField(emailInput, /^[^\s@]+@[^\s@]+\.[^\s@]+$/); // formato de email
-    });
-
-    passwordInput.addEventListener('input', () => {
-        validateField(passwordInput, /^.{6,}$/); // mínimo 6 caracteres
-    });
+    // --- ELIMINAMOS TODOS LOS EVENT LISTENERS DE 'INPUT' ---
+    // (emailInput.addEventListener('input', ...))
+    // (passwordInput.addEventListener('input', ...))
 
     // Añadimos un botón para limpiar el formulario
     const clearBtn = document.createElement('button');
     clearBtn.type = 'button';
-    clearBtn.className = 'clear-btn'; // Usamos la clase de tu CSS
+    clearBtn.className = 'clear-btn';
     clearBtn.textContent = 'Limpiar';
     clearBtn.addEventListener('click', () => {
         loginForm.reset();
@@ -57,29 +58,49 @@ document.addEventListener('DOMContentLoaded', function() {
 
 
     // ===============================
-    // Manejo de envío del formulario
+    // Manejo de envío del formulario (Validación al Final)
     // ===============================
     loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
-        messageContainer.textContent = ''; // Limpiar mensajes previos
+        messageContainer.textContent = ''; 
+        
+        // Reseteamos bordes antes de validar
+        emailInput.style.borderColor = '#ddd';
+        passwordInput.style.borderColor = '#ddd';
 
-        // Validación final antes de enviar
-        const isEmailValid = validateField(emailInput, /^[^\s@]+@[^\s@]+\.[^\s@]+$/);
-        const isPasswordValid = validateField(passwordInput, /^.{6,}$/);
+        // Patrones de validación
+        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const passwordPattern = /^.{6,}$/; // Mínimo 6 caracteres
+
+        // VALIDACIÓN DE FORMATO Y PRESENCIA
+        const isEmailValid = validateField(emailInput, emailPattern);
+        const isPasswordValid = validateField(passwordInput, passwordPattern);
+        
+        // Chequeo de campos vacíos
+        const isEmailEmpty = emailInput.value.trim() === "";
+        const isPasswordEmpty = passwordInput.value.trim() === "";
+
+
+        if (isEmailEmpty || isPasswordEmpty) {
+            messageContainer.textContent = "El email y la contraseña son obligatorios.";
+            messageContainer.style.color = '#dc3545';
+            if (isEmailEmpty) emailInput.style.borderColor = '#dc3545';
+            if (isPasswordEmpty) passwordInput.style.borderColor = '#dc3545';
+            return;
+        }
 
         if (!isEmailValid || !isPasswordValid) {
-            messageContainer.textContent = "Por favor, corrige los campos en rojo.";
+            messageContainer.textContent = "El formato de los datos ingresados no es válido (ej. contraseña debe tener min. 6 caracteres).";
             messageContainer.style.color = '#dc3545';
             return;
         }
 
         const loginData = {
             email: emailInput.value.trim(),
-            contrasena: passwordInput.value.trim() // CAMBIO CLAVE: la clave debe ser "password"
+            contrasena: passwordInput.value.trim()
         };
 
         try {
-            // CAMBIO CLAVE: Usamos la ruta relativa, sin http://localhost...
             const response = await fetch("/api/auth/login", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -87,38 +108,40 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
 
+            if (!response.ok) {
+                const errorText = await response.text(); 
+                throw new Error(errorText || "Credenciales inválidas ❌");
+            }
 
-if (!response.ok) {
-            // Leemos la respuesta como TEXTO, ya que podría no ser JSON
-            const errorText = await response.text(); 
-            // Lanzamos un error con el mensaje del backend para que lo capture el catch()
-            throw new Error(errorText || "Credenciales inválidas ❌");
-        }
+            const data = await response.json();
+            const userRole = data.rol; 
 
-        // Si la respuesta SÍ fue exitosa (código 200), la leemos como JSON
-        const data = await response.json();
-
-            // Si todo sale bien, el backend devuelve el rol
-            const userRole = data.rol;
-
+            // Éxito:
             messageContainer.textContent = '¡Login exitoso! Redirigiendo...';
             messageContainer.style.color = '#28a745';
 
-            // Redirigir según rol después de un breve momento
+            // Limpiamos los bordes si el login fue exitoso
+            emailInput.style.borderColor = '#28a745';
+            passwordInput.style.borderColor = '#28a745';
+
+            // Redirigir según rol
             setTimeout(() => {
                 if (userRole === "ADMINISTRADOR") {
-                    window.location.href = "admin.html"; // Asegúrate de tener este archivo
+                    window.location.href = "admin.html";
                 } else if (userRole === "EMPLEADO") {
-                    window.location.href = "empleado.html"; // Y este también
+                    window.location.href = "empleado.html";
                 } else {
                     console.warn("Rol desconocido:", userRole);
                 }
-            }, 1000); // Espera 1 segundo antes de redirigir
+            }, 1000); 
 
         } catch (error) {
             console.error("Error en el login:", error);
             messageContainer.textContent = error.message;
             messageContainer.style.color = '#dc3545';
+            // Marcamos los campos como incorrectos al fallar el servidor
+            emailInput.style.borderColor = '#dc3545';
+            passwordInput.style.borderColor = '#dc3545';
         }
     });
 });

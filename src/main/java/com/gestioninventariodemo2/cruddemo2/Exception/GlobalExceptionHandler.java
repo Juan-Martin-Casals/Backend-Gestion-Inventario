@@ -31,4 +31,10 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Email o contraseña incorrectos");
     }
 
+    @ExceptionHandler(SoftDeleteException.class)
+    public ResponseEntity<String> handleSoftDelete(SoftDeleteException ex){
+        // Usamos 200 OK (o 202 Accepted) para indicar que la acción fue procesada exitosamente.
+        return ResponseEntity.status(HttpStatus.OK).body(ex.getMessage()); 
+    }
+
 }

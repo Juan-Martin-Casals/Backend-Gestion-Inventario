@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,6 +16,7 @@ import com.gestioninventariodemo2.cruddemo2.Model.Cliente;
 import com.gestioninventariodemo2.cruddemo2.Model.DetalleVenta;
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
 import com.gestioninventariodemo2.cruddemo2.Model.Stock;
+import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
 import com.gestioninventariodemo2.cruddemo2.Model.Venta;
 import com.gestioninventariodemo2.cruddemo2.Repository.ProductoRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.VentaRepository;
@@ -34,8 +36,12 @@ public class VentaService {
     private final VentaRepository ventaRepository;
 
     @Transactional
-    public VentaResponseDTO registrarVenta(VentaRequestDTO dto) {
-    // Validar que haya al menos un detalle
+    public VentaResponseDTO registrarVenta(VentaRequestDTO dto, UserDetails userDetails) {
+        if (dto.getFecha() == null) {
+            throw new IllegalArgumentException("La fecha de la venta es obligatoria.");
+        }
+    
+        // Validar que haya al menos un detalle
         if (dto.getDetalles() == null || dto.getDetalles().isEmpty()) {
         throw new IllegalArgumentException("La venta debe tener al menos un producto");
         }
@@ -47,6 +53,8 @@ public class VentaService {
         }
 
     // Validar usuario
+
+    Usuario usuario = (Usuario) userDetails;
 
 
     // Crear cliente
@@ -61,7 +69,7 @@ public class VentaService {
         Venta venta = new Venta();
         venta.setFecha(dto.getFecha());
         venta.setCliente(cliente);
-
+        venta.setUsuario(usuario);
         List<DetalleVenta> detalles = new ArrayList<>();
 
         for (DetalleVentaRequestDTO detDto : dto.getDetalles()) {

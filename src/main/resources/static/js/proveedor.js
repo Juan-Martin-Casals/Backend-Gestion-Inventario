@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // URLs DE LA API
     // ===============================
     const API_PROVEEDORES_URL = '/api/proveedores';
-    const API_PRODUCTOS_URL = '/api/productos/select'; // Asegúrate que esta URL sea la correcta
+    const API_PRODUCTOS_URL = '/api/productos/select'; 
 
     // ===============================
     // LÓGICA DE PROVEEDORES
@@ -75,33 +75,47 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================================
 
     async function cargarProductosSelect() {
-        try {
+        try {
             const response = await fetch(API_PRODUCTOS_URL);
-            if (!response.ok) throw new Error('No se pudieron cargar los productos');
+            if (!response.ok) throw new Error('No se pudieron cargar los productos');
 
-            const productos = await response.json();
-            optionsContainer.innerHTML = '';
-            hiddenSelect.innerHTML = '';
+            // --- ¡CORRECCIÓN AQUÍ! ---
+            // 1. DECLARAMOS la variable primero
+             const productos = await response.json();
 
-            productos.forEach(producto => {
-                const realOption = document.createElement('option');
-                realOption.value = producto.id;
-                realOption.textContent = producto.nombre;
-                hiddenSelect.appendChild(realOption);
 
-                const visualOption = document.createElement('div');
-                visualOption.classList.add('option');
-                visualOption.textContent = producto.nombre;
-                visualOption.dataset.value = producto.id;
-                
-                visualOption.addEventListener('click', () => seleccionarProducto(visualOption, realOption));
-                optionsContainer.appendChild(visualOption);
-            });
-        } catch (error) {
-            console.error(error);
-            optionsContainer.innerHTML = `<div class="option">Error al cargar productos</div>`;
-        }
-    }
+
+            // 3. Y AHORA la validamos
+            if (!Array.isArray(productos)) {
+                throw new Error("La respuesta de la API no es un array de productos.");
+            }
+            // --- FIN DE LA CORRECCIÓN ---
+
+            optionsContainer.innerHTML = '';
+            hiddenSelect.innerHTML = '';
+
+            productos.forEach(producto => {
+                // (Tu código de mapeo que ya corregimos)
+                const realOption = document.createElement('option');
+                realOption.value = producto.idProducto;
+                realOption.textContent = producto.nombreProducto;
+                hiddenSelect.appendChild(realOption);
+
+                const visualOption = document.createElement('div');
+                visualOption.classList.add('option');
+                visualOption.textContent = producto.nombreProducto;
+                visualOption.dataset.value = producto.idProducto;
+                
+                visualOption.addEventListener('click', () => seleccionarProducto(visualOption, realOption));
+                optionsContainer.appendChild(visualOption);
+            });
+
+        } catch (error) {
+            // Ahora el error será más claro si la API falla
+            console.error("Error en cargarProductosSelect:", error); 
+            optionsContainer.innerHTML = `<div class="option">Error al cargar productos</div>`;
+        }
+    }
 
     function seleccionarProducto(visualOption, realOption) {
         realOption.selected = true;

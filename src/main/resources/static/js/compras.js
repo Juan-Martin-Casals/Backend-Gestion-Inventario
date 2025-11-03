@@ -10,10 +10,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     // ESTADO DE LA COMPRA (CARRITO)
     // ===============================
-    /**
-     * Array que almacena los productos del "carrito" antes de enviar.
-     * Cada objeto tendrá: { idProducto, nombreProducto, cantidad, precioUnitario, nuevoPrecioVenta }
-     */
     let detalleItems = [];
 
     // ===============================
@@ -24,9 +20,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const generalMessageCompra = document.getElementById('form-general-message-compra');
     const historialTabla = document.getElementById('compras-historial-tabla-body');
 
-    // --- Selectores del nuevo "carrito" ---
+    // --- Selectores del Detalle ---
     const addDetalleBtn = document.getElementById('add-detalle-btn');
-    const compraProductoSelect = document.getElementById('compra-producto-select');
+    const compraProductoSelect = document.getElementById('compra-producto-select'); // SELECT de productos
     const cantidadInput = document.getElementById('compra-cantidad');
     const costoInput = document.getElementById('compra-costo-unit');
     const ventaInput = document.getElementById('compra-venta-unit');
@@ -38,9 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // LÓGICA DE CARGA DE DATOS (Dropdowns y Tabla Historial)
     // ==========================================================
 
-    /**
-     * Carga el <select> de proveedores (el normal)
-     */
     async function loadProveedoresParaCompra() {
         if (!compraProveedorSelect) return; 
         try {
@@ -62,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Carga el <select> de productos (el nuevo)
+     * Carga el SELECT de productos (Lógica original)
      */
     async function loadProductosParaCompra() {
         if (!compraProductoSelect) return;
@@ -74,10 +67,11 @@ document.addEventListener('DOMContentLoaded', function() {
             compraProductoSelect.innerHTML = '<option value="">Seleccione un producto...</option>';
             productos.forEach(producto => {
                 const option = document.createElement('option');
-                option.value = producto.id;
-                option.textContent = producto.nombre;
-                // Opcional: guardar el precio actual en el 'data' del option
-                // option.dataset.precioVenta = producto.precioActual; 
+                // IMPORTANTE: idProducto debe existir en el DTO
+                option.value = producto.idProducto; 
+                option.textContent = producto.nombreProducto;
+                // NOTA: Si necesitas precio de venta, lo lees del DTO y lo guardas aquí:
+                option.dataset.precioVenta = producto.precioVenta; 
                 compraProductoSelect.appendChild(option);
             });
         } catch (error) {
@@ -86,12 +80,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * Carga el historial de compras (la tabla de abajo)
-     */
     async function loadComprasHistorial() {
         if (!historialTabla) return; 
-
+        // ... (Tu lógica para cargar el historial) ...
         try {
             const response = await fetch(API_COMPRAS_URL); 
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
@@ -105,9 +96,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * Dibuja la tabla de historial de compras.
-     */
     function renderComprasTabla(compras) {
         if (!historialTabla) return;
         historialTabla.innerHTML = ''; 
@@ -145,9 +133,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // LÓGICA DEL "CARRITO" (DETALLE TEMPORAL)
     // ===============================================
 
-    /**
-     * Dibuja la tabla del "carrito" basada en el array `detalleItems`
-     */
     function renderDetalleTemporal() {
         if (!detalleTemporalTabla || !totalDisplay) return;
         
@@ -178,17 +163,13 @@ document.addEventListener('DOMContentLoaded', function() {
             detalleTemporalTabla.appendChild(row);
         });
 
-        // Actualiza el total en el tfoot
         totalDisplay.textContent = `$${totalCompra.toFixed(2)}`;
 
         // Agrega los event listeners a los botones de "quitar"
         document.querySelectorAll('.btn-quitar-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                // 'dataset.index' es el 'data-index' que pusimos en el HTML
                 const indexToRemove = parseInt(e.currentTarget.dataset.index);
-                // Quita el item del array por su índice
                 detalleItems.splice(indexToRemove, 1);
-                // Vuelve a dibujar la tabla
                 renderDetalleTemporal();
             });
         });
@@ -199,17 +180,15 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     function handleAgregarDetalle() {
         // Limpiar errores
+        document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
         errorDetalleGeneral.textContent = '';
-        document.getElementById('errorCompraProducto').textContent = '';
-        document.getElementById('errorCompraCantidad').textContent = '';
-        document.getElementById('errorCompraCosto').textContent = '';
-        document.getElementById('errorCompraVenta').textContent = '';
 
         // 1. Obtener valores
-        const idProducto = compraProductoSelect.value;
-        const nombreProducto = compraProductoSelect.options[compraProductoSelect.selectedIndex].text;
-        const cantidad = parseInt(cantidadInput.value);
+        const selectElement = compraProductoSelect;
+        const idProducto = selectElement.value; // Lee del VALUE del SELECT
+        const nombreProducto = selectElement.options[selectElement.selectedIndex].text;
         
+        const cantidad = parseInt(cantidadInput.value);
         const precioUnitario = parseFloat(costoInput.value.replace(',', '.'));
         const nuevoPrecioVenta = parseFloat(ventaInput.value.replace(',', '.')); 
         
@@ -226,13 +205,12 @@ document.addEventListener('DOMContentLoaded', function() {
             isValid = false;
         }
         
-        // --- MENSAJES MODIFICADOS ---
         if (isNaN(precioUnitario) || precioUnitario <= 0) {
-            document.getElementById('errorCompraCosto').textContent = 'Costo inválido.'; // <-- Corregido
+            document.getElementById('errorCompraCosto').textContent = 'Costo inválido.'; 
             isValid = false;
         }
         if (isNaN(nuevoPrecioVenta) || nuevoPrecioVenta < 0) {
-            document.getElementById('errorCompraVenta').textContent = 'Precio de venta inválido.'; // <-- Corregido
+            document.getElementById('errorCompraVenta').textContent = 'Precio de venta inválido.';
             isValid = false;
         }
 
@@ -265,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Asignar el evento al botón "Agregar"
     if (addDetalleBtn) {
-        addDetalleBtn.addEventListener('click', handleAgregarDetalle);
+         addDetalleBtn.addEventListener('click', handleAgregarDetalle);
     }
 
 
@@ -312,8 +290,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             // 3. Construir el DTO
-            // El DTO de backend espera los campos en minúscula (ej: idProducto)
-            // Nuestro array `detalleItems` ya tiene el formato correcto.
             const compraRequestDTO = {
                 fecha: fecha,
                 idProveedor: parseInt(idProveedor),
@@ -361,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // CARGA INICIAL (COMPRAS)
     // ===============================
     loadProveedoresParaCompra(); // Carga el <select> de proveedores
-    loadProductosParaCompra();   // Carga el NUEVO <select> de productos
-    loadComprasHistorial();      // Carga la tabla de historial
-    renderDetalleTemporal();     // Dibuja la tabla temporal vacía
+    loadProductosParaCompra();   // Carga el SELECT de productos
+    loadComprasHistorial();      // Carga la tabla de historial
+    renderDetalleTemporal();     // Dibuja la tabla temporal vacía
 });

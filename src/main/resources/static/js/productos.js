@@ -13,8 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const nameInput = document.getElementById('product-name');
     const categoryInput = document.getElementById('product-category');
     const descriptionInput = document.getElementById('product-description');
-    const priceInput = document.getElementById('product-price');
-    const stockInput = document.getElementById('product-stock');
+
     const generalMessage = document.getElementById('form-general-message-producto');
 
     // ===============================
@@ -59,8 +58,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${product.nombre || 'N/A'}</td>
                     <td>${product.categoria || 'N/A'}</td>
                     <td>${product.descripcion || 'N/A'}</td>
-                    <td>$${(product.precio || 0).toFixed(2)}</td>
-                    <td>${product.stock}</td>
                 </tr>
             `;
             productTableBody.innerHTML += row;
@@ -87,8 +84,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const nombre = nameInput.value.trim();
             const categoria = categoryInput.value.trim();
             const descripcion = descriptionInput.value.trim();
-            const precio = priceInput.value.trim();
-            const stockActual = stockInput.value.trim();
+
 
             if (!nombre) {
                 document.getElementById('name-error').textContent = 'Complete este campo por favor';
@@ -102,20 +98,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('description-error').textContent = 'Complete este campo por favor';
                 isValid = false;
             }
-            if (!precio) {
-                document.getElementById('price-error').textContent = 'Complete este campo por favor';
-                isValid = false;
-            } else if (isNaN(precio) || parseFloat(precio) <= 0) {
-                document.getElementById('price-error').textContent = 'El precio debe ser un valor numérico válido';
-                isValid = false;
-            }
-            if (!stockActual) {
-                document.getElementById('stock-error').textContent = 'Complete este campo por favor';
-                isValid = false;
-            } else if (isNaN(stockActual) || parseInt(stockActual, 10) < 0) {
-                document.getElementById('stock-error').textContent = 'El stock debe ser un número válido';
-                isValid = false;
-            }
 
             if (!isValid) {
                 generalMessage.textContent = "Debe completar todos los campos correctamente.";
@@ -127,8 +109,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 nombre: nombre,
                 categoria: categoria,
                 descripcion: descripcion,
-                precio: parseFloat(precio),
-                stockActual: parseInt(stockActual, 10)
             };
 
             try {
