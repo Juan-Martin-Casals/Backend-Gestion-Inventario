@@ -389,85 +389,84 @@
     </div>
 </section>
 
-            <section id="usuarios-section" class="spa-section" style="display:none">
-                <div class="section-header">
+           <section id="usuarios-section" class="spa-section" style="display:none">
+    <div class="section-header">
+        </div>
+
+    <div class="form-section">
+        <h4>Registrar Nuevo Usuario</h4>
+        <form id="user-form" class="product-form" novalidate>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="user-nombre">Nombre</label>
+                    <input type="text" id="user-nombre" placeholder="Ingrese el nombre">
+                    <div class="error-message" id="error-user-nombre"></div>
                 </div>
-
-                <div class="form-section">
-                    <h4>Registrar Nuevo Usuario</h4>
-                    <form id="user-form" class="product-form" novalidate>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="user-nombre">Nombre</label>
-                                <input type="text" id="user-nombre" placeholder="Ingrese el nombre">
-                                <div class="error-message" id="error-user-nombre"></div>
-                            </div>
-                            <div class="form-group">
-                                <label for="user-apellido">Apellido</label>
-                                <input type="text" id="user-apellido" placeholder="Ingrese el apellido">
-                                <div class="error-message" id="error-user-apellido"></div>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="user-email">Email</label>
-                                <input type="email" id="user-email" placeholder="correo@ejemplo.com">
-                                <div class="error-message" id="error-user-email"></div>
-                            </div>
-                            <div class="form-group">
-                                <label for="user-rol">Rol</label>
-                                <select id="user-rol">
-                                    <option value="">Selecciona rol</option>
-                                    <option value="1">Administrador</option>
-                                    <option value="2">Empleado</option>
-                                </select>
-                                <div class="error-message" id="error-user-rol"></div>
-                            </div>
-                        </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="user-password">Contraseña</label>
-                                <input type="password" id="user-password" placeholder="Ingrese la contraseña">
-                                <div class="error-message" id="error-user-password"></div>
-                            </div>
-                            <div class="form-group">
-                                <label for="user-confirm-password">Confirmar Contraseña</label>
-                                <input type="password" id="user-confirm-password" placeholder="Confirme la contraseña">
-                                <div class="error-message" id="error-user-confirm-password"></div>
-                            </div>
-                        </div>
-
-                        <button type="submit" class="btn-primary" style="margin-top: 20px;">
-                            <i class="fas fa-plus"></i>
-                            Registrar Usuario
-                        </button>
-                    </form>
-                    <p id="form-general-message-usuario" class="form-message"></p>
+                <div class="form-group">
+                    <label for="user-apellido">Apellido</label>
+                    <input type="text" id="user-apellido" placeholder="Ingrese el apellido">
+                    <div class="error-message" id="error-user-apellido"></div>
                 </div>
+            </div>
 
-                <div class="table-section">
-                    <h4>Usuarios Registrados</h4>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Apellido</th>
-                                    <th>Email</th>
-                                    <th>Rol</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody id="user-table-body">
-                                <!-- Las filas se insertarán dinámicamente -->
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="user-email">Email</label>
+                    <input type="email" id="user-email" placeholder="correo@ejemplo.com">
+                    <div class="error-message" id="error-user-email"></div>
                 </div>
-            </section>
+                <div class="form-group">
+                    <label for="user-rol">Rol</label>
+                    <select id="user-rol">
+                        <option value="">Selecciona rol</option>
+                        <option value="1">Administrador</option>
+                        <option value="2">Empleado</option>
+                    </select>
+                    <div class="error-message" id="error-user-rol"></div>
+                </div>
+            </div>
 
+            <class="form-row">
+                <div class="form-group">
+                    <label for="user-password">Contraseña</label>
+                    <input type="password" id="user-password" placeholder="Ingrese la contraseña">
+                    <div class="error-message" id="error-user-password"></div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="user-confirm-password">Confirmar Contraseña</label>
+                    <input type="password" id="user-confirm-password" placeholder="Confirme la contraseña">
+                    <div class="error-message" id="error-user-confirm-password"></div>
+                </div> 
+                <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                <i class="fas fa-plus"></i>
+                Registrar Usuario
+            </button>
+            
+        </form>
+        <p id="form-general-message-usuario" class="form-message"></p>
+    </div>
+
+    <div class="table-section">
+        <h4>Usuarios Registrados</h4>
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody id="user-table-body">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</section>
 
 
     <section id="ventas-section" class="spa-section" style="display:none">
@@ -650,6 +649,7 @@
         </div>
     </div>
 </section>
+
 <div class="modal" id="delete-confirm-modal" style="display: none;">
     <div class="modal-content" style="max-width: 400px; text-align: center;">
         

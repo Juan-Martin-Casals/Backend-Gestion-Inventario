@@ -1,10 +1,4 @@
-/**
- * Este archivo es el controlador principal del panel de administración.
- * Se encarga de:
- * - La navegación entre las distintas secciones (SPA - Single Page Application).
- * - Manejar el modal de cierre de sesión.
- * - Llamar a las funciones de carga de datos de otras secciones cuando se navega a ellas.
- */
+
 document.addEventListener('DOMContentLoaded', function() {
 
     // Selectores
@@ -44,13 +38,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const sectionId = this.getAttribute('data-section');
             showSection(sectionId);
 
-            // Llama a la función de carga de datos correspondiente si existe
+            
             if (sectionId === 'principal' && typeof window.loadPrincipalData === 'function') {
                 window.loadPrincipalData();
             } else if (sectionId === 'productos' && typeof window.loadProducts === 'function') {
                 window.loadProducts();
             }
-            // ... aquí irían las llamadas a otras funciones de carga (ej: loadUsuarios)
         });
     });
 

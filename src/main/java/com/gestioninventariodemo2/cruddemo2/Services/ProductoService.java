@@ -149,39 +149,37 @@ public class ProductoService {
     }
 
     @Transactional(noRollbackFor = {IllegalArgumentException.class}) 
-    public void eliminarProducto(Long id) {
-    
+public void eliminarProducto(Long id) {
+ 
     Producto producto = productoRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado con id: " + id));
 
-    // Validamos el uso en las dos tablas
+    // Validamos el uso en TODAS las tablas
     boolean usadoEnVenta = detalleVentaRepository.existsByProductoIdProducto(id);
     boolean usadoEnCompra = detalleCompraRepository.existsByProductoIdProducto(id);
-    boolean asociadoAProveedor = productoProveedorRepository.existsByProductoIdProducto(id); // <-- ¡LA VALIDACIÓN QUE FALTABA!
+    boolean asociadoAProveedor = productoProveedorRepository.existsByProductoIdProducto(id);
+    
+    // --- ¡LA LÍNEA QUE FALTABA! ---
+    boolean tieneStockAsociado = stockRepository.existsByProductoIdProducto(id);
     
     // -----------------------------------------------------------
     
-   if (usadoEnVenta || usadoEnCompra || asociadoAProveedor) { 
+    // ¡AÑADIMOS EL NUEVO CHEQUEO AL IF!
+    if (usadoEnVenta || usadoEnCompra || asociadoAProveedor || tieneStockAsociado) { 
         // CASO 1: ÉXITO LÓGICO (Soft Delete)
+        // (Si está en uso O SIQUIERA TIENE UN REGISTRO DE STOCK)
         producto.setEstado("INACTIVO");
         productoRepository.save(producto);
         
-        // Lanzamos la excepción controlada para el Frontend
-        throw new IllegalArgumentException("El producto se marcó como INACTIVO (Está asociado a ventas/compras/proveedores).");
+        throw new IllegalArgumentException("El producto se marcó como INACTIVO (Está asociado a ventas/compras/proveedores o stock).");
 
     } else {
         // CASO 2: BORRADO FÍSICO
-        
+        // (Solo si no tiene ventas, ni compras, ni proveedores, NI stock)
         try {
-            // Si no está en uso, intentamos borrarlo
             productoRepository.deleteById(id);
-            // Si el DELETE funciona, el método termina aquí y devuelve 204 No Content.
-
         } catch (Exception e) {
-            // Si falla el borrado FÍSICO por alguna razón (ej. restricción oculta)
-            // Lanzamos una RuntimeException simple para que el GlobalExceptionHandler
-            // lo devuelva como 500. El frontend verá que el borrado falló.
-             throw new RuntimeException("Error inesperado al borrar el producto físicamente: " + e.getMessage(), e);
+             throw new RuntimeException("Error inesperado al borrar el producto físicamente.", e);
         }
     }
 }

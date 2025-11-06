@@ -19,6 +19,7 @@ import com.gestioninventariodemo2.cruddemo2.DTO.ProductoSelectDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
 import com.gestioninventariodemo2.cruddemo2.Services.ProductoService;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -50,25 +51,34 @@ public class ProductoController {
 
 
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminarProducto(@PathVariable Long id){
-        try {
-        // Ejecutamos el servicio
+   @DeleteMapping("/{id}")
+public ResponseEntity<String> eliminarProducto(@PathVariable Long id) { // <-- Cambiado a ResponseEntity<String>
+    try {
+        // 1. Intentamos ejecutar el borrado
         productoService.eliminarProducto(id);
         
-        // Si no lanza excepción, es Borrado Físico (SUCCESS 204)
+        // 2. Si NO lanzó excepción, fue un BORRADO FÍSICO exitoso
+        // Devolvemos 204 No Content (sin cuerpo)
         return ResponseEntity.noContent().build(); 
 
     } catch (IllegalArgumentException ex) {
-        // --- ¡CAPTURAMOS LA EXCEPCIÓN DEL SOFT DELETE! ---
+        // 3. ¡ES UN BORRADO LÓGICO EXITOSO!
+        // Capturamos la excepción que nosotros mismos lanzamos
+        if (ex.getMessage().contains("INACTIVO")) {
+            // Devolvemos 200 OK con el mensaje de éxito
+            return ResponseEntity.ok(ex.getMessage()); 
+        } else {
+            // Es un error de validación diferente
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        }
         
-        // Devolvemos 200 OK con el mensaje de la excepción en el cuerpo.
-        // Esto le dice al navegador: "Todo salió bien, aquí está el mensaje".
-        throw new ResponseStatusException(HttpStatus.OK, ex.getMessage()); 
-
-    } catch (RuntimeException ex) {
-        // Para errores inesperados, dejamos que el GlobalExceptionHandler maneje el 500
-        throw ex; 
+    } catch (EntityNotFoundException ex) {
+        // 4. Si el producto no existía (desde el findById)
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+        
+    } catch (Exception ex) {
+        // 5. Cualquier otro error 500 inesperado
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error inesperado en el servidor: " + ex.getMessage());
     }
-    }
+}
 }

@@ -67,10 +67,8 @@ document.addEventListener('DOMContentLoaded', function() {
             compraProductoSelect.innerHTML = '<option value="">Seleccione un producto...</option>';
             productos.forEach(producto => {
                 const option = document.createElement('option');
-                // IMPORTANTE: idProducto debe existir en el DTO
                 option.value = producto.idProducto; 
                 option.textContent = producto.nombreProducto;
-                // NOTA: Si necesitas precio de venta, lo lees del DTO y lo guardas aquí:
                 option.dataset.precioVenta = producto.precioVenta; 
                 compraProductoSelect.appendChild(option);
             });
@@ -82,7 +80,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function loadComprasHistorial() {
         if (!historialTabla) return; 
-        // ... (Tu lógica para cargar el historial) ...
         try {
             const response = await fetch(API_COMPRAS_URL); 
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
@@ -165,7 +162,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         totalDisplay.textContent = `$${totalCompra.toFixed(2)}`;
 
-        // Agrega los event listeners a los botones de "quitar"
         document.querySelectorAll('.btn-quitar-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const indexToRemove = parseInt(e.currentTarget.dataset.index);
@@ -175,9 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    /**
-     * Manejador del botón "Agregar Producto al Detalle"
-     */
     function handleAgregarDetalle() {
         // Limpiar errores
         document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
@@ -275,7 +268,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('errorCompraProveedor').textContent = 'El proveedor es obligatorio.';
                 isValid = false;
             }
-            // ¡La validación más importante!
             if (detalleItems.length === 0) {
                 if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto al detalle.';
                 isValid = false;
@@ -293,7 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const compraRequestDTO = {
                 fecha: fecha,
                 idProveedor: parseInt(idProveedor),
-                detalleCompras: detalleItems // ¡Enviamos el array del carrito!
+                detalleCompras: detalleItems 
             };
             
             console.log("Enviando DTO de Compra:", JSON.stringify(compraRequestDTO, null, 2));
@@ -317,11 +309,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 // Limpieza total
-                compraForm.reset(); // Resetea fecha y proveedor
-                detalleItems = []; // Vacía el carrito
-                renderDetalleTemporal(); // Limpia la tabla temporal
+                compraForm.reset(); 
+                detalleItems = []; 
+                renderDetalleTemporal(); 
                 
-                loadComprasHistorial(); // Recarga la tabla de historial
+                loadComprasHistorial(); 
 
             } catch (error) {
                 console.error('Error al registrar la compra:', error);
