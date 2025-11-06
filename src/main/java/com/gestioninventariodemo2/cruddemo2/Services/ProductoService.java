@@ -122,31 +122,53 @@ public class ProductoService {
 
 
     @Transactional
-    public ProductoActualizadoDTO editarProducto(Long id, ActualizarProductoDTO dto) {
-    // Validar campos obligatorios
+public ProductoActualizadoDTO editarProducto(Long id, ActualizarProductoDTO dto) {
+    // --- 1. VALIDACIONES ---
+    // (Estas eran de tu versión anterior, las volvemos a poner)
     if (dto.getNombre() == null || dto.getNombre().isBlank() ||
         dto.getCategoria() == null || dto.getCategoria().isBlank() ||
         dto.getDescripcion() == null || dto.getDescripcion().isBlank()) {
         throw new IllegalArgumentException("Todos los campos obligatorios deben estar completos");
     }
 
+    // Validación de precio (que faltaba)
+    if (dto.getPrecio() <= 0) {
+        throw new IllegalArgumentException("El precio debe ser un valor numérico válido");
+    }
 
+    // Validación de cantidad extra de stock (que faltaba)
+    if (dto.getCantidadExtraStock() < 0) {
+        throw new IllegalArgumentException("La cantidad de stock no puede ser negativa");
+    }
+
+    // --- 2. BUSCAR ENTIDADES ---
     Producto producto = productoRepository.findById(id)
             .orElseThrow(() -> new RuntimeException("Producto no encontrado con id: " + id));
 
+    // --- 3. ACTUALIZAR DATOS DEL PRODUCTO ---
     producto.setNombre(dto.getNombre());
     producto.setCategoria(dto.getCategoria());
     producto.setDescripcion(dto.getDescripcion());
+    producto.setPrecio(dto.getPrecio()); // <-- ¡ESTO FALTABA!
 
+    // --- 4. ACTUALIZAR DATOS DEL STOCK ---
+    // (Asumiendo que siempre hay un registro de stock)
+    Stock stock = producto.getStocks().get(0);
+    stock.setStockActual(stock.getStockActual() + dto.getCantidadExtraStock());
 
+    // --- 5. GUARDAR AMBAS ENTIDADES ---
     productoRepository.save(producto);
+    stockRepository.save(stock); // <-- ¡ESTA ERA LA LÍNEA CRÍTICA QUE FALTABA!
 
+    // --- 6. DEVOLVER EL DTO COMPLETO ---
     return ProductoActualizadoDTO.builder()
             .nombre(producto.getNombre())
             .categoria(producto.getCategoria())
             .descripcion(producto.getDescripcion())
+            .precio(producto.getPrecio()) // <-- ¡AÑADIDO!
+            .stockActual(stock.getStockActual()) // <-- ¡AÑADIDO!
             .build();
-    }
+}
 
     @Transactional(noRollbackFor = {IllegalArgumentException.class}) 
 public void eliminarProducto(Long id) {

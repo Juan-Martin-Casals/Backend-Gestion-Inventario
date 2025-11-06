@@ -1495,4 +1495,70 @@ body {
     background-color: #f0f0f0;
 }
 
+#edit-product-modal .modal-content {
+    /* 1. Anulamos la altura fija de la regla general */
+    height: auto !important; 
+    
+    /* 2. Definimos el ancho y el centrado */
+    max-width: 600px;
+    width: 90%;
+    margin: 5% auto; /* (O 2% auto si preferís) */
+    
+    /* 3. Permitimos que el modal crezca y tenga scroll si es necesario */
+    max-height: 90vh;
+    overflow-y: auto; 
+    
+    /* 4. Reseteamos la alineación (la regla general tiene text-align: center) */
+    text-align: left; 
+    
+    /* 5. Estilos de la caja */
+    display: block; 
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
 
+/* Encabezado del modal */
+#edit-product-modal .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee; 
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+
+#edit-product-modal .modal-header h3 {
+    margin: 0;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#edit-product-modal .modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #666;
+    cursor: pointer;
+}
+
+/* Espaciado del formulario */
+#edit-product-modal .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px; 
+    margin-bottom: 20px; /* Espacio entre filas */
+}
+
+#edit-product-modal .form-group {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 0px !important; /* Anulamos conflictos */
+}
+
+#edit-product-modal .form-group label {
+    margin-bottom: 8px !important; 
+    display: block !important;
+}
