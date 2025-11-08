@@ -1,7 +1,10 @@
 package com.gestioninventariodemo2.cruddemo2.Controller;
 
 import java.time.LocalDate;
+import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -14,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.gestioninventariodemo2.cruddemo2.DTO.InformeDashboardDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.InformeResponseDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.ResumenStockDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.StockTablaDTO;
 import com.gestioninventariodemo2.cruddemo2.Services.InformeService;
 
 import lombok.RequiredArgsConstructor;
@@ -38,6 +43,29 @@ public class InformeController {
             InformeDashboardDTO dashboard = informeService.obtenerDashboard();
             return ResponseEntity.ok(dashboard);
         }
+    }
+
+
+    @GetMapping("/low-stock")
+    public ResponseEntity<Page<StockTablaDTO>> getProductosConStockBajo(
+            // Recibimos los parámetros, con valores por defecto
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "7") int size) { // <-- 7 por página (como en Stock)
+        
+        // Creamos el objeto Pageable
+        PageRequest pageable = PageRequest.of(page, size);
+        
+        // Llamamos al servicio (que ahora devolverá una 'Page')
+        Page<StockTablaDTO> productos = informeService.obtenerProductosConStockBajo(pageable);
+        return ResponseEntity.ok(productos);
+    }
+
+
+    // --- ¡AÑADÍ ESTE MÉTODO! ---
+    @GetMapping("/resumen-stock")
+    public ResponseEntity<ResumenStockDTO> getResumenStock() {
+        ResumenStockDTO resumenStock = informeService.obtenerResumenStock();
+        return ResponseEntity.ok(resumenStock);
     }
 
 

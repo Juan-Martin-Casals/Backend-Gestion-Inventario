@@ -40,113 +40,117 @@
                 <div class="user-info">
                     <i class="fas fa-user"></i>
                     <div>
-                        <span>Usuario</span>
-                        <span>Administrador</span>
+                        <span id="header-user-name">Cargando...</span>
+                        <span id="header-user-role">Cargando...</span>
                     </div>
                 </div>
             </header>
 
             <section id="principal-section" class="spa-section">
-                <div class="sales-dashboard" style="margin-bottom:18px;">
-                    <div class="stats-cards">
-                        <div class="stat-card">
-                            <div class="stat-icon blue">
-                                <i class="fas fa-calendar"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="ventas-mes-count">0</h3>
-                                <p>Ventas del Mes</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon green">
-                                <i class="fas fa-shopping-cart"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="ventas-historicas-count">0</h3>
-                                <p>Ventas Históricas</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon purple">
-                                <i class="fas fa-cube"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="productos-mes-count">0</h3>
-                                <p>Productos Vendidos (Mes)</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-icon red">
-                                <i class="fas fa-dollar-sign"></i>
-                            </div>
-                            <div class="stat-content">
-                                <h3 id="recaudacion-mes-amount">$0.00</h3>
-                                <p>Recaudación del Mes</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    
+    <div class="dashboard-stats">
 
-                <div class="dashboard-stats">
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-box"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>5</h3>
-                            <p>Total Productos</p>
-                        </div>
-                    </div>
-                    <div class="stat-card warning">
-                        <div class="stat-icon">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>2</h3>
-                            <p>Productos Agotados</p>
-                        </div>
-                    </div>
-                    <div class="stat-card alert">
-                        <div class="stat-icon">
-                            <i class="fas fa-lock"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3>2</h3>
-                            <p>Stock Bajo</p>
-                        </div>
-                    </div>
-                </div>
+        <div class="stat-card">
+            <div class="stat-icon blue">
+                <i class="fas fa-calendar"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="ventas-mes-count">0</h3>
+                <p>Ventas del Mes</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon green">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="ventas-historicas-count">0</h3>
+                <p>Ventas Históricas</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon purple">
+                <i class="fas fa-cube"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="productos-mes-count">0</h3>
+                <p>Productos Vendidos (Mes)</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon red">
+                <i class="fas fa-dollar-sign"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="recaudacion-mes-amount">$0.00</h3>
+                <p>Recaudación del Mes</p>
+            </div>
+        </div>
 
-                <div class="low-stock-section">
-                    <h3>Productos Agotados</h3>
-                    <p>Productos que necesitan reposición urgente</p>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Categoría</th>
-                                    <th>Descripción</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Nombre Producto</td>
-                                    <td>Ejemplo Categoría</td>
-                                    <td>Descripción del producto agotado</td>
-                                </tr>
-                                <tr>
-                                    <td>Nombre Producto</td>
-                                    <td>Ejemplo Categoría</td>
-                                    <td>Descripción del producto agotado</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <div class="stat-card">
+            <div class="stat-icon">
+                <i class="fas fa-box"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="total-productos-count">0</h3>
+                <p>Total Productos</p>
+            </div>
+        </div>
+        <div class="stat-card warning">
+            <div class="stat-icon">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="productos-agotados-count">0</h3>
+                <p>Productos Agotados</p>
+            </div>
+        </div>
+        <div class="stat-card alert">
+            <div class="stat-icon">
+                <i class="fas fa-lock"></i>
+            </div>
+            <div class="stat-content">
+                <h3 id="stock-bajo-count">0</h3>
+                <p>Stock Bajo</p>
+            </div>
+        </div>
 
-            </section>
+    </div> <div class="low-stock-section">
+        <h3>Productos que necesitan reposición</h3>
+        <div class="table-container">
+            <table class="data-table">
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Descripción</th>
+            <th>Stock</th>
+            <th>Precio</th>
+        </tr>
+    </thead>
+    <tbody id="low-stock-table-body"> 
+        </tbody>
+    
+    <tfoot>
+        <tr>
+            <td colspan="5">
+                <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                    <span id="low-stock-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                    <button class="btn-outline" id="low-stock-prev-page" disabled>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <button class="btn-outline" id="low-stock-next-page">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    </tfoot>
+    </table>
+        </div>
+    </div>
+
+</section>
 
             <section id="productos-section" class="spa-section" style="display:none">
                 <div class="section-header">

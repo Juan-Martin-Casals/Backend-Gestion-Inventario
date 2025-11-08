@@ -12,6 +12,9 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
+import com.gestioninventariodemo2.cruddemo2.DTO.UsuarioPerfilDTO;
+import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
+
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -88,4 +91,23 @@ public class AuthenticationServiceImpl implements AuthenticationService{
         return  claims.getSubject();
     }
 
+    @Override
+    public UsuarioPerfilDTO getPerfilUsuario(UserDetails userDetails) {
+        // 1. Convertimos UserDetails a tu entidad Usuario
+        Usuario usuario = (Usuario) userDetails;
+        
+        // 2. Obtenemos el rol (usando la función que ya tenías)
+        String rol = getRol(userDetails); // Esto devuelve "ADMINISTRADOR" o "EMPLEADO"
+        
+        // 3. Creamos el nombre completo
+        String nombreCompleto = usuario.getNombre() + " " + usuario.getApellido();
+        
+        // 4. Devolvemos el DTO
+        return UsuarioPerfilDTO.builder()
+                .nombreCompleto(nombreCompleto)
+                .rol(rol)
+                .build();
+    }
 }
+
+

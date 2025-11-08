@@ -41,6 +41,8 @@ public class SecurityConfig {
                     .requestMatchers("/api/ventas/**").permitAll()
                     .requestMatchers("/api/productos/**").permitAll()
                     .requestMatchers("/api/stock/**").permitAll()
+                    .requestMatchers("/api/informes/**").permitAll()
+                    .requestMatchers("/api/auth/perfil").permitAll()
                     .anyRequest().permitAll()
             )
             .csrf(csrf -> csrf.disable())
