@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // URLs DE LA API
     // ===============================
     const API_PRODUCTOS_URL = '/api/productos/select';
-    const API_COMPRAS_URL = '/api/compras';
-    const API_PROVEEDORES_URL = '/api/proveedores'; // URL Base
+    const API_COMPRAS_URL = '/api/compras'; 
+    const API_PROVEEDORES_URL = '/api/proveedores'; 
     
     // ===============================
     // ESTADO DE LA COMPRA (CARRITO)
@@ -22,15 +22,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Selectores del Detalle ---
     const addDetalleBtn = document.getElementById('add-detalle-btn');
-    const compraProductoSelect = document.getElementById('compra-producto-select'); // SELECT de productos
+    const compraProductoSelect = document.getElementById('compra-producto-select');
     const cantidadInput = document.getElementById('compra-cantidad');
     const costoInput = document.getElementById('compra-costo-unit');
     const ventaInput = document.getElementById('compra-venta-unit');
     const detalleTemporalTabla = document.getElementById('compra-detalle-temporal');
-    
-    // ¡CORREGIDO! Este ID ahora apunta al H4 fuera de la tabla
     const totalDisplay = document.getElementById('compra-total-display'); 
     const errorDetalleGeneral = document.getElementById('errorDetalleGeneral');
+
+    // ===============================
+    // ¡NUEVO! ESTADO Y SELECTORES DE PAGINACIÓN
+    // ===============================
+    const historialPrevPageBtn = document.getElementById('compras-prev-page');
+    const historialNextPageBtn = document.getElementById('compras-next-page');
+    const historialPageInfo = document.getElementById('compras-page-info');
+    
+    let historialCurrentPage = 0; // Las páginas de Spring Boot empiezan en 0
+    let historialTotalPages = 1;
+    const historialItemsPerPage = 10; // Número de items a mostrar
 
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS (Dropdowns y Tabla Historial)
@@ -39,15 +48,12 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadProveedoresParaCompra() {
         if (!compraProveedorSelect) return; 
         try {
-            // ¡CORREGIDO! Llamamos al endpoint /select que no está paginado
             const response = await fetch(API_PROVEEDORES_URL + "/select"); 
             if (!response.ok) throw new Error('Error al cargar proveedores');
             
-            const proveedores = await response.json(); // Ahora sí es un Array
+            const proveedores = await response.json(); 
             
             compraProveedorSelect.innerHTML = '<option value="">Seleccione un proveedor...</option>';
-            
-            // Esta línea ya no falla
             proveedores.forEach(p => {
                 const option = document.createElement('option');
                 option.value = p.id; 
@@ -60,9 +66,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * Carga el SELECT de productos (Lógica original)
-     */
     async function loadProductosParaCompra() {
         if (!compraProductoSelect) return;
         try {
@@ -84,18 +87,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // ¡FUNCIÓN DE HISTORIAL ACTUALIZADA PARA PAGINACIÓN!
     async function loadComprasHistorial() {
         if (!historialTabla) return; 
+        
+        historialTabla.innerHTML = `<tr><td colspan="5">Cargando historial...</td></tr>`;
+
         try {
-            const response = await fetch(API_COMPRAS_URL); 
+            // Enviamos los parámetros de paginación y el ordenamiento por fecha (DESC)
+            const url = `${API_COMPRAS_URL}?page=${historialCurrentPage}&size=${historialItemsPerPage}&sort=fecha,desc`;
+            const response = await fetch(url); 
+            
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
             
-            const compras = await response.json();
-            renderComprasTabla(compras);
+            const pageData = await response.json(); // Recibimos el objeto Page
+            
+            historialTotalPages = pageData.totalPages;
+            
+            renderComprasTabla(pageData.content);
+            updateHistorialPaginationControls(); // Actualizamos controles
             
         } catch (error) {
             console.error('Error al cargar el historial de compras:', error);
-            historialTabla.innerHTML = `<tr><td colspan="4">Error al cargar historial.</td></tr>`;
+            historialTabla.innerHTML = `<tr><td colspan="5">Error al cargar historial.</td></tr>`;
         }
     }
 
@@ -104,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
         historialTabla.innerHTML = ''; 
 
         if (compras.length === 0) {
-            historialTabla.innerHTML = '<tr><td colspan="4">No hay compras registradas.</td></tr>';
+            historialTabla.innerHTML = '<tr><td colspan="5">No hay compras registradas.</td></tr>';
             return;
         }
 
@@ -113,6 +127,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 ? compra.productosComprados.map(p => `${p.nombreProducto} (x${p.cantidad})`).join('<br>')
                 : 'Sin productos';
 
+            // Costos unitarios de los productos
+            const costosTexto = compra.productosComprados && compra.productosComprados.length > 0
+                ? compra.productosComprados.map(p => `$${(p.precioUnitario || 0).toFixed(2)}`).join('<br>')
+                : 'N/A';
+                
             const totalFormateado = `$${(compra.total || 0).toFixed(2)}`;
             
             let fechaFormateada = compra.fecha || 'N/A';
@@ -126,6 +145,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <td>${fechaFormateada}</td>
                     <td>${compra.nombreProveedor || 'N/A'}</td>
                     <td>${productosTexto}</td>
+                    <td>${costosTexto}</td> 
                     <td>${totalFormateado}</td>
                 </tr>`;
             historialTabla.innerHTML += row;
@@ -133,8 +153,39 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ===============================================
+    // ¡NUEVO! LÓGICA DE PAGINACIÓN DEL HISTORIAL
+    // ===============================================
+    function updateHistorialPaginationControls() {
+        if (!historialPageInfo) return;
+        
+        historialPageInfo.textContent = `Página ${historialCurrentPage + 1} de ${historialTotalPages || 1}`;
+        historialPrevPageBtn.disabled = (historialCurrentPage === 0);
+        historialNextPageBtn.disabled = (historialCurrentPage + 1 >= historialTotalPages);
+    }
+
+    if (historialPrevPageBtn) {
+        historialPrevPageBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (historialCurrentPage > 0) {
+                historialCurrentPage--;
+                loadComprasHistorial();
+            }
+        });
+    }
+
+    if (historialNextPageBtn) {
+        historialNextPageBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (historialCurrentPage + 1 < historialTotalPages) {
+                historialCurrentPage++;
+                loadComprasHistorial();
+            }
+        });
+    }
+
+
+    // ===============================================
     // LÓGICA DEL "CARRITO" (DETALLE TEMPORAL)
-    // ¡¡FUNCIÓN ACTUALIZADA!!
     // ===============================================
 
     function renderDetalleTemporal() {
@@ -144,7 +195,6 @@ document.addEventListener('DOMContentLoaded', function() {
         let totalCompra = 0;
 
         if (detalleItems.length === 0) {
-            // ¡CORREGIDO! Colspan="5"
             detalleTemporalTabla.innerHTML = '<tr><td colspan="5">Aún no has agregado productos.</td></tr>';
         }
 
@@ -153,8 +203,6 @@ document.addEventListener('DOMContentLoaded', function() {
             totalCompra += subtotal;
 
             const row = document.createElement('tr');
-            
-            // ¡CORREGIDO! Fila con 5 columnas (sin precio de venta)
             row.innerHTML = `
                 <td>${item.nombreProducto}</td>
                 <td>${item.cantidad}</td>
@@ -169,10 +217,8 @@ document.addEventListener('DOMContentLoaded', function() {
             detalleTemporalTabla.appendChild(row);
         });
 
-        // ¡CORREGIDO! Actualiza el H4 externo
         totalDisplay.textContent = `$ Total Compra: $${totalCompra.toFixed(2)}`;
 
-        // Lógica de botones (sin cambios)
         document.querySelectorAll('.btn-quitar-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const indexToRemove = parseInt(e.currentTarget.dataset.index);
@@ -187,9 +233,9 @@ document.addEventListener('DOMContentLoaded', function() {
         document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
         errorDetalleGeneral.textContent = '';
 
-        // 1. Obtener valores
+        // 1. Obtener valores (misma lógica que ya tenías)
         const selectElement = compraProductoSelect;
-        const idProducto = selectElement.value; 
+        const idProducto = selectElement.value;
         const nombreProducto = selectElement.options[selectElement.selectedIndex].text;
         
         const cantidad = parseInt(cantidadInput.value);
@@ -201,29 +247,20 @@ document.addEventListener('DOMContentLoaded', function() {
         // 2. Validar
         let isValid = true;
         if (!idProducto) {
-            document.getElementById('errorCompraProducto').textContent = 'Seleccione un producto.';
-            isValid = false;
+            document.getElementById('errorCompraProducto').textContent = 'Seleccione un producto.'; isValid = false;
         }
         if (isNaN(cantidad) || cantidad <= 0) {
-            document.getElementById('errorCompraCantidad').textContent = 'Cantidad inválida.';
-            isValid = false;
+            document.getElementById('errorCompraCantidad').textContent = 'Cantidad inválida.'; isValid = false;
         }
-        
         if (isNaN(precioUnitario) || precioUnitario <= 0) {
-            document.getElementById('errorCompraCosto').textContent = 'Costo inválido.'; 
-            isValid = false;
+            document.getElementById('errorCompraCosto').textContent = 'Costo inválido.'; isValid = false;
         }
         if (isNaN(nuevoPrecioVenta) || nuevoPrecioVenta < 0) {
-            document.getElementById('errorCompraVenta').textContent = 'Precio de venta inválido.';
-            isValid = false;
+            document.getElementById('errorCompraVenta').textContent = 'Precio de venta inválido.'; isValid = false;
         }
-
-        // Validación de duplicados
         if (isValid && detalleItems.some(item => item.idProducto === idProductoNum)) {
-            document.getElementById('errorCompraProducto').textContent = 'Este producto ya está en el detalle.';
-            isValid = false;
+            document.getElementById('errorCompraProducto').textContent = 'Este producto ya está en el detalle.'; isValid = false;
         }
-
         if (!isValid) return;
 
         // 3. Agregar al array `detalleItems`
@@ -232,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function() {
             nombreProducto: nombreProducto,
             cantidad: cantidad,
             precioUnitario: precioUnitario,
-            nuevoPrecioVenta: nuevoPrecioVenta // (Lo guardamos aunque no se muestre)
+            nuevoPrecioVenta: nuevoPrecioVenta
         });
 
         // 4. Actualizar la tabla temporal
@@ -245,7 +282,6 @@ document.addEventListener('DOMContentLoaded', function() {
         ventaInput.value = '';
     }
 
-    // Asignar el evento al botón "Agregar"
     if (addDetalleBtn) {
          addDetalleBtn.addEventListener('click', handleAgregarDetalle);
     }
@@ -265,23 +301,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 generalMessageCompra.className = 'form-message';
             }
 
-            // 1. Obtener valores principales
+            // ... (validación de fecha y proveedor) ...
+            let isValid = true;
             const fecha = document.getElementById('compra-fecha').value;
             const idProveedor = document.getElementById('compra-proveedor').value;
-
-            // 2. Validar
-            let isValid = true;
-            if (!fecha) {
-                document.getElementById('errorCompraFecha').textContent = 'La fecha es obligatoria.';
-                isValid = false;
-            }
-            if (!idProveedor) {
-                document.getElementById('errorCompraProveedor').textContent = 'El proveedor es obligatorio.';
-                isValid = false;
-            }
+            
+            if (!fecha) { document.getElementById('errorCompraFecha').textContent = 'La fecha es obligatoria.'; isValid = false; }
+            if (!idProveedor) { document.getElementById('errorCompraProveedor').textContent = 'El proveedor es obligatorio.'; isValid = false; }
             if (detalleItems.length === 0) {
-                if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto al detalle.';
-                isValid = false;
+                if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto al detalle.'; isValid = false;
             }
             
             if (!isValid) {
@@ -292,15 +320,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // 3. Construir el DTO
             const compraRequestDTO = {
                 fecha: fecha,
                 idProveedor: parseInt(idProveedor),
                 detalleCompras: detalleItems 
             };
             
-            console.log("Enviando DTO de Compra:", JSON.stringify(compraRequestDTO, null, 2));
-
             // 4. Enviar los datos a la API
             try {
                 const response = await fetch(API_COMPRAS_URL, {
@@ -319,11 +344,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     generalMessageCompra.classList.add('success');
                 }
                 
-                // Limpieza total
+                // Limpieza y recarga en página 0 para ver la compra nueva
                 compraForm.reset(); 
                 detalleItems = []; 
                 renderDetalleTemporal(); 
                 
+                historialCurrentPage = 0; // Volver a la primera página
                 loadComprasHistorial(); 
 
             } catch (error) {
@@ -339,8 +365,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     // CARGA INICIAL (COMPRAS)
     // ===============================
-    loadProveedoresParaCompra(); // Carga el <select> de proveedores
-    loadProductosParaCompra();   // Carga el SELECT de productos
-    loadComprasHistorial();      // Carga la tabla de historial
-    renderDetalleTemporal();     // Dibuja la tabla temporal vacía
+    loadProveedoresParaCompra();
+    loadProductosParaCompra();  
+    loadComprasHistorial();      
+    renderDetalleTemporal();    
 });

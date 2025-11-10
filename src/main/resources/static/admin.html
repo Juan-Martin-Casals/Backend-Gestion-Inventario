@@ -399,21 +399,15 @@
                                 <th>Producto</th>
                                 <th>Cantidad</th>
                                 <th>Costo Unit.</th>
-                                <th>Venta Unit.</th>
                                 <th>Subtotal</th>
                                 <th>Quitar</th>
                             </tr>
                         </thead>
                         <tbody id="compra-detalle-temporal">
                             </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="4" style="text-align: right; font-weight: bold;">TOTAL COMPRA:</td>
-                                <td id="compra-total-display" style="font-weight: bold;">$0.00</td>
-                                <td></td>
-                            </tr>
-                        </tfoot>
                     </table>
+                </div><div class="total-section">
+                    <h4 id="compra-total-display">$ Total Compra: $0.00</h4>
                 </div>
             </div>
             
@@ -435,13 +429,25 @@
                         <th>Fecha</th>
                         <th>Proveedor</th>
                         <th>Productos</th>
+                        <th>Costo Unit.</th>
                         <th>Total</th>
                     </tr>
                 </thead>
                 <tbody id="compras-historial-tabla-body">
                     </tbody>
+                    
             </table>
         </div>
+        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+        <span id="compras-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+        
+        <button class="btn-outline" id="compras-prev-page" disabled>
+            <i class="fas fa-arrow-left"></i>
+        </button>
+        <button class="btn-outline" id="compras-next-page">
+            <i class="fas fa-arrow-right"></i>
+        </button>
+    </div>
     </div>
 </section>
 

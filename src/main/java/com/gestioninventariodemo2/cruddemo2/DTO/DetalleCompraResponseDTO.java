@@ -8,5 +8,6 @@ public class DetalleCompraResponseDTO {
     
     private int cantidad;
     private String nombreProducto;
+    private double precioUnitario;
 
 }

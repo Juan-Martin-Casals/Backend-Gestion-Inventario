@@ -21,6 +21,10 @@ import com.gestioninventariodemo2.cruddemo2.Repository.StockRepository;
 
 // Importaciones de Spring y Java
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
@@ -115,24 +119,29 @@ public class CompraService {
     /**
      * Lista todas las compras registradas con un formato simplificado.
      */
-    public List<CompraResponseDTO> listarTodasLasCompras() {
-        // Usamos findAll() (o puedes ordenarlas por fecha, ej: findAllByOrderByFechaDesc())
-        return compraRepository.findAll() 
-            .stream()
-            .map(this::mapToCompraDTO) 
-            .collect(Collectors.toList());
+public Page<CompraResponseDTO> listarTodasLasCompras(Pageable pageable) {
+        
+        // 1. Obtenemos la página del repositorio
+        Page<Compra> paginaCompras = compraRepository.findAll(pageable); // findAll(Pageable) existe en JpaRepository
+        
+        // 2. Mapeamos la página a DTO usando el mapper que ya tenías
+        return paginaCompras.map(this::mapToCompraDTO);
     }
 
     /**
      * Método helper para convertir la Entidad Compra a CompraResponseDTO.
      */
-    private CompraResponseDTO mapToCompraDTO(Compra compra) {
+
+        
+        // 1. Mapear los detalles
+private CompraResponseDTO mapToCompraDTO(Compra compra) {
         
         // 1. Mapear los detalles
         List<DetalleCompraResponseDTO> detalleDTO = compra.getDetalleCompras().stream()
             .map(detalle -> DetalleCompraResponseDTO.builder()
                 .cantidad(detalle.getCantidad())
                 .nombreProducto(detalle.getProducto().getNombre())
+                .precioUnitario(detalle.getPrecioUnitario()) // <-- ¡LÍNEA AÑADIDA PARA EL COSTO UNITARIO!
                 .build()
             ).collect(Collectors.toList());
 
@@ -143,5 +152,6 @@ public class CompraService {
             .nombreProveedor(compra.getProveedor().getNombre())
             .productosComprados(detalleDTO)
             .build();
-    }
+    
+}
 }

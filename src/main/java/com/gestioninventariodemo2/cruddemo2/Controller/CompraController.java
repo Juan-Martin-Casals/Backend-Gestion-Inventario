@@ -2,6 +2,9 @@ package com.gestioninventariodemo2.cruddemo2.Controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,9 +38,11 @@ public class CompraController {
         return ResponseEntity.status(HttpStatus.CREATED).body(compraGuardada);
     }
 
-    @GetMapping
-    public ResponseEntity<List<CompraResponseDTO>> listarTodasLasCompras() {
-        List<CompraResponseDTO> compras = compraService.listarTodasLasCompras();
+@GetMapping
+    // ¡MÉTODO MODIFICADO! Acepta Pageable y devuelve Page
+    public ResponseEntity<Page<CompraResponseDTO>> listarTodasLasCompras(Pageable pageable) {
+        Page<CompraResponseDTO> compras = compraService.listarTodasLasCompras(pageable);
         return ResponseEntity.ok(compras);
     }
 }
+
