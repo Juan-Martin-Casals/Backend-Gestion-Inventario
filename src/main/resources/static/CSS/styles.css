@@ -1007,59 +1007,7 @@ body {
     color: #333;
 }
 
-/* Modal */
-.modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(5px);
-}
 
-.modal-content {
-    background-color: #fff;
-    margin: 3% auto;
-    padding: 30px;
-    border-radius: 12px;
-    width: 90%;
-    max-width: 400px;
-    text-align: center;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    height: 200px;
-}
-
-.modal-content h3 {
-    color: #333;
-    font-size: 20px;
-    font-weight: 600;
-    margin-bottom: 15px;
-}
-
-.modal-content p {
-    color: #666;
-    font-size: 14px;
-    margin-bottom: 25px;
-}
-
-.modal-buttons {
-    display: flex;
-    gap: 15px;
-    justify-content: center;
-}
-
-.modal-buttons button {
-    padding: 12px 24px;
-    border: none;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s;
-}
 
 /* SPA Sections */
 .spa-section {
@@ -1143,14 +1091,7 @@ body {
         grid-template-columns: 1fr;
     }
 
-    .modal-content {
-        margin: 10% auto;
-        padding: 20px;
-    }
-
-    .modal-buttons {
-        flex-direction: column;
-    }
+    
 
     /* Optimizaciones para formularios de login en móviles */
     .login-container {
@@ -1495,70 +1436,68 @@ body {
     background-color: #f0f0f0;
 }
 
-#edit-product-modal .modal-content {
-    /* 1. Anulamos la altura fija de la regla general */
-    height: auto !important; 
-    
-    /* 2. Definimos el ancho y el centrado */
-    max-width: 600px;
+
+
+.table-container-product {
+    /* * Ajusta este valor. 
+     * (Nº de items por página) x (altura de fila) + (altura de cabecera)
+     * Ejemplo: (7 filas * 50px) + 50px = 400px 
+     */
+    min-height: 400px; 
+}
+
+.modal {
+    display: none; /* Oculto por defecto */
+    position: fixed; /* Flota sobre toda la página */
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Permite scroll */
+    background-color: rgba(0, 0, 0, 0.6); /* Fondo oscuro */
+}
+
+/* * La caja blanca (contenido).
+ * Se aplica a CUALQUIER div con clase "modal-content"
+ * que esté dentro de un div con clase "modal".
+*/
+.modal .modal-content {
+    background-color: #fefefe;
+    margin: 5% auto; /* 5% desde arriba y centrado */
+    padding: 25px;
+    border-radius: 8px;
     width: 90%;
-    margin: 5% auto; /* (O 2% auto si preferís) */
-    
-    /* 3. Permitimos que el modal crezca y tenga scroll si es necesario */
-    max-height: 90vh;
-    overflow-y: auto; 
-    
-    /* 4. Reseteamos la alineación (la regla general tiene text-align: center) */
-    text-align: left; 
-    
-    /* 5. Estilos de la caja */
-    display: block; 
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    max-width: 600px; /* Ancho máximo */
+    position: relative;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    animation: fadeIn 0.3s;
 }
 
-/* Encabezado del modal */
-#edit-product-modal .modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border-bottom: 1px solid #eee; 
-    padding-bottom: 15px;
-    margin-bottom: 20px;
-}
-
-#edit-product-modal .modal-header h3 {
-    margin: 0;
-    font-size: 18px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-#edit-product-modal .modal-close {
-    background: none;
+/* * El botón de cerrar (X).
+*/
+.modal .modal-close,
+.modal .close-modal {
+    color: #aaa;
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    font-size: 28px;
+    font-weight: bold;
     border: none;
-    font-size: 24px;
-    color: #666;
+    background: none;
     cursor: pointer;
 }
 
-/* Espaciado del formulario */
-#edit-product-modal .form-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px; 
-    margin-bottom: 20px; /* Espacio entre filas */
+.modal .modal-close:hover,
+.modal .close-modal:hover,
+.modal .modal-close:focus,
+.modal .close-modal:focus {
+    color: #000;
 }
 
-#edit-product-modal .form-group {
-    display: flex;
-    flex-direction: column;
-    margin-bottom: 0px !important; /* Anulamos conflictos */
-}
-
-#edit-product-modal .form-group label {
-    margin-bottom: 8px !important; 
-    display: block !important;
+/* Animación */
+@keyframes fadeIn {
+    from {opacity: 0; transform: translateY(-50px);}
+    to {opacity: 1; transform: translateY(0);}
 }

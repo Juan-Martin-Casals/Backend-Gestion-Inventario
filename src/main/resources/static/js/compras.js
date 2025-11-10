@@ -5,7 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     const API_PRODUCTOS_URL = '/api/productos/select';
     const API_COMPRAS_URL = '/api/compras';
-    const API_PROVEEDORES_URL = '/api/proveedores';
+    const API_PROVEEDORES_URL = '/api/proveedores'; // URL Base
     
     // ===============================
     // ESTADO DE LA COMPRA (CARRITO)
@@ -27,7 +27,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const costoInput = document.getElementById('compra-costo-unit');
     const ventaInput = document.getElementById('compra-venta-unit');
     const detalleTemporalTabla = document.getElementById('compra-detalle-temporal');
-    const totalDisplay = document.getElementById('compra-total-display');
+    
+    // ¡CORREGIDO! Este ID ahora apunta al H4 fuera de la tabla
+    const totalDisplay = document.getElementById('compra-total-display'); 
     const errorDetalleGeneral = document.getElementById('errorDetalleGeneral');
 
     // ==========================================================
@@ -37,11 +39,15 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadProveedoresParaCompra() {
         if (!compraProveedorSelect) return; 
         try {
-            const response = await fetch(API_PROVEEDORES_URL);
+            // ¡CORREGIDO! Llamamos al endpoint /select que no está paginado
+            const response = await fetch(API_PROVEEDORES_URL + "/select"); 
             if (!response.ok) throw new Error('Error al cargar proveedores');
-            const proveedores = await response.json();
+            
+            const proveedores = await response.json(); // Ahora sí es un Array
             
             compraProveedorSelect.innerHTML = '<option value="">Seleccione un proveedor...</option>';
+            
+            // Esta línea ya no falla
             proveedores.forEach(p => {
                 const option = document.createElement('option');
                 option.value = p.id; 
@@ -128,6 +134,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===============================================
     // LÓGICA DEL "CARRITO" (DETALLE TEMPORAL)
+    // ¡¡FUNCIÓN ACTUALIZADA!!
     // ===============================================
 
     function renderDetalleTemporal() {
@@ -137,7 +144,8 @@ document.addEventListener('DOMContentLoaded', function() {
         let totalCompra = 0;
 
         if (detalleItems.length === 0) {
-            detalleTemporalTabla.innerHTML = '<tr><td colspan="6">Aún no has agregado productos.</td></tr>';
+            // ¡CORREGIDO! Colspan="5"
+            detalleTemporalTabla.innerHTML = '<tr><td colspan="5">Aún no has agregado productos.</td></tr>';
         }
 
         detalleItems.forEach((item, index) => {
@@ -145,11 +153,12 @@ document.addEventListener('DOMContentLoaded', function() {
             totalCompra += subtotal;
 
             const row = document.createElement('tr');
+            
+            // ¡CORREGIDO! Fila con 5 columnas (sin precio de venta)
             row.innerHTML = `
                 <td>${item.nombreProducto}</td>
                 <td>${item.cantidad}</td>
                 <td>$${item.precioUnitario.toFixed(2)}</td>
-                <td>$${item.nuevoPrecioVenta.toFixed(2)}</td>
                 <td>$${subtotal.toFixed(2)}</td>
                 <td>
                     <button type="button" class="btn-icon btn-danger btn-quitar-item" data-index="${index}" title="Quitar">
@@ -160,8 +169,10 @@ document.addEventListener('DOMContentLoaded', function() {
             detalleTemporalTabla.appendChild(row);
         });
 
-        totalDisplay.textContent = `$${totalCompra.toFixed(2)}`;
+        // ¡CORREGIDO! Actualiza el H4 externo
+        totalDisplay.textContent = `$ Total Compra: $${totalCompra.toFixed(2)}`;
 
+        // Lógica de botones (sin cambios)
         document.querySelectorAll('.btn-quitar-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const indexToRemove = parseInt(e.currentTarget.dataset.index);
@@ -178,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 1. Obtener valores
         const selectElement = compraProductoSelect;
-        const idProducto = selectElement.value; // Lee del VALUE del SELECT
+        const idProducto = selectElement.value; 
         const nombreProducto = selectElement.options[selectElement.selectedIndex].text;
         
         const cantidad = parseInt(cantidadInput.value);
@@ -221,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
             nombreProducto: nombreProducto,
             cantidad: cantidad,
             precioUnitario: precioUnitario,
-            nuevoPrecioVenta: nuevoPrecioVenta
+            nuevoPrecioVenta: nuevoPrecioVenta // (Lo guardamos aunque no se muestre)
         });
 
         // 4. Actualizar la tabla temporal

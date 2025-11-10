@@ -18,6 +18,6 @@ public class ProveedorResponseDTO {
     private String telefono;
     private String email;
     private String direccion;
-    private List<String> productos;
+    private List<ProductoSimpleDTO> productos;
 
 }

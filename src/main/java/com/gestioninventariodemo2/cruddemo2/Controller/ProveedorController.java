@@ -2,6 +2,8 @@ package com.gestioninventariodemo2.cruddemo2.Controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -27,7 +29,7 @@ public class ProveedorController {
 
     private final ProveedorService proveedorService;
 
-@PostMapping
+    @PostMapping
 public ResponseEntity<ProveedorResponseDTO> registrarProveedor(@RequestBody ProveedorRequestDTO dto) {
     // 1. Llama al servicio y guarda el resultado directamente en una variable del tipo correcto.
     ProveedorResponseDTO responseDTO = proveedorService.registrarProveedor(dto);
@@ -36,9 +38,15 @@ public ResponseEntity<ProveedorResponseDTO> registrarProveedor(@RequestBody Prov
     return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
 }
     @GetMapping
-    public ResponseEntity<List<ProveedorResponseDTO>> listarProveedores() {
-    List<ProveedorResponseDTO> proveedores = proveedorService.listarProveedores();
-    return ResponseEntity.ok(proveedores);
+    public ResponseEntity<Page<ProveedorResponseDTO>> listarProveedores(Pageable pageable) { // Spring inyecta Pageable
+        Page<ProveedorResponseDTO> proveedores = proveedorService.listarProveedores(pageable);
+        return ResponseEntity.ok(proveedores);
+    }
+
+    @GetMapping("/select")
+    public ResponseEntity<List<ProveedorResponseDTO>> listarProveedoresSelect() {
+        List<ProveedorResponseDTO> proveedores = proveedorService.listarTodosProveedores();
+        return ResponseEntity.ok(proveedores);
     }
 
     @PutMapping("/{id}")
@@ -52,6 +60,12 @@ public ResponseEntity<ProveedorResponseDTO> registrarProveedor(@RequestBody Prov
     public ResponseEntity<Void> eliminarProveedor(@PathVariable Long id) {
     proveedorService.eliminarProveedor(id);
     return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<ProveedorResponseDTO> buscarProveedorPorId(@PathVariable Long id) {
+        ProveedorResponseDTO proveedor = proveedorService.buscarPorId(id);
+        return ResponseEntity.ok(proveedor);
     }
 
 

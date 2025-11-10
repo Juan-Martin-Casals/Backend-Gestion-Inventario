@@ -200,7 +200,7 @@
 
                 <div class="table-section">
                     <h4>Productos Registrados</h4>
-                    <div class="table-container">
+                    <div class="table-container-product">
                         <table class="data-table">
                             <thead>
                             <tr>
@@ -208,6 +208,7 @@
                                 <th>Categoría</th>
                                 <th>Descripción</th>
                                 <th>Fecha Creación</th>
+                                <th>Stock Mín.</th> <th>Stock Máx.</th> </tr>
                             </tr>
                             </thead>
                             <tbody id="product-table-body">
@@ -215,7 +216,23 @@
                             </tbody>
                         </table>
                     </div>
+                            <div class="pagination-controls">
+                            </div>
+    <tfoot>
+        <tr>
+            <td colspan="6">
+                <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                    <span id="product-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                    <button class="btn-outline" id="product-prev-page" disabled>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <button class="btn-outline" id="product-next-page">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
                 </div>
+            </td>
+        </tr>
+    </tfoot>
             </section>
 
             <section id="proveedores-section" class="spa-section" style="display:none">
@@ -290,7 +307,27 @@
                             </thead>
                             <tbody id="proveedor-tabla">
                             </tbody>
+                            
                         </table>
+                        <div class="pagination-controls">
+                            </div>
+                                                        <div class="pagination-controls">
+                            </div>
+    <tfoot>
+        <tr>
+            <td colspan="6">
+                <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                    <span id="proveedor-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                    <button class="btn-outline" id="proveedor-prev-page" disabled>
+                        <i class="fas fa-arrow-left"></i>
+                    </button>
+                    <button class="btn-outline" id="proveedor-next-page">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    </tfoot>
                     </div>
                 </div>
             </section>
@@ -687,7 +724,79 @@
     
 </section>
 
-<div class="modal" id="delete-confirm-modal" style="display: none;">
+
+
+
+
+        </main>
+    </div>
+
+    <div id="logout-modal" class="modal">
+        <div class="modal-content">
+            <h3>Confirmar Salida</h3>
+            <p>¿Estás seguro de que deseas cerrar sesión?</p>
+            <div class="modal-buttons">
+                <button id="confirm-logout" class="btn-danger">Sí, Salir</button>
+                <button id="cancel-logout" class="btn-outline">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-edit-proveedor-overlay" class="modal"> 
+    
+    <div class="modal-content">
+        
+        <button id="modal-edit-proveedor-close" class="modal-close">&times;</button>
+        
+        <h2>Editar Proveedor</h2>
+        
+        <form id="edit-proveedor-form" class="form-container">
+            <input type="hidden" id="editProveedorId">
+            
+            <div class="form-group">
+                <label for="editProveedorNombre">Nombre:</label>
+                <input type="text" id="editProveedorNombre" class="form-control">
+                <div class="error-message" id="errorEditNombre"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="editProveedorTelefono">Teléfono:</label>
+                <input type="text" id="editProveedorTelefono" class="form-control">
+                <div class="error-message" id="errorEditTelefono"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="editProveedorEmail">Email:</label>
+                <input type="email" id="editProveedorEmail" class="form-control">
+                <div class="error-message" id="errorEditEmail"></div>
+            </div>
+            
+            <div class="form-group">
+                <label for="editProveedorDireccion">Dirección:</label>
+                <input type="text" id="editProveedorDireccion" class="form-control">
+                <div class="error-message" id="errorEditDireccion"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="edit-productos-select-input">Productos que provee:</label>
+                <div class="multi-select-container" id="edit-productos-multi-select-container">
+                    <div class="tags-container" id="edit-tags-container"></div>
+                    <input type="text" id="edit-productos-select-input" placeholder="Buscar productos...">
+                </div>
+                <select id="editProveedorProductosSelect" multiple hidden></select>
+                <div class="options-container" id="edit-productos-options-container"></div>
+                <div class="error-message" id="editProveedorProductosError"></div>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            </div>
+            <div id="form-general-message-edit-proveedor" class="form-message"></div>
+        </form>
+    </div>
+</div>
+
+    <div class="modal" id="delete-confirm-modal" style="display: none;">
     <div class="modal-content" style="max-width: 400px; text-align: center;">
         
         <h3>Confirmar Eliminación</h3>
@@ -705,7 +814,6 @@
 
     </div>
 </div>
-
 
 <div class="modal" id="edit-product-modal" style="display: none;">
     <div class="modal-content" style="max-width: 600px;">
@@ -763,19 +871,6 @@
 
     </div>
 </div>
-        </main>
-    </div>
-
-    <div id="logout-modal" class="modal">
-        <div class="modal-content">
-            <h3>Confirmar Salida</h3>
-            <p>¿Estás seguro de que deseas cerrar sesión?</p>
-            <div class="modal-buttons">
-                <button id="confirm-logout" class="btn-danger">Sí, Salir</button>
-                <button id="cancel-logout" class="btn-outline">Cancelar</button>
-            </div>
-        </div>
-    </div>
 
 
     <script src="js/admin.js"></script>

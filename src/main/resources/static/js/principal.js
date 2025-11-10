@@ -200,14 +200,18 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Si este script SÓLO se carga en la página principal,
     // estas llamadas funcionarán bien aquí:
-    lowStockPrevPageBtn.addEventListener('click', () => {
+lowStockPrevPageBtn.addEventListener('click', (event) => { // <-- 1. Añadir (event)
+        event.preventDefault(); // <-- 2. Añadir esta línea
+        
         if (lowStockCurrentPage > 0) {
             lowStockCurrentPage--;
             loadLowStockTable();
         }
     });
 
-    lowStockNextPageBtn.addEventListener('click', () => {
+lowStockNextPageBtn.addEventListener('click', (event) => { // <-- 1. Añadir (event)
+        event.preventDefault(); // <-- 2. Añadir esta línea
+
         if (lowStockCurrentPage + 1 < lowStockTotalPages) {
             lowStockCurrentPage++;
             loadLowStockTable();

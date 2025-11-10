@@ -1,8 +1,11 @@
 package com.gestioninventariodemo2.cruddemo2.Services;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,7 +60,7 @@ public Producto crearProducto(ProductoRequestDTO dto) {
             .categoria(dto.getCategoria())
             .descripcion(dto.getDescripcion())
             .estado("ACTIVO")
-            // (El precio es null, lo cual está bien)
+            .fechaCreacion(LocalDate.now())
             .build();
 
     productoRepository.save(producto);
@@ -75,18 +78,36 @@ Stock stockInicial = Stock.builder()
     return producto;
 }
     
-    @Transactional(readOnly = true)
-    public List<ProductoResponseDTO> listarProductos() {
-    return productoRepository.findAll()
-            .stream()
-            .map(p -> ProductoResponseDTO.builder()
+@Transactional(readOnly = true)
+    public Page<ProductoResponseDTO> listarProductos(Pageable pageable) {
+        
+        Page<Producto> paginaProductos = productoRepository.findAllByEstado("ACTIVO", pageable);
+
+        return paginaProductos.map(p -> {
+            
+            // --- ¡LÓGICA AÑADIDA! ---
+            // Valores por defecto
+            int stockMin = 0;
+            int stockMax = 0;
+
+            // Buscamos el stock (igual que en tu lógica de StockTablaDTO)
+            if (p.getStocks() != null && !p.getStocks().isEmpty()) {
+                Stock stock = p.getStocks().get(0); // Tomamos el primer registro de stock
+                stockMin = stock.getStockMinimo();
+                stockMax = stock.getStockMaximo();
+            }
+            // --- FIN DE LÓGICA AÑADIDA ---
+
+            return ProductoResponseDTO.builder()
                     .nombre(p.getNombre())
                     .categoria(p.getCategoria())
                     .descripcion(p.getDescripcion())
                     .precio(p.getPrecio())
-                    .build()
-            )
-            .collect(Collectors.toList());
+                    .fechaCreacion(p.getFechaCreacion()) // (Este ya lo tenías)
+                    .stockMinimo(stockMin) // <-- ¡NUEVO!
+                    .stockMaximo(stockMax) // <-- ¡NUEVO!
+                    .build();
+        });
     }
 
     @Transactional(readOnly = true)
@@ -227,6 +248,7 @@ public void eliminarProducto(Long id) {
         .categoria(producto.getCategoria())
         .descripcion(producto.getDescripcion())
         .precio(producto.getPrecio())
+        .fechaCreacion(producto.getFechaCreacion())
         .build();
     }
 

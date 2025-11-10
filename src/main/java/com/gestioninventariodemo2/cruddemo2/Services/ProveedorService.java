@@ -7,9 +7,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.gestioninventariodemo2.cruddemo2.DTO.ProductoSimpleDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorUpdateDTO;
@@ -76,11 +79,22 @@ public class ProveedorService {
         return mapToDTO(proveedorGuardado);
     }
 
+@Transactional(readOnly = true)
+    public Page<ProveedorResponseDTO> listarProveedores(Pageable pageable) {
+        
+        // 1. Obtenemos la página del repositorio
+        Page<Proveedor> paginaProveedores = proveedorRepository.findAll(pageable);
+        
+        // 2. Mapeamos la página a DTO usando el método que ya tenías
+        return paginaProveedores.map(this::mapToDTO);
+    }
+
+
     @Transactional(readOnly = true)
-    public List<ProveedorResponseDTO> listarProveedores() {
-    return proveedorRepository.findAll().stream()
-        .map(this::mapToDTO) // usamos el mapper que ya tenés
-        .collect(Collectors.toList());
+    public List<ProveedorResponseDTO> listarTodosProveedores() {
+        return proveedorRepository.findAll().stream()
+            .map(this::mapToDTO)
+            .collect(Collectors.toList());
     }
 
     @Transactional
@@ -132,9 +146,14 @@ public class ProveedorService {
     }
 
 
-    public ProveedorResponseDTO mapToDTO(Proveedor proveedor) {
-        List<String> nombresProductos = proveedor.getProductoProveedor().stream()
-            .map(pp -> pp.getProducto().getNombre())
+public ProveedorResponseDTO mapToDTO(Proveedor proveedor) {
+        // Ahora mapeamos a ProductoSimpleDTO
+        List<ProductoSimpleDTO> productosDTO = proveedor.getProductoProveedor().stream()
+            .map(pp -> ProductoSimpleDTO.builder()
+                .idProducto(pp.getProducto().getIdProducto())
+                .nombreProducto(pp.getProducto().getNombre())
+                .build()
+            )
             .collect(Collectors.toList());
 
         return ProveedorResponseDTO.builder()
@@ -143,9 +162,15 @@ public class ProveedorService {
             .telefono(proveedor.getTelefono())
             .email(proveedor.getEmail())
             .direccion(proveedor.getDireccion())
-            // CORRECCIÓN 3: El campo en el builder ahora coincide con el DTO.
-            .productos(nombresProductos)
+            .productos(productosDTO) // <-- DTO modificado
             .build();
+    }
+
+    @Transactional(readOnly = true)
+    public ProveedorResponseDTO buscarPorId(Long id) {
+        Proveedor proveedor = proveedorRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado con id: " + id));
+        return mapToDTO(proveedor);
     }
 }
 

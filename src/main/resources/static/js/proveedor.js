@@ -1,21 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // ===============================
-    // SELECTORES DE ELEMENTOS DEL DOM
-    // ===============================
-    const proveedorForm = document.getElementById('proveedor-form');
-    const proveedorTabla = document.getElementById('proveedor-tabla');
-    const nombreInput = document.getElementById('proveedorNombre');
-    const telefonoInput = document.getElementById('proveedorTelefono');
-    const emailInput = document.getElementById('proveedorEmail');
-    const direccionInput = document.getElementById('proveedorDireccion');
-    const generalMessage = document.getElementById('form-general-message-proveedor');
-
-    // --- Selectores del Multi-Select ---
-    const multiSelectContainer = document.getElementById('productos-multi-select-container');
-    const tagsContainer = document.getElementById('tags-container');
-    const optionsContainer = document.getElementById('productos-options-container');
-    const hiddenSelect = document.getElementById('proveedorProductosSelect');
-    const selectInput = document.getElementById('productos-select-input');
     
     // ===============================
     // URLs DE LA API
@@ -24,15 +7,89 @@ document.addEventListener('DOMContentLoaded', function() {
     const API_PRODUCTOS_URL = '/api/productos/select'; 
 
     // ===============================
-    // LÓGICA DE PROVEEDORES
+    // ESTADO GLOBAL
     // ===============================
+    let allProducts = []; 
+    let proveedorActualEditando = null; 
+    let currentDeleteProviderId = null; // ¡NUEVO! Guarda el ID del proveedor a borrar
+
+    // ===============================
+    // SELECTORES - TABLA Y PAGINACIÓN
+    // ===============================
+    const proveedorTabla = document.getElementById('proveedor-tabla');
+    const prevPageBtn = document.getElementById('proveedor-prev-page');
+    const nextPageBtn = document.getElementById('proveedor-next-page');
+    const pageInfo = document.getElementById('proveedor-page-info');
+    
+    let currentPage = 0;
+    let totalPages = 1;
+    const itemsPerPage = 7;
+
+    // ===============================
+    // SELECTORES - FORMULARIO DE REGISTRO
+    // ===============================
+    const proveedorForm = document.getElementById('proveedor-form');
+    const nombreInput = document.getElementById('proveedorNombre');
+    const telefonoInput = document.getElementById('proveedorTelefono');
+    const emailInput = document.getElementById('proveedorEmail');
+    const direccionInput = document.getElementById('proveedorDireccion');
+    const generalMessage = document.getElementById('form-general-message-proveedor');
+    // Multi-select de Registro
+    const registerSelect = {
+        container: document.getElementById('productos-multi-select-container'),
+        tags: document.getElementById('tags-container'),
+        options: document.getElementById('productos-options-container'),
+        hiddenSelect: document.getElementById('proveedorProductosSelect'),
+        input: document.getElementById('productos-select-input'),
+        errorDiv: document.getElementById('proveedorProductosError')
+    };
+
+    // ===============================
+    // SELECTORES - MODAL DE EDICIÓN
+    // ===============================
+    const modalOverlay = document.getElementById('modal-edit-proveedor-overlay');
+    const modalCloseBtn = document.getElementById('modal-edit-proveedor-close');
+    const editForm = document.getElementById('edit-proveedor-form');
+    const editIdInput = document.getElementById('editProveedorId');
+    const editNombreInput = document.getElementById('editProveedorNombre');
+    const editTelefonoInput = document.getElementById('editProveedorTelefono');
+    const editEmailInput = document.getElementById('editProveedorEmail');
+    const editDireccionInput = document.getElementById('editProveedorDireccion');
+    const editGeneralMessage = document.getElementById('form-general-message-edit-proveedor');
+    // Multi-select de Edición
+    const editSelect = {
+        container: document.getElementById('edit-productos-multi-select-container'),
+        tags: document.getElementById('edit-tags-container'),
+        options: document.getElementById('edit-productos-options-container'),
+        hiddenSelect: document.getElementById('editProveedorProductosSelect'),
+        input: document.getElementById('edit-productos-select-input'),
+        errorDiv: document.getElementById('editProveedorProductosError')
+    };
+
+    // ===============================
+    // ¡NUEVO! SELECTORES - MODAL DE BORRADO (REUTILIZADO)
+    // ===============================
+    const deleteConfirmModal = document.getElementById('delete-confirm-modal');
+    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
+    const deleteModalMessage = document.getElementById('delete-modal-message');
+
+
+    // ==========================================================
+    // LÓGICA DE CARGA DE DATOS (TABLA Y PAGINACIÓN)
+    // ==========================================================
 
     async function loadProveedores() {
         try {
-            const response = await fetch(API_PROVEEDORES_URL);
+            const url = `${API_PROVEEDORES_URL}?page=${currentPage}&size=${itemsPerPage}&sort=nombre,asc`;
+            const response = await fetch(url);
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
-            const proveedores = await response.json();
-            renderProveedoresTabla(proveedores);
+            
+            const pageData = await response.json(); 
+            totalPages = pageData.totalPages;
+            renderProveedoresTabla(pageData.content); 
+            updatePaginationControls();
+
         } catch (error) {
             console.error('Error al cargar los proveedores:', error);
             proveedorTabla.innerHTML = `<tr><td colspan="6">Error al cargar proveedores.</td></tr>`;
@@ -40,92 +97,124 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderProveedoresTabla(proveedores) {
-    proveedorTabla.innerHTML = '';
-    if (proveedores.length === 0) {
-        proveedorTabla.innerHTML = '<tr><td colspan="6">No hay proveedores registrados.</td></tr>';
-        return;
+        proveedorTabla.innerHTML = '';
+        if (proveedores.length === 0) {
+            proveedorTabla.innerHTML = '<tr><td colspan="6">No hay proveedores registrados.</td></tr>';
+            return;
+        }
+
+        proveedores.forEach(proveedor => {
+            const productosNombres = proveedor.productos && proveedor.productos.length > 0
+                ? proveedor.productos.map(p => p.nombreProducto).join(', ') 
+                : 'Sin productos asignados';
+
+            const row = `
+                <tr>
+                    <td>${proveedor.nombre || 'N/A'}</td>
+                    <td>${proveedor.telefono || 'N/A'}</td>
+                    <td>${proveedor.email || 'N/A'}</td>
+                    <td>${proveedor.direccion || 'N/A'}</td>
+                    <td>${productosNombres}</td>
+                    <td>
+                        <button class="btn-icon btn-edit-proveedor" data-id="${proveedor.id}" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn-icon btn-delete-proveedor" data-id="${proveedor.id}" title="Eliminar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            proveedorTabla.innerHTML += row;
+        });
     }
 
-    proveedores.forEach(proveedor => {
-        // ✅ ESTA LÍNEA ES LA CLAVE
-        // Revisa si la lista 'productos' existe Y si tiene al menos un elemento.
-        // Si está vacía, muestra "Sin productos asignados".
-        const productosNombres = proveedor.productos && proveedor.productos.length > 0
-            ? proveedor.productos.join(', ')
-            : 'Sin productos asignados';
+    // --- Funciones de Paginación ---
+    function updatePaginationControls() {
+        if (!pageInfo || !prevPageBtn || !nextPageBtn) return;
+        pageInfo.textContent = `Página ${currentPage + 1} de ${totalPages || 1}`;
+        prevPageBtn.disabled = (currentPage === 0);
+        nextPageBtn.disabled = (currentPage + 1 >= totalPages);
+    }
 
-        const row = `
-            <tr>
-                <td>${proveedor.nombre || 'N/A'}</td>
-                <td>${proveedor.telefono || 'N/A'}</td>
-                <td>${proveedor.email || 'N/A'}</td>
-                <td>${proveedor.direccion || 'N/A'}</td>
-                <td>${productosNombres}</td>
-                <td>
-                    <button class="btn-icon"><i class="fas fa-edit"></i></button>
-                    <button class="btn-icon"><i class="fas fa-trash"></i></button>
-                </td>
-            </tr>`;
-        proveedorTabla.innerHTML += row;
-    });
-}
+    if (prevPageBtn) {
+        prevPageBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (currentPage > 0) {
+                currentPage--;
+                loadProveedores();
+            }
+        });
+    }
 
-    // ===============================================
-    // LÓGICA PARA EL MULTI-SELECT DE PRODUCTOS
-    // ===============================================
+    if (nextPageBtn) {
+        nextPageBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (currentPage + 1 < totalPages) {
+                currentPage++;
+                loadProveedores();
+            }
+        });
+    }
 
-    async function cargarProductosSelect() {
-        try {
+    // ==========================================================
+    // LÓGICA DEL MULTI-SELECT (REUTILIZABLE)
+    // ==========================================================
+
+    async function fetchAllProducts() {
+        if (allProducts.length > 0) return allProducts; 
+        
+        try {
             const response = await fetch(API_PRODUCTOS_URL);
-            if (!response.ok) throw new Error('No se pudieron cargar los productos');
-
-            // --- ¡CORRECCIÓN AQUÍ! ---
-            // 1. DECLARAMOS la variable primero
-             const productos = await response.json();
-
-
-
-            // 3. Y AHORA la validamos
-            if (!Array.isArray(productos)) {
-                throw new Error("La respuesta de la API no es un array de productos.");
-            }
-            // --- FIN DE LA CORRECCIÓN ---
-
-            optionsContainer.innerHTML = '';
-            hiddenSelect.innerHTML = '';
-
-            productos.forEach(producto => {
-                // (Tu código de mapeo que ya corregimos)
-                const realOption = document.createElement('option');
-                realOption.value = producto.idProducto;
-                realOption.textContent = producto.nombreProducto;
-                hiddenSelect.appendChild(realOption);
-
-                const visualOption = document.createElement('div');
-                visualOption.classList.add('option');
-                visualOption.textContent = producto.nombreProducto;
-                visualOption.dataset.value = producto.idProducto;
-                
-                visualOption.addEventListener('click', () => seleccionarProducto(visualOption, realOption));
-                optionsContainer.appendChild(visualOption);
-            });
-
-        } catch (error) {
-            // Ahora el error será más claro si la API falla
-            console.error("Error en cargarProductosSelect:", error); 
-            optionsContainer.innerHTML = `<div class="option">Error al cargar productos</div>`;
-        }
-    }
-
-    function seleccionarProducto(visualOption, realOption) {
-        realOption.selected = true;
-        crearTag(visualOption.textContent, visualOption.dataset.value, visualOption, realOption);
-        visualOption.style.display = 'none';
-        optionsContainer.style.display = 'none';
-        selectInput.value = '';
+            if (!response.ok) throw new Error('No se pudieron cargar los productos');
+            allProducts = await response.json();
+            return allProducts;
+        } catch (error) {
+            console.error("Error fatal al cargar lista de productos:", error);
+            return []; 
+        }
     }
 
-    function crearTag(texto, valor, visualOption, realOption) {
+    function setupMultiSelect(selectUI, productosPreSeleccionados = []) {
+        selectUI.options.innerHTML = '';
+        selectUI.hiddenSelect.innerHTML = '';
+        selectUI.tags.innerHTML = '';
+
+        const preSeleccionadosSet = new Set(productosPreSeleccionados.map(p => p.idProducto));
+
+        allProducts.forEach(producto => {
+            const realOption = document.createElement('option');
+            realOption.value = producto.idProducto;
+            realOption.textContent = producto.nombreProducto;
+            selectUI.hiddenSelect.appendChild(realOption);
+
+            const visualOption = document.createElement('div');
+            visualOption.classList.add('option');
+            visualOption.textContent = producto.nombreProducto;
+            visualOption.dataset.value = producto.idProducto;
+            
+            visualOption.addEventListener('click', () => {
+                seleccionarProducto(visualOption, realOption, selectUI);
+            });
+            
+            selectUI.options.appendChild(visualOption);
+
+            if (preSeleccionadosSet.has(producto.idProducto)) {
+                seleccionarProducto(visualOption, realOption, selectUI);
+            }
+        });
+
+        setupMultiSelectUIEvents(selectUI);
+    }
+
+    function seleccionarProducto(visualOption, realOption, selectUI) {
+        realOption.selected = true;
+        crearTag(visualOption.textContent, visualOption.dataset.value, visualOption, realOption, selectUI);
+        visualOption.style.display = 'none';
+        selectUI.options.style.display = 'none';
+        selectUI.input.value = '';
+    }
+
+    function crearTag(texto, valor, visualOption, realOption, selectUI) {
         const tag = document.createElement('div');
         tag.classList.add('tag');
         tag.textContent = texto;
@@ -137,110 +226,89 @@ document.addEventListener('DOMContentLoaded', function() {
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             realOption.selected = false;
-            tagsContainer.removeChild(tag);
+            selectUI.tags.removeChild(tag);
             visualOption.style.display = 'block';
         });
 
         tag.appendChild(closeBtn);
-        tagsContainer.appendChild(tag);
+        selectUI.tags.appendChild(tag);
     }
 
-    // --- Eventos del Multi-Select ---
-    if (multiSelectContainer) {
-        multiSelectContainer.addEventListener('click', () => {
-            optionsContainer.style.display = 'block';
-            selectInput.focus();
-        });
-    }
-    if (selectInput) {
-        selectInput.addEventListener('input', () => {
-            const filtro = selectInput.value.toLowerCase();
-            optionsContainer.querySelectorAll('.option').forEach(opcion => {
-                const textoOpcion = opcion.textContent.toLowerCase();
-                opcion.style.display = textoOpcion.includes(filtro) ? 'block' : 'none';
+    function setupMultiSelectUIEvents(selectUI) {
+        if (selectUI.container) {
+            selectUI.container.addEventListener('click', () => {
+                selectUI.options.style.display = 'block';
+                selectUI.input.focus();
             });
-        });
+        }
+        if (selectUI.input) {
+            selectUI.input.addEventListener('input', () => {
+                const filtro = selectUI.input.value.toLowerCase();
+                selectUI.options.querySelectorAll('.option').forEach(opcion => {
+                    const textoOpcion = opcion.textContent.toLowerCase();
+                    opcion.style.display = (textoOpcion.includes(filtro) && opcion.style.display !== 'none') ? 'block' : 'none';
+                });
+            });
+        }
     }
+    
     document.addEventListener('click', (e) => {
-        if (multiSelectContainer && !multiSelectContainer.contains(e.target) && !optionsContainer.contains(e.target)) {
-            optionsContainer.style.display = 'none';
+        if (registerSelect.container && !registerSelect.container.contains(e.target) && !registerSelect.options.contains(e.target)) {
+            registerSelect.options.style.display = 'none';
+        }
+        if (editSelect.container && !editSelect.container.contains(e.target) && !editSelect.options.contains(e.target)) {
+            editSelect.options.style.display = 'none';
         }
     });
 
     // ==========================================================
-    // ¡¡AQUÍ ESTÁ EL CÓDIGO RESTAURADO Y CORREGIDO!!
+    // LÓGICA DEL FORMULARIO DE REGISTRO
     // ==========================================================
     if (proveedorForm) {
         proveedorForm.addEventListener('submit', async function(event) {
-            // 1. Prevenir el envío por defecto para que no recargue la página
             event.preventDefault();
-
-            // 2. Limpiar mensajes de error anteriores
-            document.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+            
+            document.querySelectorAll('#proveedor-form .error-message').forEach(el => el.textContent = '');
             generalMessage.textContent = '';
             generalMessage.className = 'form-message';
-            
-            // 3. Obtener los valores y validarlos
+
+            let isValid = true;
             const nombre = nombreInput.value.trim();
             const telefono = telefonoInput.value.trim();
             const email = emailInput.value.trim();
             const direccion = direccionInput.value.trim();
-            const productosIds = Array.from(hiddenSelect.selectedOptions).map(option => option.value);
+            const productosIds = Array.from(registerSelect.hiddenSelect.selectedOptions).map(option => option.value);
 
-            // Validaciones individuales (puedes personalizarlas más)
-            let isValid = true;
-            if (!nombre) {
-                // Aquí deberías tener un <div class="error-message" id="nombreProveedorError"></div> en tu HTML
-                document.getElementById('errorNombre').textContent = 'El nombre es obligatorio.';
-                isValid = false;
-            }
-            if (!telefono) {
-                document.getElementById('errorTelefono').textContent = 'El teléfono es obligatorio.';
-                isValid = false;
-            }
-            if (!email) {
-                document.getElementById('errorEmail').textContent = 'El email es obligatorio.';
-                isValid = false;
-            }
-
-            if (!direccion) {
-                document.getElementById('errorDireccion').textContent = 'La dirección es obligatorio.';
-                isValid = false;
-            }
+            // (Aquí puedes añadir tus validaciones de campos vacíos)
 
             if (productosIds.length === 0) {
-                document.getElementById('proveedorProductosError').textContent = 'Debes seleccionar al menos un producto.';
-                isValid = false;
+                 registerSelect.errorDiv.textContent = 'Debes seleccionar al menos un producto.';
+                 isValid = false;
             }
-
-            // Si algo no es válido, detenemos la ejecución aquí
             if (!isValid) {
-                generalMessage.textContent = "Debe completar todos los campos correctamente.";
-                generalMessage.classList.add('error');
-                return;
+                 generalMessage.textContent = "Debe completar todos los campos.";
+                 generalMessage.classList.add('error');
+                 return;
             }
 
-            // 4. Construir el objeto DTO para enviar
             const proveedorDTO = { nombre, telefono, email, direccion, productosIds };
 
-            // 5. Enviar los datos a la API
             try {
                 const response = await fetch(API_PROVEEDORES_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(proveedorDTO)
                 });
-
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.message || `Error: ${response.status}`);
+                    const errorText = await response.text();
+                    throw new Error(errorText || `Error: ${response.status}`);
                 }
 
                 generalMessage.textContent = "¡Proveedor registrado exitosamente!";
                 generalMessage.classList.add('success');
                 proveedorForm.reset();
-                tagsContainer.innerHTML = '';
-                cargarProductosSelect();
+                setupMultiSelect(registerSelect, []);
+                currentPage = 0; 
                 loadProveedores();
 
             } catch (error) {
@@ -251,9 +319,182 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    // ==========================================================
+    // ¡NUEVO! LÓGICA DEL MODAL DE BORRADO
+    // ==========================================================
+    function openDeleteModal(id, nombre) {
+        currentDeleteProviderId = id; // Guarda el ID
+        deleteModalMessage.textContent = `¿Estás seguro de que quieres eliminar al proveedor "${nombre}"?`;
+        if(deleteConfirmModal) deleteConfirmModal.style.display = 'block';
+    }
+
+    function closeDeleteModal() {
+        currentDeleteProviderId = null;
+        if(deleteConfirmModal) deleteConfirmModal.style.display = 'none';
+    }
+
+
+    // ==========================================================
+    // LÓGICA DEL MODAL DE EDICIÓN
+    // ==========================================================
+
+    // --- Abrir el modal ---
+    function openEditModal(data) {
+        proveedorActualEditando = data; 
+
+        editIdInput.value = data.id;
+        editNombreInput.value = data.nombre;
+        editTelefonoInput.value = data.telefono;
+        editEmailInput.value = data.email;
+        editDireccionInput.value = data.direccion;
+        
+        setupMultiSelect(editSelect, data.productos); 
+        
+        modalOverlay.style.display = 'block';
+    }
+
+    // --- Cerrar el modal ---
+    function closeEditModal() {
+        modalOverlay.style.display = 'none';
+        proveedorActualEditando = null;
+        editGeneralMessage.textContent = '';
+        editGeneralMessage.className = 'form-message';
+    }
+
+    // --- Manejar el clic en los botones de la tabla ---
+    if (proveedorTabla) {
+        proveedorTabla.addEventListener('click', async function(e) {
+            const editButton = e.target.closest('.btn-edit-proveedor');
+            const deleteButton = e.target.closest('.btn-delete-proveedor');
+
+            if (editButton) {
+                const id = editButton.dataset.id;
+                try {
+                    const response = await fetch(`${API_PROVEEDORES_URL}/${id}`);
+                    if (!response.ok) throw new Error('No se pudo cargar el proveedor');
+                    const data = await response.json();
+                    openEditModal(data);
+                } catch (error) {
+                    console.error('Error al abrir el modal:', error);
+                    alert('Error: ' + error.message);
+                }
+            }
+
+            // ¡¡LÓGICA DE BORRADO ACTUALIZADA!!
+            if (deleteButton) {
+                const id = deleteButton.dataset.id;
+                // Busca la fila (tr) más cercana y toma el texto de la primera celda (td)
+                const nombre = deleteButton.closest('tr').cells[0].textContent;
+                openDeleteModal(id, nombre); // ¡Llama al modal en lugar de confirm()!
+            }
+        });
+    }
+
+    // --- Manejar el envío (submit) del formulario de EDICIÓN ---
+    if (editForm) {
+        editForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = editIdInput.value;
+            const dto = {
+                nombre: editNombreInput.value.trim(),
+                telefono: editTelefonoInput.value.trim(),
+                email: editEmailInput.value.trim(),
+                direccion: editDireccionInput.value.trim(),
+                productosAgregar: [],
+                productosQuitar: []
+            };
+
+            const originalIDs = new Set(proveedorActualEditando.productos.map(p => p.idProducto));
+            const newIDs = new Set(
+                Array.from(editSelect.hiddenSelect.selectedOptions).map(opt => parseInt(opt.value))
+            );
+
+            dto.productosAgregar = [...newIDs].filter(id => !originalIDs.has(id));
+            dto.productosQuitar = [...originalIDs].filter(id => !newIDs.has(id));
+            
+            try {
+                const response = await fetch(`${API_PROVEEDORES_URL}/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || `Error: ${response.status}`);
+                }
+                
+                editGeneralMessage.textContent = "Proveedor actualizado con éxito.";
+                editGeneralMessage.classList.add('success');
+
+                setTimeout(() => {
+                    closeEditModal();
+                    loadProveedores(); // Recargar la tabla
+                }, 1000);
+
+            } catch (error) {
+                console.error('Error al actualizar proveedor:', error);
+                editGeneralMessage.textContent = `Error: ${error.message}`;
+                editGeneralMessage.classList.add('error');
+            }
+        });
+    }
+
+    // --- Eventos para cerrar el modal de EDICIÓN ---
+    if (modalCloseBtn) {
+        modalCloseBtn.addEventListener('click', closeEditModal);
+    }
+    if (modalOverlay) {
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                closeEditModal();
+            }
+        });
+    }
+
+    // ¡¡NUEVO!! --- Eventos del Modal de Borrado ---
+    if (cancelDeleteBtn) {
+        cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+    }
+    
+    if (deleteConfirmModal) {
+         deleteConfirmModal.addEventListener('click', (e) => {
+            if (e.target === deleteConfirmModal) {
+                closeDeleteModal();
+            }
+        });
+    }
+
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', async () => {
+            if (!currentDeleteProviderId) return; // No hay ID para borrar
+
+            try {
+                const response = await fetch(`${API_PROVEEDORES_URL}/${currentDeleteProviderId}`, {
+                    method: 'DELETE'
+                });
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'No se pudo eliminar el proveedor');
+                }
+                
+                loadProveedores(); // Recarga la tabla
+
+            } catch (error) {
+                alert('Error al eliminar: ' + error.message);
+            } finally {
+                closeDeleteModal(); // Cierra el modal en cualquier caso
+            }
+        });
+    }
+
     // ===============================
-    // CARGA INICIAL DE DATOS
+    // CARGA INICIAL
     // ===============================
-    loadProveedores();
-    cargarProductosSelect();
+    fetchAllProducts().then(() => {
+        setupMultiSelect(registerSelect, []); 
+        loadProveedores(); 
+    });
 });

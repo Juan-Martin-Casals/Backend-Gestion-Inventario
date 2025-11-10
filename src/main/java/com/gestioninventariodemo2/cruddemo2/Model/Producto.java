@@ -1,5 +1,6 @@
 package com.gestioninventariodemo2.cruddemo2.Model;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import jakarta.persistence.Column;
@@ -40,6 +41,9 @@ public class Producto {
 
     @Column(name = "estado")
     private String estado;
+
+    @Column(name = "fecha_creacion") 
+    private LocalDate fechaCreacion;
 
     @OneToMany(mappedBy = "producto")
     private List<DetalleVenta> detalleVentas;

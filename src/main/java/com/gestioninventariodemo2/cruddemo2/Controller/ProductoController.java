@@ -2,6 +2,8 @@ package com.gestioninventariodemo2.cruddemo2.Controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,9 +40,9 @@ public class ProductoController {
     }
 
     @GetMapping
-    public ResponseEntity<List<ProductoResponseDTO>> listarProductos(){
-        List<ProductoResponseDTO> productos = productoService.listarProductos();
-        return ResponseEntity.ok(productos);
+    public ResponseEntity<Page<ProductoResponseDTO>> listarProductos(Pageable pageable){ // Spring inyecta Pageable
+        Page<ProductoResponseDTO> productos = productoService.listarProductos(pageable);
+        return ResponseEntity.ok(productos); // Devuelve el objeto Page
     }
 
     @GetMapping("/select")
