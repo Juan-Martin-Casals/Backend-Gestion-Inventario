@@ -63,14 +63,17 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         try {
+            // Se elimina la declaración 'const sortParam = 'stockActual,asc';' ya que el endpoint no es paginado.
             const response = await fetch(API_STOCK_URL); 
             if (!response.ok) {
                 throw new Error(`Error HTTP: ${response.status}`);
             }
             const productos = await response.json();
 
-            // Ordena por ID descendente (el más nuevo primero)
-            productos.sort((a, b) => b.id - a.id);
+            // Modificación: Ordenar por Stock (menor a mayor: A.stock - B.stock)
+            productos.sort((a, b) => a.stock - b.stock);
+
+            // Se elimina la línea previa: productos.sort((a, b) => b.id - a.id);
 
             todosLosProductos = productos; 
             currentListForPagination = productos;

@@ -1514,3 +1514,21 @@ body {
     to {opacity: 1; transform: translateY(0);}
 }
 
+/* ... Código CSS existente ... */
+
+/* Gestion-Inventario-Backend/src/main/resources/static/CSS/styles.css */
+
+/* ... (código CSS anterior) ... */
+
+/* Nuevo estilo para modales pequeños y cuadrados (como el de Borrado y Salida) */
+.modal .modal-content.modal-compact {
+    max-width: 400px; /* Ancho máximo para hacerlo más compacto */
+    text-align: center; /* Centrar el texto */
+    padding: 15px 30px; /* Reducido a 15px verticalmente para hacerlo más corto */
+    height: 150px;
+}
+
+/* Ajustar los botones dentro de este modal compacto para centrar */
+.modal .modal-content.modal-compact .modal-buttons {
+    justify-content: center;
+}

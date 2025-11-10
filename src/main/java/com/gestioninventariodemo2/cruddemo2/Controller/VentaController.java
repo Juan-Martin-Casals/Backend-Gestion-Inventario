@@ -3,6 +3,8 @@ package com.gestioninventariodemo2.cruddemo2.Controller;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -33,9 +35,10 @@ public class VentaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaVenta);
     }
 
+// MÉTODO MODIFICADO PARA PAGINACIÓN
     @GetMapping
-    public ResponseEntity<List<VentaResponseDTO>> listarVentas() {
-        List<VentaResponseDTO> ventas = ventaService.listarVentas();
+    public ResponseEntity<Page<VentaResponseDTO>> listarVentas(Pageable pageable) {
+        Page<VentaResponseDTO> ventas = ventaService.listarVentas(pageable);
         return ResponseEntity.ok(ventas);
     }
 

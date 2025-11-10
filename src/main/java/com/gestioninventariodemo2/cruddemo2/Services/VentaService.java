@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -109,13 +111,13 @@ public class VentaService {
         return toVentaResponseDTO(venta);
     }
 
-    public List<VentaResponseDTO> listarVentas() {
-        return ventaRepository.findAll().stream()
-                .map(this::toVentaResponseDTO)
-                .collect(Collectors.toList());
+    public Page<VentaResponseDTO> listarVentas(Pageable pageable) {
+        // Usa findAll(Pageable) y luego mapea la Page<Venta> a Page<VentaResponseDTO>
+        return ventaRepository.findAll(pageable)
+                .map(this::toVentaResponseDTO);
     }
 
-    private VentaResponseDTO toVentaResponseDTO(Venta venta) {
+private VentaResponseDTO toVentaResponseDTO(Venta venta) {
     return VentaResponseDTO.builder()
         .fecha(venta.getFecha())
         .nombreCliente(venta.getCliente().getNombre())

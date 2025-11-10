@@ -1,9 +1,5 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-
-
-    
-
     const API_VENTAS_URL = '/api/ventas';
     const API_PRODUCTOS_URL = '/api/productos/select';
 
@@ -38,35 +34,83 @@ document.addEventListener('DOMContentLoaded', function () {
     const errorCompraCantidad = document.getElementById('errorCompraCantidad');
     const errorDetalleGeneral = document.getElementById('errorDetalleGeneral');
 
-    // --- 4. Constantes de la Tabla ---
+    // --- 4. Constantes de la Tabla y Paginación ---
 
     const ventaTableBody = document.querySelector('#tabla-ventas tbody');
+    
+    // Controles de Paginación de Ventas
+    const ventasPageInfo = document.getElementById('ventas-page-info');
+    const ventasPrevPageBtn = document.getElementById('ventas-prev-page');
+    const ventasNextPageBtn = document.getElementById('ventas-next-page');
 
-    // --- NUEVAS VARIABLES DE ESTADO ---
+
+    // --- VARIABLES DE ESTADO ---
     let todosLosProductos = []; // Aquí guardaremos los productos del /select
     let productoSeleccionado = null; // Guardará el objeto producto elegido
     let detallesVenta = []; // Esta es la LISTA de productos para enviar
 
+    // --- ESTADO DE PAGINACIÓN DE VENTAS ---
+    let currentPageVentas = 0; 
+    const pageSizeVentas = 7; // Tamaño de página a 7
+    let totalPagesVentas = 0;
+
 
     // --- 5. Funciones ---
 
-    // CARGAR VENTAS EN LA TABLA
-    async function loadVentas() {
+    // CARGAR VENTAS EN LA TABLA (AHORA CON PAGINACIÓN Y ORDENAMIENTO)
+    async function loadVentas(page = 0) { // Recibe el número de página a cargar
 
         
         try {
-            const response = await fetch(API_VENTAS_URL);
+            // DEFINE LA VARIABLE sortParam E INCLUYE LA PÁGINA Y TAMAÑO
+            const sortParam = 'fecha,desc'; // Orden descendente por fecha
+            
+            // Construye la URL con paginación y ordenamiento
+            const url = `${API_VENTAS_URL}?page=${page}&size=${pageSizeVentas}&sort=${sortParam}`; 
+
+            const response = await fetch(url);
             if (!response.ok) {
+                // Si el servidor devuelve 404 o similar, el .json() fallará, manejamos el error
                 throw new Error(`Error HTTP: ${response.status}`);
             }
-            const ventas = await response.json();
+
+            // Se espera una respuesta paginada (Page<VentaResponseDTO>)
+            const pageData = await response.json(); 
+            const ventas = pageData.content;
+
+            currentPageVentas = pageData.number; // Índice de página actual (0-based)
+            totalPagesVentas = pageData.totalPages; // Total de páginas
+
             renderVentasTable(ventas);
+            updateVentasPaginationControls(); // Llama a la función de control
+
         } catch (error) {
             console.error('Error al cargar las ventas:', error);
             if (ventaTableBody) {
                 ventaTableBody.innerHTML = `<tr><td colspan="4">Error al cargar el historial de ventas.</td></tr>`;
             }
+            // En caso de error, resetea los controles de paginación
+            currentPageVentas = 0;
+            totalPagesVentas = 0;
+            renderVentasTable([]);
+            updateVentasPaginationControls();
         }
+    }
+
+    // ACTULIZAR CONTROLES DE PAGINACIÓN
+    function updateVentasPaginationControls() {
+        if (!ventasPageInfo || !ventasPrevPageBtn || !ventasNextPageBtn) return;
+        
+        // Muestra el estado actual de la paginación (índice 1 para el usuario)
+        const displayPage = totalPagesVentas > 0 ? currentPageVentas + 1 : 0;
+        ventasPageInfo.textContent = `Página ${displayPage} de ${totalPagesVentas}`;
+        
+        // Deshabilita/Habilita el botón de página anterior
+        ventasPrevPageBtn.disabled = currentPageVentas === 0 || totalPagesVentas === 0;
+        
+        // Deshabilita/Habilita el botón de página siguiente
+        ventasNextPageBtn.disabled = currentPageVentas >= totalPagesVentas - 1 || totalPagesVentas === 0;
+
     }
 
     function formatProductosList(productosList) {
@@ -86,13 +130,14 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!ventaTableBody) return;
         ventaTableBody.innerHTML = '';
         
-        if (ventas.length === 0) {
+        // Comprueba que 'ventas' sea un array válido.
+        if (!Array.isArray(ventas) || ventas.length === 0) {
             ventaTableBody.innerHTML = '<tr><td colspan="4">No hay ventas registradas.</td></tr>';
             return;
         }
 
         const rowsHtml = ventas.map(venta => {
-
+            // Convierte la fecha del backend (YYYY-MM-DD) al formato DD/MM/YYYY para mostrar
             const parts = venta.fecha.split('-');
             const fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
             const productosTexto = formatProductosList(venta.productos);
@@ -117,7 +162,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(`Error HTTP: ${response.status}`);
             }
             todosLosProductos = await response.json();
-            console.log('Productos para select cargados:', todosLosProductos);
         } catch (error) {
             console.error('Error al cargar productos para el select:', error);
             errorProducto.textContent = "No se pudieron cargar los productos.";
@@ -129,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const query = productSearchInput.value.toLowerCase();
 
         if (query.length === 0) {
-            renderResultados(todosLosProductos); // <--- ESTE ES EL CAMBIO
+            renderResultados(todosLosProductos); 
             return;
         }
 
@@ -265,9 +309,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if(!dniCliente){
             errorDniCliente.textContent = 'El DNI es obligatorio';
+        } else {
+            errorDniCliente.textContent = '';
         }
         if(!telefonoCliente){
             errorTelefonoCliente.textContent = 'El telefono es obligatorio';
+        } else {
+            errorTelefonoCliente.textContent = '';
         }
 
         if (detallesVenta.length === 0) {
@@ -324,11 +372,24 @@ document.addEventListener('DOMContentLoaded', function () {
             ventaForm.reset();
             detallesVenta = [];
             renderDetalleTemporal();
-            loadVentas();
+            loadVentas(0); // Recargar la primera página de ventas
         } catch (error) {
             console.error('Error al registrar la venta:', error);
             generalMessage.textContent = `Error: ${error.message}`;
             generalMessage.classList.add('error');
+        }
+    }
+
+    // MANEJADORES DE EVENTOS DE PAGINACIÓN DE VENTAS
+    function handleVentasPrevPage() {
+        if (currentPageVentas > 0) {
+            loadVentas(currentPageVentas - 1);
+        }
+    }
+
+    function handleVentasNextPage() {
+        if (currentPageVentas < totalPagesVentas - 1) {
+            loadVentas(currentPageVentas + 1);
         }
     }
 
@@ -339,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (productSearchInput) {
         productSearchInput.addEventListener('input', buscarProductos);
-        productSearchInput.addEventListener('focus', buscarProductos); // <--- AÑADE ESTA LÍNEA
+        productSearchInput.addEventListener('focus', buscarProductos); 
     }
     if (productResultsContainer) {
         productResultsContainer.addEventListener('click', seleccionarProducto);
@@ -350,13 +411,16 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.addEventListener('click', function (event) {
-        const isClickInsideInput = productSearchInput.contains(event.target);
-        const isClickInsideResults = productResultsContainer.contains(event.target);
+        // Aseguramos que los elementos existen antes de usar .contains
+        const isClickInsideInput = productSearchInput && productSearchInput.contains(event.target);
+        const isClickInsideResults = productResultsContainer && productResultsContainer.contains(event.target);
+        const isClickInsideAddButton = btnAgregarProducto && btnAgregarProducto.contains(event.target);
 
-        const isClickInsideAddButton = btnAgregarProducto.contains(event.target);
 
-        if (!isClickInsideInput && !isClickInsideResults && !isClickInsideAddButton) {
-            productResultsContainer.style.display = 'none';
+        if (!isClickInsideInput && !isClickInsideResults && (!btnAgregarProducto || !isClickInsideAddButton)) {
+            if (productResultsContainer) {
+                productResultsContainer.style.display = 'none';
+            }
         }
     });
 
@@ -372,7 +436,16 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-    loadProductosParaSelect();
-    loadVentas();
 
+    // Event Listeners de Paginación
+    if (ventasPrevPageBtn) {
+        ventasPrevPageBtn.addEventListener('click', handleVentasPrevPage);
+    }
+    if (ventasNextPageBtn) {
+        ventasNextPageBtn.addEventListener('click', handleVentasNextPage);
+    }
+
+
+    loadProductosParaSelect();
+    loadVentas(); // Carga inicial
 });
