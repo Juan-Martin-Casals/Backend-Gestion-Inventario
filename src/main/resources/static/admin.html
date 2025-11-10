@@ -481,9 +481,6 @@
                 <div class="form-group">
                     <label for="user-rol">Rol</label>
                     <select id="user-rol">
-                        <option value="">Selecciona rol</option>
-                        <option value="1">Administrador</option>
-                        <option value="2">Empleado</option>
                     </select>
                     <div class="error-message" id="error-user-rol"></div>
                 </div>
@@ -512,7 +509,7 @@
 
     <div class="table-section">
         <h4>Usuarios Registrados</h4>
-        <div class="table-container">
+        <div class="table-container-usuarios">
             <table class="data-table">
                 <thead>
                     <tr>
@@ -526,6 +523,16 @@
                 <tbody id="user-table-body">
                     </tbody>
             </table>
+
+            <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+            <span id="user-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+            <button class="btn-outline" id="user-prev-page" disabled>
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button class="btn-outline" id="user-next-page">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
         </div>
     </div>
 </section>
@@ -623,13 +630,29 @@
     <div class="table-section">
         <h4>Ventas Registradas</h4>
         <p>Historial de ventas realizadas</p>
-        <div class="table-container">
+        <div class="table-container-venta">
             <table class="data-table" id="tabla-ventas">
-
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Cliente</th>
+                        <th>Producto</th>
+                        <th>Total</th>
+                    </tr>
                 </thead>
-                <tbody>
+
+                <tbody id="tabla-ventas-body">
                 </tbody>
             </table>
+        </div>
+        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+            <span id="ventas-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+            <button class="btn-outline" id="ventas-prev-page" disabled>
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button class="btn-outline" id="ventas-next-page">
+                <i class="fas fa-arrow-right"></i>
+            </button>
         </div>
     </div>
 </section>
@@ -875,6 +898,52 @@
     </div>
 </form>
 
+    </div>
+</div>
+
+
+<div class="modal" id="modal-edit-usuario-overlay" style="display:none;"> 
+    <div class="modal-content" style="max-width: 600px;">
+        <button id="modal-edit-usuario-close" class="modal-close">&times;</button>
+        <h2>Editar Usuario</h2>
+        
+        <form id="edit-usuario-form" class="form-container">
+            <input type="hidden" id="editUsuarioId">
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editUsuarioNombre">Nombre:</label>
+                    <input type="text" id="editUsuarioNombre" class="form-control">
+                    <div class="error-message" id="errorEditUsuarioNombre"></div>
+                </div>
+                <div class="form-group">
+                    <label for="editUsuarioApellido">Apellido:</label>
+                    <input type="text" id="editUsuarioApellido" class="form-control">
+                    <div class="error-message" id="errorEditUsuarioApellido"></div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="editUsuarioEmail">Email:</label>
+                    <input type="email" id="editUsuarioEmail" class="form-control">
+                    <div class="error-message" id="errorEditUsuarioEmail"></div>
+                </div>
+                <div class="form-group">
+                    <label for="editUsuarioRol">Rol:</label>
+                    <select id="editUsuarioRol" class="form-control">
+                        </select>
+                    <div class="error-message" id="errorEditUsuarioRol"></div>
+                </div>
+            </div>
+            
+
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            </div>
+            <div id="form-general-message-edit-usuario" class="form-message"></div>
+        </form>
     </div>
 </div>
 

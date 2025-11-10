@@ -44,6 +44,9 @@ public class Usuario implements UserDetails{
     @Column(name = "contrasena", nullable = false)
     private String contrasena;
 
+    @Column(name = "estado")
+    private String estado;
+
     @ManyToOne
     @JoinColumn(name = "idRol", nullable = false)
     private Rol rol;

@@ -1446,6 +1446,18 @@ body {
     min-height: 400px; 
 }
 
+.table-container-usuarios {
+    /* * Ajusta este valor. 
+     * (Nº de items por página) x (altura de fila) + (altura de cabecera)
+     * Ejemplo: (7 filas * 50px) + 50px = 400px 
+     */
+    min-height: 550px; 
+}
+
+.table-container-ventañ{
+    min-height: 500px;
+}
+
 .modal {
     display: none; /* Oculto por defecto */
     position: fixed; /* Flota sobre toda la página */
@@ -1501,3 +1513,4 @@ body {
     from {opacity: 0; transform: translateY(-50px);}
     to {opacity: 1; transform: translateY(0);}
 }
+

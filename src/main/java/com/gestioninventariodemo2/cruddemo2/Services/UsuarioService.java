@@ -2,7 +2,8 @@ package com.gestioninventariodemo2.cruddemo2.Services;
 
 import java.util.List;
 
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +63,7 @@ public class UsuarioService {
                 .email(dto.getEmail())
                 .contrasena(passwordEncoder.encode(dto.getContrasena()))
                 .rol(rol)
+                .estado("ACTIVO")
                 .build();
 
         usuarioRepository.save(usuario);
@@ -70,17 +72,29 @@ public class UsuarioService {
 
 
     //LISTAR A LOS USARIOS AL FRONT OCULTANDO SU ID Y CONTRASEÑA
-    @Transactional(readOnly = true)
-    public List<UsuarioResponseDTO> obtenerTodosLosUsuarios() {
-        return usuarioRepository.findAll().stream()
-                .map(this::toResponseDTO)
-                .toList();
-    }
+@Transactional(readOnly = true)
+    public Page<UsuarioResponseDTO> obtenerTodosLosUsuarios(Pageable pageable) { // <-- Acepta Pageable
+        
+        // Asumimos que la lista solo debe traer usuarios activos.
+        // Si no tienes este método en tu Repositorio, usa findAll(pageable) en su lugar.
+        Page<Usuario> paginaUsuarios = usuarioRepository.findAllByEstado("ACTIVO", pageable); 
 
+        return paginaUsuarios.map(this::toResponseDTO); // <-- Devuelve Page<DTO>
+    }
 
 
     //ACTUALIZAR USUARIO
 
+// --- 3. NUEVO MÉTODO: OBTENER POR ID (Para el Modal) ---
+// AÑADE ESTE MÉTODO (GET /{id})
+    @Transactional(readOnly = true)
+    public UsuarioResponseDTO obtenerUsuarioPorId(Long id) {
+        Usuario usuario = usuarioRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+        return toResponseDTO(usuario);
+    }
+
+    // --- 4. ACTUALIZAR USUARIO (MÉTODO ACTUALIZADO) ---
     @Transactional
     public UsuarioResponseDTO actualizarUsuario(Long id, UsuarioRequestDTO dto) {
         Usuario usuario = usuarioRepository.findById(id)
@@ -89,30 +103,33 @@ public class UsuarioService {
         Rol rol = rolRepository.findById(dto.getIdRol())
                 .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
 
-        if (!usuario.getEmail().equals(dto.getEmail())) {
+        // Validar si el email ha cambiado y si ya existe
+        if (!usuario.getEmail().equalsIgnoreCase(dto.getEmail())) {
             validarEmailUnico(dto.getEmail());
         }
 
         usuario.setNombre(dto.getNombre());
         usuario.setApellido(dto.getApellido());
         usuario.setEmail(dto.getEmail());
-        usuario.setContrasena(passwordEncoder.encode(dto.getContrasena()));
         usuario.setRol(rol);
+        
 
         usuarioRepository.save(usuario);
         return toResponseDTO(usuario);
     }
+    
 
 
     //BORRRAR USUARIO
-    @Transactional
+ @Transactional
     public void borrarUsuario(Long id) {
-        if (!usuarioRepository.existsById(id)) {
-            throw new EntityNotFoundException("Usuario no encontrado");
-        }
-        usuarioRepository.deleteById(id);
+        Usuario usuario = usuarioRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+            
+        // CAMBIO: Soft Delete
+        usuario.setEstado("INACTIVO");
+        usuarioRepository.save(usuario);
     }
-    
     
         private void validarEmailUnico(String email) {
         if (usuarioRepository.findByEmail(email).isPresent()) {
@@ -121,15 +138,18 @@ public class UsuarioService {
     }
 
 
-        private UsuarioResponseDTO toResponseDTO(Usuario usuario) {
+// MÉTODO toResponseDTO CORREGIDO:
+    private UsuarioResponseDTO toResponseDTO(Usuario usuario) {
         return UsuarioResponseDTO.builder()
+                .id(usuario.getIdUsuario()) // <--- Ahora incluimos el ID
                 .nombre(usuario.getNombre())
                 .apellido(usuario.getApellido())
                 .email(usuario.getEmail())
+                .idRol(usuario.getRol().getIdRol()) // <--- Incluimos el ID del Rol
                 .descripcionRol(usuario.getRol().getDescripcion())
                 .build();
     }
-
+}
     
 
-}
+

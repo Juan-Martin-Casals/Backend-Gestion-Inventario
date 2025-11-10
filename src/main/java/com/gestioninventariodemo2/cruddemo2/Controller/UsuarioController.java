@@ -2,7 +2,8 @@ package com.gestioninventariodemo2.cruddemo2.Controller;
 
 import java.util.List;
 
-
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -38,13 +39,13 @@ public class UsuarioController {
     }
 
 
-    //OBTENER TODOS LOS USARIOS OCULTANDO SU ID Y CONTRASEÑA
-    @GetMapping
-    public ResponseEntity<List<UsuarioResponseDTO>> obtenerTodos() {
-        return ResponseEntity.ok(usuarioService.obtenerTodosLosUsuarios());
+@GetMapping
+    public ResponseEntity<Page<UsuarioResponseDTO>> obtenerTodos(Pageable pageable) {
+        Page<UsuarioResponseDTO> usuarios = usuarioService.obtenerTodosLosUsuarios(pageable);
+        return ResponseEntity.ok(usuarios);
     }
 
-    //ACTUALIZAR USUARIO
+// ACTUALIZAR USUARIO
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponseDTO> actualizarUsuario(
             @PathVariable Long id,
@@ -63,6 +64,17 @@ public class UsuarioController {
     public ResponseEntity<String> borrarUsuario(@PathVariable Long id) {
     usuarioService.borrarUsuario(id);
     return ResponseEntity.ok("Usuario eliminado correctamente");
+    }
+
+// --- NUEVO ENDPOINT: OBTENER POR ID (Para el Modal) ---
+    @GetMapping("/{id}")
+    public ResponseEntity<UsuarioResponseDTO> obtenerUsuarioPorId(@PathVariable Long id) {
+        try {
+            UsuarioResponseDTO usuario = usuarioService.obtenerUsuarioPorId(id);
+            return ResponseEntity.ok(usuario);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
     }
     
 }
