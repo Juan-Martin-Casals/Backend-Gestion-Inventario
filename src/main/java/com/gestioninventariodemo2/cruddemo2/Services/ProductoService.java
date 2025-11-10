@@ -12,9 +12,7 @@ import com.gestioninventariodemo2.cruddemo2.DTO.ProductoRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoSelectDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.StockTablaDTO;
-import com.gestioninventariodemo2.cruddemo2.Exception.SoftDeleteException;
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
-import com.gestioninventariodemo2.cruddemo2.Model.ProductoProveedor;
 import com.gestioninventariodemo2.cruddemo2.Model.Stock;
 import com.gestioninventariodemo2.cruddemo2.Repository.DetalleCompraRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.DetalleVentaRepository;
@@ -34,40 +32,48 @@ public class ProductoService {
     private final DetalleVentaRepository detalleVentaRepository;
     private final DetalleCompraRepository detalleCompraRepository;
     private final ProductoProveedorRepository productoProveedorRepository;
-    @Transactional
-    public Producto crearProducto(ProductoRequestDTO dto) {
-    // Validación de campos obligatorios
+    
+    
+@Transactional
+public Producto crearProducto(ProductoRequestDTO dto) {
+    // 1. Validación de campos obligatorios (esta ya la tenías)
     if (dto.getNombre() == null || dto.getNombre().isBlank() ||
         dto.getCategoria() == null || dto.getCategoria().isBlank() ||
         dto.getDescripcion() == null || dto.getDescripcion().isBlank()) {
         throw new IllegalArgumentException("Debe completar todos los campos");
     }
 
-
-
-
-        // Crear producto
-        Producto producto = Producto.builder()
-                .nombre(dto.getNombre())
-                .categoria(dto.getCategoria())
-                .descripcion(dto.getDescripcion())
-                .estado("ACTIVO")
-                .build();
-
-        productoRepository.save(producto);
-
-
-        // 2. Crear registro de Stock inicial con 0
-        Stock stockInicial = Stock.builder()
-                .producto(producto) // Relaciona el stock con el nuevo producto
-                .stockActual(0)     // Stock inicial en 0
-                .build();
-        
-        stockRepository.save(stockInicial);
-
-        return producto;
-
+    // --- ¡VALIDACIÓN DE DUPLICADO AÑADIDA! ---
+    // 2. Usamos el nuevo método del repositorio (trim() quita espacios)
+    if (productoRepository.existsByNombreIgnoreCase(dto.getNombre().trim())) {
+        // Si ya existe, lanzamos un error que el frontend mostrará
+        throw new IllegalArgumentException("Ya existe un producto con el nombre: " + dto.getNombre());
     }
+    // --- FIN DE LA VALIDACIÓN ---
+
+    // 3. Crear producto (tu código original)
+    Producto producto = Producto.builder()
+            .nombre(dto.getNombre())
+            .categoria(dto.getCategoria())
+            .descripcion(dto.getDescripcion())
+            .estado("ACTIVO")
+            // (El precio es null, lo cual está bien)
+            .build();
+
+    productoRepository.save(producto);
+
+    // 4. Crear stock asociado (tu código original)
+Stock stockInicial = Stock.builder()
+.producto(producto)
+.stockActual(0) // El stock inicial siempre es 0
+.stockMinimo(dto.getStockMinimo()) // <-- ¡NUEVO!
+.stockMaximo(dto.getStockMaximo()) // <-- ¡NUEVO!
+.build();
+    
+    stockRepository.save(stockInicial);
+
+    return producto;
+}
     
     @Transactional(readOnly = true)
     public List<ProductoResponseDTO> listarProductos() {

@@ -14,4 +14,7 @@ public class ProductoRequestDTO {
     private String nombre;
     private String categoria;
     private String descripcion;
+
+    private int stockMinimo;
+    private int stockMaximo;
 }

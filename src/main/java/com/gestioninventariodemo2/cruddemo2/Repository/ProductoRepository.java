@@ -16,4 +16,6 @@ public interface ProductoRepository extends JpaRepository<Producto,Long>{
     void actualizarEstado(Long idProducto, String nuevoEstado);
 
     List<Producto> findAllByEstado(String estado);
+
+    boolean existsByNombreIgnoreCase(String nombre);
 }
