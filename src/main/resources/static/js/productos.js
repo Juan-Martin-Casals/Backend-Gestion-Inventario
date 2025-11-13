@@ -1,8 +1,8 @@
 /**
  * Este archivo maneja toda la lógica para la sección de "Productos":
- * - Cargar la lista INICIAL de productos (paginada).
+ * - Cargar la lista de productos (paginada y ordenada).
  * - Validar y enviar el formulario para registrar nuevos productos.
- * - Controlar la paginación de la tabla.
+ * - Controlar la paginación y ordenamiento de la tabla.
  */
 document.addEventListener('DOMContentLoaded', function() {
 
@@ -25,56 +25,121 @@ document.addEventListener('DOMContentLoaded', function() {
     const stockMinError = document.getElementById('stock-min-error');
     const stockMaxError = document.getElementById('stock-max-error');
 
-    // --- ¡NUEVO! Selectores de Paginación ---
+    // --- Selectores de Paginación y Estabilidad ---
     const prevPageBtn = document.getElementById('product-prev-page');
     const nextPageBtn = document.getElementById('product-next-page');
     const pageInfo = document.getElementById('product-page-info');
+    
+    // CORRECCIÓN: Para el control de scroll y foco
+    const mainContent = document.querySelector('.main-content'); 
 
     // ===============================
-    // URLs DE LA API
+    // URLs DE LA API Y ESTADO
     // ===============================
     const API_PRODUCTOS_URL = '/api/productos'; 
     
-    // --- ¡NUEVO! Estado de Paginación ---
-    let currentPage = 0; // Las páginas de Spring Boot empiezan en 0
+    // --- Estado de Paginación y Ordenamiento ---
+    let currentPage = 0; 
     let totalPages = 1;
-    const itemsPerPage = 7; // O el número que prefieras
+    const itemsPerPage = 7;
+    let sortField = 'fechaCreacion'; // Campo de ordenamiento inicial
+    let sortDirection = 'desc'; // Dirección inicial (más nuevo primero)
+
 
     // ===============================
-    // FUNCIÓN PARA CARGAR PRODUCTOS (MODIFICADA)
+    // FUNCIÓN PARA CARGAR PRODUCTOS (FINAL)
     // ===============================
     async function loadProducts() {
-        if (!productTableBody) return; 
+        if (!productTableBody || !mainContent) return; 
         
-        productTableBody.innerHTML = '<tr><td colspan="4">Cargando...</td></tr>';
+        // 1. GUARDAR scroll y preparar animación (Fade Out)
+        const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+        productTableBody.classList.add('loading');
+        // Usamos colspan=6 ya que esa es la cantidad de columnas visibles en el HTML
+        productTableBody.innerHTML = '<tr><td colspan="6">Cargando...</td></tr>';
+        
+        // Esperar fade-out
+        await new Promise(resolve => setTimeout(resolve, 200)); 
         
         try {
-            // --- ¡CAMBIO AQUÍ! ---
-            // Le pasamos los parámetros de página y tamaño
-            const url = `${API_PRODUCTOS_URL}?page=${currentPage}&size=${itemsPerPage}&sort=fechaCreacion,desc`;
-            const response = await fetch(url); // Llama a GET /api/productos?page=...
+            // 2. Añadir parámetros de ordenamiento
+            const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
+            const url = `${API_PRODUCTOS_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
+            
+            const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`Error del servidor: ${response.status}`);
             }
             
-            // La respuesta ahora es un objeto 'Page'
             const pageData = await response.json(); 
-            
-            // Guardamos el estado de la paginación
             totalPages = pageData.totalPages;
             
-            renderProductTable(pageData.content); // pageData.content es la lista
-            updatePaginationControls(); // Actualizamos botones
+            // 3. Renderizar y finalizar animación
+            renderProductTable(pageData.content); 
+            updatePaginationControls(); 
+            updateSortIndicators(); 
+            
+            requestAnimationFrame(() => {
+                // Restaurar scroll y forzar foco para estabilidad
+                mainContent.focus(); 
+                window.scrollTo(0, scrollPosition);
+                // INICIAR FADE-IN
+                productTableBody.classList.remove('loading');
+            });
 
         } catch (error) {
             console.error('Error al cargar los productos:', error);
             productTableBody.innerHTML = `<tr><td colspan="6">Error al cargar productos.</td></tr>`;
+            productTableBody.classList.remove('loading'); 
         }
     }
 
     // ===============================
-    // FUNCIÓN PARA RENDERIZAR LA TABLA (SIN CAMBIOS)
+    // FUNCIONES DE ORDENAMIENTO
+    // ===============================
+    function handleSortClick(event) {
+        event.preventDefault();
+        event.currentTarget.blur(); // Evita que el encabezado mantenga el foco
+        
+        const th = event.currentTarget;
+        const newSortField = th.getAttribute('data-sort-by');
+
+        if (!newSortField) return;
+
+        if (sortField === newSortField) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortField = newSortField;
+            sortDirection = 'asc';
+        }
+
+        currentPage = 0; 
+        loadProducts();
+    }
+    
+    function updateSortIndicators() {
+        const headers = document.querySelectorAll('#productos-section .data-table th[data-sort-by]');
+        headers.forEach(th => {
+            th.classList.remove('sort-asc', 'sort-desc');
+            
+            const icon = th.querySelector('.sort-icon');
+            if (icon) {
+                icon.className = 'sort-icon fas fa-sort';
+            }
+            
+            if (th.getAttribute('data-sort-by') === sortField) {
+                th.classList.add(`sort-${sortDirection}`);
+                
+                if (icon) {
+                    icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
+                }
+            }
+        });
+    }
+
+    // ===============================
+    // FUNCIÓN PARA RENDERIZAR LA TABLA
     // ===============================
     function renderProductTable(products) {
         if (!productTableBody) return;
@@ -87,12 +152,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         products.forEach(product => {
             let fechaFormateada = "N/A";
-            // (Esta es la lógica que corregimos antes)
             if (product.fechaCreacion) { 
                 const parts = product.fechaCreacion.split('-');
                 fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`; 
             }
 
+            // NOTA: Se asume que el backend devuelve stockMinimo y stockMaximo correctamente en ProductoResponseDTO
             const row = `
                 <tr>
                     <td>${product.nombre || 'N/A'}</td>
@@ -108,13 +173,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ===============================
-    // LÓGICA DEL FORMULARIO DE REGISTRO (Modificada)
+    // LÓGICA DEL FORMULARIO DE REGISTRO
     // ===============================
     if (productForm) {
         productForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
-            // ... (Toda tu lógica de validación de campos va aquí - sin cambios)
             // 1. Limpiar mensajes
             document.querySelectorAll('#product-form .error-message').forEach(el => el.textContent = '');
             generalMessage.textContent = '';
@@ -148,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // 5. Enviar
             try {
-                const response = await fetch(API_PRODUCTOS_URL, { // POST a /api/productos
+                const response = await fetch(API_PRODUCTOS_URL, { 
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(productoDTO)
@@ -163,7 +227,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 generalMessage.classList.add('success');
                 productForm.reset();
                 
-                // --- ¡CAMBIO AQUÍ! ---
                 // Reseteamos a la página 0 y recargamos la tabla
                 currentPage = 0; 
                 loadProducts(); 
@@ -177,8 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ===============================
-    // ¡NUEVO! FUNCIONES DE PAGINACIÓN
-    // (Copiadas de principal.js y adaptadas)
+    // FUNCIONES DE PAGINACIÓN
     // ===============================
     function updatePaginationControls() {
         if (!pageInfo || !prevPageBtn || !nextPageBtn) return;
@@ -188,10 +250,9 @@ document.addEventListener('DOMContentLoaded', function() {
         nextPageBtn.disabled = (currentPage + 1 >= totalPages);
     }
 
-if (prevPageBtn) {
-        prevPageBtn.addEventListener('click', (event) => { // <-- 1. Añadir (event)
-            event.preventDefault(); // <-- 2. Añadir esta línea
-            
+    if (prevPageBtn) {
+        prevPageBtn.addEventListener('click', (event) => { 
+            event.preventDefault(); 
             if (currentPage > 0) {
                 currentPage--;
                 loadProducts();
@@ -199,18 +260,26 @@ if (prevPageBtn) {
         });
     }
 
-if (nextPageBtn) {
-        nextPageBtn.addEventListener('click', (event) => { // <-- 1. Añadir (event)
-            event.preventDefault(); // <-- 2. Añadir esta línea
-            
+    if (nextPageBtn) {
+        nextPageBtn.addEventListener('click', (event) => { 
+            event.preventDefault(); 
             if (currentPage + 1 < totalPages) {
                 currentPage++;
                 loadProducts();
             }
         });
     }
+    
     // ===============================
+    // LISTENERS Y EJECUCIÓN INICIAL
+    // ===============================
+    
+    // LISTENERS DE ORDENAMIENTO
+    const sortableHeaders = document.querySelectorAll('#productos-section .data-table th[data-sort-by]');
+    sortableHeaders.forEach(th => {
+        th.addEventListener('click', handleSortClick);
+    });
+    
     // CARGA INICIAL
-    // ===============================
-    loadProducts(); // Carga la primera página (página 0) al entrar
+    loadProducts(); 
 });

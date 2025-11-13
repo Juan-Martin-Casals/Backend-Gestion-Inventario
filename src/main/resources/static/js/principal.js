@@ -9,7 +9,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const API_STOCK_RESUMEN_URL = '/api/informes/resumen-stock';
     // Endpoint para la tabla de productos agotados (Nuevo)
     const API_LOW_STOCK_URL = '/api/informes/low-stock'; // (Asumimos este endpoint)
-
+    
+    const mainContent = document.querySelector('.main-content');
     // --- 2. CONSTANTES DEL DOM (Tarjetas del Mes) ---
     const ventasMesCount = document.getElementById('ventas-mes-count');
     const ventasHistoricasCount = document.getElementById('ventas-historicas-count');
@@ -23,6 +24,10 @@ document.addEventListener('DOMContentLoaded', function () {
     let lowStockCurrentPage = 0; // Las páginas de Spring Boot empiezan en 0
     let lowStockTotalPages = 1;
     const itemsPerPage = 7;
+    
+    let lowStockSortField = 'stockActual'; // Campo de ordenamiento inicial
+    let lowStockSortDirection = 'asc';
+
 
     // --- 3. CONSTANTES DEL DOM (Tarjetas de Stock) ---
     // (Estos son los IDs que agregaste en el HTML)
@@ -87,29 +92,99 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     async function loadLowStockTable() {
         if (!lowStockTableBody) return;
+
+        const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+
+        lowStockTableBody.classList.add('loading');
+
+
         lowStockTableBody.innerHTML = '<tr><td colspan="5">Cargando...</td></tr>';
 
+        await new Promise(resolve => setTimeout(resolve, 250));
+
         try {
-            // --- ¡CAMBIO AQUÍ! ---
-            // Le pasamos los parámetros de página y tamaño
-            const url = `${API_LOW_STOCK_URL}?page=${lowStockCurrentPage}&size=${itemsPerPage}`;
+            // Añadimos el parámetro de ordenamiento: sort=campo,direccion
+            const sortParam = lowStockSortField ? `&sort=${lowStockSortField},${lowStockSortDirection}` : '';
+            const url = `${API_LOW_STOCK_URL}?page=${lowStockCurrentPage}&size=${itemsPerPage}${sortParam}`;
+            
             const response = await fetch(url);
             
             if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
             
-            // La respuesta ahora es un objeto 'Page'
             const pageData = await response.json(); 
             
-            // Guardamos el estado de la paginación
             lowStockTotalPages = pageData.totalPages;
             
-            renderLowStockTable(pageData.content); // pageData.content es la lista de productos
-            updatePaginationControls(); // Actualizamos botones
+            renderLowStockTable(pageData.content); 
+            updatePaginationControls();
+            updateSortIndicators();
+
+            requestAnimationFrame(() => {
+                // 1. Forzar el foco en el contenedor estable
+                mainContent.focus(); 
+                // 2. Restaurar la posición de scroll
+                window.scrollTo(0, scrollPosition);
+
+                lowStockTableBody.classList.remove('loading');
+            });
+            
+            // AÑADIDO: Restaurar la posición de scroll después de renderizar el contenido
+            // Utilizamos setTimeout(0) para asegurar que la actualización del DOM haya finalizado
+            setTimeout(() => {
+                window.scrollTo(0, scrollPosition);
+            }, 0);
+
 
         } catch (error) {
             console.error('Error al cargar tabla de stock bajo:', error);
             lowStockTableBody.innerHTML = '<tr><td colspan="5">Error al cargar datos.</td></tr>';
         }
+    }
+    
+    function handleSortClick(event) {
+        event.preventDefault();
+        event.currentTarget.blur();
+        const th = event.currentTarget;
+        const newSortField = th.getAttribute('data-sort-by');
+
+        if (!newSortField) return;
+
+        if (lowStockSortField === newSortField) {
+            // Cambiar dirección si se hace clic en la columna ya ordenada
+            lowStockSortDirection = lowStockSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            // Nueva columna, ordenar por defecto ascendente
+            lowStockSortField = newSortField;
+            lowStockSortDirection = 'asc';
+        }
+
+        // Reiniciar a la primera página al ordenar
+        lowStockCurrentPage = 0;
+        loadLowStockTable();
+    }
+
+    function updateSortIndicators() {
+        // Seleccionamos solo los TH que tienen el atributo data-sort-by
+        const headers = document.querySelectorAll('.low-stock-section .data-table th[data-sort-by]');
+        headers.forEach(th => {
+            // Quitamos las clases de ordenamiento anterior
+            th.classList.remove('sort-asc', 'sort-desc');
+            
+            // Asumimos que la hoja de estilos tiene el selector .fa-sort
+            th.querySelector('.sort-icon').className = 'sort-icon fas fa-sort'; // Icono por defecto
+            
+            if (th.getAttribute('data-sort-by') === lowStockSortField) {
+                // Columna actualmente ordenada
+                const directionClass = `sort-${lowStockSortDirection}`;
+                th.classList.add(directionClass);
+                
+                // Actualizar el ícono: fa-sort-up o fa-sort-down
+                const icon = th.querySelector('.sort-icon');
+                if (icon) {
+                    icon.className = `sort-icon fas fa-sort-${lowStockSortDirection === 'asc' ? 'up' : 'down'}`;
+                }
+            }
+        });
     }
     /**
      * Dibuja la tabla de productos con stock bajo.
@@ -200,7 +275,12 @@ document.addEventListener('DOMContentLoaded', function () {
     
     // Si este script SÓLO se carga en la página principal,
     // estas llamadas funcionarán bien aquí:
-lowStockPrevPageBtn.addEventListener('click', (event) => { // <-- 1. Añadir (event)
+    const sortableHeaders = document.querySelectorAll('.low-stock-section .data-table th[data-sort-by]');
+    sortableHeaders.forEach(th => {
+        th.addEventListener('click', handleSortClick);
+    });
+    
+    lowStockPrevPageBtn.addEventListener('click', (event) => { // <-- 1. Añadir (event)
         event.preventDefault(); // <-- 2. Añadir esta línea
         
         if (lowStockCurrentPage > 0) {

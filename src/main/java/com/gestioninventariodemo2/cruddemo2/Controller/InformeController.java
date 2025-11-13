@@ -5,6 +5,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -46,20 +47,15 @@ public class InformeController {
     }
 
 
-    @GetMapping("/low-stock")
+@GetMapping("/low-stock")
     public ResponseEntity<Page<StockTablaDTO>> getProductosConStockBajo(
-            // Recibimos los parámetros, con valores por defecto
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "7") int size) { // <-- 7 por página (como en Stock)
+            // Spring automáticamente construirá el objeto Pageable a partir de los parámetros page, size y sort
+            Pageable pageable) { 
         
-        // Creamos el objeto Pageable
-        PageRequest pageable = PageRequest.of(page, size);
-        
-        // Llamamos al servicio (que ahora devolverá una 'Page')
+        // Ya no necesitamos PageRequest.of(), le pasamos el Pageable directo al servicio.
         Page<StockTablaDTO> productos = informeService.obtenerProductosConStockBajo(pageable);
         return ResponseEntity.ok(productos);
     }
-
 
     // --- ¡AÑADÍ ESTE MÉTODO! ---
     @GetMapping("/resumen-stock")

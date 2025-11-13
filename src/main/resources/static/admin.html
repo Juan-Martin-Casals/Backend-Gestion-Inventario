@@ -29,7 +29,7 @@
             </ul>
         </aside>
 
-        <main class="main-content">
+        <main class="main-content" tabindex="-1">
             <header class="main-header">
                 <div class="header-left">
                     <div class="header-title">
@@ -120,12 +120,13 @@
         <div class="table-container">
             <table class="data-table">
     <thead>
+    
         <tr>
-            <th>Nombre</th>
-            <th>Categoría</th>
-            <th>Descripción</th>
-            <th>Stock</th>
-            <th>Precio</th>
+            <th data-sort-by="producto.nombre" class="sortable">Nombre <i class="sort-icon fas fa-sort"></i></th>
+            <th data-sort-by="producto.categoria" class="sortable">Categoría <i class="sort-icon fas fa-sort"></i></th>
+            <th>Descripción</th> 
+            <th data-sort-by="stockActual" class="sortable">Stock <i class="sort-icon fas fa-sort"></i></th>
+            <th data-sort-by="producto.precio" class="sortable">Precio <i class="sort-icon fas fa-sort"></i></th>
         </tr>
     </thead>
     <tbody id="low-stock-table-body"> 
@@ -204,12 +205,13 @@
                         <table class="data-table">
                             <thead>
                             <tr>
-                                <th>Nombre</th>
-                                <th>Categoría</th>
-                                <th>Descripción</th>
-                                <th>Fecha Creación</th>
-                                <th>Stock Mín.</th> <th>Stock Máx.</th> </tr>
-                            </tr>
+                    <th data-sort-by="nombre" class="sortable">Nombre <i class="sort-icon fas fa-sort"></i></th>
+                    <th data-sort-by="categoria" class="sortable">Categoría <i class="sort-icon fas fa-sort"></i></th>
+                    <th>Descripción</th>
+                    <th data-sort-by="fechaCreacion" class="sortable">Fecha Creación <i class="sort-icon fas fa-sort"></i></th>
+                    <th>Stock Mín.</th> 
+                    <th>Stock Máx.</th> 
+                </tr>
                             </thead>
                             <tbody id="product-table-body">
 

@@ -10,6 +10,7 @@ body {
     background: #f5f5f5;
     color: #333;
     line-height: 1.6;
+    overflow-y: scroll;
 }
 
 /* Login Page */
@@ -1532,3 +1533,56 @@ body {
 .modal .modal-content.modal-compact .modal-buttons {
     justify-content: center;
 }
+
+.data-table th[data-sort-by] {
+    cursor: pointer;
+    user-select: none; 
+    /* AÑADIDO: Aplicamos transición a todas las propiedades durante 0.3 segundos */
+    transition: all 0.7s ease-in-out; 
+}
+
+/* AÑADIDO: Estilo para la columna que actualmente está ordenando */
+.data-table th.sort-asc,
+.data-table th.sort-desc {
+    background-color: #e9ecef; /* Un gris muy claro */
+    color: #007bff; /* Hace que el texto y el ícono sean azules para resaltar */
+}
+
+/* AÑADIDO: Ajustamos el icono para que herede el color */
+.data-table th.sort-asc .sort-icon,
+.data-table th.sort-desc .sort-icon {
+    color: #007bff;
+}
+
+
+
+.main-content:focus {
+    outline: none; /* Elimina el contorno predeterminado del navegador */
+}
+
+
+.low-stock-section .table-container {
+    min-height: 340px; /* Altura suficiente para 7 filas. */
+}
+
+/* REGLAS DE ANIMACIÓN: Aplica transición de fade-out/fade-in */
+#low-stock-table-body {
+    opacity: 1;
+    /* Suaviza el cambio de opacidad en 0.2 segundos (200ms) */
+    transition: opacity 0.2s ease-in-out; 
+}
+
+#low-stock-table-body.loading {
+    opacity: 0; /* Oculta la tabla cuando se están cargando nuevos datos */
+}
+
+
+#product-table-body {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out; 
+}
+
+#product-table-body.loading {
+    opacity: 0; /* Oculta la tabla cuando se están cargando nuevos datos */
+}
+

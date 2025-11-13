@@ -59,8 +59,12 @@ public class InformeService {
         String estadoActivo = "ACTIVO";
 
         // 1. Busca en la BD usando paginación y ordenamiento
-        Page<Stock> stocksBajos = stockRepository.findByStockActualLessThanEqualAndProductoEstadoOrderByStockActualAsc(stockBajoNivel,
-            estadoActivo,  // <-- Le pasamos "ACTIVO"
+        // ¡CAMBIO CLAVE AQUÍ!
+        // Cambiamos el método a uno que NO tiene el sufijo "OrderByStockActualAsc".
+        // Esto permite que el ordenamiento sea tomado de la variable 'pageable'.
+        Page<Stock> stocksBajos = stockRepository.findByStockActualLessThanEqualAndProductoEstado(
+            stockBajoNivel,
+            estadoActivo,
             pageable
         );
 
