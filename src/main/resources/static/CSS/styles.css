@@ -1444,7 +1444,7 @@ body {
      * (Nº de items por página) x (altura de fila) + (altura de cabecera)
      * Ejemplo: (7 filas * 50px) + 50px = 400px 
      */
-    min-height: 400px; 
+    min-height: 450px; 
 }
 
 .table-container-usuarios {
@@ -1452,11 +1452,11 @@ body {
      * (Nº de items por página) x (altura de fila) + (altura de cabecera)
      * Ejemplo: (7 filas * 50px) + 50px = 400px 
      */
-    min-height: 550px; 
+    min-height: 600px; 
 }
 
-.table-container-ventañ{
-    min-height: 500px;
+.table-container-venta{
+    min-height: 600px;
 }
 
 .modal {
@@ -1562,7 +1562,7 @@ body {
 
 
 .low-stock-section .table-container {
-    min-height: 340px; /* Altura suficiente para 7 filas. */
+    min-height: 600px; /* Altura suficiente para 7 filas. */
 }
 
 /* REGLAS DE ANIMACIÓN: Aplica transición de fade-out/fade-in */
@@ -1593,3 +1593,17 @@ body {
 
 }
 
+
+#proveedor-tabla {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#proveedor-tabla.loading {
+    opacity: 0; /* Oculta la tabla de proveedores mientras carga */
+}
+
+.table-container-proveedor {
+    /* (7 filas * 50px aprox) + 50px cabecera = 400px */
+    min-height: 550px; 
+}

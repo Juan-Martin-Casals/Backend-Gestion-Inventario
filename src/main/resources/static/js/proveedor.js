@@ -99,11 +99,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // 1. GUARDAR scroll y preparar animación (Fade Out)
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+        
         proveedorTabla.classList.add('loading'); 
         proveedorTabla.innerHTML = '<tr><td colspan="6">Cargando...</td></tr>';
 
         // Esperar fade-out (si existe)
-        await new Promise(resolve => setTimeout(resolve, 200));
+        await new Promise(resolve => setTimeout(resolve, 250));
 
         try {
             // ¡CORREGIDO! - Ahora 'sortField' y 'sortDirection' están definidos
@@ -123,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             requestAnimationFrame(() => {
                 // Restaurar scroll y forzar foco para estabilidad
-                mainContent.focus(); 
+                
                 window.scrollTo(0, scrollPosition);
                 proveedorTabla.classList.remove('loading');
             });
@@ -150,10 +151,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const row = `
                 <tr>
                     <td>${proveedor.nombre || 'N/A'}</td>
+                    
+                    <td>${proveedor.email|| 'N/A'}</td>
                     <td>${proveedor.telefono || 'N/A'}</td>
-                    <td>${proveedor.email || 'N/A'}</td>
-                    <td>${proveedor.direccion || 'N/A'}</td>
                     <td>${productosNombres}</td>
+                    <td>${proveedor.direccion || 'N/A'}</td>
+                    
                     <td>
                         <button class="btn-icon btn-edit-proveedor" data-id="${proveedor.id}" title="Editar">
                             <i class="fas fa-edit"></i>
