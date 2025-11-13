@@ -1586,3 +1586,10 @@ body {
     opacity: 0; /* Oculta la tabla cuando se están cargando nuevos datos */
 }
 
+
+#proveedor-tabla{
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out; 
+
+}
+

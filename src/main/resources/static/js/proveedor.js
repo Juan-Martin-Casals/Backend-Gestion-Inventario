@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     let allProducts = []; 
     let proveedorActualEditando = null; 
-    let currentDeleteProviderId = null; // ¡NUEVO! Guarda el ID del proveedor a borrar
+    let currentDeleteProviderId = null;
 
     // ===============================
     // SELECTORES - TABLA Y PAGINACIÓN
@@ -21,9 +21,24 @@ document.addEventListener('DOMContentLoaded', function() {
     const nextPageBtn = document.getElementById('proveedor-next-page');
     const pageInfo = document.getElementById('proveedor-page-info');
     
+    const mainContent = document.querySelector('.main-content');
+    
     let currentPage = 0;
     let totalPages = 1;
     const itemsPerPage = 7;
+
+    // ===============================
+    // ¡CORREGIDO! ESTADO DE ORDENAMIENTO
+    // ===============================
+    let sortField = 'nombre'; // Columna por defecto
+    let sortDirection = 'asc'; // Dirección por defecto
+
+
+    // ===============================
+    // ¡CORREGIDO! SELECTORES DE ORDENAMIENTO
+    // ===============================
+    // Seleccionamos por 'data-sort-by' que coincide con el CSS y el HTML
+    const tableHeaders = document.querySelectorAll('#proveedores-section .data-table th[data-sort-by]');
 
     // ===============================
     // SELECTORES - FORMULARIO DE REGISTRO
@@ -67,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // ===============================
-    // ¡NUEVO! SELECTORES - MODAL DE BORRADO (REUTILIZADO)
+    // SELECTORES - MODAL DE BORRADO (REUTILIZADO)
     // ===============================
     const deleteConfirmModal = document.getElementById('delete-confirm-modal');
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
@@ -80,19 +95,43 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================================
 
     async function loadProveedores() {
+        if (!proveedorTabla || !mainContent) return;
+
+        // 1. GUARDAR scroll y preparar animación (Fade Out)
+        const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+        proveedorTabla.classList.add('loading'); 
+        proveedorTabla.innerHTML = '<tr><td colspan="6">Cargando...</td></tr>';
+
+        // Esperar fade-out (si existe)
+        await new Promise(resolve => setTimeout(resolve, 200));
+
         try {
-            const url = `${API_PROVEEDORES_URL}?page=${currentPage}&size=${itemsPerPage}&sort=nombre,asc`;
+            // ¡CORREGIDO! - Ahora 'sortField' y 'sortDirection' están definidos
+            const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
+            const url = `${API_PROVEEDORES_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
+            
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
             
             const pageData = await response.json(); 
             totalPages = pageData.totalPages;
+            
+            // 3. Renderizar y finalizar animación
             renderProveedoresTabla(pageData.content); 
             updatePaginationControls();
+            updateSortIndicators(); // ¡NUEVO!
+
+            requestAnimationFrame(() => {
+                // Restaurar scroll y forzar foco para estabilidad
+                mainContent.focus(); 
+                window.scrollTo(0, scrollPosition);
+                proveedorTabla.classList.remove('loading');
+            });
 
         } catch (error) {
             console.error('Error al cargar los proveedores:', error);
             proveedorTabla.innerHTML = `<tr><td colspan="6">Error al cargar proveedores.</td></tr>`;
+            proveedorTabla.classList.remove('loading');
         }
     }
 
@@ -156,9 +195,59 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+
+    function handleSortClick(event) {
+        event.preventDefault();
+        event.currentTarget.blur();
+        
+        const th = event.currentTarget;
+        const newSortField = th.getAttribute('data-sort-by'); 
+
+        if (!newSortField) return;
+
+        // ¡CORREGIDO! Usamos las variables correctas
+        if (sortField === newSortField) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortField = newSortField;
+            sortDirection = 'asc';
+        }
+
+        currentPage = 0; 
+        loadProveedores();
+    }
+
+    function updateSortIndicators() {
+        // Usamos el selector global 'tableHeaders'
+        tableHeaders.forEach(th => {
+            th.classList.remove('sort-asc', 'sort-desc'); 
+            
+            const icon = th.querySelector('.sort-icon');
+            if (icon) {
+                icon.className = 'sort-icon fas fa-sort'; // Icono neutral
+            }
+            
+            // ¡CORREGIDO! Usamos las variables correctas
+            if (th.getAttribute('data-sort-by') === sortField) {
+                th.classList.add(`sort-${sortDirection}`); 
+                
+                if (icon) {
+                    icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
+                }
+            }
+        });
+    }
+
+    // Asignar los eventos de clic a las cabeceras
+    tableHeaders.forEach(header => {
+        header.addEventListener('click', handleSortClick);
+    });
+
     // ==========================================================
     // LÓGICA DEL MULTI-SELECT (REUTILIZABLE)
     // ==========================================================
+    
+    // ... (El código del Multi-Select no necesita cambios) ...
 
     async function fetchAllProducts() {
         if (allProducts.length > 0) return allProducts; 
@@ -279,10 +368,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const direccion = direccionInput.value.trim();
             const productosIds = Array.from(registerSelect.hiddenSelect.selectedOptions).map(option => option.value);
 
-            // (Aquí puedes añadir tus validaciones de campos vacíos)
-
             if (productosIds.length === 0) {
                  registerSelect.errorDiv.textContent = 'Debes seleccionar al menos un producto.';
+                 isValid = false;
+            }
+             // Validación simple de campos vacíos
+            if (!nombre || !telefono || !email || !direccion) {
                  isValid = false;
             }
             if (!isValid) {
@@ -308,7 +399,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 generalMessage.classList.add('success');
                 proveedorForm.reset();
                 setupMultiSelect(registerSelect, []);
-                currentPage = 0; 
+                
+                // ¡CORREGIDO! Reseteamos las variables correctas
+                currentPage = 0;
+                sortField = 'nombre';
+                sortDirection = 'asc';
                 loadProveedores();
 
             } catch (error) {
@@ -320,8 +415,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================================
-    // ¡NUEVO! LÓGICA DEL MODAL DE BORRADO
+    // LÓGICA DEL MODAL DE BORRADO
     // ==========================================================
+    
+    // ... (El código de borrado no necesita cambios) ...
+    
     function openDeleteModal(id, nombre) {
         currentDeleteProviderId = id; // Guarda el ID
         deleteModalMessage.textContent = `¿Estás seguro de que quieres eliminar al proveedor "${nombre}"?`;
@@ -333,10 +431,11 @@ document.addEventListener('DOMContentLoaded', function() {
         if(deleteConfirmModal) deleteConfirmModal.style.display = 'none';
     }
 
-
     // ==========================================================
     // LÓGICA DEL MODAL DE EDICIÓN
     // ==========================================================
+    
+    // ... (El código de edición no necesita cambios) ...
 
     // --- Abrir el modal ---
     function openEditModal(data) {
@@ -380,12 +479,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
 
-            // ¡¡LÓGICA DE BORRADO ACTUALIZADA!!
             if (deleteButton) {
                 const id = deleteButton.dataset.id;
-                // Busca la fila (tr) más cercana y toma el texto de la primera celda (td)
                 const nombre = deleteButton.closest('tr').cells[0].textContent;
-                openDeleteModal(id, nombre); // ¡Llama al modal en lugar de confirm()!
+                openDeleteModal(id, nombre);
             }
         });
     }
@@ -453,7 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ¡¡NUEVO!! --- Eventos del Modal de Borrado ---
+    // --- Eventos del Modal de Borrado ---
     if (cancelDeleteBtn) {
         cancelDeleteBtn.addEventListener('click', closeDeleteModal);
     }
@@ -468,7 +565,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener('click', async () => {
-            if (!currentDeleteProviderId) return; // No hay ID para borrar
+            if (!currentDeleteProviderId) return;
 
             try {
                 const response = await fetch(`${API_PROVEEDORES_URL}/${currentDeleteProviderId}`, {
@@ -485,7 +582,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (error) {
                 alert('Error al eliminar: ' + error.message);
             } finally {
-                closeDeleteModal(); // Cierra el modal en cualquier caso
+                closeDeleteModal(); 
             }
         });
     }
