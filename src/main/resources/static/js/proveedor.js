@@ -20,6 +20,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const prevPageBtn = document.getElementById('proveedor-prev-page');
     const nextPageBtn = document.getElementById('proveedor-next-page');
     const pageInfo = document.getElementById('proveedor-page-info');
+
+    const nombreError = document.getElementById('errorNombre');
+    const telefonoError = document.getElementById('errorTelefono');
+    const emailError = document.getElementById('errorEmail');
+    const direccionError = document.getElementById('errorDireccion');
     
     const mainContent = document.querySelector('.main-content');
     
@@ -304,6 +309,8 @@ document.addEventListener('DOMContentLoaded', function() {
         visualOption.style.display = 'none';
         selectUI.options.style.display = 'none';
         selectUI.input.value = '';
+
+        selectUI.input.placeholder = '';
     }
 
     function crearTag(texto, valor, visualOption, realOption, selectUI) {
@@ -320,6 +327,10 @@ document.addEventListener('DOMContentLoaded', function() {
             realOption.selected = false;
             selectUI.tags.removeChild(tag);
             visualOption.style.display = 'block';
+
+            if (selectUI.tags.children.length === 0) {
+        selectUI.input.placeholder = 'Buscar y seleccionar productos...';
+        }
         });
 
         tag.appendChild(closeBtn);
@@ -360,6 +371,8 @@ document.addEventListener('DOMContentLoaded', function() {
         proveedorForm.addEventListener('submit', async function(event) {
             event.preventDefault();
             
+            // --- ¡MODIFICADO! ---
+            // 1. Limpiar todos los errores
             document.querySelectorAll('#proveedor-form .error-message').forEach(el => el.textContent = '');
             generalMessage.textContent = '';
             generalMessage.className = 'form-message';
@@ -371,19 +384,39 @@ document.addEventListener('DOMContentLoaded', function() {
             const direccion = direccionInput.value.trim();
             const productosIds = Array.from(registerSelect.hiddenSelect.selectedOptions).map(option => option.value);
 
+            // 2. Validar campo por campo
+            if (!nombre) {
+                nombreError.textContent = 'Debe rellenar este campo';
+                isValid = false;
+            }
+            if (!telefono) {
+                telefonoError.textContent = 'Debe rellenar este campo';
+                isValid = false;
+            }
+            if (!email) {
+                emailError.textContent = 'Debe rellenar este campo';
+                isValid = false;
+            } else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) { 
+                // Añadimos una validación simple de formato de email
+                emailError.textContent = 'El formato del email no es válido';
+                isValid = false;
+            }
+            if (!direccion) {
+                direccionError.textContent = 'Debe rellenar este campo';
+                isValid = false;
+            }
             if (productosIds.length === 0) {
                  registerSelect.errorDiv.textContent = 'Debes seleccionar al menos un producto.';
                  isValid = false;
             }
-             // Validación simple de campos vacíos
-            if (!nombre || !telefono || !email || !direccion) {
-                 isValid = false;
-            }
+
+            // 3. Si algo es inválido, mostrar mensaje general y parar
             if (!isValid) {
-                 generalMessage.textContent = "Debe completar todos los campos.";
+                 generalMessage.textContent = "Debe completar todos los campos obligatorios.";
                  generalMessage.classList.add('error');
                  return;
             }
+            // --- FIN DE LA MODIFICACIÓN ---
 
             const proveedorDTO = { nombre, telefono, email, direccion, productosIds };
 
@@ -403,7 +436,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 proveedorForm.reset();
                 setupMultiSelect(registerSelect, []);
                 
-                // ¡CORREGIDO! Reseteamos las variables correctas
                 currentPage = 0;
                 sortField = 'nombre';
                 sortDirection = 'asc';
