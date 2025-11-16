@@ -1575,3 +1575,25 @@ body {
 }
 
 
+#stock-table-body {
+    opacity: 1;
+    /* Suaviza el cambio de opacidad en 0.2 segundos (200ms) */
+    transition: opacity 0.2s ease-in-out; 
+}
+
+#stock-table-body.loading {
+    opacity: 0; /* Oculta la tabla cuando se están cargando nuevos datos */
+}
+
+/* * Previene que la paginación "salte" cuando la tabla se oculta.
+ * Asumo que el contenedor de la tabla de stock tiene la clase 
+ * '.table-container-stock' (si no la tiene, deberías añadirla 
+ * en el HTML o ajustar este selector).
+ *
+ * Si no tienes una clase específica, puedes usar:
+ * #stock-section .table-container 
+ */
+#stock-section .table-container {
+    /* (7 filas * 50px aprox) + 50px cabecera = 400px */
+    min-height: 450px; 
+}

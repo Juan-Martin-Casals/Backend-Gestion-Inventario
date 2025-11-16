@@ -8,6 +8,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- 2. CONSTANTES DEL DOM (PÁGINA PRINCIPAL) ---
     const searchInput = document.getElementById('stock-search-input');
     const tableBody = document.getElementById('stock-table-body');
+    
+    // ¡NUEVO! Selectores para estabilidad y ordenamiento
+    const mainContent = document.querySelector('.main-content');
+    const tableHeaders = document.querySelectorAll('#stock-section .data-table th[data-sort-by]');
 
     // --- 3. CONSTANTES DEL DOM (MODAL DE BORRADO) ---
     const deleteModal = document.getElementById('delete-confirm-modal');
@@ -18,8 +22,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const editModal = document.getElementById('edit-product-modal');
     const editModalCloseBtn = document.getElementById('edit-modal-close-btn');
     const editProductForm = document.getElementById('edit-product-form');
-    
-    // Inputs del formulario de edición
     const editProductId = document.getElementById('edit-product-id');
     const editNombre = document.getElementById('edit-nombre');
     const editCategoria = document.getElementById('edit-categoria');
@@ -27,8 +29,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const editPrecio = document.getElementById('edit-precio');
     const editStockActual = document.getElementById('edit-stock-actual');
     const editCantidadAjuste = document.getElementById('edit-cantidad-ajuste');
-    
-    // Mensajes de error del formulario de edición
     const errorEditNombre = document.getElementById('error-edit-nombre');
     const errorEditCategoria = document.getElementById('error-edit-categoria');
     const errorEditDescripcion = document.getElementById('error-edit-descripcion');
@@ -50,12 +50,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const itemsPerPage = 7; // Productos por página
     let currentListForPagination = []; // Lista (filtrada o completa) que se está paginando
 
+    // ¡NUEVO! Estado de ordenamiento
+    let sortField = 'stock'; // Orden inicial por stock
+    let sortDirection = 'asc'; // De menor a mayor
+
     // =================================================================
     // --- 6. FUNCIONES DE LÓGICA (CARGA, RENDER, FILTRO, ETC.) ---
     // =================================================================
 
     /**
-     * Carga todos los productos desde la API, los ordena y renderiza.
+     * Carga todos los productos desde la API.
      */
     async function loadStock() {
         if (tableBody) {
@@ -63,22 +67,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         try {
-            // Se elimina la declaración 'const sortParam = 'stockActual,asc';' ya que el endpoint no es paginado.
             const response = await fetch(API_STOCK_URL); 
             if (!response.ok) {
                 throw new Error(`Error HTTP: ${response.status}`);
             }
             const productos = await response.json();
 
-            // Modificación: Ordenar por Stock (menor a mayor: A.stock - B.stock)
-            productos.sort((a, b) => a.stock - b.stock);
-
-            // Se elimina la línea previa: productos.sort((a, b) => b.id - a.id);
-
             todosLosProductos = productos; 
-            currentListForPagination = productos;
-            currentPage = 1; // Resetea a la página 1
-            renderStockTable(); // Llama sin parámetros
+            
+            filtrarStock(); 
 
         } catch (error) {
             console.error('Error al cargar el stock:', error);
@@ -89,15 +86,23 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
-     * Dibuja las filas de la tabla (paginadas).
+     * ¡MODIFICADO! Dibuja las filas de la tabla (paginadas) con animación.
      */
-    function renderStockTable() {
-        if (!tableBody) return;
+    async function renderStockTable() {
+        if (!tableBody || !mainContent) return;
+        
+        // 1. Guardar scroll y aplicar fade-out
+        const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+        tableBody.classList.add('loading');
+        
+        // Esperar la animación de fade-out
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        // 2. Lógica de renderizado
         tableBody.innerHTML = ''; 
         
         const totalPages = Math.ceil(currentListForPagination.length / itemsPerPage);
         
-        // Corregir página actual si está fuera de rango (ej. después de filtrar)
         if (currentPage > totalPages && totalPages > 0) {
             currentPage = totalPages;
         }
@@ -105,12 +110,10 @@ document.addEventListener('DOMContentLoaded', function () {
             currentPage = 1;
         }
 
-        // Corta la lista a solo 7 items
         const startIndex = (currentPage - 1) * itemsPerPage;
         const endIndex = startIndex + itemsPerPage;
         const paginatedItems = currentListForPagination.slice(startIndex, endIndex);
 
-        // Renderiza las filas
         if (paginatedItems.length === 0) {
             tableBody.innerHTML = '<tr><td colspan="6">No se encontraron productos.</td></tr>';
         } else {
@@ -136,25 +139,121 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
-        // Actualiza los controles de paginación
+        // 3. Actualizar controles
         pageInfo.textContent = `Página ${currentPage} de ${totalPages || 1}`;
         prevPageBtn.disabled = (currentPage === 1);
         nextPageBtn.disabled = (currentPage === totalPages || totalPages === 0);
+        
+        updateSortIndicators();
+
+        // 4. Restaurar scroll y aplicar fade-in
+        requestAnimationFrame(() => {
+            
+            // --- ¡ESTA ES LA CORRECCIÓN! ---
+            // Comprobamos si el elemento activo (el que tiene el foco)
+            // es la barra de búsqueda.
+            const isSearchActive = (document.activeElement === searchInput);
+
+            // Solo movemos el foco a 'mainContent' si NO estamos
+            // escribiendo en la barra de búsqueda.
+            if (!isSearchActive) {
+                mainContent.focus();
+            }
+            // --- FIN DE LA CORRECCIÓN ---
+            
+            window.scrollTo(0, scrollPosition);
+            tableBody.classList.remove('loading');
+        });
     }
 
     /**
-     * Filtra la tabla basado en el buscador.
+     * ¡MODIFICADO! Filtra, ORDENA y renderiza.
      */
     function filtrarStock() {
         const textoBusqueda = searchInput.value.toLowerCase();
+        
+        // 1. Filtrar
         const productosFiltrados = todosLosProductos.filter(producto => {
             return producto.nombre.toLowerCase().includes(textoBusqueda);
         });
         
-        currentListForPagination = productosFiltrados; // Actualiza la lista a paginar
+        currentListForPagination = productosFiltrados;
+        
+        // 2. ¡NUEVO! Ordenar
+        clientSideSort();
+
+        // 3. Renderizar
         currentPage = 1; // Resetea a la página 1
-        renderStockTable(); // Vuelve a dibujar
+        renderStockTable(); // Vuelve a dibujar (ahora es async)
     }
+
+    /**
+     * ¡NUEVO! Helper para ordenar la lista actual (client-side).
+     */
+    function clientSideSort() {
+        currentListForPagination.sort((a, b) => {
+            let valA = a[sortField];
+            let valB = b[sortField];
+
+            // Manejar tipos de datos (string vs numérico)
+            if (typeof valA === 'string') {
+                valA = valA.toLowerCase();
+                valB = valB.toLowerCase();
+            }
+
+            let comparison = 0;
+            if (valA > valB) {
+                comparison = 1;
+            } else if (valA < valB) {
+                comparison = -1;
+            }
+
+            return (sortDirection === 'desc') ? (comparison * -1) : comparison;
+        });
+    }
+
+    /**
+     * ¡NUEVO! Maneja el clic en las cabeceras de la tabla.
+     */
+    function handleSortClick(event) {
+        event.preventDefault();
+        const th = event.currentTarget;
+        const newSortField = th.getAttribute('data-sort-by');
+
+        if (!newSortField) return;
+
+        if (sortField === newSortField) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortField = newSortField;
+            sortDirection = 'asc';
+        }
+
+        // Llama a filtrarStock, que ahora filtra Y ordena
+        filtrarStock();
+    }
+
+    /**
+     * ¡NUEVO! Actualiza los íconos de ordenamiento en las cabeceras.
+     */
+    function updateSortIndicators() {
+        tableHeaders.forEach(th => {
+            th.classList.remove('sort-asc', 'sort-desc');
+            
+            const icon = th.querySelector('.sort-icon');
+            if (icon) {
+                icon.className = 'sort-icon fas fa-sort';
+            }
+            
+            if (th.getAttribute('data-sort-by') === sortField) {
+                th.classList.add(`sort-${sortDirection}`);
+                if (icon) {
+                    icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
+                }
+            }
+        });
+    }
+
 
     /**
      * Borra la fila de la tabla instantáneamente (sin recargar).
@@ -168,12 +267,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 fila.remove(); 
             }
         }
-        // Actualiza las listas globales para que el filtro y paginación
-        // no cuenten el producto eliminado.
         todosLosProductos = todosLosProductos.filter(p => p.id != id);
         currentListForPagination = currentListForPagination.filter(p => p.id != id);
-        
-        // Vuelve a renderizar la página actual (importante si la página quedó vacía)
         renderStockTable();
     }
 
@@ -186,13 +281,9 @@ document.addEventListener('DOMContentLoaded', function () {
             alert('Error: Producto no encontrado en el inventario local.');
             return;
         }
-
-        // Limpia errores
         document.querySelectorAll('#edit-product-form .error-message').forEach(el => el.textContent = '');
         editFormGeneralMessage.textContent = '';
         editFormGeneralMessage.className = 'form-message';
-        
-        // Rellena el formulario
         editProductId.value = producto.id;
         editNombre.value = producto.nombre;
         editCategoria.value = producto.categoria;
@@ -200,7 +291,6 @@ document.addEventListener('DOMContentLoaded', function () {
         editPrecio.value = producto.precio.toFixed(2);
         editStockActual.value = producto.stock; 
         editCantidadAjuste.value = 0; 
-
         editModal.style.display = 'block';
     }
 
@@ -209,14 +299,10 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     async function handleEditSubmit(event) {
         event.preventDefault(); 
-        
         editFormGeneralMessage.textContent = '';
         editFormGeneralMessage.className = 'form-message';
-
         const id = editProductId.value;
         const ajuste = parseInt(editCantidadAjuste.value) || 0; 
-        
-        // 1. Validaciones
         let isValid = true;
         if (editNombre.value.trim() === "") {
              errorEditNombre.textContent = 'El nombre es obligatorio.'; isValid = false;
@@ -232,10 +318,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (ajuste < 0) {
              errorEditAjuste.textContent = 'La cantidad a añadir no puede ser negativa.'; isValid = false;
         }
-        
         if (!isValid) return; 
-
-        // 2. Construir el DTO
         const actualizarDTO = {
             nombre: editNombre.value.trim(),
             categoria: editCategoria.value.trim(),
@@ -243,26 +326,19 @@ document.addEventListener('DOMContentLoaded', function () {
             precio: parseFloat(editPrecio.value),
             cantidadExtraStock: ajuste
         };
-
-        // 3. Llamar al backend (PUT a /api/stock/{id})
         try {
             const response = await fetch(API_STOCK_EDIT_URL + id, { 
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(actualizarDTO)
             });
-
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(errorText || `Error HTTP: ${response.status}`);
             }
-
-            // 4. Éxito
             editModal.style.display = 'none';
             alert('¡Producto actualizado con éxito!');
-            // Recargamos todo para ver el cambio de stock y precio
             loadStock(); 
-
         } catch (error) {
             console.error('Error al actualizar producto:', error);
             editFormGeneralMessage.textContent = `Error: ${error.message}`;
@@ -276,19 +352,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Buscador
     searchInput.addEventListener('input', filtrarStock);
+    
+    // ¡NUEVO! Listeners para ordenamiento
+    tableHeaders.forEach(th => {
+        th.addEventListener('click', handleSortClick);
+    });
 
     // Botones de la tabla (Editar y Borrar)
     tableBody.addEventListener('click', (event) => {
         const target = event.target; 
-
-        // Lógica de borrar (abre modal)
         const deleteButton = target.closest('.btn-delete-producto');
         if (deleteButton) {
             idParaBorrar = deleteButton.dataset.id; 
             deleteModal.style.display = 'block';
         }
-
-        // Lógica de editar (abre modal)
         const editButton = target.closest('.btn-edit-producto');
         if (editButton) {
             const id = editButton.dataset.id;
@@ -304,26 +381,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     confirmDeleteBtn.addEventListener('click', async () => {
         if (!idParaBorrar) return;
-
         try {
             const response = await fetch(API_PRODUCTOS_DELETE_URL + idParaBorrar, {
                 method: 'DELETE'
             });
-
             if (response.ok) {
-                // ÉXITO (Status 200 o 204)
-                // Borramos la fila sin alertar al usuario
                 removerFilaDelDOM(idParaBorrar); 
             } else {
-                // ERROR (Status 400, 403, 500, etc.)
                 const errorTexto = await response.text();
-                
                 if (response.status === 400 && errorTexto.includes("INACTIVO")) {
-                    // ÉXITO LÓGICO (400 Bad Request)
-                    // Borramos la fila sin alertar al usuario
                     removerFilaDelDOM(idParaBorrar);
                 } else {
-                    // Error real
                     throw new Error(errorTexto || `Error HTTP: ${response.status}`);
                 }
             }
@@ -345,19 +413,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     editProductForm.addEventListener('submit', handleEditSubmit);
 
-    // Botones de Paginación
-    prevPageBtn.addEventListener('click', () => {
+    // ¡MODIFICADO! Botones de Paginación (ahora son async)
+    prevPageBtn.addEventListener('click', async () => {
         if (currentPage > 1) {
             currentPage--;
-            renderStockTable();
+            await renderStockTable(); // Espera a que la animación termine
         }
     });
 
-    nextPageBtn.addEventListener('click', () => {
+    nextPageBtn.addEventListener('click', async () => {
         const totalPages = Math.ceil(currentListForPagination.length / itemsPerPage);
         if (currentPage < totalPages) {
             currentPage++;
-            renderStockTable();
+            await renderStockTable(); // Espera a que la animación termine
         }
     });
 
