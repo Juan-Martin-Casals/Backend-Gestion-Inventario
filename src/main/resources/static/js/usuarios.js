@@ -358,11 +358,15 @@ document.addEventListener('DOMContentLoaded', function() {
             option.value = rol.idRol; 
             option.textContent = rol.descripcion;
 
-            if (rol.idRol == data.idRol) { // Comparar idRol con idRol
+            if (rol.idRol == user.idRol) { 
                 option.selected = true;
             }
             editRolSelect.appendChild(option);
         });
+
+        // ¡NUEVO! Mostrar el modal
+        // Esta línea faltaba en el código que pegaste
+        if(modalEdit) modalEdit.style.display = 'block';
     }
 
     // --- Cerrar el modal ---

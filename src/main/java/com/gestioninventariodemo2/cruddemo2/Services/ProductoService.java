@@ -1,6 +1,7 @@
 package com.gestioninventariodemo2.cruddemo2.Services;
 
 import java.time.LocalDate;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -145,6 +146,20 @@ Stock stockInicial = Stock.builder()
                         .build();
             })
             .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductoSelectDTO> listarProductosSelectPorProveedor(Long idProveedor) {
+        // Si no se proporciona un ID, devolvemos una lista vacía.
+        if (idProveedor == null) {
+            return Collections.emptyList(); 
+        }
+        
+        // Usamos el nuevo método del repositorio y el DTO helper existente
+        return productoRepository.findActivosByProveedorId(idProveedor)
+                .stream()
+                .map(this::mapDto) // Reutilizamos el helper 'mapDto'
+                .toList();
     }
 
 

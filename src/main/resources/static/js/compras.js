@@ -3,9 +3,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     // URLs DE LA API
     // ===============================
-    const API_PRODUCTOS_URL = '/api/productos/select';
+    // Esta URL ahora solo se usa para la carga original (que está comentada)
+    const API_PRODUCTOS_URL_SELECT_ALL = '/api/productos/select'; 
     const API_COMPRAS_URL = '/api/compras'; 
     const API_PROVEEDORES_URL = '/api/proveedores/select';
+    
+    // Esta es la URL base para el nuevo endpoint
+    const API_PRODUCTOS_URL_BASE = '/api/productos'; 
     
     // ===============================
     // ESTADO GLOBAL
@@ -77,14 +81,36 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * Carga Productos al array 'todosLosProductos'
+     * ¡NUEVA! Carga Productos al array 'todosLosProductos' FILTRANDO por proveedor
      */
-    async function loadProductosParaCompra() {
+    async function fetchProductosDelProveedor(idProveedor) {
         if (!productoSearchInput) return;
+
+        // Limpiamos y deshabilitamos mientras carga
+        productoSearchInput.disabled = true;
+        productoSearchInput.placeholder = "Cargando productos...";
+        todosLosProductos = []; // Limpiar la lista de productos anterior
+        productoHiddenInput.value = '';
+        productoSearchInput.value = '';
+        
         try {
-            const response = await fetch(API_PRODUCTOS_URL);
+            
+            // --- ¡URL CORREGIDA! ---
+            // Usamos la URL base correcta, SIN el '/select'
+            const response = await fetch(`${API_PRODUCTOS_URL_BASE}/por-proveedor/${idProveedor}`);
+            
             if (!response.ok) throw new Error('No se pudieron cargar los productos');
+            
             todosLosProductos = await response.json();
+            
+            if (todosLosProductos.length > 0) {
+                productoSearchInput.placeholder = "Buscar producto...";
+                productoSearchInput.disabled = false; // Habilitamos el input
+            } else {
+                productoSearchInput.placeholder = "Este proveedor no tiene productos";
+                // El input queda deshabilitado
+            }
+            
         } catch (error) {
             console.error(error);
             productoSearchInput.placeholder = "Error al cargar productos";
@@ -114,17 +140,33 @@ document.addEventListener('DOMContentLoaded', function() {
         renderResultadosProveedores(proveedoresFiltrados);
     }
 
+    /**
+     * Función 'seleccionarProveedor' con corrección de parseInt
+     */
     function seleccionarProveedor(event) {
         const target = event.target.closest('.product-result-item');
         if (!target || !target.dataset.id) return;
-        const proveedorId = target.dataset.id;
-        const proveedor = todosLosProveedores.find(p => p.id == proveedorId);
+
+        // --- CORRECCIÓN PARSEINT ---
+        // 1. Convertir el ID del dataset (que es string) a un número
+        const proveedorIdNum = parseInt(target.dataset.id, 10);
+        if (isNaN(proveedorIdNum)) return; // Salir si no es un número válido
+
+        // 2. Usar la comparación ESTRICTA (===) con el ID numérico
+        const proveedor = todosLosProveedores.find(p => p.id === proveedorIdNum); 
+        // --- FIN DE LA CORRECCIÓN ---
 
         if (proveedor) {
             proveedorSearchInput.value = proveedor.nombre;
-            proveedorHiddenInput.value = proveedor.id;
+            proveedorHiddenInput.value = proveedor.id; // El hidden input no necesita ser número
             proveedorResultsContainer.style.display = 'none';
             if (proveedorError) proveedorError.textContent = '';
+            
+            // Disparamos la carga de productos para ESTE proveedor
+            fetchProductosDelProveedor(proveedor.id);
+        } else {
+             // Opcional: Ayuda a depurar si algo sigue mal
+            console.error("Error: No se encontró el proveedor con ID:", proveedorIdNum);
         }
     }
 
@@ -134,9 +176,20 @@ document.addEventListener('DOMContentLoaded', function() {
             proveedorHiddenInput.value = ''; 
             if (proveedorError) proveedorError.textContent = '';
             filtrarProveedores(); 
+            
+            // --- LÓGICA AÑADIDA ---
+            // Si el usuario borra el input de proveedor, reseteamos los productos
+            if (proveedorSearchInput.value.trim() === '') {
+                 todosLosProductos = []; // Vaciar la lista
+                 productoSearchInput.value = '';
+                 productoHiddenInput.value = '';
+                 productoSearchInput.placeholder = "Seleccione un proveedor primero";
+                 productoSearchInput.disabled = true;
+            }
         });
         proveedorSearchInput.addEventListener('focus', filtrarProveedores);
     }
+    
     if (proveedorResultsContainer) {
         proveedorResultsContainer.addEventListener('click', seleccionarProveedor);
     }
@@ -167,11 +220,21 @@ document.addEventListener('DOMContentLoaded', function() {
         renderResultadosProductos(productosFiltrados);
     }
 
+    /**
+     * Función 'seleccionarProducto' con corrección de parseInt
+     */
     function seleccionarProducto(event) {
         const target = event.target.closest('.product-result-item');
         if (!target || !target.dataset.id) return;
-        const productoId = target.dataset.id;
-        const producto = todosLosProductos.find(p => p.idProducto == productoId);
+        
+        // --- CORRECCIÓN PARSEINT ---
+        // 1. Convertir el ID del dataset (string) a número
+        const productoIdNum = parseInt(target.dataset.id, 10);
+        if (isNaN(productoIdNum)) return;
+
+        // 2. Usar la comparación ESTRICTA (===)
+        const producto = todosLosProductos.find(p => p.idProducto === productoIdNum);
+        // --- FIN DE LA CORRECCIÓN ---
 
         if (producto) {
             productoSearchInput.value = producto.nombreProducto;
@@ -179,10 +242,11 @@ document.addEventListener('DOMContentLoaded', function() {
             productoResultsContainer.style.display = 'none';
             if (productoError) productoError.textContent = '';
             
-            // Auto-rellenar precio de venta si el campo existe
             if(ventaInput) {
                  ventaInput.value = producto.precioVenta.toFixed(2);
             }
+        } else {
+            console.error("Error: No se encontró el producto con ID:", productoIdNum);
         }
     }
     
@@ -218,7 +282,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ===============================================
     // LÓGICA DEL "CARRITO" (DETALLE TEMPORAL)
-    // (Modificado para leer del buscador de producto)
     // ===============================================
 
     function renderDetalleTemporal() {
@@ -260,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     /**
-     * ¡MODIFICADO! Lee de los inputs del buscador de productos.
+     * Lee de los inputs del buscador de productos.
      */
     function handleAgregarDetalle() {
         document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
@@ -382,11 +445,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 detalleItems = []; 
                 renderDetalleTemporal(); 
                 
-                // Limpiamos AMBOS buscadores
+                // Limpiamos AMBOS buscadores y reseteamos productos
                 proveedorSearchInput.value = '';
                 proveedorHiddenInput.value = '';
                 productoSearchInput.value = '';
                 productoHiddenInput.value = '';
+                todosLosProductos = [];
+                productoSearchInput.placeholder = "Seleccione un proveedor primero";
+                productoSearchInput.disabled = true;
+
 
                 historialCurrentPage = 0;
                 loadComprasHistorial(); 
@@ -543,7 +610,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // CARGA INICIAL (COMPRAS)
     // ===============================
     loadProveedoresParaCompra(); // Carga proveedores al array
-    loadProductosParaCompra();   // Carga productos al array
-    loadComprasHistorial();       // Carga la tabla de historial
-    renderDetalleTemporal();     // Renderiza la tabla vacía del carrito
+    // loadProductosParaCompra();  // <-- ESTA YA NO SE LLAMA AL INICIO
+    loadComprasHistorial();       // Carga la tabla de historial
+    renderDetalleTemporal();      // Renderiza la tabla vacía del carrito
+    
+    // Deshabilitamos los productos al inicio
+    if(productoSearchInput) {
+        productoSearchInput.disabled = true;
+        productoSearchInput.placeholder = "Seleccione un proveedor primero";
+    }
 });

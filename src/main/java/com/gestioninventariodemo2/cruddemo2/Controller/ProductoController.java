@@ -51,6 +51,12 @@ public class ProductoController {
         return ResponseEntity.ok(productos);
     }
 
+    @GetMapping("/por-proveedor/{idProveedor}")
+    public ResponseEntity<List<ProductoSelectDTO>> listarProductosPorProveedor(@PathVariable Long idProveedor){
+        List<ProductoSelectDTO> productos = productoService.listarProductosSelectPorProveedor(idProveedor);
+        return ResponseEntity.ok(productos);
+    }
+
 
 
    @DeleteMapping("/{id}")

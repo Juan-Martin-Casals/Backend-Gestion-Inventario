@@ -7,6 +7,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
 
@@ -22,4 +23,7 @@ public interface ProductoRepository extends JpaRepository<Producto,Long>{
     boolean existsByNombreIgnoreCase(String nombre);
 
     Page<Producto> findAllByEstado(String estado, Pageable pageable);
+
+    @Query("SELECT p FROM Producto p JOIN p.productoProveedores pp WHERE pp.proveedor.idProveedor = :idProveedor AND p.estado = 'ACTIVO'")
+    List<Producto> findActivosByProveedorId(@Param("idProveedor") Long idProveedor);
 }
