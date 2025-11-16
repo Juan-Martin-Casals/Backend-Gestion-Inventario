@@ -1,26 +1,19 @@
 package com.gestioninventariodemo2.cruddemo2.DTO;
 
-
-
-import java.time.LocalDate;
-import java.util.List;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class VentaRequestDTO{
+public class ClienteSelectDTO {
 
-
-    private Long idCliente;
-    private List<DetalleVentaRequestDTO> detalles;
-    private LocalDate fecha;
-
-    
+    private Long id;
+    private String nombre;
+    private String apellido;
+    private String dni;
 
 }

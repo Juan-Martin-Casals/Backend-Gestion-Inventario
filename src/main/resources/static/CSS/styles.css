@@ -1597,3 +1597,57 @@ body {
     /* (7 filas * 50px aprox) + 50px cabecera = 400px */
     min-height: 450px; 
 }
+
+
+
+.search-with-add {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Espacio entre el input y el botón */
+}
+
+.search-with-add input[type="text"] {
+    /* El input ocupa todo el espacio menos el botón */
+    flex: 1;
+    margin-bottom: 0; /* Quitamos el margen inferior que tienen los form-group */
+}
+
+.btn-add-quick {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 10px;
+    height: 38px; 
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    flex-shrink: 0;
+    
+    /* --- ¡CAMBIO DIRECTO! --- */
+    /* Este es un color azul "primario" estándar */
+    background-color: #0d6efd; 
+    
+    /* Esto es para el ícono '+' (es correcto) */
+    color: white; 
+}
+
+.btn-add-quick:hover {
+    background-color: var(--color-primary-dark);
+}
+
+/* --- Estilos para el nuevo modal --- */
+/* (Se ocultará con JS, pero lo definimos aquí) */
+#modal-add-cliente-overlay {
+    display: none; 
+}
+
+
+#modal-add-cliente-overlay .form-group {
+    margin-bottom: 22px; /* Elige el valor que te guste, ej: 25px */
+}
+
+/* Aumenta el espacio *encima* de la sección del botón */
+#modal-add-cliente-overlay .modal-footer {
+    margin-top: 30px; /* Elige el valor que te guste, ej: 35px */
+}

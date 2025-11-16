@@ -19,4 +19,8 @@ public interface StockRepository extends JpaRepository<Stock,Long>{
     long countByStockActualGreaterThanAndStockActualLessThanEqual(int min, int max);
 
     Page<Stock> findByStockActualLessThanEqualAndProductoEstado(int stockNivel, String estado, Pageable pageable);
+
+    Optional<Stock> findByProductoIdProducto(Long idProducto);
+
+    
 }

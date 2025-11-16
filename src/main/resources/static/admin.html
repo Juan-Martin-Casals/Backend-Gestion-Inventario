@@ -558,43 +558,39 @@
 </section>
 
 
-    <section id="ventas-section" class="spa-section" style="display:none">
+
+
+<section id="ventas-section" class="spa-section" style="display:none">
     <div class="section-header"></div>
 
     <div class="form-section">
         <h4>Registrar Nueva Venta</h4>
         <form class="sale-form" id="venta-form">
+            
             <div class="form-row">
                 <div class="form-group">
                     <label for="fecha-venta">Fecha</label>
                     <input type="date" id="fecha-venta">
                     <div class="error-message" id="errorFechaVenta"></div>
                 </div>
+                
                 <div class="form-group">
-                    <label for="nombre-venta">Nombre del Cliente</label>
-                    <input type="text" id="nombre-venta" placeholder="Ingrese el nombre del cliente">
-                    <div class="error-message" id="errorNombreCliente"></div>
+                    <label for="venta-cliente-search">Buscar Cliente (Nombre, Apellido o DNI)</label>
+                    
+                    <div class="search-with-add">
+                        <input type="text" id="venta-cliente-search" autocomplete="off" placeholder="Buscar cliente existente...">
+                        
+                        <button type="button" id="btn-add-cliente" class="btn-icon btn-add-quick" title="Crear Nuevo Cliente">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    
+                    <input type="hidden" id="venta-cliente-id-hidden">
+                    <div class="product-results" id="venta-cliente-results"></div>
+                    <span class="error-message" id="errorVentaCliente"></span>
                 </div>
             </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="apellido-cliente">Apellido del Cliente:</label>
-                    <input type="text" id="apellido-cliente" name="apellido_cliente" >
-                    <div class="error-message" id="errorApellidoCliente"></div>
-                </div>
-                <div class="form-group">
-                    <label for="telefono-cliente">Teléfono del Cliente:</label>
-                    <input type="text" id="telefono-cliente" name="telefono_cliente" >
-                    <div class="error-message" id="errorTelefonoCliente"></div>
-                </div>
-                <div class="form-group">
-                    <label for="dni-cliente">DNI del Cliente:</label>
-                    <input type="text" id="dni-cliente" name="dni_cliente" >
-                    <div class="error-message" id="errorDniCliente"></div>
-                </div>
-            </div>
-
+            
             <div class="product-selection">
                 <h5><i class="fas fa-box"></i> Selección de Producto</h5>
                 <div class="form-row">
@@ -613,27 +609,27 @@
                     </div>
                 </div>
                 <button type="button" id="btn-agregar-producto" class="btn-secondary">
-        <i class="fas fa-plus"></i>
-        Agregar Producto a la Venta
-    </button>
-    <div class="error-message" id="errorDetalleGeneral"></div>
+                    <i class="fas fa-plus"></i>
+                    Agregar Producto a la Venta
+                </button>
+                <div class="error-message" id="errorDetalleGeneral"></div>
 
-    <div class="table-container" style="margin-top: 20px;">
-        <table class="data-table">
-            <thead>
-                <tr>
-                    <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Precio Unit.</th>
-                    <th>Subtotal</th>
-                    <th>Quitar</th>
-                </tr>
-            </thead>
-            <tbody id="venta-detalle-temporal">
-            </tbody>
-        </table>
-    </div>
-    </div>
+                <div class="table-container" style="margin-top: 20px;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unit.</th>
+                                <th>Subtotal</th>
+                                <th>Quitar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="venta-detalle-temporal">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
 
             <div class="total-section">
                 <h4 id="total-venta">$ Total: $0.00</h4>
@@ -659,21 +655,60 @@
                         <th>Producto</th> <th data-sort-by="total" class="sortable">Total <i class="sort-icon fas fa-sort"></i></th>
                     </tr>
                 </thead>
-
                 <tbody id="tabla-ventas-body">
-                        </tbody>
-                    </table>
-
-                    <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                        <span id="ventas-page-info" style="margin-right: 15px;">Página 1 de 1</span>
-                        <button class="btn-outline" id="ventas-prev-page" disabled>
-                            <i class="fas fa-arrow-left"></i>
-                        </button>
-                        <button class="btn-outline" id="ventas-next-page">
-                            <i class="fas fa-arrow-right"></i>
-                        </button>
-                    </div>
+                </tbody>
+            </table>
+            <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                <span id="ventas-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                <button class="btn-outline" id="ventas-prev-page" disabled>
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <button class="btn-outline" id="ventas-next-page">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
     </div>
+
+    <div id="modal-add-cliente-overlay" class="modal"> <div class="modal-content"> <button id="modal-add-cliente-close" class="modal-close">&times;</button>
+
+        <header class="modal-header">
+            <h2>Crear Nuevo Cliente</h2>
+            </header>
+        
+        <form id="add-cliente-form" class="modal-form" novalidate>
+            
+            <div class="form-message" id="form-general-message-add-cliente"></div>
+
+            <div class="form-group">
+                <label for="addClienteNombre">Nombre <span class="required">*</span></label>
+                <input type="text" id="addClienteNombre" required>
+                <span class="error-message" id="errorAddClienteNombre"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="addClienteApellido">Apellido</label>
+                <input type="text" id="addClienteApellido">
+            </div>
+
+            <div class="form-group">
+                <label for="addClienteDNI">DNI <span class="required">*</span></label>
+                <input type="text" id="addClienteDNI" required>
+                <span class="error-message" id="errorAddClienteDNI"></span>
+            </div>
+            
+            <div class="form-group">
+                <label for="addClienteTelefono">Teléfono</label>
+                <input type="tel" id="addClienteTelefono">
+            </div>
+
+            <div class="modal-footer">
+                <button type="submit" class="btn btn-primary">Guardar Cliente</button>
+            </div>
+        </form>
+    </div>
+</div>
+
 </section>
 
 

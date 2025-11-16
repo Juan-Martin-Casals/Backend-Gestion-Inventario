@@ -1,5 +1,7 @@
 package com.gestioninventariodemo2.cruddemo2.Exception;
 
+import java.util.Map;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -35,6 +37,16 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> handleSoftDelete(SoftDeleteException ex){
         // Usamos 200 OK (o 202 Accepted) para indicar que la acción fue procesada exitosamente.
         return ResponseEntity.status(HttpStatus.OK).body(ex.getMessage()); 
+    }
+
+
+    @ExceptionHandler(StockInsuficienteException.class)
+    public ResponseEntity<Object> handleStockInsuficiente(StockInsuficienteException ex) {
+        // Devuelve un JSON con el mensaje de error, que el frontend SÍ puede leer
+        return new ResponseEntity<>(
+            Map.of("message", ex.getMessage()), 
+            HttpStatus.BAD_REQUEST
+        );
     }
 
 }

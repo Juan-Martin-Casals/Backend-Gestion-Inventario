@@ -14,9 +14,12 @@ import lombok.NoArgsConstructor;
 @Builder
 public class VentaResponseDTO {
 
+
+    private Long idVenta;
     private LocalDate fecha;
     private String nombreCliente;
     private double total;
     private List<ProductoVentaDTO> productos;
+    private String nombreVendedor;
 
 }
