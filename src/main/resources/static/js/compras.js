@@ -41,6 +41,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let historialTotalPages = 1;
     const historialItemsPerPage = 10; // Número de items a mostrar
 
+    let historialSortField = 'fecha'; // Campo de ordenamiento inicial
+    let historialSortDirection = 'desc'; // Dirección inicial (más nuevo primero)
+    const historialTableHeaders = document.querySelectorAll('#compras-section .data-table th[data-sort-by]');
+
+
+    const mainContent = document.querySelector('.main-content');
+
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS (Dropdowns y Tabla Historial)
     // ==========================================================
@@ -89,27 +96,47 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // ¡FUNCIÓN DE HISTORIAL ACTUALIZADA PARA PAGINACIÓN!
     async function loadComprasHistorial() {
-        if (!historialTabla) return; 
+        // Asegurarse de que existan los elementos
+        if (!historialTabla || !mainContent) return; 
         
+        // 1. GUARDAR scroll y preparar animación (Fade Out)
+        const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+        historialTabla.classList.add('loading');
+        // El colspan debe coincidir con el número de columnas (Fecha, Prov, Prod, Costo, Total)
         historialTabla.innerHTML = `<tr><td colspan="5">Cargando historial...</td></tr>`;
 
+        // Esperar fade-out
+        await new Promise(resolve => setTimeout(resolve, 200));
+
         try {
-            // Enviamos los parámetros de paginación y el ordenamiento por fecha (DESC)
-            const url = `${API_COMPRAS_URL}?page=${historialCurrentPage}&size=${historialItemsPerPage}&sort=fecha,desc`;
+            // 2. Construir URL con paginación y ordenamiento
+            const sortParam = historialSortField ? `&sort=${historialSortField},${historialSortDirection}` : '';
+            const url = `${API_COMPRAS_URL}?page=${historialCurrentPage}&size=${historialItemsPerPage}${sortParam}`;
+            
             const response = await fetch(url); 
             
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
             
-            const pageData = await response.json(); // Recibimos el objeto Page
+            const pageData = await response.json(); 
             
             historialTotalPages = pageData.totalPages;
             
+            // 3. Renderizar datos
             renderComprasTabla(pageData.content);
-            updateHistorialPaginationControls(); // Actualizamos controles
+            updateHistorialPaginationControls(); 
+            updateHistorialSortIndicators(); 
+            
+            // 4. Restaurar scroll y aplicar Fade-In
+            requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPosition);
+                historialTabla.classList.remove('loading');
+            });
             
         } catch (error) {
             console.error('Error al cargar el historial de compras:', error);
             historialTabla.innerHTML = `<tr><td colspan="5">Error al cargar historial.</td></tr>`;
+            // Asegurarse de quitar la clase 'loading' en caso de error
+            historialTabla.classList.remove('loading');
         }
     }
 
@@ -179,6 +206,48 @@ document.addEventListener('DOMContentLoaded', function() {
             if (historialCurrentPage + 1 < historialTotalPages) {
                 historialCurrentPage++;
                 loadComprasHistorial();
+            }
+        });
+    }
+
+    function handleHistorialSortClick(event) {
+        event.preventDefault();
+        event.currentTarget.blur(); // Evita que el encabezado mantenga el foco
+        
+        const th = event.currentTarget;
+        const newSortField = th.getAttribute('data-sort-by');
+
+        if (!newSortField) return;
+
+        // Si es la misma columna, invertimos la dirección
+        if (historialSortField === newSortField) {
+            historialSortDirection = historialSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            // Si es una nueva columna, la seteamos en 'asc'
+            historialSortField = newSortField;
+            historialSortDirection = 'asc';
+        }
+
+        historialCurrentPage = 0; // Volver a la página 0
+        loadComprasHistorial();
+    }
+
+    function updateHistorialSortIndicators() {
+        historialTableHeaders.forEach(th => {
+            th.classList.remove('sort-asc', 'sort-desc');
+            
+            const icon = th.querySelector('.sort-icon');
+            if (icon) {
+                icon.className = 'sort-icon fas fa-sort'; // Icono neutral
+            }
+            
+            // Si es la columna activa, mostramos la dirección
+            if (th.getAttribute('data-sort-by') === historialSortField) {
+                th.classList.add(`sort-${historialSortDirection}`); 
+                
+                if (icon) {
+                    icon.className = `sort-icon fas fa-sort-${historialSortDirection === 'asc' ? 'up' : 'down'}`;
+                }
             }
         });
     }
@@ -361,6 +430,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    historialTableHeaders.forEach(header => {
+        header.addEventListener('click', handleHistorialSortClick);
+    });
 
     // ===============================
     // CARGA INICIAL (COMPRAS)

@@ -1518,3 +1518,60 @@ body {
     /* (7 filas * 50px aprox) + 50px cabecera = 400px */
     min-height: 550px; 
 }
+
+#compras-historial-tabla-body {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
+/* * Cuando el JS añade la clase .loading, 
+ * la tabla se oculta con la transición.
+ */
+#compras-historial-tabla-body.loading {
+    opacity: 0; /* Oculta la tabla de historial mientras carga */
+}
+
+/* * IMPORTANTE: Previene que la paginación "salte"
+ * cuando la tabla se oculta al cargar.
+ * Usamos un selector específico para el contenedor de esa tabla.
+ */
+#compras-section .table-section .table-container {
+    /* (10 filas * 50px aprox) + 50px cabecera = 550px */
+    min-height: 650px; 
+}
+
+#user-table-body {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#user-table-body.loading {
+    opacity: 0; /* Oculta la tabla de usuarios mientras carga */
+}
+
+/* Previene que la paginación "salte" */
+.table-container-usuarios {
+    /* (7 filas * 50px aprox) + 50px cabecera = 400px */
+    /* Ajusta este valor si 7 filas es incorrecto */
+    min-height: 650px; 
+}
+
+
+#tabla-ventas-body {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#tabla-ventas-body.loading {
+    opacity: 0; /* Oculta la tabla de ventas mientras carga */
+}
+
+/* * El contenedor de la tabla de ventas tiene la clase '.table-container-venta' 
+ * (ver admin.html) 
+ */
+.table-container-venta {
+    /* (7 filas * 50px aprox) + 50px cabecera = 400px */
+    min-height: 600px; 
+}
+
+

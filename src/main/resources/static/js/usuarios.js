@@ -1,128 +1,187 @@
+/**
+ * Este archivo maneja toda la lógica para la sección de "Usuarios":
+ * - Cargar la lista de usuarios (paginada y ordenada).
+ * - Cargar roles en los formularios.
+ * - Validar y enviar el formulario para registrar nuevos usuarios.
+ * - Manejar el modal de edición de usuarios.
+ * - Manejar el modal de eliminación.
+ */
 document.addEventListener('DOMContentLoaded', function() {
 
     // ===============================
     // URLs DE LA API
     // ===============================
-    const API_USUARIOS_URL = '/api/usuarios'; 
-    const API_ROLES_URL = '/api/roles'; 
+    const API_USUARIOS_URL = '/api/usuarios';
+    const API_ROLES_URL = '/api/roles';
 
     // ===============================
-    // ESTADO GLOBAL Y PAGINACIÓN
+    // ESTADO GLOBAL
     // ===============================
-    let currentDeleteUserId = null; 
-    let allRoles = []; 
-    
-    // Paginación
-    let currentPage = 0; // Las páginas de Spring Boot empiezan en 0
-    let totalPages = 1;
-    const itemsPerPage = 7; // Define el tamaño de la página
+    let currentDeleteUserId = null;
+    let itemsPerPage = 7; 
 
     // ===============================
     // SELECTORES - TABLA Y PAGINACIÓN
     // ===============================
     const userTableBody = document.getElementById('user-table-body');
-    const userPrevPageBtn = document.getElementById('user-prev-page'); // <-- Nuevo
-    const userNextPageBtn = document.getElementById('user-next-page'); // <-- Nuevo
-    const userPageInfo = document.getElementById('user-page-info');     // <-- Nuevo
+    const prevPageBtn = document.getElementById('user-prev-page');
+    const nextPageBtn = document.getElementById('user-next-page');
+    const pageInfo = document.getElementById('user-page-info');
+    
+    // ¡NUEVO! Selector para estabilidad de scroll/foco
+    const mainContent = document.querySelector('.main-content');
 
-    // ... (otros selectores de registro y modales) ...
-    // --- Selectores de Registro ---
+    // ===============================
+    // ESTADO DE PAGINACIÓN
+    // ===============================
+    let currentPage = 0;
+    let totalPages = 1;
+    
+    // ===============================
+    // ¡NUEVO! ESTADO Y SELECTORES DE ORDENAMIENTO
+    // ===============================
+    let sortField = 'nombre'; // Campo de ordenamiento inicial
+    let sortDirection = 'asc'; // Dirección inicial
+    const userTableHeaders = document.querySelectorAll('#usuarios-section .data-table th[data-sort-by]');
+
+
+    // ===============================
+    // SELECTORES - FORMULARIO DE REGISTRO
+    // ===============================
     const userForm = document.getElementById('user-form');
+    const nombreInput = document.getElementById('user-nombre');
+    const apellidoInput = document.getElementById('user-apellido');
+    const emailInput = document.getElementById('user-email');
     const rolSelect = document.getElementById('user-rol');
+    const passwordInput = document.getElementById('user-password');
+    const confirmPasswordInput = document.getElementById('user-confirm-password');
     const generalMessage = document.getElementById('form-general-message-usuario');
-    const errorNombre = document.getElementById('error-user-nombre');
-    const errorApellido = document.getElementById('error-user-apellido');
-    const errorEmail = document.getElementById('error-user-email');
-    const errorRol = document.getElementById('error-user-rol');
-    // --- Selectores Modales ---
-    const editModalOverlay = document.getElementById('modal-edit-usuario-overlay');
-    const editModalCloseBtn = document.getElementById('modal-edit-usuario-close');
+
+    // ===============================
+    // SELECTORES - MODAL DE EDICIÓN
+    // ===============================
+    const modalEdit = document.getElementById('modal-edit-usuario-overlay');
+    const modalEditCloseBtn = document.getElementById('modal-edit-usuario-close');
     const editForm = document.getElementById('edit-usuario-form');
     const editIdInput = document.getElementById('editUsuarioId');
     const editNombreInput = document.getElementById('editUsuarioNombre');
     const editApellidoInput = document.getElementById('editUsuarioApellido');
     const editEmailInput = document.getElementById('editUsuarioEmail');
-    const editRolSelect = document.getElementById('editUsuarioRol'); 
+    const editRolSelect = document.getElementById('editUsuarioRol');
     const editGeneralMessage = document.getElementById('form-general-message-edit-usuario');
+
+    // ===============================
+    // SELECTORES - MODAL DE BORRADO (REUTILIZADO)
+    // ===============================
     const deleteConfirmModal = document.getElementById('delete-confirm-modal');
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
     const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
     const deleteModalMessage = document.getElementById('delete-modal-message');
 
     // ==========================================================
-    // LÓGICA DE CARGA DE DATOS (Roles y Tabla)
+    // LÓGICA DE CARGA DE DATOS (TABLA Y ROLES)
     // ==========================================================
 
+    /**
+     * Carga los roles desde la API y los popula en los <select>
+     */
     async function loadRoles() {
-        // ... (Tu lógica de carga de roles - sin cambios) ...
+    try {
+        const response = await fetch(API_ROLES_URL);
+        if (!response.ok) throw new Error('Error al cargar roles.');
+        allRoles = await response.json(); // <-- Esto trae [{"idRol": 1, "descripcion": "ADMIN"}, ...]
+
+        if (rolSelect) {
+            rolSelect.innerHTML = '<option value="">Selecciona rol</option>';
+            allRoles.forEach(rol => {
+                const option = document.createElement('option');
+
+                // --- ¡ESTA ES LA CORRECCIÓN! ---
+                // Usar los nombres exactos del RolSelectDTO
+                option.value = rol.idRol; 
+                option.textContent = rol.descripcion; // <-- Debe ser 'descripcion'
+
+                rolSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar roles:', error);
+        if (rolSelect) rolSelect.innerHTML = '<option value="">Error al cargar</option>';
+    }
+}
+
+    /**
+     * ¡MODIFICADO! Carga la tabla de usuarios con paginación, ordenamiento y animación.
+     */
+    async function loadUsuarios() {
+        if (!userTableBody || !mainContent) return;
+
+        // 1. GUARDAR scroll y preparar animación (Fade Out)
+        const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+        userTableBody.classList.add('loading');
+        // El colspan debe coincidir con el número de columnas (Nombre, Apellido, Email, Rol, Acciones)
+        userTableBody.innerHTML = '<tr><td colspan="5">Cargando usuarios...</td></tr>';
+
+        // Esperar fade-out
+        await new Promise(resolve => setTimeout(resolve, 200));
+
         try {
-            const response = await fetch(API_ROLES_URL);
-            if (!response.ok) throw new Error('Error al cargar roles.');
-            allRoles = await response.json();
+            // 2. Construir URL con paginación y ordenamiento
+            const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
+            const url = `${API_USUARIOS_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
             
-            if (rolSelect) {
-                rolSelect.innerHTML = '<option value="">Selecciona rol</option>';
-                allRoles.forEach(rol => {
-                    const option = document.createElement('option');
-                    const roleId = rol.idRol || rol.id; 
-                    const roleName = rol.descripcion || rol.nombre || 'Rol sin nombre'; 
-                    option.value = roleId; 
-                    option.textContent = roleName; 
-                    rolSelect.appendChild(option);
-                });
+            const response = await fetch(url);
+            if (!response.ok) {
+                // Manejo de error si el token expiró o es inválido
+                if (response.status === 401 || response.status === 403) {
+                     window.location.href = '/index.html'; // Redirigir al login
+                }
+                throw new Error(`Error del servidor: ${response.status}`);
             }
+            
+            const pageData = await response.json(); 
+            totalPages = pageData.totalPages;
+            
+            // 3. Renderizar datos
+            renderUserTable(pageData.content); 
+            updatePaginationControls();
+            updateSortIndicators(); // ¡NUEVO!
+            
+            // 4. Restaurar scroll y aplicar Fade-In
+            requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPosition);
+                userTableBody.classList.remove('loading');
+            });
+
         } catch (error) {
-            console.error('Error al cargar roles:', error);
-            if (rolSelect) rolSelect.innerHTML = '<option value="">Error al cargar</option>';
+            console.error('Error al cargar los usuarios:', error);
+            userTableBody.innerHTML = `<tr><td colspan="5">Error al cargar usuarios.</td></tr>`;
+            userTableBody.classList.remove('loading');
         }
     }
 
     /**
-     * Carga y renderiza la tabla de usuarios (MODIFICADA para PAGINACIÓN).
+     * Renderiza las filas de la tabla de usuarios.
      */
-    async function loadUsers() {
-        if (!userTableBody) return;
-        userTableBody.innerHTML = '<tr><td colspan="5">Cargando...</td></tr>';
-        
-        try {
-            // Enviamos los parámetros de paginación y ordenamos por apellido (ascendente)
-            const url = `${API_USUARIOS_URL}?page=${currentPage}&size=${itemsPerPage}&sort=apellido,asc`;
-            const response = await fetch(url); 
-            if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
-            
-            const pageData = await response.json(); // Recibimos el objeto Page
-            
-            totalPages = pageData.totalPages;
-            renderUsersTable(pageData.content); // Solo renderizamos el contenido
-            updatePaginationControls(); // Actualizamos los controles
-
-        } catch (error) {
-            console.error('Error al cargar usuarios:', error);
-            userTableBody.innerHTML = `<tr><td colspan="5">Error al cargar usuarios.</td></tr>`;
-        }
-    }
-
-    function renderUsersTable(users) {
-        // ... (Tu lógica de renderizado - sin cambios en la fila) ...
-        if (!userTableBody) return;
+    function renderUserTable(usuarios) {
         userTableBody.innerHTML = '';
-        if (users.length === 0) {
+        if (usuarios.length === 0) {
             userTableBody.innerHTML = '<tr><td colspan="5">No hay usuarios registrados.</td></tr>';
             return;
         }
 
-        users.forEach(user => {
+        usuarios.forEach(user => {
             const row = `
                 <tr>
                     <td>${user.nombre || 'N/A'}</td>
                     <td>${user.apellido || 'N/A'}</td>
                     <td>${user.email || 'N/A'}</td>
-                    <td>${user.descripcionRol || user.nombreRol || 'N/A'}</td>
+                    <td>${user.descripcionRol || 'Sin Rol'}</td>
                     <td>
-                        <button class="btn-icon btn-edit-user" data-id="${user.id || user.idUsuario}" title="Editar">
+                        <button class="btn-icon btn-edit-usuario" data-id="${user.id}" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn-icon btn-danger btn-delete-user" data-id="${user.id || user.idUsuario}" title="Eliminar">
+                        <button class="btn-icon btn-delete-usuario" data-id="${user.id}" data-nombre="${user.nombre}" title="Eliminar">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -132,41 +191,86 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ==========================================================
-    // ¡NUEVO! LÓGICA DE PAGINACIÓN DE USUARIOS
-    // ==========================================================
+    // ===============================================
+    // LÓGICA DE PAGINACIÓN
+    // ===============================================
+    
     function updatePaginationControls() {
-        if (!userPageInfo) return;
+        if (!pageInfo || !prevPageBtn || !nextPageBtn) return;
         
-        userPageInfo.textContent = `Página ${currentPage + 1} de ${totalPages || 1}`;
-        userPrevPageBtn.disabled = (currentPage === 0);
-        userNextPageBtn.disabled = (currentPage + 1 >= totalPages);
+        pageInfo.textContent = `Página ${currentPage + 1} de ${totalPages || 1}`;
+        prevPageBtn.disabled = (currentPage === 0);
+        nextPageBtn.disabled = (currentPage + 1 >= totalPages);
     }
 
-    if (userPrevPageBtn) {
-        userPrevPageBtn.addEventListener('click', (event) => {
-            event.preventDefault();
+    if (prevPageBtn) {
+        prevPageBtn.addEventListener('click', (event) => { 
+            event.preventDefault(); 
             if (currentPage > 0) {
                 currentPage--;
-                loadUsers();
+                loadUsuarios();
             }
         });
     }
 
-    if (userNextPageBtn) {
-        userNextPageBtn.addEventListener('click', (event) => {
-            event.preventDefault();
+    if (nextPageBtn) {
+        nextPageBtn.addEventListener('click', (event) => { 
+            event.preventDefault(); 
             if (currentPage + 1 < totalPages) {
                 currentPage++;
-                loadUsers();
+                loadUsuarios();
+            }
+        });
+    }
+    
+    // ===============================================
+    // ¡NUEVO! LÓGICA DE ORDENAMIENTO
+    // ===============================================
+
+    function handleSortClick(event) {
+        event.preventDefault();
+        event.currentTarget.blur();
+        
+        const th = event.currentTarget;
+        const newSortField = th.getAttribute('data-sort-by');
+
+        if (!newSortField) return;
+
+        if (sortField === newSortField) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortField = newSortField;
+            sortDirection = 'asc';
+        }
+
+        currentPage = 0; 
+        loadUsuarios();
+    }
+    
+    function updateSortIndicators() {
+        userTableHeaders.forEach(th => {
+            th.classList.remove('sort-asc', 'sort-desc');
+            
+            const icon = th.querySelector('.sort-icon');
+            if (icon) {
+                icon.className = 'sort-icon fas fa-sort';
+            }
+            
+            if (th.getAttribute('data-sort-by') === sortField) {
+                th.classList.add(`sort-${sortDirection}`);
+                
+                if (icon) {
+                    icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
+                }
             }
         });
     }
 
 
-    // ==========================================================
-    // LÓGICA DEL FORMULARIO DE REGISTRO (MODIFICADO)
-    // ==========================================================
+    // ===============================================
+    // LÓGICA DEL FORMULARIO DE REGISTRO
+    // ===============================================
+
     if (userForm) {
         userForm.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -177,59 +281,54 @@ document.addEventListener('DOMContentLoaded', function() {
             generalMessage.className = 'form-message';
             
             // 2. Obtener valores
-            const nombre = document.getElementById('user-nombre').value.trim();
-            const apellido = document.getElementById('user-apellido').value.trim();
-            const email = document.getElementById('user-email').value.trim();
+            const nombre = nombreInput.value.trim();
+            const apellido = apellidoInput.value.trim();
+            const email = emailInput.value.trim();
             const idRol = rolSelect.value;
-            const password = document.getElementById('user-password').value;
-            const confirmPassword = document.getElementById('user-confirm-password').value;
+            const password = passwordInput.value;
+            const confirmPassword = confirmPasswordInput.value;
 
             // 3. Validaciones
             let isValid = true;
-            if (!nombre) { errorNombre.textContent = 'Campo obligatorio.'; isValid = false; }
-            if (!apellido) { errorApellido.textContent = 'Campo obligatorio.'; isValid = false; }
-            if (!email) { errorEmail.textContent = 'Campo obligatorio.'; isValid = false; }
-            if (!idRol) { errorRol.textContent = 'Seleccione un rol.'; isValid = false; }
-            if (!password) { errorPassword.textContent = 'Campo obligatorio'; isValid=false}
-            if (password !== confirmPassword) {
-                errorConfirmPassword.textContent = 'Las contraseñas no coinciden.';
-                errorPassword.textContent = 'Las contraseñas no coinciden.';
-                isValid = false;
+            if (!nombre) { document.getElementById('error-user-nombre').textContent = 'Complete este campo'; isValid = false; }
+            if (!apellido) { document.getElementById('error-user-apellido').textContent = 'Complete este campo'; isValid = false; }
+            if (!email) { document.getElementById('error-user-email').textContent = 'Complete este campo'; isValid = false; }
+            if (!idRol) { document.getElementById('error-user-rol').textContent = 'Seleccione un rol'; isValid = false; }
+            if (!password) { document.getElementById('error-user-password').textContent = 'Complete este campo'; isValid = false; }
+            if (password !== confirmPassword) { 
+                document.getElementById('error-user-confirm-password').textContent = 'Las contraseñas no coinciden'; 
+                isValid = false; 
             }
+            if (!isValid) { generalMessage.textContent = "Complete los campos."; generalMessage.classList.add('error'); return; }
 
-            if (!isValid) {
-                generalMessage.textContent = "Debe completar todos los campos correctamente.";
-                generalMessage.classList.add('error');
-                return;
-            }
-
-            // 4. Construir DTO (usando los nombres de campos de tu UsuarioRequestDTO)
-            const userDTO = { 
-                nombre, 
-                apellido, 
-                email, 
-                idRol: parseInt(idRol), 
-                contrasena: password, // <-- Nombre del campo en tu DTO
-                confirmacionContrasena: confirmPassword // <-- Nombre del campo en tu DTO
+            // 4. Construir DTO
+            const usuarioDTO = {
+                nombre,
+                apellido,
+                email,
+                password, 
+                idRol: parseInt(idRol)
             };
 
             // 5. Enviar
             try {
-                const response = await fetch(API_USUARIOS_URL, { // POST a /api/usuarios
+                const response = await fetch(API_USUARIOS_URL, { 
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(userDTO)
+                    body: JSON.stringify(usuarioDTO)
                 });
 
                 if (!response.ok) {
-                    const errorText = await response.text(); 
-                    throw new Error(errorText || `Error del servidor: ${response.status}`);
+                    const errorText = await response.text();
+                    throw new Error(errorText || `Error: ${response.status}`);
                 }
 
                 generalMessage.textContent = "¡Usuario registrado con éxito!";
                 generalMessage.classList.add('success');
                 userForm.reset();
-                loadUsers(); // Recargar la tabla
+                
+                currentPage = 0; 
+                loadUsuarios(); 
 
             } catch (error) {
                 console.error('Error al registrar el usuario:', error);
@@ -239,79 +338,65 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ... (El resto de la lógica de Modales de Edición y Borrado sigue aquí) ...
-
     // ==========================================================
     // LÓGICA DEL MODAL DE EDICIÓN
     // ==========================================================
     
-    async function openEditModal(id) {
-        // ... (lógica de apertura) ...
-        try {
-            document.querySelectorAll('#edit-usuario-form .error-message').forEach(el => el.textContent = '');
-            editGeneralMessage.textContent = '';
-            
-            const response = await fetch(`${API_USUARIOS_URL}/${id}`); 
-            if (!response.ok) throw new Error('No se pudo cargar el usuario para edición.');
-            
-            const data = await response.json();
-            
-            editIdInput.value = data.id || data.idUsuario;
-            editNombreInput.value = data.nombre;
-            editApellidoInput.value = data.apellido;
-            editEmailInput.value = data.email;
-            
-            editRolSelect.innerHTML = '';
-            allRoles.forEach(rol => {
-                const option = document.createElement('option');
-                const roleId = rol.idRol || rol.id; 
-                const roleName = rol.descripcion || rol.nombre;
-                
-                option.value = roleId; 
-                option.textContent = roleName;
-                
-                if (roleId == data.idRol) { 
-                    option.selected = true;
-                }
-                editRolSelect.appendChild(option);
-            });
-            
-            editModalOverlay.style.display = 'block';
-        } catch (error) {
-            console.error('Error al abrir el modal de edición:', error);
-            alert('Error al cargar datos: ' + error.message);
-        }
+    // --- Abrir el modal ---
+    function openEditModal(user) {
+        editIdInput.value = user.id;
+        editNombreInput.value = user.nombre;
+        editApellidoInput.value = user.apellido;
+        editEmailInput.value = user.email;
+        
+        // Seleccionar el rol correcto
+        editRolSelect.innerHTML = '';
+        allRoles.forEach(rol => {
+            const option = document.createElement('option');
+
+            // --- ¡CORRECCIÓN DOBLE! ---
+            option.value = rol.idRol; 
+            option.textContent = rol.descripcion;
+
+            if (rol.idRol == data.idRol) { // Comparar idRol con idRol
+                option.selected = true;
+            }
+            editRolSelect.appendChild(option);
+        });
     }
 
+    // --- Cerrar el modal ---
     function closeEditModal() {
-        editModalOverlay.style.display = 'none';
-        editGeneralMessage.textContent = '';
-        document.querySelectorAll('#edit-usuario-form .error-message').forEach(el => el.textContent = '');
+        if(modalEdit) modalEdit.style.display = 'none';
     }
-
-    // --- Manejador del envío del formulario de EDICIÓN ---
+    
+    // --- Manejar el envío (submit) del formulario de EDICIÓN ---
     if (editForm) {
         editForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-
-            // 1. Construir DTO para PUT (solo datos básicos y Rol)
+            
             const id = editIdInput.value;
-            const updateDTO = {
+            const dto = {
                 nombre: editNombreInput.value.trim(),
                 apellido: editApellidoInput.value.trim(),
                 email: editEmailInput.value.trim(),
-                idRol: parseInt(editRolSelect.value),
-                
-                contrasena: null, 
-                confirmacionContrasena: null 
+                idRol: parseInt(editRolSelect.value)
             };
+
+            // Validaciones (similar al de registro pero sin password)
+            let isValid = true;
+            if (!dto.nombre) { document.getElementById('errorEditUsuarioNombre').textContent = 'Complete este campo'; isValid = false; }
+            if (!dto.apellido) { document.getElementById('errorEditUsuarioApellido').textContent = 'Complete este campo'; isValid = false; }
+            if (!dto.email) { document.getElementById('errorEditUsuarioEmail').textContent = 'Complete este campo'; isValid = false; }
+            if (!dto.idRol) { document.getElementById('errorEditUsuarioRol').textContent = 'Seleccione un rol'; isValid = false; }
+            if (!isValid) { editGeneralMessage.textContent = "Complete los campos."; editGeneralMessage.classList.add('error'); return; }
+
             
-            // 2. Enviar PUT
             try {
-                const response = await fetch(`${API_USUARIOS_URL}/${id}`, { 
+                const response = await fetch(`${API_USUARIOS_URL}/${id}`, {
                     method: 'PUT',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(updateDTO)
+                    body: JSON.stringify(dto)
                 });
 
                 if (!response.ok) {
@@ -324,7 +409,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 setTimeout(() => {
                     closeEditModal();
-                    loadUsers(); 
+                    loadUsuarios(); // Recargar la tabla
                 }, 1000);
 
             } catch (error) {
@@ -334,8 +419,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
-    // ... (Lógica de Borrado y Event Listeners de la Tabla - sin cambios) ...
+
+    // ==========================================================
+    // LÓGICA DE BORRADO (MODAL REUTILIZADO)
+    // ==========================================================
 
     function openDeleteModal(id, nombre) {
         currentDeleteUserId = id; 
@@ -348,69 +435,95 @@ document.addEventListener('DOMContentLoaded', function() {
         if(deleteConfirmModal) deleteConfirmModal.style.display = 'none';
     }
 
+    // ===============================================
+    // LISTENERS DE EVENTOS DE TABLA Y MODALES
+    // ===============================================
+
+    // --- Clics en botones de la tabla ---
     if (userTableBody) {
         userTableBody.addEventListener('click', async function(e) {
-            const editButton = e.target.closest('.btn-edit-user');
-            const deleteButton = e.target.closest('.btn-delete-user');
+            const editButton = e.target.closest('.btn-edit-usuario');
+            const deleteButton = e.target.closest('.btn-delete-usuario');
 
+            // --- Clic en EDITAR ---
             if (editButton) {
                 const id = editButton.dataset.id;
-                openEditModal(id); 
+                try {
+                    // Hacemos un fetch para obtener los datos más frescos del usuario
+                    // (El DTO de la tabla puede no tener el idRol, solo el nombre)
+                    const response = await fetch(`${API_USUARIOS_URL}/${id}`); 
+                    if (!response.ok) throw new Error('No se pudo cargar el usuario');
+                    const userData = await response.json(); 
+                    openEditModal(userData);
+                } catch (error) {
+                    console.error('Error al abrir el modal de edición:', error);
+                    alert('Error: ' + error.message);
+                }
             }
 
+            // --- Clic en BORRAR ---
             if (deleteButton) {
                 const id = deleteButton.dataset.id;
-                const nombreCompleto = deleteButton.closest('tr').cells[0].textContent + ' ' + deleteButton.closest('tr').cells[1].textContent;
-                openDeleteModal(id, nombreCompleto); 
+                const nombre = deleteButton.dataset.nombre;
+                openDeleteModal(id, nombre);
             }
         });
     }
 
-    if (editModalCloseBtn) {
-        editModalCloseBtn.addEventListener('click', closeEditModal);
-    }
-    if (editModalOverlay) {
-        editModalOverlay.addEventListener('click', (e) => {
-            if (e.target === editModalOverlay) closeEditModal();
+    // --- Clic en el botón de confirmación de BORRADO ---
+    if (confirmDeleteBtn) {
+        confirmDeleteBtn.addEventListener('click', async () => {
+            // Verificamos si estamos borrando un usuario (podría ser un producto u otro)
+            if (currentDeleteUserId) { 
+                try {
+                    const response = await fetch(`${API_USUARIOS_URL}/${currentDeleteUserId}`, {
+                        method: 'DELETE'
+                    });
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(errorText || 'No se pudo eliminar el usuario');
+                    }
+                    
+                    loadUsuarios(); // Recarga la tabla
+
+                } catch (error) {
+                    alert('Error al eliminar: ' + error.message);
+                } finally {
+                    closeDeleteModal(); 
+                    currentDeleteUserId = null; // Limpiamos el ID
+                }
+            }
         });
     }
-
+    
+    // --- Eventos para cerrar modales ---
     if (cancelDeleteBtn) {
         cancelDeleteBtn.addEventListener('click', closeDeleteModal);
     }
-    
     if (deleteConfirmModal) {
          deleteConfirmModal.addEventListener('click', (e) => {
             if (e.target === deleteConfirmModal) closeDeleteModal();
         });
     }
-
-    if (confirmDeleteBtn) {
-        confirmDeleteBtn.addEventListener('click', async () => {
-            if (!currentDeleteUserId) return; 
-
-            try {
-                const response = await fetch(`${API_USUARIOS_URL}/${currentDeleteUserId}`, {
-                    method: 'DELETE'
-                });
-                
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || 'No se pudo eliminar el usuario');
-                }
-                
-                loadUsers(); // Recarga la tabla
-
-            } catch (error) {
-                alert('Error al eliminar: ' + error.message);
-            } finally {
-                closeDeleteModal(); 
-            }
+    if (modalEditCloseBtn) {
+        modalEditCloseBtn.addEventListener('click', closeEditModal);
+    }
+    if (modalEdit) {
+        modalEdit.addEventListener('click', (e) => {
+            if (e.target === modalEdit) closeEditModal();
         });
     }
 
     // ===============================
     // CARGA INICIAL
     // ===============================
-    loadRoles().then(loadUsers);
+    
+    // ¡NUEVO! Asignar eventos de clic a las cabeceras
+    userTableHeaders.forEach(header => {
+        header.addEventListener('click', handleSortClick);
+    });
+
+    loadRoles();
+    loadUsuarios(); 
 });

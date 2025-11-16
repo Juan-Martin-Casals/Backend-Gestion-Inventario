@@ -43,6 +43,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const ventasPrevPageBtn = document.getElementById('ventas-prev-page');
     const ventasNextPageBtn = document.getElementById('ventas-next-page');
 
+    const mainContent = document.querySelector('.main-content');
+
 
     // --- VARIABLES DE ESTADO ---
     let todosLosProductos = []; // Aquí guardaremos los productos del /select
@@ -54,46 +56,64 @@ document.addEventListener('DOMContentLoaded', function () {
     const pageSizeVentas = 7; // Tamaño de página a 7
     let totalPagesVentas = 0;
 
+    let ventasSortField = 'fecha'; 
+    let ventasSortDirection = 'desc'; 
+    const ventasTableHeaders = document.querySelectorAll('#ventas-section .data-table th[data-sort-by]');
+
 
     // --- 5. Funciones ---
 
     // CARGAR VENTAS EN LA TABLA (AHORA CON PAGINACIÓN Y ORDENAMIENTO)
-    async function loadVentas(page = 0) { // Recibe el número de página a cargar
+    async function loadVentas(page = 0) { 
+        if (!ventaTableBody || !mainContent) return;
 
+        // 1. GUARDAR scroll y preparar animación (Fade Out)
+        const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+        ventaTableBody.classList.add('loading');
+        // El colspan debe coincidir con el número de columnas (Fecha, Cliente, Producto, Total)
+        ventaTableBody.innerHTML = `<tr><td colspan="4">Cargando historial de ventas...</td></tr>`;
+
+        // Esperar fade-out
+        await new Promise(resolve => setTimeout(resolve, 200));
         
         try {
-            // DEFINE LA VARIABLE sortParam E INCLUYE LA PÁGINA Y TAMAÑO
-            const sortParam = 'fecha,desc'; // Orden descendente por fecha
-            
-            // Construye la URL con paginación y ordenamiento
+            // 2. Construir URL con paginación y ordenamiento dinámico
+            const sortParam = `${ventasSortField},${ventasSortDirection}`;
             const url = `${API_VENTAS_URL}?page=${page}&size=${pageSizeVentas}&sort=${sortParam}`; 
 
             const response = await fetch(url);
             if (!response.ok) {
-                // Si el servidor devuelve 404 o similar, el .json() fallará, manejamos el error
                 throw new Error(`Error HTTP: ${response.status}`);
             }
 
-            // Se espera una respuesta paginada (Page<VentaResponseDTO>)
             const pageData = await response.json(); 
             const ventas = pageData.content;
 
-            currentPageVentas = pageData.number; // Índice de página actual (0-based)
-            totalPagesVentas = pageData.totalPages; // Total de páginas
+            currentPageVentas = pageData.number; 
+            totalPagesVentas = pageData.totalPages; 
 
+            // 3. Renderizar datos
             renderVentasTable(ventas);
-            updateVentasPaginationControls(); // Llama a la función de control
+            updateVentasPaginationControls(); 
+            updateVentasSortIndicators(); // ¡NUEVO!
+
+            // 4. Restaurar scroll y aplicar Fade-In
+            requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPosition);
+                ventaTableBody.classList.remove('loading');
+            });
 
         } catch (error) {
             console.error('Error al cargar las ventas:', error);
             if (ventaTableBody) {
                 ventaTableBody.innerHTML = `<tr><td colspan="4">Error al cargar el historial de ventas.</td></tr>`;
             }
-            // En caso de error, resetea los controles de paginación
             currentPageVentas = 0;
             totalPagesVentas = 0;
             renderVentasTable([]);
             updateVentasPaginationControls();
+            // Asegurarse de quitar la clase 'loading' en caso de error
+            ventaTableBody.classList.remove('loading');
         }
     }
 
@@ -153,6 +173,45 @@ document.addEventListener('DOMContentLoaded', function () {
         }).join('');
 
         ventaTableBody.innerHTML = rowsHtml;
+    }
+
+    function handleVentasSortClick(event) {
+        event.preventDefault();
+        event.currentTarget.blur();
+        
+        const th = event.currentTarget;
+        const newSortField = th.getAttribute('data-sort-by');
+
+        if (!newSortField) return;
+
+        if (ventasSortField === newSortField) {
+            ventasSortDirection = ventasSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            ventasSortField = newSortField;
+            ventasSortDirection = 'asc';
+        }
+
+        currentPageVentas = 0; 
+        loadVentas(0); // Cargar la primera página con el nuevo orden
+    }
+    
+    function updateVentasSortIndicators() {
+        ventasTableHeaders.forEach(th => {
+            th.classList.remove('sort-asc', 'sort-desc');
+            
+            const icon = th.querySelector('.sort-icon');
+            if (icon) {
+                icon.className = 'sort-icon fas fa-sort';
+            }
+            
+            if (th.getAttribute('data-sort-by') === ventasSortField) {
+                th.classList.add(`sort-${ventasSortDirection}`);
+                
+                if (icon) {
+                    icon.className = `sort-icon fas fa-sort-${ventasSortDirection === 'asc' ? 'up' : 'down'}`;
+                }
+            }
+        });
     }
 
     async function loadProductosParaSelect() {
@@ -444,6 +503,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (ventasNextPageBtn) {
         ventasNextPageBtn.addEventListener('click', handleVentasNextPage);
     }
+    ventasTableHeaders.forEach(header => {
+        header.addEventListener('click', handleVentasSortClick);
+    });
 
 
     loadProductosParaSelect();

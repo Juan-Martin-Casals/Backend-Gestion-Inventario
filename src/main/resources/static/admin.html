@@ -432,11 +432,9 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Fecha</th>
-                        <th>Proveedor</th>
-                        <th>Productos</th>
-                        <th>Costo Unit.</th>
-                        <th>Total</th>
+                        <th data-sort-by="fecha" class="sortable">Fecha <i class="sort-icon fas fa-sort"></i></th>
+                        <th data-sort-by="proveedor.nombre" class="sortable">Proveedor <i class="sort-icon fas fa-sort"></i></th>
+                        <th>Productos</th> <th>Costo Unit.</th> <th data-sort-by="total" class="sortable">Total <i class="sort-icon fas fa-sort"></i></th>
                     </tr>
                 </thead>
                 <tbody id="compras-historial-tabla-body">
@@ -519,10 +517,10 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>Nombre</th>
-                        <th>Apellido</th>
-                        <th>Email</th>
-                        <th>Rol</th>
+                        <th data-sort-by="nombre" class="sortable">Nombre <i class="sort-icon fas fa-sort"></i></th>
+                        <th data-sort-by="apellido" class="sortable">Apellido <i class="sort-icon fas fa-sort"></i></th>
+                        <th data-sort-by="email" class="sortable">Email <i class="sort-icon fas fa-sort"></i></th>
+                        <th data-sort-by="rol.idRol" class="sortable">Rol <i class="sort-icon fas fa-sort"></i></th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -640,26 +638,25 @@
             <table class="data-table" id="tabla-ventas">
                 <thead>
                     <tr>
-                        <th>Fecha</th>
-                        <th>Cliente</th>
-                        <th>Producto</th>
-                        <th>Total</th>
+                        <th data-sort-by="fecha" class="sortable">Fecha <i class="sort-icon fas fa-sort"></i></th>
+                        <th data-sort-by="cliente.nombre" class="sortable">Cliente <i class="sort-icon fas fa-sort"></i></th>
+                        <th>Producto</th> <th data-sort-by="total" class="sortable">Total <i class="sort-icon fas fa-sort"></i></th>
                     </tr>
                 </thead>
 
                 <tbody id="tabla-ventas-body">
-                </tbody>
-            </table>
-        </div>
-        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-            <span id="ventas-page-info" style="margin-right: 15px;">Página 1 de 1</span>
-            <button class="btn-outline" id="ventas-prev-page" disabled>
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <button class="btn-outline" id="ventas-next-page">
-                <i class="fas fa-arrow-right"></i>
-            </button>
-        </div>
+                        </tbody>
+                    </table>
+
+                    <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                        <span id="ventas-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                        <button class="btn-outline" id="ventas-prev-page" disabled>
+                            <i class="fas fa-arrow-left"></i>
+                        </button>
+                        <button class="btn-outline" id="ventas-next-page">
+                            <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
     </div>
 </section>
 
