@@ -410,25 +410,25 @@ document.addEventListener('DOMContentLoaded', function () {
     async function saveVenta(event) {
         event.preventDefault();
         
-        // Resetear todos los mensajes de error
+        // 1. Resetear mensajes de error visuales
         generalMessage.textContent = '';
         generalMessage.className = 'form-message';
         if (errorFechaVenta) errorFechaVenta.textContent = '';
         if (clienteError) clienteError.textContent = '';
         if (errorDetalleGeneral) errorDetalleGeneral.textContent = '';
 
-
-        // --- VALIDACIÓN ---
+        // 2. Obtener valores y Validar
+        // (La validación se hace ANTES de mostrar el modal)
         const fechaVenta = fechaVentaInput.value;
-        const idCliente = clienteHiddenInput.value; // <-- ¡CAMBIO!
+        const idCliente = clienteHiddenInput.value;
 
         let isValid = true;
+
         if (!fechaVenta) {
             if (errorFechaVenta) errorFechaVenta.textContent = 'La fecha es obligatoria.';
             isValid = false;
         }
         
-        // ¡CAMBIO! Validar el ID oculto del cliente
         if (!idCliente) {
             if (clienteError) clienteError.textContent = 'Debe seleccionar un cliente.';
             isValid = false;
@@ -442,75 +442,71 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!isValid) {
             generalMessage.textContent = 'Por favor, complete todos los campos obligatorios.';
             generalMessage.classList.add('error');
-            return; 
+            return; // Detenemos aquí si no es válido
         }
 
-        // --- CONSTRUIR DTO ---
-        const detallesParaBackend = detallesVenta.map(item => {
-            return {
-                productoId: item.idProducto,
-                cantidad: item.cantidad
-            };
-        });
+        // 3. Mostrar Modal de Confirmación
+        // Pasamos el mensaje y la función asíncrona que se ejecutará al dar "Sí"
+        showConfirmationModal("¿Estás seguro de que deseas registrar esta venta?", async () => {
+            
+            try {
+                // --- PREPARAR DATOS (DTO) ---
+                const detallesParaBackend = detallesVenta.map(item => {
+                    return {
+                        productoId: item.idProducto,
+                        cantidad: item.cantidad
+                    };
+                });
 
-        // ¡CAMBIO! El DTO de Venta ahora solo necesita el ID del cliente
-        const ventaRequestDTO = {
-            fecha: fechaVenta,
-            idCliente: parseInt(idCliente), // <-- ¡CAMBIO!
-            detalles: detallesParaBackend,
-        };
+                const ventaRequestDTO = {
+                    fecha: fechaVenta,
+                    idCliente: parseInt(idCliente),
+                    detalles: detallesParaBackend,
+                };
 
-        // --- ENVIAR A LA API ---
-       try {
-            const response = await fetch(API_VENTAS_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(ventaRequestDTO),
-            });
+                // --- ENVIAR A LA API ---
+                const response = await fetch(API_VENTAS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(ventaRequestDTO),
+                });
 
-            if (!response.ok) {
-                // Lógica mejorada para leer errores (JSON o texto)
-                const errorTexto = await response.text();
-                try {
-                    const errorData = JSON.parse(errorTexto);
-                    throw new Error(errorData.message || "Error desconocido del servidor.");
-                } catch (jsonError) {
-                    throw new Error(errorTexto || `Error HTTP: ${response.status}`);
+                if (!response.ok) {
+                    const errorTexto = await response.text();
+                    try {
+                        const errorData = JSON.parse(errorTexto);
+                        throw new Error(errorData.message || "Error desconocido del servidor.");
+                    } catch (jsonError) {
+                        throw new Error(errorTexto || `Error HTTP: ${response.status}`);
+                    }
                 }
+
+                // --- ÉXITO ---
+                const ventaCreada = await response.json();
+                console.log('Venta registrada con éxito:', ventaCreada);
+
+                generalMessage.textContent = '¡Venta registrada con éxito!';
+                generalMessage.classList.add('success');
+
+                // Limpiar formulario y estado
+                ventaForm.reset();
+                detallesVenta = [];
+                renderDetalleTemporal();
+                clienteHiddenInput.value = ''; 
+                
+                // Recargar tabla de ventas
+                await new Promise(resolve => setTimeout(resolve, 250)); 
+                currentPageVentas = 0;
+                ventasSortField = 'fecha';
+                ventasSortDirection = 'desc';
+                loadVentas(currentPageVentas); 
+
+            } catch (error) {
+                console.error('Error al registrar la venta:', error);
+                generalMessage.textContent = `Error: ${error.message}`;
+                generalMessage.classList.add('error');
             }
-
-            // ¡Éxito!
-            const ventaCreada = await response.json();
-            console.log('Venta registrada con éxito:', ventaCreada);
-
-            generalMessage.textContent = '¡Venta registrada con éxito!';
-            generalMessage.classList.add('success');
-
-            // Resetear el formulario
-            ventaForm.reset();
-            detallesVenta = [];
-            renderDetalleTemporal();
-            clienteHiddenInput.value = ''; // Limpiar el ID oculto
-            
-            // --- ¡ESTA ES LA CORRECCIÓN! ---
-            // (Eliminamos la lógica de 'insertAdjacentHTML')
-
-            // 1. (Opcional) Esperamos 250ms para dar tiempo a la BD a actualizarse
-            await new Promise(resolve => setTimeout(resolve, 250)); 
-            
-            // 2. Forzamos la tabla al estado "por defecto" (Página 1, más nuevas primero)
-            currentPageVentas = 0;
-            ventasSortField = 'fecha';
-            ventasSortDirection = 'desc';
-            
-            // 3. Volvemos a llamar a loadVentas
-            loadVentas(currentPageVentas); 
-
-        } catch (error) {
-            console.error('Error al registrar la venta:', error);
-            generalMessage.textContent = `Error: ${error.message}`; // Mostrar error de stock
-            generalMessage.classList.add('error');
-        }
+        });
     }
 
     // ==========================================================

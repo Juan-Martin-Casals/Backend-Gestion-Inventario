@@ -81,6 +81,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const isPasswordEmpty = passwordInput.value.trim() === "";
 
 
+        
+
+
         if (isEmailEmpty || isPasswordEmpty) {
             messageContainer.textContent = "El email y la contraseña son obligatorios.";
             messageContainer.style.color = '#dc3545';

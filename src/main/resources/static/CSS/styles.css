@@ -1651,3 +1651,10 @@ body {
 #modal-add-cliente-overlay .modal-footer {
     margin-top: 30px; /* Elige el valor que te guste, ej: 35px */
 }
+
+.modal-buttons {
+    display: flex;
+    gap: 15px;
+    justify-content: center; /* Centra los botones */
+    margin-top: 20px;
+}

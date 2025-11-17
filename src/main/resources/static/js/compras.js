@@ -392,79 +392,99 @@ document.addEventListener('DOMContentLoaded', function() {
     if (compraForm) {
         compraForm.addEventListener('submit', async function(event) {
             event.preventDefault();
+            
+            // 1. Limpiar mensajes de error previos
             document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
             if (generalMessageCompra) {
                 generalMessageCompra.textContent = '';
                 generalMessageCompra.className = 'form-message';
             }
 
+            // 2. Validaciones (ANTES de mostrar el modal)
             let isValid = true;
             const fecha = document.getElementById('compra-fecha').value;
             const idProveedor = proveedorHiddenInput.value;
             
-            if (!fecha) { document.getElementById('errorCompraFecha').textContent = 'La fecha es obligatoria.'; isValid = false; }
+            if (!fecha) { 
+                document.getElementById('errorCompraFecha').textContent = 'La fecha es obligatoria.'; 
+                isValid = false; 
+            }
             if (!idProveedor) { 
                 document.getElementById('errorCompraProveedor').textContent = 'El proveedor es obligatorio.'; 
                 isValid = false; 
             }
             if (detalleItems.length === 0) {
-                if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto al detalle.'; isValid = false;
+                if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto al detalle.'; 
+                isValid = false;
             }
+            
             if (!isValid) {
                 if (generalMessageCompra) {
                     generalMessageCompra.textContent = "Debe completar todos los campos correctamente.";
                     generalMessageCompra.classList.add('error');
                 }
-                return;
+                return; // Si no es válido, paramos aquí y NO mostramos el modal
             }
 
-            const compraRequestDTO = {
-                fecha: fecha,
-                idProveedor: parseInt(idProveedor),
-                detalleCompras: detalleItems 
-            };
-            
-            try {
-                const response = await fetch(API_COMPRAS_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(compraRequestDTO)
-                });
-
-                if (!response.ok) {
-                    const errorData = await response.json(); 
-                    throw new Error(errorData.message || `Error del servidor: ${response.status}`);
-                }
-
-                if (generalMessageCompra) {
-                    generalMessageCompra.textContent = "¡Compra registrada exitosamente!";
-                    generalMessageCompra.classList.add('success');
-                }
+            // 3. Mostrar Modal de Confirmación
+            showConfirmationModal("¿Estás seguro de que deseas registrar esta compra?", async () => {
                 
-                compraForm.reset(); 
-                detalleItems = []; 
-                renderDetalleTemporal(); 
+                // --- Preparar datos y Enviar ---
+                const compraRequestDTO = {
+                    fecha: fecha,
+                    idProveedor: parseInt(idProveedor),
+                    detalleCompras: detalleItems 
+                };
                 
-                // Limpiamos AMBOS buscadores y reseteamos productos
-                proveedorSearchInput.value = '';
-                proveedorHiddenInput.value = '';
-                productoSearchInput.value = '';
-                productoHiddenInput.value = '';
-                todosLosProductos = [];
-                productoSearchInput.placeholder = "Seleccione un proveedor primero";
-                productoSearchInput.disabled = true;
+                try {
+                    const response = await fetch(API_COMPRAS_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(compraRequestDTO)
+                    });
 
+                    if (!response.ok) {
+                        const errorData = await response.json(); 
+                        throw new Error(errorData.message || `Error del servidor: ${response.status}`);
+                    }
 
-                historialCurrentPage = 0;
-                loadComprasHistorial(); 
+                    // --- Éxito ---
+                    if (generalMessageCompra) {
+                        generalMessageCompra.textContent = "¡Compra registrada exitosamente!";
+                        generalMessageCompra.classList.add('success');
+                    }
+                    
+                    // Limpiar formulario y estado
+                    compraForm.reset(); 
+                    detalleItems = []; 
+                    renderDetalleTemporal(); 
+                    
+                    // Limpiar buscadores
+                    proveedorSearchInput.value = '';
+                    proveedorHiddenInput.value = '';
+                    productoSearchInput.value = '';
+                    productoHiddenInput.value = '';
+                    todosLosProductos = [];
+                    
+                    // Resetear estado del input de productos
+                    if (productoSearchInput) {
+                        productoSearchInput.placeholder = "Seleccione un proveedor primero";
+                        productoSearchInput.disabled = true;
+                    }
 
-            } catch (error) {
-                console.error('Error al registrar la compra:', error);
-                if (generalMessageCompra) {
-                    generalMessageCompra.textContent = `Error al registrar: ${error.message}`;
-                    generalMessageCompra.classList.add('error');
+                    // Recargar tabla (esperamos un poco para asegurar consistencia en DB)
+                    await new Promise(resolve => setTimeout(resolve, 250));
+                    historialCurrentPage = 0;
+                    loadComprasHistorial(); 
+
+                } catch (error) {
+                    console.error('Error al registrar la compra:', error);
+                    if (generalMessageCompra) {
+                        generalMessageCompra.textContent = `Error al registrar: ${error.message}`;
+                        generalMessageCompra.classList.add('error');
+                    }
                 }
-            }
+            });
         });
     }
 
