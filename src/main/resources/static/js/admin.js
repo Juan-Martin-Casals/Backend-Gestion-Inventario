@@ -27,8 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // Lógica de navegación
-    sidebarLinks.forEach(link => {
+        sidebarLinks.forEach(link => {
         link.addEventListener('click', function(e) {
             e.preventDefault();
 
@@ -38,12 +37,27 @@ document.addEventListener('DOMContentLoaded', function() {
             const sectionId = this.getAttribute('data-section');
             showSection(sectionId);
 
-            
+            // ACTUALIZACIÓN: Agregar los casos que faltan
             if (sectionId === 'principal' && typeof window.loadPrincipalData === 'function') {
                 window.loadPrincipalData();
             } else if (sectionId === 'productos' && typeof window.loadProducts === 'function') {
                 window.loadProducts();
+            } 
+            // AGREGA ESTO:
+            else if (sectionId === 'ventas' && typeof window.cargarDatosVentas === 'function') {
+                // Asumo que en ventas.js tienes una función para cargar los selects
+                window.cargarDatosVentas(); 
             }
+            else if (sectionId === 'proveedores' && typeof window.cargarDatosProveedores === 'function') {
+            window.cargarDatosProveedores();
+            }
+            else if (sectionId === 'compras' && typeof window.cargarDatosCompras === 'function') {
+            window.cargarDatosCompras();
+            }
+            else if (sectionId === 'stock' && typeof window.cargarDatosStock === 'function') {
+            window.cargarDatosStock();
+}
+            // Repite para compras, stock, etc.
         });
     });
 

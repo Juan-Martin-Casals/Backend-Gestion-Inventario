@@ -6,25 +6,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const API_PRODUCTOS_URL_SELECT_ALL = '/api/productos/select'; 
     const API_COMPRAS_URL = '/api/compras'; 
     const API_PROVEEDORES_URL = '/api/proveedores/select';
-    
     const API_PRODUCTOS_URL_BASE = '/api/productos'; 
     
     // ===============================
     // CONFIGURACIÓN DE FORMATO
     // ===============================
-    // Formateador para MOSTRAR (ej: 25.000,50)
     const formatoMoneda = new Intl.NumberFormat('es-AR', {
         style: 'decimal',
         minimumFractionDigits: 0,
         maximumFractionDigits: 2
     });
 
-    // ¡NUEVO! Función para LEER los inputs formateados
-    // Convierte "25.000,50" -> 25000.50 (número válido para JS)
     function parsearMoneda(valor) {
         if (!valor) return NaN;
-        // 1. Quitamos los puntos de miles (los eliminamos)
-        // 2. Cambiamos la coma decimal por punto
         const limpio = valor.toString().replace(/\./g, '').replace(',', '.');
         return parseFloat(limpio);
     }
@@ -37,24 +31,21 @@ document.addEventListener('DOMContentLoaded', function() {
     let todosLosProductos = []; 
 
     // ===============================
-    // SELECTORES DEL FORMULARIO
+    // SELECTORES
     // ===============================
     const compraForm = document.getElementById('compra-form');
     const generalMessageCompra = document.getElementById('form-general-message-compra');
     
-    // --- Selectores Buscador Proveedor ---
     const proveedorSearchInput = document.getElementById('compra-proveedor-search');
     const proveedorHiddenInput = document.getElementById('compra-proveedor-id-hidden');
     const proveedorResultsContainer = document.getElementById('compra-proveedor-results');
     const proveedorError = document.getElementById('errorCompraProveedor');
-
-    // --- Selectores Buscador Producto ---
+    
     const productoSearchInput = document.getElementById('compra-producto-search');
     const productoHiddenInput = document.getElementById('compra-producto-id-hidden');
     const productoResultsContainer = document.getElementById('compra-producto-results');
     const productoError = document.getElementById('errorCompraProducto');
-
-    // --- Selectores del Detalle ("Carrito") ---
+    
     const addDetalleBtn = document.getElementById('add-detalle-btn');
     const cantidadInput = document.getElementById('compra-cantidad');
     const costoInput = document.getElementById('compra-costo-unit');
@@ -63,21 +54,18 @@ document.addEventListener('DOMContentLoaded', function() {
     const totalDisplay = document.getElementById('compra-total-display'); 
     const errorDetalleGeneral = document.getElementById('errorDetalleGeneral');
 
-    // ===============================
-    // SELECTORES TABLA HISTORIAL
-    // ===============================
     const historialTabla = document.getElementById('compras-historial-tabla-body');
     const historialPrevPageBtn = document.getElementById('compras-prev-page');
     const historialNextPageBtn = document.getElementById('compras-next-page');
     const historialPageInfo = document.getElementById('compras-page-info');
+    const historialTableHeaders = document.querySelectorAll('#compras-section .data-table th[data-sort-by]');
+    const mainContent = document.querySelector('.main-content');
     
     let historialCurrentPage = 0;
     let historialTotalPages = 1;
     const historialItemsPerPage = 10;
     let historialSortField = 'fecha';
     let historialSortDirection = 'desc';
-    const historialTableHeaders = document.querySelectorAll('#compras-section .data-table th[data-sort-by]');
-    const mainContent = document.querySelector('.main-content');
 
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS
@@ -89,6 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const response = await fetch(API_PROVEEDORES_URL); 
             if (!response.ok) throw new Error('Error al cargar proveedores');
             todosLosProveedores = await response.json(); 
+            console.log("Proveedores actualizados en Compras:", todosLosProveedores.length);
         } catch (error) {
             console.error(error);
             proveedorSearchInput.placeholder = "Error al cargar proveedores";
@@ -97,18 +86,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     async function fetchProductosDelProveedor(idProveedor) {
         if (!productoSearchInput) return;
-
-        productoSearchInput.disabled = true;
-        productoSearchInput.placeholder = "Cargando productos...";
         todosLosProductos = []; 
-        productoHiddenInput.value = '';
-        productoSearchInput.value = '';
         
         try {
             const response = await fetch(`${API_PRODUCTOS_URL_BASE}/por-proveedor/${idProveedor}`);
-            
             if (!response.ok) throw new Error('No se pudieron cargar los productos');
-            
             todosLosProductos = await response.json();
             
             if (todosLosProductos.length > 0) {
@@ -117,7 +99,6 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 productoSearchInput.placeholder = "Este proveedor no tiene productos";
             }
-            
         } catch (error) {
             console.error(error);
             productoSearchInput.placeholder = "Error al cargar productos";
@@ -125,7 +106,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================================
-    // LÓGICA DEL BUSCADOR DE PROVEEDORES
+    // BUSCADOR PROVEEDORES
     // ==========================================================
 
     function renderResultadosProveedores(proveedores) {
@@ -161,10 +142,9 @@ document.addEventListener('DOMContentLoaded', function() {
             proveedorHiddenInput.value = proveedor.id; 
             proveedorResultsContainer.style.display = 'none';
             if (proveedorError) proveedorError.textContent = '';
-            
+            productoSearchInput.value = '';
+            productoHiddenInput.value = '';
             fetchProductosDelProveedor(proveedor.id);
-        } else {
-            console.error("Error: No se encontró el proveedor con ID:", proveedorIdNum);
         }
     }
 
@@ -173,7 +153,6 @@ document.addEventListener('DOMContentLoaded', function() {
             proveedorHiddenInput.value = ''; 
             if (proveedorError) proveedorError.textContent = '';
             filtrarProveedores(); 
-            
             if (proveedorSearchInput.value.trim() === '') {
                  todosLosProductos = []; 
                  productoSearchInput.value = '';
@@ -184,13 +163,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         proveedorSearchInput.addEventListener('focus', filtrarProveedores);
     }
-    
-    if (proveedorResultsContainer) {
-        proveedorResultsContainer.addEventListener('click', seleccionarProveedor);
-    }
+    if (proveedorResultsContainer) proveedorResultsContainer.addEventListener('click', seleccionarProveedor);
     
     // ==========================================================
-    // LÓGICA DEL BUSCADOR DE PRODUCTOS
+    // BUSCADOR PRODUCTOS
     // ==========================================================
 
     function renderResultadosProductos(productos) {
@@ -228,13 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
             productoHiddenInput.value = producto.idProducto;
             productoResultsContainer.style.display = 'none';
             if (productoError) productoError.textContent = '';
-            
-            if(ventaInput) {
-                 // --- MODIFICADO: Ahora usamos formatoMoneda para el input ---
-                 ventaInput.value = formatoMoneda.format(producto.precioVenta);
-            }
-        } else {
-            console.error("Error: No se encontró el producto con ID:", productoIdNum);
+            if(ventaInput) ventaInput.value = formatoMoneda.format(producto.precioVenta);
         }
     }
     
@@ -246,41 +216,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         productoSearchInput.addEventListener('focus', filtrarProductos);
     }
-    if (productoResultsContainer) {
-        productoResultsContainer.addEventListener('click', seleccionarProducto);
-    }
+    if (productoResultsContainer) productoResultsContainer.addEventListener('click', seleccionarProducto);
 
     document.addEventListener('click', function (event) {
-        const isClickInsideProviderInput = proveedorSearchInput && proveedorSearchInput.contains(event.target);
-        const isClickInsideProviderResults = proveedorResultsContainer && proveedorResultsContainer.contains(event.target);
-        if (!isClickInsideProviderInput && !isClickInsideProviderResults) {
-            if (proveedorResultsContainer) proveedorResultsContainer.style.display = 'none';
+        if (proveedorSearchInput && !proveedorSearchInput.contains(event.target) && proveedorResultsContainer && !proveedorResultsContainer.contains(event.target)) {
+            proveedorResultsContainer.style.display = 'none';
         }
-        
-        const isClickInsideProductInput = productoSearchInput && productoSearchInput.contains(event.target);
-        const isClickInsideProductResults = productoResultsContainer && productoResultsContainer.contains(event.target);
-        if (!isClickInsideProductInput && !isClickInsideProductResults) {
-            if (productoResultsContainer) productoResultsContainer.style.display = 'none';
+        if (productoSearchInput && !productoSearchInput.contains(event.target) && productoResultsContainer && !productoResultsContainer.contains(event.target)) {
+            productoResultsContainer.style.display = 'none';
         }
     });
 
     // ===============================================
-    // LÓGICA DEL "CARRITO" (DETALLE TEMPORAL)
+    // CARRITO COMPRAS
     // ===============================================
 
     function renderDetalleTemporal() {
         if (!detalleTemporalTabla || !totalDisplay) return;
         detalleTemporalTabla.innerHTML = '';
         let totalCompra = 0;
-
-        if (detalleItems.length === 0) {
-            detalleTemporalTabla.innerHTML = '<tr><td colspan="5">Aún no has agregado productos.</td></tr>';
-        }
+        if (detalleItems.length === 0) detalleTemporalTabla.innerHTML = '<tr><td colspan="5">Aún no has agregado productos.</td></tr>';
 
         detalleItems.forEach((item, index) => {
             const subtotal = item.cantidad * item.precioUnitario;
             totalCompra += subtotal;
-            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${item.nombreProducto}</td>
@@ -295,9 +254,7 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             detalleTemporalTabla.appendChild(row);
         });
-
         totalDisplay.textContent = `$ Total Compra: $${formatoMoneda.format(totalCompra)}`;
-
         document.querySelectorAll('.btn-quitar-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const indexToRemove = parseInt(e.currentTarget.dataset.index);
@@ -314,31 +271,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const idProducto = productoHiddenInput.value;
         const nombreProducto = productoSearchInput.value; 
         const idProductoNum = parseInt(idProducto);
-        
         const cantidad = parseInt(cantidadInput.value);
-        
-        // --- MODIFICADO: Usamos parsearMoneda para leer los inputs con puntos ---
         const precioUnitario = parsearMoneda(costoInput.value);
         const nuevoPrecioVenta = parsearMoneda(ventaInput.value);
 
         let isValid = true;
-        if (!idProducto) {
-            if(productoError) productoError.textContent = 'Seleccione un producto.'; 
-            isValid = false;
-        }
-        if (isNaN(cantidad) || cantidad <= 0) {
-            document.getElementById('errorCompraCantidad').textContent = 'Cantidad inválida.'; isValid = false;
-        }
-        if (isNaN(precioUnitario) || precioUnitario <= 0) {
-            document.getElementById('errorCompraCosto').textContent = 'Costo inválido.'; isValid = false;
-        }
-        if (isNaN(nuevoPrecioVenta) || nuevoPrecioVenta < 0) {
-            document.getElementById('errorCompraVenta').textContent = 'Precio de venta inválido.'; isValid = false;
-        }
-        if (isValid && detalleItems.some(item => item.idProducto === idProductoNum)) {
-            if(productoError) productoError.textContent = 'Este producto ya está en el detalle.'; 
-            isValid = false;
-        }
+        if (!idProducto) { if(productoError) productoError.textContent = 'Seleccione un producto.'; isValid = false; }
+        if (isNaN(cantidad) || cantidad <= 0) { document.getElementById('errorCompraCantidad').textContent = 'Cantidad inválida.'; isValid = false; }
+        if (isNaN(precioUnitario) || precioUnitario <= 0) { document.getElementById('errorCompraCosto').textContent = 'Costo inválido.'; isValid = false; }
+        if (isNaN(nuevoPrecioVenta) || nuevoPrecioVenta < 0) { document.getElementById('errorCompraVenta').textContent = 'Precio de venta inválido.'; isValid = false; }
+        if (isValid && detalleItems.some(item => item.idProducto === idProductoNum)) { if(productoError) productoError.textContent = 'Este producto ya está en el detalle.'; isValid = false; }
         if (!isValid) return;
 
         detalleItems.push({
@@ -348,69 +290,34 @@ document.addEventListener('DOMContentLoaded', function() {
             precioUnitario: precioUnitario,
             nuevoPrecioVenta: nuevoPrecioVenta
         });
-
         renderDetalleTemporal();
-
         productoSearchInput.value = '';
         productoHiddenInput.value = '';
         cantidadInput.value = '1';
         costoInput.value = '';
         ventaInput.value = '';
-        
         productoSearchInput.focus(); 
     }
 
-    if (addDetalleBtn) {
-         addDetalleBtn.addEventListener('click', handleAgregarDetalle);
-    }
-
-    // ===============================================
-    // MANEJADOR DEL FORMULARIO PRINCIPAL (SUBMIT)
-    // ===============================================
+    if (addDetalleBtn) addDetalleBtn.addEventListener('click', handleAgregarDetalle);
 
     if (compraForm) {
         compraForm.addEventListener('submit', async function(event) {
             event.preventDefault();
-            
             document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
-            if (generalMessageCompra) {
-                generalMessageCompra.textContent = '';
-                generalMessageCompra.className = 'form-message';
-            }
+            if (generalMessageCompra) { generalMessageCompra.textContent = ''; generalMessageCompra.className = 'form-message'; }
 
             let isValid = true;
             const fecha = document.getElementById('compra-fecha').value;
             const idProveedor = proveedorHiddenInput.value;
             
-            if (!fecha) { 
-                document.getElementById('errorCompraFecha').textContent = 'La fecha es obligatoria.'; 
-                isValid = false; 
-            }
-            if (!idProveedor) { 
-                document.getElementById('errorCompraProveedor').textContent = 'El proveedor es obligatorio.'; 
-                isValid = false; 
-            }
-            if (detalleItems.length === 0) {
-                if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto al detalle.'; 
-                isValid = false;
-            }
-            
-            if (!isValid) {
-                if (generalMessageCompra) {
-                    generalMessageCompra.textContent = "Debe completar todos los campos correctamente.";
-                    generalMessageCompra.classList.add('error');
-                }
-                return; 
-            }
+            if (!fecha) { document.getElementById('errorCompraFecha').textContent = 'La fecha es obligatoria.'; isValid = false; }
+            if (!idProveedor) { document.getElementById('errorCompraProveedor').textContent = 'El proveedor es obligatorio.'; isValid = false; }
+            if (detalleItems.length === 0) { if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto al detalle.'; isValid = false; }
+            if (!isValid) { if (generalMessageCompra) { generalMessageCompra.textContent = "Debe completar todos los campos correctamente."; generalMessageCompra.classList.add('error'); } return; }
 
             showConfirmationModal("¿Estás seguro de que deseas registrar esta compra?", async () => {
-                
-                const compraRequestDTO = {
-                    fecha: fecha,
-                    idProveedor: parseInt(idProveedor),
-                    detalleCompras: detalleItems 
-                };
-                
+                const compraRequestDTO = { fecha: fecha, idProveedor: parseInt(idProveedor), detalleCompras: detalleItems };
                 try {
                     const response = await fetch(API_COMPRAS_URL, {
                         method: 'POST',
@@ -422,73 +329,53 @@ document.addEventListener('DOMContentLoaded', function() {
                         const errorData = await response.json(); 
                         throw new Error(errorData.message || `Error del servidor: ${response.status}`);
                     }
-
-                    if (generalMessageCompra) {
-                        generalMessageCompra.textContent = "¡Compra registrada exitosamente!";
-                        generalMessageCompra.classList.add('success');
-                    }
+                    if (generalMessageCompra) { generalMessageCompra.textContent = "¡Compra registrada exitosamente!"; generalMessageCompra.classList.add('success'); }
                     
                     compraForm.reset(); 
                     detalleItems = []; 
                     renderDetalleTemporal(); 
-                    
                     proveedorSearchInput.value = '';
                     proveedorHiddenInput.value = '';
                     productoSearchInput.value = '';
                     productoHiddenInput.value = '';
                     todosLosProductos = [];
-                    
-                    if (productoSearchInput) {
-                        productoSearchInput.placeholder = "Seleccione un proveedor primero";
-                        productoSearchInput.disabled = true;
-                    }
+                    if (productoSearchInput) { productoSearchInput.placeholder = "Seleccione un proveedor primero"; productoSearchInput.disabled = true; }
 
                     await new Promise(resolve => setTimeout(resolve, 250));
                     historialCurrentPage = 0;
                     loadComprasHistorial(); 
 
+                    document.dispatchEvent(new Event('productosActualizados'));
+
                 } catch (error) {
                     console.error('Error al registrar la compra:', error);
-                    if (generalMessageCompra) {
-                        generalMessageCompra.textContent = `Error al registrar: ${error.message}`;
-                        generalMessageCompra.classList.add('error');
-                    }
+                    if (generalMessageCompra) { generalMessageCompra.textContent = `Error al registrar: ${error.message}`; generalMessageCompra.classList.add('error'); }
                 }
             });
         });
     }
 
     // ===============================================
-    // LÓGICA DE LA TABLA HISTORIAL
+    // HISTORIAL
     // ===============================================
     
     async function loadComprasHistorial() {
         if (!historialTabla || !mainContent) return; 
-        
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         historialTabla.classList.add('loading');
-        historialTabla.innerHTML = `<tr><td colspan="5">Cargando historial...</td></tr>`;
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
             const sortParam = historialSortField ? `&sort=${historialSortField},${historialSortDirection}` : '';
             const url = `${API_COMPRAS_URL}?page=${historialCurrentPage}&size=${historialItemsPerPage}${sortParam}`;
-            
             const response = await fetch(url); 
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
-            
             const pageData = await response.json(); 
             historialTotalPages = pageData.totalPages;
-            
             renderComprasTabla(pageData.content);
             updateHistorialPaginationControls(); 
             updateHistorialSortIndicators(); 
-            
-            requestAnimationFrame(() => {
-                window.scrollTo(0, scrollPosition);
-                historialTabla.classList.remove('loading');
-            });
-            
+            requestAnimationFrame(() => { window.scrollTo(0, scrollPosition); historialTabla.classList.remove('loading'); });
         } catch (error) {
             console.error('Error al cargar el historial de compras:', error);
             historialTabla.innerHTML = `<tr><td colspan="5">Error al cargar historial.</td></tr>`;
@@ -499,29 +386,17 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderComprasTabla(compras) {
         if (!historialTabla) return;
         historialTabla.innerHTML = ''; 
-
-        if (compras.length === 0) {
-            historialTabla.innerHTML = '<tr><td colspan="5">No hay compras registradas.</td></tr>';
-            return;
-        }
+        if (compras.length === 0) { historialTabla.innerHTML = '<tr><td colspan="5">No hay compras registradas.</td></tr>'; return; }
 
         compras.forEach(compra => {
-            const productosTexto = compra.productosComprados && compra.productosComprados.length > 0
-                ? compra.productosComprados.map(p => `${p.nombreProducto} (x${p.cantidad})`).join('<br>')
-                : 'Sin productos';
-
-            const costosTexto = compra.productosComprados && compra.productosComprados.length > 0
-                ? compra.productosComprados.map(p => `$${formatoMoneda.format(p.precioUnitario || 0)}`).join('<br>')
-                : 'N/A';
-                
+            const productosTexto = compra.productosComprados && compra.productosComprados.length > 0 ? compra.productosComprados.map(p => `${p.nombreProducto} (x${p.cantidad})`).join('<br>') : 'Sin productos';
+            const costosTexto = compra.productosComprados && compra.productosComprados.length > 0 ? compra.productosComprados.map(p => `$${formatoMoneda.format(p.precioUnitario || 0)}`).join('<br>') : 'N/A';
             const totalFormateado = `$${formatoMoneda.format(compra.total || 0)}`;
-            
             let fechaFormateada = compra.fecha || 'N/A';
             if (typeof fechaFormateada === 'string' && fechaFormateada.includes('-')) {
                  const partes = fechaFormateada.split('T')[0].split('-');
                  fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
             }
-
             const row = `
                 <tr>
                     <td>${fechaFormateada}</td>
@@ -541,40 +416,15 @@ document.addEventListener('DOMContentLoaded', function() {
         historialNextPageBtn.disabled = (historialCurrentPage + 1 >= historialTotalPages);
     }
 
-    if (historialPrevPageBtn) {
-        historialPrevPageBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            if (historialCurrentPage > 0) {
-                historialCurrentPage--;
-                loadComprasHistorial();
-            }
-        });
-    }
-
-    if (historialNextPageBtn) {
-        historialNextPageBtn.addEventListener('click', (event) => {
-            event.preventDefault();
-            if (historialCurrentPage + 1 < historialTotalPages) {
-                historialCurrentPage++;
-                loadComprasHistorial();
-            }
-        });
-    }
+    if (historialPrevPageBtn) historialPrevPageBtn.addEventListener('click', (e) => { e.preventDefault(); if (historialCurrentPage > 0) { historialCurrentPage--; loadComprasHistorial(); } });
+    if (historialNextPageBtn) historialNextPageBtn.addEventListener('click', (e) => { e.preventDefault(); if (historialCurrentPage + 1 < historialTotalPages) { historialCurrentPage++; loadComprasHistorial(); } });
 
     function handleHistorialSortClick(event) {
         event.preventDefault();
-        event.currentTarget.blur();
-        
         const th = event.currentTarget;
         const newSortField = th.getAttribute('data-sort-by');
         if (!newSortField) return;
-
-        if (historialSortField === newSortField) {
-            historialSortDirection = historialSortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            historialSortField = newSortField;
-            historialSortDirection = 'asc';
-        }
+        if (historialSortField === newSortField) { historialSortDirection = historialSortDirection === 'asc' ? 'desc' : 'asc'; } else { historialSortField = newSortField; historialSortDirection = 'asc'; }
         historialCurrentPage = 0;
         loadComprasHistorial();
     }
@@ -584,7 +434,6 @@ document.addEventListener('DOMContentLoaded', function() {
             th.classList.remove('sort-asc', 'sort-desc');
             const icon = th.querySelector('.sort-icon');
             if (icon) icon.className = 'sort-icon fas fa-sort';
-            
             if (th.getAttribute('data-sort-by') === historialSortField) {
                 th.classList.add(`sort-${historialSortDirection}`); 
                 if (icon) icon.className = `sort-icon fas fa-sort-${historialSortDirection === 'asc' ? 'up' : 'down'}`;
@@ -592,19 +441,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    historialTableHeaders.forEach(header => {
-        header.addEventListener('click', handleHistorialSortClick);
-    });
+    historialTableHeaders.forEach(header => { header.addEventListener('click', handleHistorialSortClick); });
 
-    // ===============================
-    // CARGA INICIAL
-    // ===============================
+    // ==========================================================
+    // CARGA INICIAL Y EXPOSICIÓN
+    // ==========================================================
     loadProveedoresParaCompra(); 
     loadComprasHistorial();      
     renderDetalleTemporal();      
+    if(productoSearchInput) { productoSearchInput.disabled = true; productoSearchInput.placeholder = "Seleccione un proveedor primero"; }
+
+    window.cargarDatosCompras = async function() {
+        await loadProveedoresParaCompra();
+        if (historialCurrentPage === 0) { loadComprasHistorial(); }
+        const idProveedorSeleccionado = proveedorHiddenInput.value;
+        if (idProveedorSeleccionado) { fetchProductosDelProveedor(idProveedorSeleccionado); }
+    };
+
+    // Escucha actualizaciones de productos (ej: stock, precios)
+    document.addEventListener('productosActualizados', function() {
+        console.log('Compras.js: Detectados cambios en productos/stock. Recargando...');
+        window.cargarDatosCompras();
+    });
     
-    if(productoSearchInput) {
-        productoSearchInput.disabled = true;
-        productoSearchInput.placeholder = "Seleccione un proveedor primero";
-    }
+    // Escucha actualizaciones de proveedores (nuevo proveedor creado)
+    document.addEventListener('proveedoresActualizados', function() {
+        console.log('Compras.js: Detectado cambio en proveedores. Recargando lista...');
+        loadProveedoresParaCompra();
+    });
 });

@@ -93,6 +93,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    window.loadProducts = loadProducts;
+
     // ===============================
     // FUNCIONES DE ORDENAMIENTO
     // ===============================
@@ -227,7 +229,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Reseteamos a la página 0 y recargamos la tabla
                 currentPage = 0; 
-                loadProducts(); 
+                loadProducts();
+
+                document.dispatchEvent(new Event('productosActualizados'));
 
             } catch (error) {
                 console.error('Error al registrar el producto:', error);

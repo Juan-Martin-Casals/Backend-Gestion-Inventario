@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const API_CLIENTES_BASE_URL = '/api/clientes';   
 
     // =================================================================
-    // --- CONFIGURACIÓN DE FORMATO (NUEVO) ---
+    // --- CONFIGURACIÓN DE FORMATO ---
     // =================================================================
     // Formateador para MOSTRAR (ej: 54.000 o 1.500,50)
     const formatoMoneda = new Intl.NumberFormat('es-AR', {
@@ -131,6 +131,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const response = await fetch(API_PRODUCTOS_URL);
             if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
             todosLosProductos = await response.json();
+            console.log("Productos actualizados en Ventas:", todosLosProductos.length); // Log para verificar
         } catch (error) {
             console.error('Error al cargar productos:', error);
             if (errorProducto) errorProducto.textContent = "No se pudieron cargar los productos.";
@@ -153,6 +154,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÓGICA DEL MODAL DE CREACIÓN RÁPIDA DE CLIENTES
     // ==========================================================
 
+    const handleAddClienteEsc = (e) => { 
+        if (e.key === 'Escape') closeAddClienteModal(); 
+    };
+
     function resetAddClienteModal() {
         if (addClienteForm) addClienteForm.reset();
         if (addClienteMessage) {
@@ -168,11 +173,17 @@ document.addEventListener('DOMContentLoaded', function () {
         resetAddClienteModal();
         addClienteModal.style.display = 'flex'; 
         document.getElementById('addClienteNombre').focus();
+        
+        // Agregar listener para ESC
+        window.addEventListener('keydown', handleAddClienteEsc);
     }
 
     function closeAddClienteModal() {
         if (!addClienteModal) return;
         addClienteModal.style.display = 'none'; 
+        
+        // Remover listener para ESC
+        window.removeEventListener('keydown', handleAddClienteEsc);
     }
 
     async function handleAddClienteSubmit(event) {
@@ -294,7 +305,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         productResultsContainer.innerHTML = productos.map(producto => {
-            // --- MODIFICADO: Usamos formatoMoneda aquí ---
             return `
                 <div class="product-result-item" data-id="${producto.idProducto}">
                     ${producto.nombreProducto} <span>($${formatoMoneda.format(producto.precioVenta)})</span>
@@ -368,7 +378,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const subtotal = item.precioVenta * item.cantidad;
             totalAcumulado += subtotal;
             
-            // --- MODIFICADO: Usamos formatoMoneda en la tabla ---
             const row = `
                 <tr>
                     <td>${item.nombreProducto}</td>
@@ -385,7 +394,6 @@ document.addEventListener('DOMContentLoaded', function () {
             ventaDetalleTemporalBody.innerHTML += row;
         });
         
-        // --- MODIFICADO: Usamos formatoMoneda en el total ---
         totalVentaDisplay.textContent = `$ Total: $${formatoMoneda.format(totalAcumulado)}`;
     }
 
@@ -495,7 +503,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const productosTexto = formatProductosList(venta.productos); 
         const nombreClienteTexto = venta.nombreCliente || 'Cliente N/A';
 
-        // --- MODIFICADO: Usamos formatoMoneda en la tabla de historial ---
         return `
             <tr>
                 <td>${fechaFormateada}</td>
@@ -656,10 +663,30 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ==========================================================
-    // CARGA INICIAL
+    // CARGA INICIAL Y EXPOSICIÓN DE FUNCIONES (MODIFICADO)
     // ==========================================================
+    
+    // 1. Carga inicial estándar
     loadProductosParaSelect();
     loadClientesParaVenta(); 
     loadVentas(); 
     renderDetalleTemporal(); 
+
+    // --- NUEVO: Exponer la función para que admin.js pueda llamarla al cambiar de pestaña ---
+    window.cargarDatosVentas = async function() {
+        // Recargamos productos y clientes (para asegurar que estén frescos)
+        await loadProductosParaSelect();
+        await loadClientesParaVenta();
+        // Si estamos en la primera página del historial, también lo refrescamos
+        if (currentPageVentas === 0) {
+            loadVentas(0);
+        }
+    };
+
+    // --- NUEVO: Escuchar evento de actualización automática de productos ---
+    document.addEventListener('productosActualizados', function() {
+        console.log('Ventas.js: Detectada actualización de productos. Recargando lista...');
+        loadProductosParaSelect();
+    });
+
 });

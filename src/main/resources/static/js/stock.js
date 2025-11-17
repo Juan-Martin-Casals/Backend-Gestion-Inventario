@@ -19,23 +19,25 @@ document.addEventListener('DOMContentLoaded', function () {
     const mainContent = document.querySelector('.main-content');
     const tableHeaders = document.querySelectorAll('#stock-section .data-table th[data-sort-by]');
 
+    // Selectores para las tarjetas de Resumen (Dashboard)
+    const countTotalProductos = document.getElementById('total-productos-count');
+    const countProductosAgotados = document.getElementById('productos-agotados-count');
+    const countStockBajo = document.getElementById('stock-bajo-count');
+
     // --- 3. DETECCIÓN DE MODO (EMPLEADO VS ADMIN) ---
-    // Intentamos obtener los modales. Si no existen, asumimos modo "Solo Lectura".
     const editModal = document.getElementById('edit-product-modal');
     const deleteModal = document.getElementById('delete-confirm-modal');
-    const isReadOnly = !editModal; // Si no hay modal de edición, es solo lectura
+    const isReadOnly = !editModal; 
 
-    // --- 4. CONSTANTES DEL DOM (ACCIONES) - Solo si NO es solo lectura ---
+    // --- 4. CONSTANTES DEL DOM (ACCIONES) ---
     let confirmDeleteBtn, cancelDeleteBtn;
     let editModalCloseBtn, editProductForm, editProductId, editNombre, editCategoria, editDescripcion, editPrecio, editStockActual, editCantidadAjuste, editFormGeneralMessage;
     let errorEditNombre, errorEditCategoria, errorEditPrecio, errorEditAjuste;
 
     if (!isReadOnly) {
-        // Modal Borrado
         confirmDeleteBtn = document.getElementById('confirm-delete-btn');
         cancelDeleteBtn = document.getElementById('cancel-delete-btn');
 
-        // Modal Edición
         editModalCloseBtn = document.getElementById('edit-modal-close-btn');
         editProductForm = document.getElementById('edit-product-form');
         editProductId = document.getElementById('edit-product-id');
@@ -72,16 +74,36 @@ document.addEventListener('DOMContentLoaded', function () {
     // =================================================================
 
     async function loadStock() {
-        if (tableBody) tableBody.innerHTML = '<tr><td colspan="6">Cargando...</td></tr>';
+        if (tableBody)
         try {
             const response = await fetch(API_STOCK_URL); 
             if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+            
+            // Guardamos todos los datos
             todosLosProductos = await response.json();
+            
+            // 1. Calcular resumen localmente (sin llamar a otra API)
+            actualizarResumenDashboard(todosLosProductos);
+
+            // 2. Filtrar y mostrar tabla
             filtrarStock(); 
+
         } catch (error) {
             console.error('Error al cargar el stock:', error);
             if (tableBody) tableBody.innerHTML = `<tr><td colspan="6">Error: ${error.message}</td></tr>`;
         }
+    }
+
+    function actualizarResumenDashboard(productos) {
+        if (!productos) return;
+        
+        const total = productos.length;
+        const agotados = productos.filter(p => p.stock <= 0).length;
+        const bajoStock = productos.filter(p => p.stock > 0 && p.stock <= 5).length;
+
+        if (countTotalProductos) countTotalProductos.textContent = total;
+        if (countProductosAgotados) countProductosAgotados.textContent = agotados;
+        if (countStockBajo) countStockBajo.textContent = bajoStock;
     }
 
     async function renderStockTable() {
@@ -101,7 +123,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const paginatedItems = currentListForPagination.slice(startIndex, endIndex);
 
         if (paginatedItems.length === 0) {
-            // Ajustamos el colspan dependiendo de si hay acciones o no
             const colSpan = isReadOnly ? 5 : 6;
             tableBody.innerHTML = `<tr><td colspan="${colSpan}">No se encontraron productos.</td></tr>`;
         } else {
@@ -110,7 +131,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (producto.stock <= 0) stockClass = 'empty';
                 else if (producto.stock <= 5) stockClass = 'low';
 
-                // Lógica para mostrar u ocultar botones
                 let accionesHtml = '';
                 if (!isReadOnly) {
                     accionesHtml = `
@@ -119,7 +139,6 @@ document.addEventListener('DOMContentLoaded', function () {
                             <button class="btn-icon btn-delete-producto" data-id="${producto.id}"><i class="fas fa-trash"></i></button>
                         </td>`;
                 }
-                // Si es ReadOnly, simplemente no agregamos la columna de acciones
 
                 const row = `
                     <tr>
@@ -150,12 +169,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function filtrarStock() {
-        if(!searchInput) return;
-        const textoBusqueda = searchInput.value.toLowerCase();
-        const productosFiltrados = todosLosProductos.filter(producto => {
-            return producto.nombre.toLowerCase().includes(textoBusqueda);
-        });
-        currentListForPagination = productosFiltrados;
+        if(!searchInput) {
+             currentListForPagination = todosLosProductos; // Si no hay input, mostrar todo
+        } else {
+             const textoBusqueda = searchInput.value.toLowerCase();
+             currentListForPagination = todosLosProductos.filter(producto => {
+                 return producto.nombre.toLowerCase().includes(textoBusqueda);
+             });
+        }
         clientSideSort();
         currentPage = 1; 
         renderStockTable(); 
@@ -187,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function () {
             sortField = newSortField;
             sortDirection = 'asc';
         }
-        filtrarStock();
+        filtrarStock(); // Reordenar y renderizar
     }
 
     function updateSortIndicators() {
@@ -204,7 +225,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // =================================================================
-    // --- FUNCIONES DE EDICIÓN/BORRADO (SOLO SI NO ES READ ONLY) ---
+    // --- FUNCIONES DE EDICIÓN/BORRADO ---
     // =================================================================
 
     function removerFilaDelDOM(id) {
@@ -216,6 +237,8 @@ document.addEventListener('DOMContentLoaded', function () {
         todosLosProductos = todosLosProductos.filter(p => p.id != id);
         currentListForPagination = currentListForPagination.filter(p => p.id != id);
         renderStockTable();
+        // Actualizamos resumen al borrar
+        actualizarResumenDashboard(todosLosProductos);
     }
 
     function openEditModal(id) {
@@ -233,7 +256,6 @@ document.addEventListener('DOMContentLoaded', function () {
         editNombre.value = producto.nombre;
         editCategoria.value = producto.categoria;
         editDescripcion.value = producto.descripcion;
-        // Mantenemos toFixed(2) para el input (necesita formato estándar 1234.56)
         editPrecio.value = producto.precio.toFixed(2);
         editStockActual.value = producto.stock; 
         editCantidadAjuste.value = 0; 
@@ -278,8 +300,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(errorText || `Error HTTP: ${response.status}`);
             }
             editModal.style.display = 'none';
-            alert('¡Producto actualizado con éxito!');
+            
+            // Recargamos todo para ver los cambios reflejados
             loadStock(); 
+            document.dispatchEvent(new Event('productosActualizados')); // Avisar a otros módulos
+
         } catch (error) {
             console.error('Error al actualizar:', error);
             editFormGeneralMessage.textContent = `Error: ${error.message}`;
@@ -296,9 +321,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (tableBody) {
         tableBody.addEventListener('click', (event) => {
-            if (isReadOnly) return; // Salir si es empleado
+            if (isReadOnly) return; 
 
             const target = event.target; 
+            // Usamos .closest para atrapar clicks en el ícono <i> o en el botón
             const deleteButton = target.closest('.btn-delete-producto');
             if (deleteButton && deleteModal) {
                 idParaBorrar = deleteButton.dataset.id; 
@@ -311,7 +337,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Handlers de ESC para modales (solo si existen)
     if (!isReadOnly) {
         const handleEditEsc = (e) => { if (e.key === 'Escape' && editModal.style.display === 'block') editModal.style.display = 'none'; };
         const handleDeleteEsc = (e) => { if (e.key === 'Escape' && deleteModal.style.display === 'block') { deleteModal.style.display = 'none'; idParaBorrar = null; }};
@@ -329,8 +354,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     const response = await fetch(API_PRODUCTOS_DELETE_URL + idParaBorrar, { method: 'DELETE' });
                     if (response.ok) {
                         removerFilaDelDOM(idParaBorrar); 
+                        document.dispatchEvent(new Event('productosActualizados'));
                     } else {
                         const errorTexto = await response.text();
+                        // Manejo especial para "Soft Delete" si el backend responde 400 pero lo desactiva
                         if (response.status === 400 && errorTexto.includes("INACTIVO")) {
                             removerFilaDelDOM(idParaBorrar);
                         } else {
@@ -355,7 +382,21 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // =================================================================
-    // --- 8. EJECUCIÓN INICIAL ---
+    // --- 8. CARGA INICIAL Y EVENTOS GLOBALES ---
     // =================================================================
+    
     loadStock();
+
+    // EXPOSICIÓN GLOBAL: Para que admin.js pueda llamar a esta función
+    window.cargarDatosStock = function() {
+        todosLosProductos = []; // Forzamos vaciar para recargar de la API
+        loadStock();
+    };
+
+    // ESCUCHA DE EVENTOS: Para recargar si se crea/edita producto en otra pestaña
+    document.addEventListener('productosActualizados', function() {
+        console.log('Stock.js: Detectado cambio en inventario. Recargando...');
+        todosLosProductos = [];
+        loadStock();
+    });
 });

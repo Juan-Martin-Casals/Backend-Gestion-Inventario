@@ -33,16 +33,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const itemsPerPage = 10;
 
     // ===============================
-    // ¡CORREGIDO! ESTADO DE ORDENAMIENTO
+    // ESTADO DE ORDENAMIENTO
     // ===============================
-    let sortField = 'nombre'; // Columna por defecto
-    let sortDirection = 'asc'; // Dirección por defecto
+    let sortField = 'nombre'; 
+    let sortDirection = 'asc'; 
 
-
     // ===============================
-    // ¡CORREGIDO! SELECTORES DE ORDENAMIENTO
+    // SELECTORES DE ORDENAMIENTO
     // ===============================
-    // Seleccionamos por 'data-sort-by' que coincide con el CSS y el HTML
     const tableHeaders = document.querySelectorAll('#proveedores-section .data-table th[data-sort-by]');
 
     // ===============================
@@ -54,6 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailInput = document.getElementById('proveedorEmail');
     const direccionInput = document.getElementById('proveedorDireccion');
     const generalMessage = document.getElementById('form-general-message-proveedor');
+    
     // Multi-select de Registro
     const registerSelect = {
         container: document.getElementById('productos-multi-select-container'),
@@ -76,6 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const editEmailInput = document.getElementById('editProveedorEmail');
     const editDireccionInput = document.getElementById('editProveedorDireccion');
     const editGeneralMessage = document.getElementById('form-general-message-edit-proveedor');
+    
     // Multi-select de Edición
     const editSelect = {
         container: document.getElementById('edit-productos-multi-select-container'),
@@ -87,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // ===============================
-    // SELECTORES - MODAL DE BORRADO (REUTILIZADO)
+    // SELECTORES - MODAL DE BORRADO
     // ===============================
     const deleteConfirmModal = document.getElementById('delete-confirm-modal');
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
@@ -102,16 +102,12 @@ document.addEventListener('DOMContentLoaded', function() {
     async function loadProveedores() {
         if (!proveedorTabla || !mainContent) return;
 
-        // 1. GUARDAR scroll y preparar animación (Fade Out)
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
-        
         proveedorTabla.classList.add('loading'); 
 
-        // Esperar fade-out (si existe)
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
-            // ¡CORREGIDO! - Ahora 'sortField' y 'sortDirection' están definidos
             const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
             const url = `${API_PROVEEDORES_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
             
@@ -121,14 +117,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const pageData = await response.json(); 
             totalPages = pageData.totalPages;
             
-            // 3. Renderizar y finalizar animación
             renderProveedoresTabla(pageData.content); 
             updatePaginationControls();
-            updateSortIndicators(); // ¡NUEVO!
+            updateSortIndicators(); 
 
             requestAnimationFrame(() => {
-                // Restaurar scroll y forzar foco para estabilidad
-                
                 window.scrollTo(0, scrollPosition);
                 proveedorTabla.classList.remove('loading');
             });
@@ -155,12 +148,10 @@ document.addEventListener('DOMContentLoaded', function() {
             const row = `
                 <tr>
                     <td>${proveedor.nombre || 'N/A'}</td>
-                    
                     <td>${proveedor.email|| 'N/A'}</td>
                     <td>${proveedor.telefono || 'N/A'}</td>
                     <td>${productosNombres}</td>
                     <td>${proveedor.direccion || 'N/A'}</td>
-                    
                     <td>
                         <button class="btn-icon btn-edit-proveedor" data-id="${proveedor.id}" title="Editar">
                             <i class="fas fa-edit"></i>
@@ -174,7 +165,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Funciones de Paginación ---
     function updatePaginationControls() {
         if (!pageInfo || !prevPageBtn || !nextPageBtn) return;
         pageInfo.textContent = `Página ${currentPage + 1} de ${totalPages || 1}`;
@@ -202,63 +192,47 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-
     function handleSortClick(event) {
         event.preventDefault();
         event.currentTarget.blur();
-        
         const th = event.currentTarget;
         const newSortField = th.getAttribute('data-sort-by'); 
-
         if (!newSortField) return;
 
-        // ¡CORREGIDO! Usamos las variables correctas
         if (sortField === newSortField) {
             sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
             sortField = newSortField;
             sortDirection = 'asc';
         }
-
         currentPage = 0; 
         loadProveedores();
     }
 
     function updateSortIndicators() {
-        // Usamos el selector global 'tableHeaders'
         tableHeaders.forEach(th => {
             th.classList.remove('sort-asc', 'sort-desc'); 
-            
             const icon = th.querySelector('.sort-icon');
-            if (icon) {
-                icon.className = 'sort-icon fas fa-sort'; // Icono neutral
-            }
+            if (icon) icon.className = 'sort-icon fas fa-sort'; 
             
-            // ¡CORREGIDO! Usamos las variables correctas
             if (th.getAttribute('data-sort-by') === sortField) {
                 th.classList.add(`sort-${sortDirection}`); 
-                
-                if (icon) {
-                    icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
-                }
+                if (icon) icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
             }
         });
     }
 
-    // Asignar los eventos de clic a las cabeceras
     tableHeaders.forEach(header => {
         header.addEventListener('click', handleSortClick);
     });
 
     // ==========================================================
-    // LÓGICA DEL MULTI-SELECT (REUTILIZABLE)
+    // LÓGICA DEL MULTI-SELECT
     // ==========================================================
     
-    // ... (El código del Multi-Select no necesita cambios) ...
-
     async function fetchAllProducts() {
+        // Si ya hay datos, los devolvemos, pero la función 'inicializar' y los eventos pueden limpiar este array para forzar recarga
         if (allProducts.length > 0) return allProducts; 
-        
         try {
             const response = await fetch(API_PRODUCTOS_URL);
             if (!response.ok) throw new Error('No se pudieron cargar los productos');
@@ -271,6 +245,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function setupMultiSelect(selectUI, productosPreSeleccionados = []) {
+        if (!selectUI.options || !selectUI.hiddenSelect || !selectUI.tags) return;
+
         selectUI.options.innerHTML = '';
         selectUI.hiddenSelect.innerHTML = '';
         selectUI.tags.innerHTML = '';
@@ -298,17 +274,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 seleccionarProducto(visualOption, realOption, selectUI);
             }
         });
-
         setupMultiSelectUIEvents(selectUI);
     }
 
     function seleccionarProducto(visualOption, realOption, selectUI) {
         realOption.selected = true;
+        // Agregamos la clase 'selected-option' para saber que está elegido
+        visualOption.classList.add('selected-option'); 
+        
         crearTag(visualOption.textContent, visualOption.dataset.value, visualOption, realOption, selectUI);
+        
+        // Lo ocultamos visualmente de la lista
         visualOption.style.display = 'none';
+        
         selectUI.options.style.display = 'none';
         selectUI.input.value = '';
-
         selectUI.input.placeholder = '';
     }
 
@@ -324,17 +304,24 @@ document.addEventListener('DOMContentLoaded', function() {
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             realOption.selected = false;
+            
+            // Quitamos la marca de seleccionado
+            visualOption.classList.remove('selected-option');
+            
             selectUI.tags.removeChild(tag);
+            
+            // Volvemos a mostrarlo en la lista
             visualOption.style.display = 'block';
 
             if (selectUI.tags.children.length === 0) {
-        selectUI.input.placeholder = 'Buscar y seleccionar productos...';
-        }
+                selectUI.input.placeholder = 'Buscar y seleccionar productos...';
+            }
         });
 
         tag.appendChild(closeBtn);
         selectUI.tags.appendChild(tag);
     }
+
 
     function setupMultiSelectUIEvents(selectUI) {
         if (selectUI.container) {
@@ -346,9 +333,18 @@ document.addEventListener('DOMContentLoaded', function() {
         if (selectUI.input) {
             selectUI.input.addEventListener('input', () => {
                 const filtro = selectUI.input.value.toLowerCase();
+                
                 selectUI.options.querySelectorAll('.option').forEach(opcion => {
                     const textoOpcion = opcion.textContent.toLowerCase();
-                    opcion.style.display = (textoOpcion.includes(filtro) && opcion.style.display !== 'none') ? 'block' : 'none';
+                    const isSelected = opcion.classList.contains('selected-option');
+
+                    // LÓGICA CORREGIDA:
+                    // Mostrar SI: (coincide con filtro) Y (NO está seleccionado ya)
+                    if (textoOpcion.includes(filtro) && !isSelected) {
+                        opcion.style.display = 'block';
+                    } else {
+                        opcion.style.display = 'none';
+                    }
                 });
             });
         }
@@ -370,8 +366,6 @@ document.addEventListener('DOMContentLoaded', function() {
         proveedorForm.addEventListener('submit', async function(event) {
             event.preventDefault();
             
-            // --- ¡MODIFICADO! ---
-            // 1. Limpiar todos los errores
             document.querySelectorAll('#proveedor-form .error-message').forEach(el => el.textContent = '');
             generalMessage.textContent = '';
             generalMessage.className = 'form-message';
@@ -383,39 +377,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const direccion = direccionInput.value.trim();
             const productosIds = Array.from(registerSelect.hiddenSelect.selectedOptions).map(option => option.value);
 
-            // 2. Validar campo por campo
-            if (!nombre) {
-                nombreError.textContent = 'Debe rellenar este campo';
-                isValid = false;
-            }
-            if (!telefono) {
-                telefonoError.textContent = 'Debe rellenar este campo';
-                isValid = false;
-            }
-            if (!email) {
-                emailError.textContent = 'Debe rellenar este campo';
-                isValid = false;
-            } else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) { 
-                // Añadimos una validación simple de formato de email
+            if (!nombre) { nombreError.textContent = 'Debe rellenar este campo'; isValid = false; }
+            if (!telefono) { telefonoError.textContent = 'Debe rellenar este campo'; isValid = false; }
+            if (!email) { emailError.textContent = 'Debe rellenar este campo'; isValid = false; }
+            else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) { 
                 emailError.textContent = 'El formato del email no es válido';
                 isValid = false;
             }
-            if (!direccion) {
-                direccionError.textContent = 'Debe rellenar este campo';
-                isValid = false;
-            }
+            if (!direccion) { direccionError.textContent = 'Debe rellenar este campo'; isValid = false; }
             if (productosIds.length === 0) {
                  registerSelect.errorDiv.textContent = 'Debes seleccionar al menos un producto.';
                  isValid = false;
             }
 
-            // 3. Si algo es inválido, mostrar mensaje general y parar
             if (!isValid) {
                  generalMessage.textContent = "Debe completar todos los campos obligatorios.";
                  generalMessage.classList.add('error');
                  return;
             }
-            // --- FIN DE LA MODIFICACIÓN ---
 
             const proveedorDTO = { nombre, telefono, email, direccion, productosIds };
 
@@ -439,6 +418,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 sortField = 'nombre';
                 sortDirection = 'asc';
                 loadProveedores();
+                
+                // --- AVISO CRUCIAL: Informar a Compras.js y otros ---
+                document.dispatchEvent(new Event('proveedoresActualizados'));
 
             } catch (error) {
                 console.error('Error al registrar el proveedor:', error);
@@ -450,18 +432,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const handleEditEsc = (e) => { if (e.key === 'Escape') closeEditModal(); };
     const handleDeleteEsc = (e) => { if (e.key === 'Escape') closeDeleteModal(); };
-    // ==========================================================
-    // LÓGICA DEL MODAL DE BORRADO
-    // ==========================================================
-    
-    // ... (El código de borrado no necesita cambios) ...
-    
+
     function openDeleteModal(id, nombre) {
-        currentDeleteProviderId = id; // Guarda el ID
+        currentDeleteProviderId = id; 
         deleteModalMessage.textContent = `¿Estás seguro de que quieres eliminar al proveedor "${nombre}"?`;
         if(deleteConfirmModal) {
             deleteConfirmModal.style.display = 'block';
-            window.addEventListener('keydown', handleDeleteEsc); // Agregar
+            window.addEventListener('keydown', handleDeleteEsc);
         }
     }
 
@@ -469,33 +446,22 @@ document.addEventListener('DOMContentLoaded', function() {
         currentDeleteProviderId = null;
         if(deleteConfirmModal) {
             deleteConfirmModal.style.display = 'none';
-            window.removeEventListener('keydown', handleDeleteEsc); // Quitar
+            window.removeEventListener('keydown', handleDeleteEsc); 
         }
     }
 
-    // ==========================================================
-    // LÓGICA DEL MODAL DE EDICIÓN
-    // ==========================================================
-    
-    // ... (El código de edición no necesita cambios) ...
-
-    // --- Abrir el modal ---
     function openEditModal(data) {
         proveedorActualEditando = data; 
-
         editIdInput.value = data.id;
         editNombreInput.value = data.nombre;
         editTelefonoInput.value = data.telefono;
         editEmailInput.value = data.email;
         editDireccionInput.value = data.direccion;
-        
         setupMultiSelect(editSelect, data.productos); 
-        
         modalOverlay.style.display = 'block';
         window.addEventListener('keydown', handleEditEsc);
     }
 
-    // --- Cerrar el modal ---
     function closeEditModal() {
         modalOverlay.style.display = 'none';
         window.removeEventListener('keydown', handleEditEsc);
@@ -504,7 +470,6 @@ document.addEventListener('DOMContentLoaded', function() {
         editGeneralMessage.className = 'form-message';
     }
 
-    // --- Manejar el clic en los botones de la tabla ---
     if (proveedorTabla) {
         proveedorTabla.addEventListener('click', async function(e) {
             const editButton = e.target.closest('.btn-edit-proveedor');
@@ -531,11 +496,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Manejar el envío (submit) del formulario de EDICIÓN ---
     if (editForm) {
         editForm.addEventListener('submit', async function(e) {
             e.preventDefault();
-            
             const id = editIdInput.value;
             const dto = {
                 nombre: editNombreInput.value.trim(),
@@ -560,18 +523,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(dto)
                 });
-
                 if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(errorText || `Error: ${response.status}`);
                 }
-                
                 editGeneralMessage.textContent = "Proveedor actualizado con éxito.";
                 editGeneralMessage.classList.add('success');
-
                 setTimeout(() => {
                     closeEditModal();
-                    loadProveedores(); // Recargar la tabla
+                    loadProveedores(); 
+                    // También avisamos al editar
+                    document.dispatchEvent(new Event('proveedoresActualizados'));
                 }, 1000);
 
             } catch (error) {
@@ -582,47 +544,25 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Eventos para cerrar el modal de EDICIÓN ---
-    if (modalCloseBtn) {
-        modalCloseBtn.addEventListener('click', closeEditModal);
-    }
-    if (modalOverlay) {
-        modalOverlay.addEventListener('click', (e) => {
-            if (e.target === modalOverlay) {
-                closeEditModal();
-            }
-        });
-    }
-
-    // --- Eventos del Modal de Borrado ---
-    if (cancelDeleteBtn) {
-        cancelDeleteBtn.addEventListener('click', closeDeleteModal);
-    }
-    
-    if (deleteConfirmModal) {
-         deleteConfirmModal.addEventListener('click', (e) => {
-            if (e.target === deleteConfirmModal) {
-                closeDeleteModal();
-            }
-        });
-    }
+    if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeEditModal);
+    if (modalOverlay) modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeEditModal(); });
+    if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+    if (deleteConfirmModal) deleteConfirmModal.addEventListener('click', (e) => { if (e.target === deleteConfirmModal) closeDeleteModal(); });
 
     if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener('click', async () => {
             if (!currentDeleteProviderId) return;
-
             try {
                 const response = await fetch(`${API_PROVEEDORES_URL}/${currentDeleteProviderId}`, {
                     method: 'DELETE'
                 });
-                
                 if (!response.ok) {
                     const errorText = await response.text();
                     throw new Error(errorText || 'No se pudo eliminar el proveedor');
                 }
-                
-                loadProveedores(); // Recarga la tabla
-
+                loadProveedores(); 
+                // También avisamos al eliminar
+                document.dispatchEvent(new Event('proveedoresActualizados'));
             } catch (error) {
                 alert('Error al eliminar: ' + error.message);
             } finally {
@@ -631,11 +571,30 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ===============================
-    // CARGA INICIAL
-    // ===============================
-    fetchAllProducts().then(() => {
+    // ==========================================================
+    // CARGA INICIAL Y EXPOSICIÓN
+    // ==========================================================
+    
+    async function inicializar() {
+        await fetchAllProducts();
         setupMultiSelect(registerSelect, []); 
         loadProveedores(); 
+    }
+    inicializar();
+
+    window.cargarDatosProveedores = async function() {
+        allProducts = []; // Limpiar cache de productos
+        await fetchAllProducts();
+        setupMultiSelect(registerSelect, []);
+        currentPage = 0;
+        loadProveedores(); 
+    };
+
+    // Escuchar si se agregan productos para actualizar el multi-select
+    document.addEventListener('productosActualizados', async function() {
+        console.log('Proveedor.js: Detectada actualización de productos. Recargando lista...');
+        allProducts = []; 
+        await fetchAllProducts();
+        setupMultiSelect(registerSelect, []);
     });
 });

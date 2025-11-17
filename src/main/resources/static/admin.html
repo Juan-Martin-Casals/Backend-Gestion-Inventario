@@ -352,20 +352,17 @@
                     <div class="error-message" id="errorCompraFecha"></div>
                 </div>
                 <div class="form-group">
-    <label for="compra-proveedor-search">Proveedor</label>
-    
-    <div class="product-search-container">
-        
-        <input type="text" id="compra-proveedor-search" placeholder="Buscar proveedor por nombre..." class="product-search-input" autocomplete="off">
-        
-        <input type="hidden" id="compra-proveedor-id-hidden">
-        
-        <div id="compra-proveedor-results" class="product-results" style="display: none;">
-            </div>
-    </div>
-    
-    <div class="error-message" id="errorCompraProveedor"></div>
-</div>
+                    <label for="compra-proveedor-search">Proveedor</label>
+                    
+                    <div class="product-search-container">
+                        <input type="text" id="compra-proveedor-search" placeholder="Buscar proveedor por nombre..." class="product-search-input" autocomplete="off">
+                        <input type="hidden" id="compra-proveedor-id-hidden">
+                        <div id="compra-proveedor-results" class="product-results" style="display: none;">
+                        </div>
+                    </div>
+                    
+                    <div class="error-message" id="errorCompraProveedor"></div>
+                </div>
             </div>
 
             <div class="product-selection">
@@ -373,20 +370,17 @@
                 
                 <div class="form-row">
                     <div class="form-group" style="flex: 2;">
-    <label for="compra-producto-search">Producto</label>
-    
-    <div class="product-search-container">
-        
-        <input type="text" id="compra-producto-search" placeholder="Buscar producto por nombre..." class="product-search-input" autocomplete="off">
-        
-        <input type="hidden" id="compra-producto-id-hidden">
-        
-        <div id="compra-producto-results" class="product-results" style="display: none;">
-            </div>
-    </div>
-    
-    <div class="error-message" id="errorCompraProducto"></div>
-</div>
+                        <label for="compra-producto-search">Producto</label>
+                        
+                        <div class="product-search-container">
+                            <input type="text" id="compra-producto-search" placeholder="Buscar producto por nombre..." class="product-search-input" autocomplete="off">
+                            <input type="hidden" id="compra-producto-id-hidden">
+                            <div id="compra-producto-results" class="product-results" style="display: none;">
+                            </div>
+                        </div>
+                        
+                        <div class="error-message" id="errorCompraProducto"></div>
+                    </div>
                     
                     <div class="form-group" style="flex: 1;">
                         <label for="compra-cantidad">Cantidad</label>
@@ -426,9 +420,10 @@
                             </tr>
                         </thead>
                         <tbody id="compra-detalle-temporal">
-                            </tbody>
+                        </tbody>
                     </table>
-                </div><div class="total-section">
+                </div>
+                <div class="total-section">
                     <h4 id="compra-total-display">$ Total Compra: $0.00</h4>
                 </div>
             </div>
@@ -450,24 +445,30 @@
                     <tr>
                         <th data-sort-by="fecha" class="sortable">Fecha <i class="sort-icon fas fa-sort"></i></th>
                         <th data-sort-by="proveedor.nombre" class="sortable">Proveedor <i class="sort-icon fas fa-sort"></i></th>
-                        <th>Productos</th> <th>Costo Unit.</th> <th data-sort-by="total" class="sortable">Total <i class="sort-icon fas fa-sort"></i></th>
+                        <th>Productos</th> 
+                        <th>Costo Unit.</th> 
+                        <th data-sort-by="total" class="sortable">Total <i class="sort-icon fas fa-sort"></i></th>
                     </tr>
                 </thead>
                 <tbody id="compras-historial-tabla-body">
-                    </tbody>
-                    
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5">
+                            <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                <span id="compras-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                <button class="btn-outline" id="compras-prev-page" disabled>
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <button class="btn-outline" id="compras-next-page">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tfoot>
             </table>
         </div>
-        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-        <span id="compras-page-info" style="margin-right: 15px;">Página 1 de 1</span>
-        
-        <button class="btn-outline" id="compras-prev-page" disabled>
-            <i class="fas fa-arrow-left"></i>
-        </button>
-        <button class="btn-outline" id="compras-next-page">
-            <i class="fas fa-arrow-right"></i>
-        </button>
-    </div>
     </div>
 </section>
 
@@ -875,9 +876,9 @@
 
             <div class="form-group">
                 <label for="edit-productos-select-input">Productos que provee:</label>
-                <div class="multi-select-container" id="edit-productos-multi-select-container">
+                <div class="custom-multi-select-container" id="edit-productos-multi-select-container">
                     <div class="tags-container" id="edit-tags-container"></div>
-                    <input type="text" id="edit-productos-select-input" placeholder="Buscar productos...">
+                    <input type="text" id="edit-productos-select-input" class="custom-select-input" placeholder="Buscar productos...">
                 </div>
                 <select id="editProveedorProductosSelect" multiple hidden></select>
                 <div class="options-container" id="edit-productos-options-container"></div>
