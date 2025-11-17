@@ -11,20 +11,32 @@ function showConfirmationModal(message, onConfirm) {
     // 2. Mostrar el modal
     modal.style.display = "block";
 
+    // --- NUEVO: Función para manejar la tecla Esc ---
+    const handleEsc = (event) => {
+        if (event.key === "Escape") {
+            closeModal();
+        }
+    };
+    // Agregamos el listener
+    window.addEventListener('keydown', handleEsc);
+
     // 3. Función para cerrar el modal y limpiar eventos
     const closeModal = () => {
         modal.style.display = "none";
-        // Limpiamos los eventos para evitar ejecuciones múltiples si se abre de nuevo
+        // Limpiamos los eventos para evitar ejecuciones múltiples
         btnYes.onclick = null;
         btnCancel.onclick = null;
         spanClose.onclick = null;
         window.onclick = null;
+        
+        // --- NUEVO: Removemos el listener de Esc ---
+        window.removeEventListener('keydown', handleEsc);
     };
 
     // 4. Asignar la acción al botón "Confirmar"
     btnYes.onclick = () => {
-        onConfirm(); // Ejecuta la lógica que le pasaste
-        closeModal(); // Cierra el modal
+        onConfirm(); 
+        closeModal(); 
     };
 
     // 5. Asignar acción de cerrar al botón "Cancelar" y a la "X"
@@ -38,9 +50,4 @@ function showConfirmationModal(message, onConfirm) {
         }
     };
 
-    function notifySystemUpdate(entity) {
-    console.log(`🔄 Sistema notificado: cambio en [${entity}]`); // <-- ¡IMPORTANTE!
-    const event = new CustomEvent('system-update', { detail: { entity: entity } });
-    document.dispatchEvent(event);
-    }
 }

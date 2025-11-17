@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Estado de Paginación y Ordenamiento ---
     let currentPage = 0; 
     let totalPages = 1;
-    const itemsPerPage = 7;
+    const itemsPerPage = 10;
     let sortField = 'fechaCreacion'; // Campo de ordenamiento inicial
     let sortDirection = 'desc'; // Dirección inicial (más nuevo primero)
 
@@ -55,8 +55,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // 1. GUARDAR scroll y preparar animación (Fade Out)
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         productTableBody.classList.add('loading');
-        // Usamos colspan=6 ya que esa es la cantidad de columnas visibles en el HTML
-        productTableBody.innerHTML = '<tr><td colspan="6">Cargando...</td></tr>';
         
         // Esperar fade-out
         await new Promise(resolve => setTimeout(resolve, 200)); 

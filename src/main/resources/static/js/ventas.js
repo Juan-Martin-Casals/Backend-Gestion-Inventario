@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- ESTADO DE PAGINACIÓN DE VENTAS ---
     let currentPageVentas = 0; 
-    const pageSizeVentas = 7;
+    const pageSizeVentas = 10;
     let totalPagesVentas = 0;
     let ventasSortField = 'fecha'; 
     let ventasSortDirection = 'desc'; 
@@ -88,7 +88,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         ventaTableBody.classList.add('loading');
-        ventaTableBody.innerHTML = `<tr><td colspan="4">Cargando historial de ventas...</td></tr>`;
         await new Promise(resolve => setTimeout(resolve, 200));
         
         try {

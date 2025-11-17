@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ESTADO GLOBAL
     // ===============================
     let currentDeleteUserId = null;
-    let itemsPerPage = 7; 
+    let itemsPerPage = 10; 
 
     // ===============================
     // SELECTORES - TABLA Y PAGINACIÓN
@@ -119,8 +119,6 @@ document.addEventListener('DOMContentLoaded', function() {
         // 1. GUARDAR scroll y preparar animación (Fade Out)
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         userTableBody.classList.add('loading');
-        // El colspan debe coincidir con el número de columnas (Nombre, Apellido, Email, Rol, Acciones)
-        userTableBody.innerHTML = '<tr><td colspan="5">Cargando usuarios...</td></tr>';
 
         // Esperar fade-out
         await new Promise(resolve => setTimeout(resolve, 200));
@@ -341,6 +339,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================================
     // LÓGICA DEL MODAL DE EDICIÓN
     // ==========================================================
+
+    const handleEditEsc = (e) => { if (e.key === 'Escape') closeEditModal(); };
+    const handleDeleteEsc = (e) => { if (e.key === 'Escape') closeDeleteModal(); };
     
     // --- Abrir el modal ---
     function openEditModal(user) {
@@ -366,12 +367,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // ¡NUEVO! Mostrar el modal
         // Esta línea faltaba en el código que pegaste
-        if(modalEdit) modalEdit.style.display = 'block';
+        if(modalEdit) {
+            modalEdit.style.display = 'block';
+            window.addEventListener('keydown', handleEditEsc); // Agregamos evento
+        }
     }
 
     // --- Cerrar el modal ---
     function closeEditModal() {
-        if(modalEdit) modalEdit.style.display = 'none';
+        if(modalEdit) {
+            modalEdit.style.display = 'none';
+            window.removeEventListener('keydown', handleEditEsc); // Quitamos evento
+        }
     }
     
     // --- Manejar el envío (submit) del formulario de EDICIÓN ---
@@ -424,6 +431,8 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
+    
+
     // ==========================================================
     // LÓGICA DE BORRADO (MODAL REUTILIZADO)
     // ==========================================================
@@ -431,12 +440,20 @@ document.addEventListener('DOMContentLoaded', function() {
     function openDeleteModal(id, nombre) {
         currentDeleteUserId = id; 
         deleteModalMessage.textContent = `¿Estás seguro de que quieres eliminar al usuario "${nombre}"?`;
-        if(deleteConfirmModal) deleteConfirmModal.style.display = 'block';
+        if(deleteConfirmModal) {
+            deleteConfirmModal.style.display = 'block';
+            // 2. ¡NUEVO! Agregamos el evento al abrir
+            window.addEventListener('keydown', handleDeleteEsc);
+        }
     }
 
     function closeDeleteModal() {
         currentDeleteUserId = null;
-        if(deleteConfirmModal) deleteConfirmModal.style.display = 'none';
+        if(deleteConfirmModal) {
+            deleteConfirmModal.style.display = 'none';
+            // 3. ¡NUEVO! Quitamos el evento al cerrar para evitar errores
+            window.removeEventListener('keydown', handleDeleteEsc);
+        }
     }
 
     // ===============================================

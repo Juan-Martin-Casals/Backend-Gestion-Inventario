@@ -1355,16 +1355,10 @@ body {
      * (Nº de items por página) x (altura de fila) + (altura de cabecera)
      * Ejemplo: (7 filas * 50px) + 50px = 400px 
      */
-    min-height: 450px; 
+    min-height: 650px; 
 }
 
-.table-container-usuarios {
-    /* * Ajusta este valor. 
-     * (Nº de items por página) x (altura de fila) + (altura de cabecera)
-     * Ejemplo: (7 filas * 50px) + 50px = 400px 
-     */
-    min-height: 600px; 
-}
+
 
 .table-container-venta{
     min-height: 600px;
@@ -1516,7 +1510,7 @@ body {
 
 .table-container-proveedor {
     /* (7 filas * 50px aprox) + 50px cabecera = 400px */
-    min-height: 550px; 
+    min-height: 650px; 
 }
 
 #compras-historial-tabla-body {
@@ -1553,7 +1547,7 @@ body {
 .table-container-usuarios {
     /* (7 filas * 50px aprox) + 50px cabecera = 400px */
     /* Ajusta este valor si 7 filas es incorrecto */
-    min-height: 650px; 
+    min-height: 600px; 
 }
 
 

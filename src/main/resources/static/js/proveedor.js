@@ -30,7 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let currentPage = 0;
     let totalPages = 1;
-    const itemsPerPage = 7;
+    const itemsPerPage = 10;
 
     // ===============================
     // ¡CORREGIDO! ESTADO DE ORDENAMIENTO
@@ -106,10 +106,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         
         proveedorTabla.classList.add('loading'); 
-        proveedorTabla.innerHTML = '<tr><td colspan="6">Cargando...</td></tr>';
 
         // Esperar fade-out (si existe)
-        await new Promise(resolve => setTimeout(resolve, 250));
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
             // ¡CORREGIDO! - Ahora 'sortField' y 'sortDirection' están definidos
@@ -448,7 +447,9 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-
+    
+    const handleEditEsc = (e) => { if (e.key === 'Escape') closeEditModal(); };
+    const handleDeleteEsc = (e) => { if (e.key === 'Escape') closeDeleteModal(); };
     // ==========================================================
     // LÓGICA DEL MODAL DE BORRADO
     // ==========================================================
@@ -458,12 +459,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function openDeleteModal(id, nombre) {
         currentDeleteProviderId = id; // Guarda el ID
         deleteModalMessage.textContent = `¿Estás seguro de que quieres eliminar al proveedor "${nombre}"?`;
-        if(deleteConfirmModal) deleteConfirmModal.style.display = 'block';
+        if(deleteConfirmModal) {
+            deleteConfirmModal.style.display = 'block';
+            window.addEventListener('keydown', handleDeleteEsc); // Agregar
+        }
     }
 
     function closeDeleteModal() {
         currentDeleteProviderId = null;
-        if(deleteConfirmModal) deleteConfirmModal.style.display = 'none';
+        if(deleteConfirmModal) {
+            deleteConfirmModal.style.display = 'none';
+            window.removeEventListener('keydown', handleDeleteEsc); // Quitar
+        }
     }
 
     // ==========================================================
@@ -485,11 +492,13 @@ document.addEventListener('DOMContentLoaded', function() {
         setupMultiSelect(editSelect, data.productos); 
         
         modalOverlay.style.display = 'block';
+        window.addEventListener('keydown', handleEditEsc);
     }
 
     // --- Cerrar el modal ---
     function closeEditModal() {
         modalOverlay.style.display = 'none';
+        window.removeEventListener('keydown', handleEditEsc);
         proveedorActualEditando = null;
         editGeneralMessage.textContent = '';
         editGeneralMessage.className = 'form-message';

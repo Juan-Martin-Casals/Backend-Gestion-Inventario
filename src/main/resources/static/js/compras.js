@@ -497,7 +497,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         historialTabla.classList.add('loading');
-        historialTabla.innerHTML = `<tr><td colspan="5">Cargando historial...</td></tr>`;
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {

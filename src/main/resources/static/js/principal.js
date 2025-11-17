@@ -98,9 +98,7 @@ document.addEventListener('DOMContentLoaded', function () {
         lowStockTableBody.classList.add('loading');
 
 
-        lowStockTableBody.innerHTML = '<tr><td colspan="5">Cargando...</td></tr>';
-
-        await new Promise(resolve => setTimeout(resolve, 250));
+        await new Promise(resolve => setTimeout(resolve,200));
 
         try {
             // Añadimos el parámetro de ordenamiento: sort=campo,direccion
