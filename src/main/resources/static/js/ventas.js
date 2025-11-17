@@ -91,7 +91,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         ventaTableBody.classList.add('loading');
-        ventaTableBody.innerHTML = `<tr><td colspan="4">Cargando historial de ventas...</td></tr>`;
         await new Promise(resolve => setTimeout(resolve, 200));
         
         try {
