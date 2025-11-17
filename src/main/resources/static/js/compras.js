@@ -3,20 +3,38 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     // URLs DE LA API
     // ===============================
-    // Esta URL ahora solo se usa para la carga original (que está comentada)
     const API_PRODUCTOS_URL_SELECT_ALL = '/api/productos/select'; 
     const API_COMPRAS_URL = '/api/compras'; 
     const API_PROVEEDORES_URL = '/api/proveedores/select';
     
-    // Esta es la URL base para el nuevo endpoint
     const API_PRODUCTOS_URL_BASE = '/api/productos'; 
     
     // ===============================
+    // CONFIGURACIÓN DE FORMATO
+    // ===============================
+    // Formateador para MOSTRAR (ej: 25.000,50)
+    const formatoMoneda = new Intl.NumberFormat('es-AR', {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
+
+    // ¡NUEVO! Función para LEER los inputs formateados
+    // Convierte "25.000,50" -> 25000.50 (número válido para JS)
+    function parsearMoneda(valor) {
+        if (!valor) return NaN;
+        // 1. Quitamos los puntos de miles (los eliminamos)
+        // 2. Cambiamos la coma decimal por punto
+        const limpio = valor.toString().replace(/\./g, '').replace(',', '.');
+        return parseFloat(limpio);
+    }
+
+    // ===============================
     // ESTADO GLOBAL
     // ===============================
-    let detalleItems = []; // "Carrito" de compras
-    let todosLosProveedores = []; // Array para el buscador de proveedores
-    let todosLosProductos = []; // Array para el buscador de productos
+    let detalleItems = []; 
+    let todosLosProveedores = []; 
+    let todosLosProductos = []; 
 
     // ===============================
     // SELECTORES DEL FORMULARIO
@@ -30,7 +48,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const proveedorResultsContainer = document.getElementById('compra-proveedor-results');
     const proveedorError = document.getElementById('errorCompraProveedor');
 
-    // --- Selectores Buscador Producto (NUEVO) ---
+    // --- Selectores Buscador Producto ---
     const productoSearchInput = document.getElementById('compra-producto-search');
     const productoHiddenInput = document.getElementById('compra-producto-id-hidden');
     const productoResultsContainer = document.getElementById('compra-producto-results');
@@ -65,9 +83,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // LÓGICA DE CARGA DE DATOS
     // ==========================================================
 
-    /**
-     * Carga Proveedores al array 'todosLosProveedores'
-     */
     async function loadProveedoresParaCompra() {
         if (!proveedorSearchInput) return; 
         try {
@@ -80,23 +95,16 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    /**
-     * ¡NUEVA! Carga Productos al array 'todosLosProductos' FILTRANDO por proveedor
-     */
     async function fetchProductosDelProveedor(idProveedor) {
         if (!productoSearchInput) return;
 
-        // Limpiamos y deshabilitamos mientras carga
         productoSearchInput.disabled = true;
         productoSearchInput.placeholder = "Cargando productos...";
-        todosLosProductos = []; // Limpiar la lista de productos anterior
+        todosLosProductos = []; 
         productoHiddenInput.value = '';
         productoSearchInput.value = '';
         
         try {
-            
-            // --- ¡URL CORREGIDA! ---
-            // Usamos la URL base correcta, SIN el '/select'
             const response = await fetch(`${API_PRODUCTOS_URL_BASE}/por-proveedor/${idProveedor}`);
             
             if (!response.ok) throw new Error('No se pudieron cargar los productos');
@@ -105,10 +113,9 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (todosLosProductos.length > 0) {
                 productoSearchInput.placeholder = "Buscar producto...";
-                productoSearchInput.disabled = false; // Habilitamos el input
+                productoSearchInput.disabled = false; 
             } else {
                 productoSearchInput.placeholder = "Este proveedor no tiene productos";
-                // El input queda deshabilitado
             }
             
         } catch (error) {
@@ -140,47 +147,35 @@ document.addEventListener('DOMContentLoaded', function() {
         renderResultadosProveedores(proveedoresFiltrados);
     }
 
-    /**
-     * Función 'seleccionarProveedor' con corrección de parseInt
-     */
     function seleccionarProveedor(event) {
         const target = event.target.closest('.product-result-item');
         if (!target || !target.dataset.id) return;
 
-        // --- CORRECCIÓN PARSEINT ---
-        // 1. Convertir el ID del dataset (que es string) a un número
         const proveedorIdNum = parseInt(target.dataset.id, 10);
-        if (isNaN(proveedorIdNum)) return; // Salir si no es un número válido
+        if (isNaN(proveedorIdNum)) return; 
 
-        // 2. Usar la comparación ESTRICTA (===) con el ID numérico
         const proveedor = todosLosProveedores.find(p => p.id === proveedorIdNum); 
-        // --- FIN DE LA CORRECCIÓN ---
 
         if (proveedor) {
             proveedorSearchInput.value = proveedor.nombre;
-            proveedorHiddenInput.value = proveedor.id; // El hidden input no necesita ser número
+            proveedorHiddenInput.value = proveedor.id; 
             proveedorResultsContainer.style.display = 'none';
             if (proveedorError) proveedorError.textContent = '';
             
-            // Disparamos la carga de productos para ESTE proveedor
             fetchProductosDelProveedor(proveedor.id);
         } else {
-             // Opcional: Ayuda a depurar si algo sigue mal
             console.error("Error: No se encontró el proveedor con ID:", proveedorIdNum);
         }
     }
 
-    // --- Listeners Buscador Proveedor ---
     if (proveedorSearchInput) {
         proveedorSearchInput.addEventListener('input', () => {
             proveedorHiddenInput.value = ''; 
             if (proveedorError) proveedorError.textContent = '';
             filtrarProveedores(); 
             
-            // --- LÓGICA AÑADIDA ---
-            // Si el usuario borra el input de proveedor, reseteamos los productos
             if (proveedorSearchInput.value.trim() === '') {
-                 todosLosProductos = []; // Vaciar la lista
+                 todosLosProductos = []; 
                  productoSearchInput.value = '';
                  productoHiddenInput.value = '';
                  productoSearchInput.placeholder = "Seleccione un proveedor primero";
@@ -195,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // ==========================================================
-    // LÓGICA DEL BUSCADOR DE PRODUCTOS (NUEVO)
+    // LÓGICA DEL BUSCADOR DE PRODUCTOS
     // ==========================================================
 
     function renderResultadosProductos(productos) {
@@ -203,9 +198,8 @@ document.addEventListener('DOMContentLoaded', function() {
             productoResultsContainer.innerHTML = '<div class="product-result-item">No se encontraron productos</div>';
         } else {
             productoResultsContainer.innerHTML = productos.map(p => {
-                // El DTO de producto usa 'idProducto' y 'nombreProducto'
                 return `<div class="product-result-item" data-id="${p.idProducto}">
-                    ${p.nombreProducto} <span>($${p.precioVenta.toFixed(2)})</span>
+                    ${p.nombreProducto} <span>($${formatoMoneda.format(p.precioVenta)})</span>
                 </div>`;
             }).join('');
         }
@@ -220,21 +214,14 @@ document.addEventListener('DOMContentLoaded', function() {
         renderResultadosProductos(productosFiltrados);
     }
 
-    /**
-     * Función 'seleccionarProducto' con corrección de parseInt
-     */
     function seleccionarProducto(event) {
         const target = event.target.closest('.product-result-item');
         if (!target || !target.dataset.id) return;
         
-        // --- CORRECCIÓN PARSEINT ---
-        // 1. Convertir el ID del dataset (string) a número
         const productoIdNum = parseInt(target.dataset.id, 10);
         if (isNaN(productoIdNum)) return;
 
-        // 2. Usar la comparación ESTRICTA (===)
         const producto = todosLosProductos.find(p => p.idProducto === productoIdNum);
-        // --- FIN DE LA CORRECCIÓN ---
 
         if (producto) {
             productoSearchInput.value = producto.nombreProducto;
@@ -243,14 +230,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (productoError) productoError.textContent = '';
             
             if(ventaInput) {
-                 ventaInput.value = producto.precioVenta.toFixed(2);
+                 // --- MODIFICADO: Ahora usamos formatoMoneda para el input ---
+                 ventaInput.value = formatoMoneda.format(producto.precioVenta);
             }
         } else {
             console.error("Error: No se encontró el producto con ID:", productoIdNum);
         }
     }
     
-    // --- Listeners Buscador Producto ---
     if (productoSearchInput) {
         productoSearchInput.addEventListener('input', () => {
             productoHiddenInput.value = '';
@@ -263,16 +250,13 @@ document.addEventListener('DOMContentLoaded', function() {
         productoResultsContainer.addEventListener('click', seleccionarProducto);
     }
 
-    // --- Listener Global para cerrar AMBOS dropdowns ---
     document.addEventListener('click', function (event) {
-        // Cierra Proveedor
         const isClickInsideProviderInput = proveedorSearchInput && proveedorSearchInput.contains(event.target);
         const isClickInsideProviderResults = proveedorResultsContainer && proveedorResultsContainer.contains(event.target);
         if (!isClickInsideProviderInput && !isClickInsideProviderResults) {
             if (proveedorResultsContainer) proveedorResultsContainer.style.display = 'none';
         }
         
-        // Cierra Producto
         const isClickInsideProductInput = productoSearchInput && productoSearchInput.contains(event.target);
         const isClickInsideProductResults = productoResultsContainer && productoResultsContainer.contains(event.target);
         if (!isClickInsideProductInput && !isClickInsideProductResults) {
@@ -296,12 +280,13 @@ document.addEventListener('DOMContentLoaded', function() {
         detalleItems.forEach((item, index) => {
             const subtotal = item.cantidad * item.precioUnitario;
             totalCompra += subtotal;
+            
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td>${item.nombreProducto}</td>
                 <td>${item.cantidad}</td>
-                <td>$${item.precioUnitario.toFixed(2)}</td>
-                <td>$${subtotal.toFixed(2)}</td>
+                <td>$${formatoMoneda.format(item.precioUnitario)}</td>
+                <td>$${formatoMoneda.format(subtotal)}</td>
                 <td>
                     <button type="button" class="btn-icon btn-danger btn-quitar-item" data-index="${index}" title="Quitar">
                         <i class="fas fa-trash"></i>
@@ -311,7 +296,7 @@ document.addEventListener('DOMContentLoaded', function() {
             detalleTemporalTabla.appendChild(row);
         });
 
-        totalDisplay.textContent = `$ Total Compra: $${totalCompra.toFixed(2)}`;
+        totalDisplay.textContent = `$ Total Compra: $${formatoMoneda.format(totalCompra)}`;
 
         document.querySelectorAll('.btn-quitar-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -322,24 +307,20 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    /**
-     * Lee de los inputs del buscador de productos.
-     */
     function handleAgregarDetalle() {
         document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
         errorDetalleGeneral.textContent = '';
 
-        // --- Lectura desde los nuevos inputs ---
         const idProducto = productoHiddenInput.value;
-        const nombreProducto = productoSearchInput.value; // El nombre ya está en el input visible
+        const nombreProducto = productoSearchInput.value; 
         const idProductoNum = parseInt(idProducto);
         
-        // El resto de la lógica es la misma
         const cantidad = parseInt(cantidadInput.value);
-        const precioUnitario = parseFloat(costoInput.value.replace(',', '.'));
-        const nuevoPrecioVenta = parseFloat(ventaInput.value.replace(',', '.')); 
+        
+        // --- MODIFICADO: Usamos parsearMoneda para leer los inputs con puntos ---
+        const precioUnitario = parsearMoneda(costoInput.value);
+        const nuevoPrecioVenta = parsearMoneda(ventaInput.value);
 
-        // --- Validación ---
         let isValid = true;
         if (!idProducto) {
             if(productoError) productoError.textContent = 'Seleccione un producto.'; 
@@ -360,7 +341,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         if (!isValid) return;
 
-        // --- Agregar al array ---
         detalleItems.push({
             idProducto: idProductoNum,
             nombreProducto: nombreProducto,
@@ -371,14 +351,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         renderDetalleTemporal();
 
-        // --- Limpiar los inputs para el siguiente producto ---
         productoSearchInput.value = '';
         productoHiddenInput.value = '';
         cantidadInput.value = '1';
         costoInput.value = '';
         ventaInput.value = '';
         
-        productoSearchInput.focus(); // Devolvemos el foco al buscador de producto
+        productoSearchInput.focus(); 
     }
 
     if (addDetalleBtn) {
@@ -393,14 +372,12 @@ document.addEventListener('DOMContentLoaded', function() {
         compraForm.addEventListener('submit', async function(event) {
             event.preventDefault();
             
-            // 1. Limpiar mensajes de error previos
             document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
             if (generalMessageCompra) {
                 generalMessageCompra.textContent = '';
                 generalMessageCompra.className = 'form-message';
             }
 
-            // 2. Validaciones (ANTES de mostrar el modal)
             let isValid = true;
             const fecha = document.getElementById('compra-fecha').value;
             const idProveedor = proveedorHiddenInput.value;
@@ -423,13 +400,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     generalMessageCompra.textContent = "Debe completar todos los campos correctamente.";
                     generalMessageCompra.classList.add('error');
                 }
-                return; // Si no es válido, paramos aquí y NO mostramos el modal
+                return; 
             }
 
-            // 3. Mostrar Modal de Confirmación
             showConfirmationModal("¿Estás seguro de que deseas registrar esta compra?", async () => {
                 
-                // --- Preparar datos y Enviar ---
                 const compraRequestDTO = {
                     fecha: fecha,
                     idProveedor: parseInt(idProveedor),
@@ -448,31 +423,26 @@ document.addEventListener('DOMContentLoaded', function() {
                         throw new Error(errorData.message || `Error del servidor: ${response.status}`);
                     }
 
-                    // --- Éxito ---
                     if (generalMessageCompra) {
                         generalMessageCompra.textContent = "¡Compra registrada exitosamente!";
                         generalMessageCompra.classList.add('success');
                     }
                     
-                    // Limpiar formulario y estado
                     compraForm.reset(); 
                     detalleItems = []; 
                     renderDetalleTemporal(); 
                     
-                    // Limpiar buscadores
                     proveedorSearchInput.value = '';
                     proveedorHiddenInput.value = '';
                     productoSearchInput.value = '';
                     productoHiddenInput.value = '';
                     todosLosProductos = [];
                     
-                    // Resetear estado del input de productos
                     if (productoSearchInput) {
                         productoSearchInput.placeholder = "Seleccione un proveedor primero";
                         productoSearchInput.disabled = true;
                     }
 
-                    // Recargar tabla (esperamos un poco para asegurar consistencia en DB)
                     await new Promise(resolve => setTimeout(resolve, 250));
                     historialCurrentPage = 0;
                     loadComprasHistorial(); 
@@ -489,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ===============================================
-    // LÓGICA DE LA TABLA HISTORIAL (Sin cambios)
+    // LÓGICA DE LA TABLA HISTORIAL
     // ===============================================
     
     async function loadComprasHistorial() {
@@ -497,6 +467,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         historialTabla.classList.add('loading');
+        historialTabla.innerHTML = `<tr><td colspan="5">Cargando historial...</td></tr>`;
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
@@ -540,10 +511,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 : 'Sin productos';
 
             const costosTexto = compra.productosComprados && compra.productosComprados.length > 0
-                ? compra.productosComprados.map(p => `$${(p.precioUnitario || 0).toFixed(2)}`).join('<br>')
+                ? compra.productosComprados.map(p => `$${formatoMoneda.format(p.precioUnitario || 0)}`).join('<br>')
                 : 'N/A';
                 
-            const totalFormateado = `$${(compra.total || 0).toFixed(2)}`;
+            const totalFormateado = `$${formatoMoneda.format(compra.total || 0)}`;
             
             let fechaFormateada = compra.fecha || 'N/A';
             if (typeof fechaFormateada === 'string' && fechaFormateada.includes('-')) {
@@ -626,14 +597,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // ===============================
-    // CARGA INICIAL (COMPRAS)
+    // CARGA INICIAL
     // ===============================
-    loadProveedoresParaCompra(); // Carga proveedores al array
-    // loadProductosParaCompra();  // <-- ESTA YA NO SE LLAMA AL INICIO
-    loadComprasHistorial();       // Carga la tabla de historial
-    renderDetalleTemporal();      // Renderiza la tabla vacía del carrito
+    loadProveedoresParaCompra(); 
+    loadComprasHistorial();      
+    renderDetalleTemporal();      
     
-    // Deshabilitamos los productos al inicio
     if(productoSearchInput) {
         productoSearchInput.disabled = true;
         productoSearchInput.placeholder = "Seleccione un proveedor primero";

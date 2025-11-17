@@ -6,9 +6,18 @@ document.addEventListener('DOMContentLoaded', function () {
     const API_VENTAS_URL = '/api/ventas';
     const API_PRODUCTOS_URL = '/api/productos/select';
     
-    // --- ¡NUEVAS URLs DE CLIENTE! ---
-    const API_CLIENTES_URL = '/api/clientes/select'; // Para el buscador
-    const API_CLIENTES_BASE_URL = '/api/clientes';   // Para crear (POST)
+    const API_CLIENTES_URL = '/api/clientes/select'; 
+    const API_CLIENTES_BASE_URL = '/api/clientes';   
+
+    // =================================================================
+    // --- CONFIGURACIÓN DE FORMATO (NUEVO) ---
+    // =================================================================
+    // Formateador para MOSTRAR (ej: 54.000 o 1.500,50)
+    const formatoMoneda = new Intl.NumberFormat('es-AR', {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
 
     // ===============================
     // SELECTORES FORMULARIO VENTA
@@ -16,7 +25,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const ventaForm = document.getElementById('venta-form');
     const fechaVentaInput = document.getElementById('fecha-venta');
     
-    // --- ¡NUEVOS Selectores Buscador Cliente! ---
+    // --- Selectores Buscador Cliente ---
     const clienteSearchInput = document.getElementById('venta-cliente-search');
     const clienteHiddenInput = document.getElementById('venta-cliente-id-hidden');
     const clienteResultsContainer = document.getElementById('venta-cliente-results');
@@ -32,13 +41,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const ventaDetalleTemporalBody = document.getElementById('venta-detalle-temporal');
     const totalVentaDisplay = document.getElementById('total-venta');
     
-    // --- Mensajes de Error Formulario ---
+    // --- Mensajes de Error ---
     const errorFechaVenta = document.getElementById('errorFechaVenta');
     const errorProducto = document.getElementById('errorProducto');
-    const errorCompraCantidad = document.getElementById('errorCompraCantidad');
     const errorDetalleGeneral = document.getElementById('errorDetalleGeneral');
     const generalMessage = document.getElementById('form-general-message-venta');
-
 
     // ===================================
     // SELECTORES - MODAL NUEVO CLIENTE
@@ -59,35 +66,32 @@ document.addEventListener('DOMContentLoaded', function () {
     const mainContent = document.querySelector('.main-content');
     const ventasTableHeaders = document.querySelectorAll('#ventas-section .data-table th[data-sort-by]');
 
-
     // ===============================
     // ESTADO GLOBAL
     // ===============================
     let todosLosProductos = [];
-    let todosLosClientes = []; // <-- ¡NUEVO!
+    let todosLosClientes = []; 
     let productoSeleccionado = null;
     let detallesVenta = []; 
 
-    // --- ESTADO DE PAGINACIÓN DE VENTAS ---
+    // --- Estado de Paginación ---
     let currentPageVentas = 0; 
-    const pageSizeVentas = 10;
+    const pageSizeVentas = 7;
     let totalPagesVentas = 0;
     let ventasSortField = 'fecha'; 
     let ventasSortDirection = 'desc'; 
 
     
     // ==========================================================
-    // LÓGICA DE CARGA DE DATOS (VENTAS, PRODUCTOS, CLIENTES)
+    // LÓGICA DE CARGA DE DATOS
     // ==========================================================
 
-    /**
-     * Carga el historial de ventas paginado y ordenado
-     */
     async function loadVentas(page = 0) { 
         if (!ventaTableBody || !mainContent) return;
 
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         ventaTableBody.classList.add('loading');
+        ventaTableBody.innerHTML = `<tr><td colspan="4">Cargando historial de ventas...</td></tr>`;
         await new Promise(resolve => setTimeout(resolve, 200));
         
         try {
@@ -123,9 +127,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    /**
-     * Carga la lista de productos para el buscador
-     */
     async function loadProductosParaSelect() {
         try {
             const response = await fetch(API_PRODUCTOS_URL);
@@ -137,9 +138,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    /**
-     * ¡NUEVA! Carga la lista de clientes para el buscador
-     */
     async function loadClientesParaVenta() {
         if (!clienteSearchInput) return;
         try {
@@ -151,7 +149,6 @@ document.addEventListener('DOMContentLoaded', function () {
             clienteSearchInput.placeholder = "Error al cargar clientes";
         }
     }
-
 
     // ==========================================================
     // LÓGICA DEL MODAL DE CREACIÓN RÁPIDA DE CLIENTES
@@ -170,13 +167,13 @@ document.addEventListener('DOMContentLoaded', function () {
     function openAddClienteModal() {
         if (!addClienteModal) return;
         resetAddClienteModal();
-        addClienteModal.style.display = 'flex'; // <-- CAMBIO: 'flex' para centrar
+        addClienteModal.style.display = 'flex'; 
         document.getElementById('addClienteNombre').focus();
     }
 
     function closeAddClienteModal() {
         if (!addClienteModal) return;
-        addClienteModal.style.display = 'none'; // 'none' sigue igual
+        addClienteModal.style.display = 'none'; 
     }
 
     async function handleAddClienteSubmit(event) {
@@ -218,13 +215,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const nuevoCliente = await response.json(); 
             closeAddClienteModal();
 
-            // Auto-seleccionar el cliente en el formulario de Venta
             const nombreCompleto = `${nuevoCliente.nombre} ${nuevoCliente.apellido || ''} (${nuevoCliente.dni})`;
             clienteSearchInput.value = nombreCompleto.trim();
-            clienteHiddenInput.value = nuevoCliente.idCliente; // Asumiendo que el backend devuelve idCliente
+            clienteHiddenInput.value = nuevoCliente.idCliente; 
             if (clienteError) clienteError.textContent = ''; 
             
-            // Actualizar la lista global de clientes
             loadClientesParaVenta();
 
         } catch (error) {
@@ -237,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================================
-    // LÓGICA DEL BUSCADOR DE CLIENTES (¡NUEVO!)
+    // LÓGICA DEL BUSCADOR DE CLIENTES
     // ==========================================================
 
     function renderResultadosClientes(clientes) {
@@ -253,19 +248,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function filtrarClientes() {
-        // 1. Obtener la consulta y separarla por espacios
         const query = clienteSearchInput.value.toLowerCase();
-        // Ej: "juan pe" -> ["juan", "pe"]
         const terminosBusqueda = query.split(' ').filter(term => term.length > 0);
 
         const clientesFiltrados = todosLosClientes.filter(c => {
-            
-            // 2. Crear un texto único de búsqueda para cada cliente
             const nombreCompleto = `${c.nombre.toLowerCase()} ${c.apellido ? c.apellido.toLowerCase() : ''} ${c.dni.toLowerCase()}`;
-            // Ej: "juan perez 12345678"
-
-            // 3. Verificar que CADA término de búsqueda esté en el texto completo
-            // .every() se asegura de que "juan" Y "pe" estén presentes
             return terminosBusqueda.every(term => nombreCompleto.includes(term));
         });
         
@@ -288,7 +275,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-
     // ==========================================================
     // LÓGICA DEL BUSCADOR DE PRODUCTOS
     // ==========================================================
@@ -309,9 +295,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         productResultsContainer.innerHTML = productos.map(producto => {
+            // --- MODIFICADO: Usamos formatoMoneda aquí ---
             return `
                 <div class="product-result-item" data-id="${producto.idProducto}">
-                    ${producto.nombreProducto} <span>($${producto.precioVenta.toFixed(2)})</span>
+                    ${producto.nombreProducto} <span>($${formatoMoneda.format(producto.precioVenta)})</span>
                 </div>
             `;
         }).join('');
@@ -332,7 +319,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-
     // ==========================================================
     // LÓGICA DEL DETALLE DE VENTA ("CARRITO")
     // ==========================================================
@@ -349,7 +335,6 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
         
-        // Verificar si el producto ya está en el detalle
         const productoExistente = detallesVenta.find(item => item.idProducto === productoSeleccionado.idProducto);
 
         if (productoExistente) {
@@ -364,7 +349,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         renderDetalleTemporal();
         
-        // Resetear inputs de producto
         productoSeleccionado = null;
         productSearchInput.value = '';
         cantidadProductoInput.value = '1';
@@ -384,12 +368,14 @@ document.addEventListener('DOMContentLoaded', function () {
         detallesVenta.forEach(item => {
             const subtotal = item.precioVenta * item.cantidad;
             totalAcumulado += subtotal;
+            
+            // --- MODIFICADO: Usamos formatoMoneda en la tabla ---
             const row = `
                 <tr>
                     <td>${item.nombreProducto}</td>
                     <td>${item.cantidad}</td>
-                    <td>$${item.precioVenta.toFixed(2)}</td>
-                    <td>$${subtotal.toFixed(2)}</td>
+                    <td>$${formatoMoneda.format(item.precioVenta)}</td>
+                    <td>$${formatoMoneda.format(subtotal)}</td>
                     <td>
                         <button type="button" class="btn-icon btn-danger btn-delete-detalle" data-id="${item.idProducto}" title="Quitar">
                             <i class="fas fa-trash"></i>
@@ -399,7 +385,9 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
             ventaDetalleTemporalBody.innerHTML += row;
         });
-        totalVentaDisplay.textContent = `$ Total: $${totalAcumulado.toFixed(2)}`;
+        
+        // --- MODIFICADO: Usamos formatoMoneda en el total ---
+        totalVentaDisplay.textContent = `$ Total: $${formatoMoneda.format(totalAcumulado)}`;
     }
 
     // ==========================================================
@@ -409,15 +397,12 @@ document.addEventListener('DOMContentLoaded', function () {
     async function saveVenta(event) {
         event.preventDefault();
         
-        // 1. Resetear mensajes de error visuales
         generalMessage.textContent = '';
         generalMessage.className = 'form-message';
         if (errorFechaVenta) errorFechaVenta.textContent = '';
         if (clienteError) clienteError.textContent = '';
         if (errorDetalleGeneral) errorDetalleGeneral.textContent = '';
 
-        // 2. Obtener valores y Validar
-        // (La validación se hace ANTES de mostrar el modal)
         const fechaVenta = fechaVentaInput.value;
         const idCliente = clienteHiddenInput.value;
 
@@ -441,15 +426,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!isValid) {
             generalMessage.textContent = 'Por favor, complete todos los campos obligatorios.';
             generalMessage.classList.add('error');
-            return; // Detenemos aquí si no es válido
+            return; 
         }
 
-        // 3. Mostrar Modal de Confirmación
-        // Pasamos el mensaje y la función asíncrona que se ejecutará al dar "Sí"
         showConfirmationModal("¿Estás seguro de que deseas registrar esta venta?", async () => {
             
             try {
-                // --- PREPARAR DATOS (DTO) ---
                 const detallesParaBackend = detallesVenta.map(item => {
                     return {
                         productoId: item.idProducto,
@@ -463,7 +445,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     detalles: detallesParaBackend,
                 };
 
-                // --- ENVIAR A LA API ---
                 const response = await fetch(API_VENTAS_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -480,20 +461,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 }
 
-                // --- ÉXITO ---
                 const ventaCreada = await response.json();
                 console.log('Venta registrada con éxito:', ventaCreada);
 
                 generalMessage.textContent = '¡Venta registrada con éxito!';
                 generalMessage.classList.add('success');
 
-                // Limpiar formulario y estado
                 ventaForm.reset();
                 detallesVenta = [];
                 renderDetalleTemporal();
                 clienteHiddenInput.value = ''; 
                 
-                // Recargar tabla de ventas
                 await new Promise(resolve => setTimeout(resolve, 250)); 
                 currentPageVentas = 0;
                 ventasSortField = 'fecha';
@@ -509,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================================
-    // LÓGICA DE TABLA DE VENTAS (Paginación, Orden)
+    // LÓGICA DE TABLA DE VENTAS
     // ==========================================================
     function crearFilaVentaHTML(venta) {
         const parts = venta.fecha.split('-');
@@ -518,12 +496,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const productosTexto = formatProductosList(venta.productos); 
         const nombreClienteTexto = venta.nombreCliente || 'Cliente N/A';
 
+        // --- MODIFICADO: Usamos formatoMoneda en la tabla de historial ---
         return `
             <tr>
                 <td>${fechaFormateada}</td>
                 <td>${nombreClienteTexto}</td> 
                 <td>${productosTexto}</td> 
-                <td>$${venta.total.toFixed(2)}</td> 
+                <td>$${formatoMoneda.format(venta.total)}</td> 
             </tr>
         `;
     }
@@ -537,9 +516,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // ¡CAMBIO! Ahora usa el helper
         const rowsHtml = ventas.map(crearFilaVentaHTML).join('');
-
         ventaTableBody.innerHTML = rowsHtml;
     }
 
@@ -602,12 +579,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // ASIGNACIÓN DE EVENT LISTENERS
     // ==========================================================
 
-    // --- Formulario Principal ---
     if (ventaForm) {
         ventaForm.addEventListener('submit', saveVenta);
     }
 
-    // --- Modal Cliente Rápido ---
     if (addClienteBtn) {
         addClienteBtn.addEventListener('click', openAddClienteModal);
     }
@@ -623,10 +598,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // --- Buscador de Clientes ---
     if (clienteSearchInput) {
         clienteSearchInput.addEventListener('input', () => {
-            clienteHiddenInput.value = ''; // Limpiar ID si el usuario escribe
+            clienteHiddenInput.value = ''; 
             if (clienteError) clienteError.textContent = '';
             filtrarClientes();
         });
@@ -636,7 +610,6 @@ document.addEventListener('DOMContentLoaded', function () {
         clienteResultsContainer.addEventListener('click', seleccionarCliente);
     }
 
-    // --- Buscador de Productos ---
     if (productSearchInput) {
         productSearchInput.addEventListener('input', buscarProductos);
         productSearchInput.addEventListener('focus', buscarProductos); 
@@ -648,7 +621,6 @@ document.addEventListener('DOMContentLoaded', function () {
         btnAgregarProducto.addEventListener('click', agregarProductoAlDetalle);
     }
 
-    // --- Carrito (Detalle Temporal) ---
     if (ventaDetalleTemporalBody) {
         ventaDetalleTemporalBody.addEventListener('click', function(event) {
             const deleteButton = event.target.closest('.btn-delete-detalle');
@@ -660,16 +632,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
     
-    // --- Clic Global (Cerrar Dropdowns) ---
     document.addEventListener('click', function (event) {
-        // Cerrar Dropdown de Productos
         const isClickInsideProductInput = productSearchInput && productSearchInput.contains(event.target);
         const isClickInsideProductResults = productResultsContainer && productResultsContainer.contains(event.target);
         if (!isClickInsideProductInput && !isClickInsideProductResults) {
             if (productResultsContainer) productResultsContainer.style.display = 'none';
         }
         
-        // Cerrar Dropdown de Clientes
         const isClickInsideClientInput = clienteSearchInput && clienteSearchInput.contains(event.target);
         const isClickInsideClientResults = clienteResultsContainer && clienteResultsContainer.contains(event.target);
         if (!isClickInsideClientInput && !isClickInsideClientResults) {
@@ -677,7 +646,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-    // --- Paginación y Orden (Historial de Ventas) ---
     if (ventasPrevPageBtn) {
         ventasPrevPageBtn.addEventListener('click', handleVentasPrevPage);
     }
@@ -692,7 +660,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // CARGA INICIAL
     // ==========================================================
     loadProductosParaSelect();
-    loadClientesParaVenta(); // <-- ¡NUEVO!
+    loadClientesParaVenta(); 
     loadVentas(); 
-    renderDetalleTemporal(); // Para mostrar el mensaje "Agregue productos..."
+    renderDetalleTemporal(); 
 });

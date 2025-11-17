@@ -59,7 +59,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (ventasMesCount) ventasMesCount.textContent = data.ventasMes;
             if (ventasHistoricasCount) ventasHistoricasCount.textContent = data.ventasHistoricas;
             if (productosMesCount) productosMesCount.textContent = data.productoMes;
-            if (recaudacionMesAmount) recaudacionMesAmount.textContent = `$${data.recaudacionMes.toFixed(2)}`;
+            if (recaudacionMesAmount) {
+                // Usamos 'es-AR' para que use puntos para los miles (ej: 54.000)
+                const formato = new Intl.NumberFormat('es-AR', {
+                    style: 'decimal',
+                    minimumFractionDigits: 0, // Sin decimales mínimos
+                    maximumFractionDigits: 0  // Sin decimales máximos (entero)
+                });
+                recaudacionMesAmount.textContent = `$${formato.format(data.recaudacionMes)}`;
+            }
 
         } catch (error) {
             console.error('Error al cargar datos del dashboard:', error);

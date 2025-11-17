@@ -1,31 +1,33 @@
 document.addEventListener('DOMContentLoaded', function () {
 
-    // =================================================================
     // --- 1. CONSTANTES DE API ---
-    // =================================================================
-    const API_STOCK_URL = '/api/stock/productos';           // GET para la tabla
-    const API_STOCK_EDIT_URL = '/api/stock/';               // PUT para editar (ej: /api/stock/1)
-    const API_PRODUCTOS_DELETE_URL = '/api/productos/';     // DELETE para borrar (ej: /api/productos/1)
+    const API_STOCK_URL = '/api/stock/productos';           
+    const API_STOCK_EDIT_URL = '/api/stock/';               
+    const API_PRODUCTOS_DELETE_URL = '/api/productos/';     
 
     // =================================================================
-    // --- 2. CONSTANTES DEL DOM (PÁGINA PRINCIPAL) ---
+    // --- CONFIGURACIÓN DE FORMATO (NUEVO) ---
     // =================================================================
+    // Definimos el formateador para moneda (es-AR usa punto para miles)
+    const formatoMoneda = new Intl.NumberFormat('es-AR', {
+        style: 'decimal',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    });
+
+    // --- 2. CONSTANTES DEL DOM (PÁGINA PRINCIPAL) ---
     const searchInput = document.getElementById('stock-search-input');
     const tableBody = document.getElementById('stock-table-body');
     
-    // Selectores para estabilidad y ordenamiento
     const mainContent = document.querySelector('.main-content');
     const tableHeaders = document.querySelectorAll('#stock-section .data-table th[data-sort-by]');
 
-    // =================================================================
-    // --- 3. CONSTANTES DEL DOM (MODALES) ---
-    // =================================================================
-    // Modal de Borrado
+    // --- 3. CONSTANTES DEL DOM (MODAL DE BORRADO) ---
     const deleteModal = document.getElementById('delete-confirm-modal');
     const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
     const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
 
-    // Modal de Edición
+    // --- 4. CONSTANTES DEL DOM (MODAL DE EDICIÓN) ---
     const editModal = document.getElementById('edit-product-modal');
     const editModalCloseBtn = document.getElementById('edit-modal-close-btn');
     const editProductForm = document.getElementById('edit-product-form');
@@ -36,8 +38,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const editPrecio = document.getElementById('edit-precio');
     const editStockActual = document.getElementById('edit-stock-actual');
     const editCantidadAjuste = document.getElementById('edit-cantidad-ajuste');
-    
-    // Errores de Edición
     const errorEditNombre = document.getElementById('error-edit-nombre');
     const errorEditCategoria = document.getElementById('error-edit-categoria');
     const errorEditDescripcion = document.getElementById('error-edit-descripcion');
@@ -45,94 +45,31 @@ document.addEventListener('DOMContentLoaded', function () {
     const errorEditAjuste = document.getElementById('error-edit-ajuste');
     const editFormGeneralMessage = document.getElementById('edit-form-general-message');
 
-    // Paginación
+    // Constantes de paginación
     const prevPageBtn = document.getElementById('prev-page');
     const nextPageBtn = document.getElementById('next-page');
     const pageInfo = document.getElementById('page-info');
-
-    // =================================================================
-    // --- 4. VARIABLES DE ESTADO ---
-    // =================================================================
-    let todosLosProductos = []; // Guarda la lista completa de productos
-    let idParaBorrar = null;   // Guarda el ID del producto a borrar
+    
+    // --- 5. VARIABLES DE ESTADO ---
+    let todosLosProductos = []; 
+    let idParaBorrar = null;   
     
     // Estado de la paginación
     let currentPage = 1;
-    const itemsPerPage = 7; // Productos por página
-    let currentListForPagination = []; // Lista (filtrada o completa) que se está paginando
+    const itemsPerPage = 7; 
+    let currentListForPagination = []; 
 
     // Estado de ordenamiento
-    let sortField = 'stock'; // Orden inicial por stock
-    let sortDirection = 'asc'; // De menor a mayor
+    let sortField = 'stock'; 
+    let sortDirection = 'asc'; 
 
     // =================================================================
-    // --- 5. HANDLERS PARA TECLA ESC ---
-    // =================================================================
-    // Definimos estas funciones antes de usarlas
-    const handleEditEsc = (e) => { if (e.key === 'Escape') closeEditModal(); };
-    const handleDeleteEsc = (e) => { if (e.key === 'Escape') closeDeleteModal(); };
-
-    // =================================================================
-    // --- 6. FUNCIONES DE CONTROL DE MODALES (NUEVO) ---
+    // --- 6. FUNCIONES DE LÓGICA (CARGA, RENDER, FILTRO, ETC.) ---
     // =================================================================
 
-    // --- Funciones para el Modal de Edición ---
-    function openEditModal(id) {
-        const producto = todosLosProductos.find(p => p.id == id);
-        if (!producto) {
-            alert('Error: Producto no encontrado en el inventario local.');
-            return;
-        }
-        
-        // Limpiar formulario
-        document.querySelectorAll('#edit-product-form .error-message').forEach(el => el.textContent = '');
-        editFormGeneralMessage.textContent = '';
-        editFormGeneralMessage.className = 'form-message';
-        
-        // Rellenar datos
-        editProductId.value = producto.id;
-        editNombre.value = producto.nombre;
-        editCategoria.value = producto.categoria;
-        editDescripcion.value = producto.descripcion;
-        editPrecio.value = producto.precio.toFixed(2);
-        editStockActual.value = producto.stock; 
-        editCantidadAjuste.value = 0; 
-        
-        // Mostrar modal y activar escucha de tecla Esc
-        if (editModal) {
-            editModal.style.display = 'block';
-            window.addEventListener('keydown', handleEditEsc);
-        }
-    }
-
-    function closeEditModal() {
-        if (editModal) {
-            editModal.style.display = 'none';
-            window.removeEventListener('keydown', handleEditEsc);
-        }
-    }
-
-    // --- Funciones para el Modal de Borrado ---
-    function openDeleteModal(id) {
-        idParaBorrar = id;
-        if (deleteModal) {
-            deleteModal.style.display = 'block';
-            window.addEventListener('keydown', handleDeleteEsc);
-        }
-    }
-
-    function closeDeleteModal() {
-        idParaBorrar = null;
-        if (deleteModal) {
-            deleteModal.style.display = 'none';
-            window.removeEventListener('keydown', handleDeleteEsc);
-        }
-    }
-
-    // =================================================================
-    // --- 7. FUNCIONES DE LÓGICA (CARGA, RENDER, FILTRO, ETC.) ---
-    // =================================================================
-
+    /**
+     * Carga todos los productos desde la API.
+     */
     async function loadStock() {
         if (tableBody) {
             tableBody.innerHTML = '<tr><td colspan="6">Cargando...</td></tr>';
@@ -146,6 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const productos = await response.json();
 
             todosLosProductos = productos; 
+            
             filtrarStock(); 
 
         } catch (error) {
@@ -156,6 +94,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /**
+     * Dibuja las filas de la tabla (paginadas) con animación.
+     */
     async function renderStockTable() {
         if (!tableBody || !mainContent) return;
         
@@ -192,7 +133,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td>${producto.nombre}</td>
                         <td>${producto.categoria}</td>
                         <td>${producto.descripcion}</td>
-                        <td>$${producto.precio.toFixed(2)}</td>
+                        
+                        <td>$${formatoMoneda.format(producto.precio)}</td>
+                        
                         <td><span class="stock-badge ${stockClass}">${producto.stock}</span></td>
                         <td>
                             <button class="btn-icon btn-edit-producto" data-id="${producto.id}"><i class="fas fa-edit"></i></button>
@@ -220,6 +163,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    /**
+     * Filtra, ORDENA y renderiza.
+     */
     function filtrarStock() {
         const textoBusqueda = searchInput.value.toLowerCase();
         
@@ -304,14 +250,34 @@ document.addEventListener('DOMContentLoaded', function () {
         renderStockTable();
     }
 
+    function openEditModal(id) {
+        const producto = todosLosProductos.find(p => p.id == id);
+        if (!producto) {
+            alert('Error: Producto no encontrado en el inventario local.');
+            return;
+        }
+        document.querySelectorAll('#edit-product-form .error-message').forEach(el => el.textContent = '');
+        editFormGeneralMessage.textContent = '';
+        editFormGeneralMessage.className = 'form-message';
+        editProductId.value = producto.id;
+        editNombre.value = producto.nombre;
+        editCategoria.value = producto.categoria;
+        editDescripcion.value = producto.descripcion;
+        
+        // Mantenemos toFixed(2) para el INPUT porque el navegador espera formato estándar para editar
+        editPrecio.value = producto.precio.toFixed(2);
+        
+        editStockActual.value = producto.stock; 
+        editCantidadAjuste.value = 0; 
+        editModal.style.display = 'block';
+    }
+
     async function handleEditSubmit(event) {
         event.preventDefault(); 
         editFormGeneralMessage.textContent = '';
         editFormGeneralMessage.className = 'form-message';
-        
         const id = editProductId.value;
         const ajuste = parseInt(editCantidadAjuste.value) || 0; 
-        
         let isValid = true;
         if (editNombre.value.trim() === "") {
              errorEditNombre.textContent = 'El nombre es obligatorio.'; isValid = false;
@@ -327,9 +293,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (ajuste < 0) {
              errorEditAjuste.textContent = 'La cantidad a añadir no puede ser negativa.'; isValid = false;
         }
-        
         if (!isValid) return; 
-
         const actualizarDTO = {
             nombre: editNombre.value.trim(),
             categoria: editCategoria.value.trim(),
@@ -337,22 +301,19 @@ document.addEventListener('DOMContentLoaded', function () {
             precio: parseFloat(editPrecio.value),
             cantidadExtraStock: ajuste
         };
-
         try {
             const response = await fetch(API_STOCK_EDIT_URL + id, { 
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(actualizarDTO)
             });
-
             if (!response.ok) {
                 const errorText = await response.text();
                 throw new Error(errorText || `Error HTTP: ${response.status}`);
             }
-            
-            closeEditModal(); // Usamos la función segura para cerrar
+            editModal.style.display = 'none';
+            alert('¡Producto actualizado con éxito!');
             loadStock(); 
-
         } catch (error) {
             console.error('Error al actualizar producto:', error);
             editFormGeneralMessage.textContent = `Error: ${error.message}`;
@@ -361,36 +322,33 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // =================================================================
-    // --- 8. LISTENERS (Conexión de eventos) ---
+    // --- 7. LISTENERS (Conexión de eventos) ---
     // =================================================================
 
-    // Buscador
     searchInput.addEventListener('input', filtrarStock);
     
-    // Ordenamiento
     tableHeaders.forEach(th => {
         th.addEventListener('click', handleSortClick);
     });
 
-    // Botones de la tabla (Editar y Borrar)
     tableBody.addEventListener('click', (event) => {
         const target = event.target; 
-        
-        // Botón BORRAR
         const deleteButton = target.closest('.btn-delete-producto');
         if (deleteButton) {
-            openDeleteModal(deleteButton.dataset.id);
+            idParaBorrar = deleteButton.dataset.id; 
+            deleteModal.style.display = 'block';
         }
-        
-        // Botón EDITAR
         const editButton = target.closest('.btn-edit-producto');
         if (editButton) {
-            openEditModal(editButton.dataset.id);
+            const id = editButton.dataset.id;
+            openEditModal(id);
         }
     });
 
-    // Botones del Modal de Borrado
-    cancelDeleteBtn.addEventListener('click', closeDeleteModal);
+    cancelDeleteBtn.addEventListener('click', () => {
+        deleteModal.style.display = 'none';
+        idParaBorrar = null;
+    });
 
     confirmDeleteBtn.addEventListener('click', async () => {
         if (!idParaBorrar) return;
@@ -414,15 +372,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 alert(`Error inesperado: ${error.message}`);
             }
         } finally {
-            closeDeleteModal(); // Usamos la función segura
+            deleteModal.style.display = 'none';
+            idParaBorrar = null;
         }
     });
 
-    // Botones del Modal de Edición
-    editModalCloseBtn.addEventListener('click', closeEditModal);
+    editModalCloseBtn.addEventListener('click', () => {
+        editModal.style.display = 'none';
+    });
+
     editProductForm.addEventListener('submit', handleEditSubmit);
 
-    // Paginación
     prevPageBtn.addEventListener('click', async () => {
         if (currentPage > 1) {
             currentPage--;
@@ -439,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // =================================================================
-    // --- 9. EJECUCIÓN INICIAL ---
+    // --- 8. EJECUCIÓN INICIAL ---
     // =================================================================
     loadStock();
 

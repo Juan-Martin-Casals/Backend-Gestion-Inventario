@@ -301,13 +301,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // 4. Construir DTO
             const usuarioDTO = {
-                nombre,
-                apellido,
-                email,
-                password, 
+                nombre: nombre,
+                apellido: apellido,
+                email: email,
+                contrasena: password, // Cambiamos 'password' por 'contrasena'
+                confirmacionContrasena: confirmPassword, // Agregamos este campo que espera el DTO
                 idRol: parseInt(idRol)
             };
-
             // 5. Enviar
             try {
                 const response = await fetch(API_USUARIOS_URL, { 
