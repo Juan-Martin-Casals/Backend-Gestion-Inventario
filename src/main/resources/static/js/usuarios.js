@@ -6,7 +6,7 @@
  * - Manejar el modal de edición de usuarios.
  * - Manejar el modal de eliminación.
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
 
     // ===============================
     // URLs DE LA API
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ESTADO GLOBAL
     // ===============================
     let currentDeleteUserId = null;
-    let itemsPerPage = 10; 
+    let itemsPerPage = 10;
 
     // ===============================
     // SELECTORES - TABLA Y PAGINACIÓN
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const prevPageBtn = document.getElementById('user-prev-page');
     const nextPageBtn = document.getElementById('user-next-page');
     const pageInfo = document.getElementById('user-page-info');
-    
+
     // ¡NUEVO! Selector para estabilidad de scroll/foco
     const mainContent = document.querySelector('.main-content');
 
@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     let currentPage = 0;
     let totalPages = 1;
-    
+
     // ===============================
     // ¡NUEVO! ESTADO Y SELECTORES DE ORDENAMIENTO
     // ===============================
@@ -86,29 +86,29 @@ document.addEventListener('DOMContentLoaded', function() {
      * Carga los roles desde la API y los popula en los <select>
      */
     async function loadRoles() {
-    try {
-        const response = await fetch(API_ROLES_URL);
-        if (!response.ok) throw new Error('Error al cargar roles.');
-        allRoles = await response.json(); // <-- Esto trae [{"idRol": 1, "descripcion": "ADMIN"}, ...]
+        try {
+            const response = await fetch(API_ROLES_URL);
+            if (!response.ok) throw new Error('Error al cargar roles.');
+            allRoles = await response.json(); // <-- Esto trae [{"idRol": 1, "descripcion": "ADMIN"}, ...]
 
-        if (rolSelect) {
-            rolSelect.innerHTML = '<option value="">Selecciona rol</option>';
-            allRoles.forEach(rol => {
-                const option = document.createElement('option');
+            if (rolSelect) {
+                rolSelect.innerHTML = '<option value="">Selecciona rol</option>';
+                allRoles.forEach(rol => {
+                    const option = document.createElement('option');
 
-                // --- ¡ESTA ES LA CORRECCIÓN! ---
-                // Usar los nombres exactos del RolSelectDTO
-                option.value = rol.idRol; 
-                option.textContent = rol.descripcion; // <-- Debe ser 'descripcion'
+                    // --- ¡ESTA ES LA CORRECCIÓN! ---
+                    // Usar los nombres exactos del RolSelectDTO
+                    option.value = rol.idRol;
+                    option.textContent = rol.descripcion; // <-- Debe ser 'descripcion'
 
-                rolSelect.appendChild(option);
-            });
+                    rolSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error al cargar roles:', error);
+            if (rolSelect) rolSelect.innerHTML = '<option value="">Error al cargar</option>';
         }
-    } catch (error) {
-        console.error('Error al cargar roles:', error);
-        if (rolSelect) rolSelect.innerHTML = '<option value="">Error al cargar</option>';
     }
-}
 
     /**
      * ¡MODIFICADO! Carga la tabla de usuarios con paginación, ordenamiento y animación.
@@ -127,24 +127,24 @@ document.addEventListener('DOMContentLoaded', function() {
             // 2. Construir URL con paginación y ordenamiento
             const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
             const url = `${API_USUARIOS_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
-            
+
             const response = await fetch(url);
             if (!response.ok) {
                 // Manejo de error si el token expiró o es inválido
                 if (response.status === 401 || response.status === 403) {
-                     window.location.href = '/index.html'; // Redirigir al login
+                    window.location.href = '/index.html'; // Redirigir al login
                 }
                 throw new Error(`Error del servidor: ${response.status}`);
             }
-            
-            const pageData = await response.json(); 
+
+            const pageData = await response.json();
             totalPages = pageData.totalPages;
-            
+
             // 3. Renderizar datos
-            renderUserTable(pageData.content); 
+            renderUserTable(pageData.content);
             updatePaginationControls();
             updateSortIndicators(); // ¡NUEVO!
-            
+
             // 4. Restaurar scroll y aplicar Fade-In
             requestAnimationFrame(() => {
                 window.scrollTo(0, scrollPosition);
@@ -192,18 +192,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================================
     // LÓGICA DE PAGINACIÓN
     // ===============================================
-    
+
     function updatePaginationControls() {
         if (!pageInfo || !prevPageBtn || !nextPageBtn) return;
-        
+
         pageInfo.textContent = `Página ${currentPage + 1} de ${totalPages || 1}`;
         prevPageBtn.disabled = (currentPage === 0);
         nextPageBtn.disabled = (currentPage + 1 >= totalPages);
     }
 
     if (prevPageBtn) {
-        prevPageBtn.addEventListener('click', (event) => { 
-            event.preventDefault(); 
+        prevPageBtn.addEventListener('click', (event) => {
+            event.preventDefault();
             if (currentPage > 0) {
                 currentPage--;
                 loadUsuarios();
@@ -212,15 +212,15 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (nextPageBtn) {
-        nextPageBtn.addEventListener('click', (event) => { 
-            event.preventDefault(); 
+        nextPageBtn.addEventListener('click', (event) => {
+            event.preventDefault();
             if (currentPage + 1 < totalPages) {
                 currentPage++;
                 loadUsuarios();
             }
         });
     }
-    
+
     // ===============================================
     // ¡NUEVO! LÓGICA DE ORDENAMIENTO
     // ===============================================
@@ -228,7 +228,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleSortClick(event) {
         event.preventDefault();
         event.currentTarget.blur();
-        
+
         const th = event.currentTarget;
         const newSortField = th.getAttribute('data-sort-by');
 
@@ -241,22 +241,22 @@ document.addEventListener('DOMContentLoaded', function() {
             sortDirection = 'asc';
         }
 
-        currentPage = 0; 
+        currentPage = 0;
         loadUsuarios();
     }
-    
+
     function updateSortIndicators() {
         userTableHeaders.forEach(th => {
             th.classList.remove('sort-asc', 'sort-desc');
-            
+
             const icon = th.querySelector('.sort-icon');
             if (icon) {
                 icon.className = 'sort-icon fas fa-sort';
             }
-            
+
             if (th.getAttribute('data-sort-by') === sortField) {
                 th.classList.add(`sort-${sortDirection}`);
-                
+
                 if (icon) {
                     icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
                 }
@@ -270,14 +270,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================================
 
     if (userForm) {
-        userForm.addEventListener('submit', async function(e) {
+        userForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
             // 1. Limpiar mensajes
             document.querySelectorAll('#user-form .error-message').forEach(el => el.textContent = '');
             generalMessage.textContent = '';
             generalMessage.className = 'form-message';
-            
+
             // 2. Obtener valores
             const nombre = nombreInput.value.trim();
             const apellido = apellidoInput.value.trim();
@@ -293,9 +293,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!email) { document.getElementById('error-user-email').textContent = 'Complete este campo'; isValid = false; }
             if (!idRol) { document.getElementById('error-user-rol').textContent = 'Seleccione un rol'; isValid = false; }
             if (!password) { document.getElementById('error-user-password').textContent = 'Complete este campo'; isValid = false; }
-            if (password !== confirmPassword) { 
-                document.getElementById('error-user-confirm-password').textContent = 'Las contraseñas no coinciden'; 
-                isValid = false; 
+            if (password !== confirmPassword) {
+                document.getElementById('error-user-confirm-password').textContent = 'Las contraseñas no coinciden';
+                isValid = false;
             }
             if (!isValid) { generalMessage.textContent = "Complete los campos."; generalMessage.classList.add('error'); return; }
 
@@ -310,7 +310,7 @@ document.addEventListener('DOMContentLoaded', function() {
             };
             // 5. Enviar
             try {
-                const response = await fetch(API_USUARIOS_URL, { 
+                const response = await fetch(API_USUARIOS_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(usuarioDTO)
@@ -324,13 +324,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 generalMessage.textContent = "¡Usuario registrado con éxito!";
                 generalMessage.classList.add('success');
                 userForm.reset();
-                
-                currentPage = 0; 
-                loadUsuarios(); 
+
+                currentPage = 0;
+                loadUsuarios();
+                showSubsection('usuarios-list'); // Redirigir a la lista
 
             } catch (error) {
                 console.error('Error al registrar el usuario:', error);
-                generalMessage.textContent = `${error.message}`; 
+                generalMessage.textContent = `${error.message}`;
                 generalMessage.classList.add('error');
             }
         });
@@ -342,24 +343,24 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const handleEditEsc = (e) => { if (e.key === 'Escape') closeEditModal(); };
     const handleDeleteEsc = (e) => { if (e.key === 'Escape') closeDeleteModal(); };
-    
+
     // --- Abrir el modal ---
     function openEditModal(user) {
         editIdInput.value = user.id;
         editNombreInput.value = user.nombre;
         editApellidoInput.value = user.apellido;
         editEmailInput.value = user.email;
-        
+
         // Seleccionar el rol correcto
         editRolSelect.innerHTML = '';
         allRoles.forEach(rol => {
             const option = document.createElement('option');
 
             // --- ¡CORRECCIÓN DOBLE! ---
-            option.value = rol.idRol; 
+            option.value = rol.idRol;
             option.textContent = rol.descripcion;
 
-            if (rol.idRol == user.idRol) { 
+            if (rol.idRol == user.idRol) {
                 option.selected = true;
             }
             editRolSelect.appendChild(option);
@@ -367,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // ¡NUEVO! Mostrar el modal
         // Esta línea faltaba en el código que pegaste
-        if(modalEdit) {
+        if (modalEdit) {
             modalEdit.style.display = 'block';
             window.addEventListener('keydown', handleEditEsc); // Agregamos evento
         }
@@ -375,17 +376,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Cerrar el modal ---
     function closeEditModal() {
-        if(modalEdit) {
+        if (modalEdit) {
             modalEdit.style.display = 'none';
             window.removeEventListener('keydown', handleEditEsc); // Quitamos evento
         }
     }
-    
+
     // --- Manejar el envío (submit) del formulario de EDICIÓN ---
     if (editForm) {
-        editForm.addEventListener('submit', async function(e) {
+        editForm.addEventListener('submit', async function (e) {
             e.preventDefault();
-            
+
             const id = editIdInput.value;
             const dto = {
                 nombre: editNombreInput.value.trim(),
@@ -402,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!dto.idRol) { document.getElementById('errorEditUsuarioRol').textContent = 'Seleccione un rol'; isValid = false; }
             if (!isValid) { editGeneralMessage.textContent = "Complete los campos."; editGeneralMessage.classList.add('error'); return; }
 
-            
+
             try {
                 const response = await fetch(`${API_USUARIOS_URL}/${id}`, {
                     method: 'PUT',
@@ -414,7 +415,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const errorText = await response.text();
                     throw new Error(errorText || `Error: ${response.status}`);
                 }
-                
+
                 editGeneralMessage.textContent = "Usuario actualizado con éxito.";
                 editGeneralMessage.classList.add('success');
 
@@ -431,16 +432,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    
+
 
     // ==========================================================
     // LÓGICA DE BORRADO (MODAL REUTILIZADO)
     // ==========================================================
 
     function openDeleteModal(id, nombre) {
-        currentDeleteUserId = id; 
+        currentDeleteUserId = id;
         deleteModalMessage.textContent = `¿Estás seguro de que quieres eliminar al usuario "${nombre}"?`;
-        if(deleteConfirmModal) {
+        if (deleteConfirmModal) {
             deleteConfirmModal.style.display = 'block';
             // 2. ¡NUEVO! Agregamos el evento al abrir
             window.addEventListener('keydown', handleDeleteEsc);
@@ -449,7 +450,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function closeDeleteModal() {
         currentDeleteUserId = null;
-        if(deleteConfirmModal) {
+        if (deleteConfirmModal) {
             deleteConfirmModal.style.display = 'none';
             // 3. ¡NUEVO! Quitamos el evento al cerrar para evitar errores
             window.removeEventListener('keydown', handleDeleteEsc);
@@ -462,7 +463,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Clics en botones de la tabla ---
     if (userTableBody) {
-        userTableBody.addEventListener('click', async function(e) {
+        userTableBody.addEventListener('click', async function (e) {
             const editButton = e.target.closest('.btn-edit-usuario');
             const deleteButton = e.target.closest('.btn-delete-usuario');
 
@@ -472,9 +473,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 try {
                     // Hacemos un fetch para obtener los datos más frescos del usuario
                     // (El DTO de la tabla puede no tener el idRol, solo el nombre)
-                    const response = await fetch(`${API_USUARIOS_URL}/${id}`); 
+                    const response = await fetch(`${API_USUARIOS_URL}/${id}`);
                     if (!response.ok) throw new Error('No se pudo cargar el usuario');
-                    const userData = await response.json(); 
+                    const userData = await response.json();
                     openEditModal(userData);
                 } catch (error) {
                     console.error('Error al abrir el modal de edición:', error);
@@ -495,35 +496,35 @@ document.addEventListener('DOMContentLoaded', function() {
     if (confirmDeleteBtn) {
         confirmDeleteBtn.addEventListener('click', async () => {
             // Verificamos si estamos borrando un usuario (podría ser un producto u otro)
-            if (currentDeleteUserId) { 
+            if (currentDeleteUserId) {
                 try {
                     const response = await fetch(`${API_USUARIOS_URL}/${currentDeleteUserId}`, {
                         method: 'DELETE'
                     });
-                    
+
                     if (!response.ok) {
                         const errorText = await response.text();
                         throw new Error(errorText || 'No se pudo eliminar el usuario');
                     }
-                    
+
                     loadUsuarios(); // Recarga la tabla
 
                 } catch (error) {
                     alert('Error al eliminar: ' + error.message);
                 } finally {
-                    closeDeleteModal(); 
+                    closeDeleteModal();
                     currentDeleteUserId = null; // Limpiamos el ID
                 }
             }
         });
     }
-    
+
     // --- Eventos para cerrar modales ---
     if (cancelDeleteBtn) {
         cancelDeleteBtn.addEventListener('click', closeDeleteModal);
     }
     if (deleteConfirmModal) {
-         deleteConfirmModal.addEventListener('click', (e) => {
+        deleteConfirmModal.addEventListener('click', (e) => {
             if (e.target === deleteConfirmModal) closeDeleteModal();
         });
     }
@@ -539,12 +540,35 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     // CARGA INICIAL
     // ===============================
-    
+
     // ¡NUEVO! Asignar eventos de clic a las cabeceras
     userTableHeaders.forEach(header => {
         header.addEventListener('click', handleSortClick);
     });
 
+    // ===============================
+    // LÓGICA DE SUBSECCIONES
+    // ===============================
+    const subsectionContainers = document.querySelectorAll('.subsection-container');
+
+    function showSubsection(subsectionId) {
+        // 1. Ocultar todos los contenedores que sean de usuarios
+        subsectionContainers.forEach(container => {
+            if (container.id.startsWith('usuarios-')) {
+                container.style.display = 'none';
+            }
+        });
+
+        // 2. Mostrar contenedor seleccionado
+        const targetContainer = document.getElementById(`${subsectionId}-container`);
+        if (targetContainer) {
+            targetContainer.style.display = 'block';
+        }
+    }
+
+    // Exponer globalmente
+    window.showUsuariosSubsection = showSubsection;
+
     loadRoles();
-    loadUsuarios(); 
+    loadUsuarios();
 });

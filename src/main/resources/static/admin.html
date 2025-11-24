@@ -18,11 +18,56 @@
             </div>
             <ul class="sidebar-menu">
                 <li><a href="#" data-section="principal" class="active"><i class="fas fa-home"></i> Principal</a></li>
-                <li><a href="#" data-section="productos"><i class="fas fa-box"></i> Productos</a></li>
-                <li><a href="#" data-section="proveedores"><i class="fas fa-user"></i> Proveedores</a></li>
-                <li><a href="#" data-section="compras"><i class="fas fa-shopping-bag"></i> Compras</a></li>
-                <li><a href="#" data-section="usuarios"><i class="fas fa-users"></i> Usuarios</a></li>
-                <li><a href="#" data-section="ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
+                <li class="has-submenu">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-box"></i> Productos <i class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="#" data-section="productos" data-subsection="productos-create">Crear Producto</a>
+                        </li>
+                        <li><a href="#" data-section="productos" data-subsection="productos-list">Ver Productos</a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-user"></i> Proveedores <i class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="#" data-section="proveedores" data-subsection="proveedores-create">Crear
+                                Proveedor</a></li>
+                        <li><a href="#" data-section="proveedores" data-subsection="proveedores-list">Ver
+                                Proveedores</a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-shopping-bag"></i> Compras <i class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="#" data-section="compras" data-subsection="compras-create">Registrar Compra</a>
+                        </li>
+                        <li><a href="#" data-section="compras" data-subsection="compras-list">Ver Compras</a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-users"></i> Usuarios <i class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="#" data-section="usuarios" data-subsection="usuarios-create">Registrar Usuario</a>
+                        </li>
+                        <li><a href="#" data-section="usuarios" data-subsection="usuarios-list">Ver Usuarios</a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-shopping-cart"></i> Ventas <i class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="#" data-section="ventas" data-subsection="ventas-create">Registrar Venta</a></li>
+                        <li><a href="#" data-section="ventas" data-subsection="ventas-list">Ver Ventas</a></li>
+                    </ul>
+                </li>
                 <li><a href="#" data-section="informes"><i class="fas fa-chart-bar"></i> Informes</a></li>
                 <li><a href="#" data-section="stock"><i class="fas fa-warehouse"></i> Stock</a></li>
                 <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
@@ -47,670 +92,760 @@
             </header>
 
             <section id="principal-section" class="spa-section">
-    
-    <div class="dashboard-stats">
 
-        <div class="stat-card">
-            <div class="stat-icon blue">
-                <i class="fas fa-calendar"></i>
-            </div>
-            <div class="stat-content">
-                <h3 id="ventas-mes-count">0</h3>
-                <p>Ventas del Mes</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon green">
-                <i class="fas fa-shopping-cart"></i>
-            </div>
-            <div class="stat-content">
-                <h3 id="ventas-historicas-count">0</h3>
-                <p>Ventas Históricas</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon purple">
-                <i class="fas fa-cube"></i>
-            </div>
-            <div class="stat-content">
-                <h3 id="productos-mes-count">0</h3>
-                <p>Productos Vendidos (Mes)</p>
-            </div>
-        </div>
-        <div class="stat-card">
-            <div class="stat-icon red">
-                <i class="fas fa-dollar-sign"></i>
-            </div>
-            <div class="stat-content">
-                <h3 id="recaudacion-mes-amount">$0.00</h3>
-                <p>Recaudación del Mes</p>
-            </div>
-        </div>
+                <div class="dashboard-stats">
 
-        <div class="stat-card">
-            <div class="stat-icon">
-                <i class="fas fa-box"></i>
-            </div>
-            <div class="stat-content">
-                <h3 id="total-productos-count">0</h3>
-                <p>Total Productos</p>
-            </div>
-        </div>
-        <div class="stat-card warning">
-            <div class="stat-icon">
-                <i class="fas fa-exclamation-triangle"></i>
-            </div>
-            <div class="stat-content">
-                <h3 id="productos-agotados-count">0</h3>
-                <p>Productos Agotados</p>
-            </div>
-        </div>
-        <div class="stat-card alert">
-            <div class="stat-icon">
-                <i class="fas fa-lock"></i>
-            </div>
-            <div class="stat-content">
-                <h3 id="stock-bajo-count">0</h3>
-                <p>Stock Bajo</p>
-            </div>
-        </div>
-
-    </div> <div class="low-stock-section">
-        <h3>Productos que necesitan reposición</h3>
-        <div class="table-container">
-            <table class="data-table">
-    <thead>
-    
-        <tr>
-            <th data-sort-by="producto.nombre" class="sortable">Nombre <i class="sort-icon fas fa-sort"></i></th>
-            <th data-sort-by="producto.categoria" class="sortable">Categoría <i class="sort-icon fas fa-sort"></i></th>
-            <th>Descripción</th> 
-            <th data-sort-by="stockActual" class="sortable">Stock <i class="sort-icon fas fa-sort"></i></th>
-            <th data-sort-by="producto.precio" class="sortable">Precio <i class="sort-icon fas fa-sort"></i></th>
-        </tr>
-    </thead>
-    <tbody id="low-stock-table-body"> 
-        </tbody>
-    
-    <tfoot>
-        <tr>
-            <td colspan="5">
-                <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                    <span id="low-stock-page-info" style="margin-right: 15px;">Página 1 de 1</span>
-                    <button class="btn-outline" id="low-stock-prev-page" disabled>
-                        <i class="fas fa-arrow-left"></i>
-                    </button>
-                    <button class="btn-outline" id="low-stock-next-page">
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    </tfoot>
-    </table>
-        </div>
-    </div>
-
-</section>
-
-            <section id="productos-section" class="spa-section" style="display:none">
-                <div class="section-header">
-                </div>
-
-                <div class="form-section">
-                    <h4>Registrar Nuevo Producto</h4>
-                    <form id="product-form" class="product-form" novalidate>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="product-name">Nombre del Producto</label>
-                                <input type="text" id="product-name" name="nombre" placeholder="Ingrese el nombre del producto">
-                                <div class="error-message" id="name-error"></div>
-                            </div>
-                            <div class="form-group">
-                                <label for="product-category">Categoría</label>
-                                <input type="text" id="product-category" name="categoria" placeholder="Ingrese la categoría">
-                                <div class="error-message" id="category-error"></div>
-                            </div>
+                    <div class="stat-card">
+                        <div class="stat-icon blue">
+                            <i class="fas fa-calendar"></i>
                         </div>
-                        <div class="form-group">
-                            <label for="product-description">Descripción</label>
-                            <textarea id="product-description" name="descripcion" placeholder="Descripción del producto"></textarea>
-                            <div class="error-message" id="description-error"></div>
+                        <div class="stat-content">
+                            <h3 id="ventas-mes-count">0</h3>
+                            <p>Ventas del Mes</p>
                         </div>
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="product-stock-min">Stock Mínimo</label>
-                                <input type="number" id="product-stock-min" value="5">
-                                <div class="error-message" id="stock-min-error"></div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="product-stock-max">Stock Máximo</label>
-                                <input type="number" id="product-stock-max" value="100">
-                                <div class="error-message" id="stock-max-error"></div>
-                            </div>
-                        </div>
-                        <button type="submit" class="btn-primary" style="margin-top: 20px;">
-                            <i class="fas fa-plus"></i>
-                            Registrar Producto
-                        </button>
-                    </form>
-                    <p id="form-general-message-producto" class="form-message"></p>
-                </div>
-
-                <div class="table-section">
-                    <h4>Productos Registrados</h4>
-                    <div class="table-container-product">
-                        <table class="data-table">
-                            <thead>
-                            <tr>
-                    <th data-sort-by="nombre" class="sortable">Nombre <i class="sort-icon fas fa-sort"></i></th>
-                    <th data-sort-by="categoria" class="sortable">Categoría <i class="sort-icon fas fa-sort"></i></th>
-                    <th>Descripción</th>
-                    <th data-sort-by="fechaCreacion" class="sortable">Fecha Creación <i class="sort-icon fas fa-sort"></i></th>
-                    <th>Stock Mín.</th> 
-                    <th>Stock Máx.</th> 
-                </tr>
-                            </thead>
-                            <tbody id="product-table-body">
-
-                            </tbody>
-                        </table>
                     </div>
-                            <div class="pagination-controls">
-                            </div>
-    <tfoot>
-        <tr>
-            <td colspan="6">
-                <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                    <span id="product-page-info" style="margin-right: 15px;">Página 1 de 1</span>
-                    <button class="btn-outline" id="product-prev-page" disabled>
-                        <i class="fas fa-arrow-left"></i>
-                    </button>
-                    <button class="btn-outline" id="product-next-page">
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    </tfoot>
-            </section>
-
-            <section id="proveedores-section" class="spa-section" style="display:none">
-
-                <div class="section-header">
-                </div>
-            
-                <div class="form-section">
-                    <h4>Registrar Nuevo Proveedor</h4>
-                    <form id="proveedor-form" class="supplier-form" novalidate>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="proveedorNombre">Nombre del Proveedor</label>
-                                <input type="text" id="proveedorNombre" name="nombre" placeholder="Nombre proveedor">
-                                <div class="error-message" id="errorNombre"></div>
-                            </div>
-                            <div class="form-group">
-                                <label for="proveedorTelefono">Teléfono</label>
-                                <input type="text" id="proveedorTelefono" name="telefono" placeholder="123456789">
-                                <div class="error-message" id="errorTelefono"></div>
-                            </div>
+                    <div class="stat-card">
+                        <div class="stat-icon green">
+                            <i class="fas fa-shopping-cart"></i>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="proveedorEmail">Email</label>
-                                <input type="email" id="proveedorEmail" name="email" placeholder="email@ejemplo.com">
-                                <div class="error-message" id="errorEmail"></div>
-                            </div>
-                            <div class="form-group">
-                                <label for="proveedorDireccion">Dirección</label>
-                                <input type="text" id="proveedorDireccion" name="direccion" placeholder="Dirección completa">
-                                <div class="error-message" id="errorDireccion"></div>
-                            </div>
+                        <div class="stat-content">
+                            <h3 id="ventas-historicas-count">0</h3>
+                            <p>Ventas Históricas</p>
                         </div>
-                        <div class="form-group">
-    <label for="proveedorProductosSelect">Productos que Ofrece</label>
-    
-    <div id="productos-multi-select-container" class="custom-multi-select-container">
-        
-        <div id="tags-container" class="tags-container">
-            
-        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon purple">
+                            <i class="fas fa-cube"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="productos-mes-count">0</h3>
+                            <p>Productos Vendidos (Mes)</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon red">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="recaudacion-mes-amount">$0.00</h3>
+                            <p>Recaudación del Mes</p>
+                        </div>
+                    </div>
 
-        <input type="text" id="productos-select-input" class="custom-select-input" placeholder="Buscar y seleccionar productos...">
-    
-    </div> <div id="productos-options-container" class="options-container">
-    </div>
-    <select id="proveedorProductosSelect" name="productosIds" multiple>
-    </select>
-    <div class="error-message" id="proveedorProductosError"></div>
-</div>
-                        <button type="submit" class="btn-primary" style="margin-top: 20px;">
-                            <i class="fas fa-plus"></i>
-                            Registrar Proveedor
-                        </button>
-                    </form>
-                    <p id="form-general-message-proveedor" class="form-message"></p>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="total-productos-count">0</h3>
+                            <p>Total Productos</p>
+                        </div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="productos-agotados-count">0</h3>
+                            <p>Productos Agotados</p>
+                        </div>
+                    </div>
+                    <div class="stat-card alert">
+                        <div class="stat-icon">
+                            <i class="fas fa-lock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="stock-bajo-count">0</h3>
+                            <p>Stock Bajo</p>
+                        </div>
+                    </div>
+
                 </div>
-            
-                <div class="table-section">
-                    <h4>Proveedores Registrados</h4>
-                    <div class="table-container table-container-proveedor">
+                <div class="low-stock-section">
+                    <h3>Productos que necesitan reposición</h3>
+                    <div class="table-container">
                         <table class="data-table">
                             <thead>
 
                                 <tr>
-
-                                    <th data-sort-by="nombre" class="sortable">Nombre <i class="sort-icon fas fa-sort"></i></th>
-                                    <th data-sort-by="email" class="sortable">Email <i class="sort-icon fas fa-sort"></i></th>
-                                    <th data-sort-by="telefono" class="sortable">Teléfono <i class="sort-icon fas fa-sort"></i></th>
-                                    <th>Productos</th>
-                                    <th data-sort-by="direccion" class="sortable">Dirección <i class="sort-icon fas fa-sort"></i></th>
-                                    <th>Acciones</th>
+                                    <th data-sort-by="producto.nombre" class="sortable">Nombre <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th data-sort-by="producto.categoria" class="sortable">Categoría <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th>Descripción</th>
+                                    <th data-sort-by="stockActual" class="sortable">Stock <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th data-sort-by="producto.precio" class="sortable">Precio <i
+                                            class="sort-icon fas fa-sort"></i></th>
                                 </tr>
-                                
                             </thead>
-                            <tbody id="proveedor-tabla">
+                            <tbody id="low-stock-table-body">
                             </tbody>
-                            
+
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                            <span id="low-stock-page-info" style="margin-right: 15px;">Página 1 de
+                                                1</span>
+                                            <button class="btn-outline" id="low-stock-prev-page" disabled>
+                                                <i class="fas fa-arrow-left"></i>
+                                            </button>
+                                            <button class="btn-outline" id="low-stock-next-page">
+                                                <i class="fas fa-arrow-right"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
-                        <div class="pagination-controls">
-                            </div>
-                                                        <div class="pagination-controls">
-                            </div>
-    <tfoot>
-        <tr>
-            <td colspan="6">
-                <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                    <span id="proveedor-page-info" style="margin-right: 15px;">Página 1 de 1</span>
-                    <button class="btn-outline" id="proveedor-prev-page" disabled>
-                        <i class="fas fa-arrow-left"></i>
-                    </button>
-                    <button class="btn-outline" id="proveedor-next-page">
-                        <i class="fas fa-arrow-right"></i>
-                    </button>
+                    </div>
                 </div>
-            </td>
-        </tr>
-    </tfoot>
+
+            </section>
+
+            <section id="productos-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h3>Gestión de Productos</h3>
+                    <p>Administra el inventario de productos.</p>
+                </div>
+
+
+
+                <!-- Subsección: Crear Producto -->
+                <div id="productos-create-container" class="subsection-container" style="display: none;">
+                    <div class="form-section">
+                        <h4>Registrar Nuevo Producto</h4>
+                        <form id="product-form" class="product-form" novalidate>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="product-name">Nombre del Producto</label>
+                                    <input type="text" id="product-name" name="nombre"
+                                        placeholder="Ingrese el nombre del producto">
+                                    <div class="error-message" id="name-error"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="product-category">Categoría</label>
+                                    <input type="text" id="product-category" name="categoria"
+                                        placeholder="Ingrese la categoría">
+                                    <div class="error-message" id="category-error"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-description">Descripción</label>
+                                <textarea id="product-description" name="descripcion"
+                                    placeholder="Descripción del producto"></textarea>
+                                <div class="error-message" id="description-error"></div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="product-stock-min">Stock Mínimo</label>
+                                    <input type="number" id="product-stock-min" value="5">
+                                    <div class="error-message" id="stock-min-error"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="product-stock-max">Stock Máximo</label>
+                                    <input type="number" id="product-stock-max" value="100">
+                                    <div class="error-message" id="stock-max-error"></div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                                <i class="fas fa-plus"></i>
+                                Registrar Producto
+                            </button>
+                        </form>
+                        <p id="form-general-message-producto" class="form-message"></p>
+                    </div>
+                </div>
+
+                <!-- Subsección: Ver Productos -->
+                <div id="productos-list-container" class="subsection-container">
+                    <div class="table-section">
+                        <h4>Productos Registrados</h4>
+                        <div class="table-container-product">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th data-sort-by="nombre" class="sortable">Nombre <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="categoria" class="sortable">Categoría <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Descripción</th>
+                                        <th data-sort-by="fechaCreacion" class="sortable">Fecha Creación <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Stock Mín.</th>
+                                        <th>Stock Máx.</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="product-table-body">
+
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-controls">
+                        </div>
+                        <tfoot>
+                            <tr>
+                                <td colspan="6">
+                                    <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                        <span id="product-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                        <button class="btn-outline" id="product-prev-page" disabled>
+                                            <i class="fas fa-arrow-left"></i>
+                                        </button>
+                                        <button class="btn-outline" id="product-next-page">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tfoot>
                     </div>
                 </div>
             </section>
 
-<section id="compras-section" class="spa-section" style="display:none">
-    <div class="section-header">
-    </div>
-
-    <div class="form-section">
-        <h4>Registrar Nueva Compra</h4>
-        <form id="compra-form" class="sale-form" novalidate>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="compra-fecha">Fecha de Compra</label>
-                    <input type="date" id="compra-fecha" value="">
-                    <div class="error-message" id="errorCompraFecha"></div>
+            <section id="proveedores-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h2>Gestión de Proveedores</h2>
+                    <p>Administra tus proveedores.</p>
                 </div>
-                <div class="form-group">
-                    <label for="compra-proveedor-search">Proveedor</label>
-                    
-                    <div class="product-search-container">
-                        <input type="text" id="compra-proveedor-search" placeholder="Buscar proveedor por nombre..." class="product-search-input" autocomplete="off">
-                        <input type="hidden" id="compra-proveedor-id-hidden">
-                        <div id="compra-proveedor-results" class="product-results" style="display: none;">
-                        </div>
-                    </div>
-                    
-                    <div class="error-message" id="errorCompraProveedor"></div>
-                </div>
-            </div>
 
-            <div class="product-selection">
-                <h5><i class="fas fa-box"></i> Detalle de la Compra</h5>
-                
-                <div class="form-row">
-                    <div class="form-group" style="flex: 2;">
-                        <label for="compra-producto-search">Producto</label>
-                        
-                        <div class="product-search-container">
-                            <input type="text" id="compra-producto-search" placeholder="Buscar producto por nombre..." class="product-search-input" autocomplete="off">
-                            <input type="hidden" id="compra-producto-id-hidden">
-                            <div id="compra-producto-results" class="product-results" style="display: none;">
+                <!-- Subsección: Crear Proveedor -->
+                <div id="proveedores-create-container" class="subsection-container" style="display: none;">
+                    <div class="form-section">
+                        <h4>Registrar Nuevo Proveedor</h4>
+                        <form id="proveedor-form" class="supplier-form" novalidate>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="proveedorNombre">Nombre del Proveedor</label>
+                                    <input type="text" id="proveedorNombre" name="nombre"
+                                        placeholder="Nombre proveedor">
+                                    <div class="error-message" id="errorNombre"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="proveedorTelefono">Teléfono</label>
+                                    <input type="text" id="proveedorTelefono" name="telefono" placeholder="123456789">
+                                    <div class="error-message" id="errorTelefono"></div>
+                                </div>
                             </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="proveedorEmail">Email</label>
+                                    <input type="email" id="proveedorEmail" name="email"
+                                        placeholder="email@ejemplo.com">
+                                    <div class="error-message" id="errorEmail"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="proveedorDireccion">Dirección</label>
+                                    <input type="text" id="proveedorDireccion" name="direccion"
+                                        placeholder="Dirección completa">
+                                    <div class="error-message" id="errorDireccion"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="proveedorProductosSelect">Productos que Ofrece</label>
+
+                                <div id="productos-multi-select-container" class="custom-multi-select-container">
+
+                                    <div id="tags-container" class="tags-container">
+
+                                    </div>
+
+                                    <input type="text" id="productos-select-input" class="custom-select-input"
+                                        placeholder="Buscar y seleccionar productos...">
+
+                                </div>
+                                <div id="productos-options-container" class="options-container">
+                                </div>
+                                <select id="proveedorProductosSelect" name="productosIds" multiple>
+                                </select>
+                                <div class="error-message" id="proveedorProductosError"></div>
+                            </div>
+                            <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                                <i class="fas fa-plus"></i>
+                                Registrar Proveedor
+                            </button>
+                        </form>
+                        <p id="form-general-message-proveedor" class="form-message"></p>
+                    </div>
+                </div>
+
+                <!-- Subsección: Ver Proveedores -->
+                <div id="proveedores-list-container" class="subsection-container">
+                    <div class="table-section">
+                        <h4>Proveedores Registrados</h4>
+                        <div class="table-container table-container-proveedor">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th data-sort-by="nombre" class="sortable">Nombre <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="email" class="sortable">Email <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="telefono" class="sortable">Teléfono <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Productos</th>
+                                        <th data-sort-by="direccion" class="sortable">Dirección <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="proveedor-tabla">
+                                    <!-- Se llena con JS -->
+                                </tbody>
+                            </table>
+                            <div class="pagination-controls">
+                            </div>
+                            <div class="pagination-controls">
+                            </div>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                            <span id="proveedor-page-info" style="margin-right: 15px;">Página 1 de
+                                                1</span>
+                                            <button class="btn-outline" id="proveedor-prev-page" disabled>
+                                                <i class="fas fa-arrow-left"></i>
+                                            </button>
+                                            <button class="btn-outline" id="proveedor-next-page">
+                                                <i class="fas fa-arrow-right"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </div>
-                        
-                        <div class="error-message" id="errorCompraProducto"></div>
                     </div>
-                    
-                    <div class="form-group" style="flex: 1;">
-                        <label for="compra-cantidad">Cantidad</label>
-                        <input type="number" id="compra-cantidad" value="1" min="1">
-                        <div class="error-message" id="errorCompraCantidad"></div>
+                </div>
+            </section>
+
+            <section id="compras-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h2>Gestión de Compras</h2>
+                    <p>Administra tus compras.</p>
+                </div>
+
+                <!-- Subsección: Registrar Compra -->
+                <div id="compras-create-container" class="subsection-container" style="display: none;">
+                    <div class="form-section">
+                        <h4>Registrar Nueva Compra</h4>
+                        <form id="compra-form" class="sale-form" novalidate>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="compra-fecha">Fecha de Compra</label>
+                                    <input type="date" id="compra-fecha" value="">
+                                    <div class="error-message" id="errorCompraFecha"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="compra-proveedor-search">Proveedor</label>
+
+                                    <div class="product-search-container">
+                                        <input type="text" id="compra-proveedor-search"
+                                            placeholder="Buscar proveedor por nombre..." class="product-search-input"
+                                            autocomplete="off">
+                                        <input type="hidden" id="compra-proveedor-id-hidden">
+                                        <div id="compra-proveedor-results" class="product-results"
+                                            style="display: none;">
+                                        </div>
+                                    </div>
+
+                                    <div class="error-message" id="errorCompraProveedor"></div>
+                                </div>
+                            </div>
+
+                            <div class="product-selection">
+                                <h5><i class="fas fa-box"></i> Detalle de la Compra</h5>
+
+                                <div class="form-row">
+                                    <div class="form-group" style="flex: 2;">
+                                        <label for="compra-producto-search">Producto</label>
+
+                                        <div class="product-search-container">
+                                            <input type="text" id="compra-producto-search"
+                                                placeholder="Buscar producto por nombre..." class="product-search-input"
+                                                autocomplete="off">
+                                            <input type="hidden" id="compra-producto-id-hidden">
+                                            <div id="compra-producto-results" class="product-results"
+                                                style="display: none;">
+                                            </div>
+                                        </div>
+
+                                        <div class="error-message" id="errorCompraProducto"></div>
+                                    </div>
+
+                                    <div class="form-group" style="flex: 1;">
+                                        <label for="compra-cantidad">Cantidad</label>
+                                        <input type="number" id="compra-cantidad" value="1" min="1">
+                                        <div class="error-message" id="errorCompraCantidad"></div>
+                                    </div>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="compra-costo-unit">Precio de Costo (Unit.)</label>
+                                        <input type="text" id="compra-costo-unit" placeholder="0.00">
+                                        <div class="error-message" id="errorCompraCosto"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="compra-venta-unit">Nuevo Precio Venta (Unit.)</label>
+                                        <input type="text" id="compra-venta-unit" placeholder="0.00">
+                                        <div class="error-message" id="errorCompraVenta"></div>
+                                    </div>
+                                </div>
+
+                                <button type="button" id="add-detalle-btn" class="btn-secondary"
+                                    style="margin-top: 10px;">
+                                    <i class="fas fa-plus"></i>
+                                    Agregar Producto al Detalle
+                                </button>
+                                <div class="error-message" id="errorDetalleGeneral"></div>
+
+                                <div class="table-container" style="margin-top: 20px;">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Cantidad</th>
+                                                <th>Costo Unit.</th>
+                                                <th>Subtotal</th>
+                                                <th>Quitar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="compra-detalle-temporal">
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="total-section">
+                                    <h4 id="compra-total-display">$ Total Compra: $0.00</h4>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn-primary" style="margin-top: 10px;">
+                                <i class="fas fa-plus"></i>
+                                Registrar Compra
+                            </button>
+                        </form>
+                        <p id="form-general-message-compra" class="form-message"></p>
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="compra-costo-unit">Precio de Costo (Unit.)</label>
-                        <input type="text" id="compra-costo-unit" placeholder="0.00">
-                        <div class="error-message" id="errorCompraCosto"></div>
+                <!-- Subsección: Ver Compras -->
+                <div id="compras-list-container" class="subsection-container">
+                    <div class="table-section">
+                        <h4>Compras Registradas</h4>
+                        <p>Historial de compras a proveedores</p>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th data-sort-by="fecha" class="sortable">Fecha <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="proveedor.nombre" class="sortable">Proveedor <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Productos</th>
+                                        <th>Costo Unit.</th>
+                                        <th data-sort-by="total" class="sortable">Total <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="compras-historial-tabla-body">
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="5">
+                                            <div class="pagination-controls"
+                                                style="text-align: right; padding: 10px 0;">
+                                                <span id="compras-page-info" style="margin-right: 15px;">Página 1 de
+                                                    1</span>
+                                                <button class="btn-outline" id="compras-prev-page" disabled>
+                                                    <i class="fas fa-arrow-left"></i>
+                                                </button>
+                                                <button class="btn-outline" id="compras-next-page">
+                                                    <i class="fas fa-arrow-right"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
-                    <div class="form-group">
-                        <label for="compra-venta-unit">Nuevo Precio Venta (Unit.)</label>
-                        <input type="text" id="compra-venta-unit" placeholder="0.00">
-                        <div class="error-message" id="errorCompraVenta"></div>
+                </div>
+            </section>
+
+            <section id="usuarios-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h2>Gestión de Usuarios</h2>
+                    <p>Administra los usuarios del sistema.</p>
+                </div>
+
+                <!-- Subsección: Registrar Usuario -->
+                <div id="usuarios-create-container" class="subsection-container" style="display: none;">
+                    <div class="form-section">
+                        <h4>Registrar Nuevo Usuario</h4>
+                        <form id="user-form" class="product-form" novalidate>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="user-nombre">Nombre</label>
+                                    <input type="text" id="user-nombre" placeholder="Ingrese el nombre">
+                                    <div class="error-message" id="error-user-nombre"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="user-apellido">Apellido</label>
+                                    <input type="text" id="user-apellido" placeholder="Ingrese el apellido">
+                                    <div class="error-message" id="error-user-apellido"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="user-email">Email</label>
+                                    <input type="email" id="user-email" placeholder="correo@ejemplo.com">
+                                    <div class="error-message" id="error-user-email"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="user-rol">Rol</label>
+                                    <select id="user-rol">
+                                    </select>
+                                    <div class="error-message" id="error-user-rol"></div>
+                                </div>
+                            </div>
+
+                            <class="form-row">
+                                <div class="form-group">
+                                    <label for="user-password">Contraseña</label>
+                                    <input type="password" id="user-password" placeholder="Ingrese la contraseña">
+                                    <div class="error-message" id="error-user-password"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="user-confirm-password">Confirmar Contraseña</label>
+                                    <input type="password" id="user-confirm-password"
+                                        placeholder="Confirme la contraseña">
+                                    <div class="error-message" id="error-user-confirm-password"></div>
+                                </div>
+                                <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                                    <i class="fas fa-plus"></i>
+                                    Registrar Usuario
+                                </button>
+
+                        </form>
+                        <p id="form-general-message-usuario" class="form-message"></p>
                     </div>
                 </div>
 
-                <button type="button" id="add-detalle-btn" class="btn-secondary" style="margin-top: 10px;">
-                    <i class="fas fa-plus"></i>
-                    Agregar Producto al Detalle
-                </button>
-                <div class="error-message" id="errorDetalleGeneral"></div>
+                <!-- Subsección: Ver Usuarios -->
+                <div id="usuarios-list-container" class="subsection-container">
+                    <div class="table-section">
+                        <h4>Usuarios Registrados</h4>
+                        <div class="table-container-usuarios">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th data-sort-by="nombre" class="sortable">Nombre <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="apellido" class="sortable">Apellido <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="email" class="sortable">Email <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="rol.idRol" class="sortable">Rol <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="user-table-body">
+                                </tbody>
+                            </table>
 
-                <div class="table-container" style="margin-top: 20px;">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Cantidad</th>
-                                <th>Costo Unit.</th>
-                                <th>Subtotal</th>
-                                <th>Quitar</th>
-                            </tr>
-                        </thead>
-                        <tbody id="compra-detalle-temporal">
-                        </tbody>
-                    </table>
-                </div>
-                <div class="total-section">
-                    <h4 id="compra-total-display">$ Total Compra: $0.00</h4>
-                </div>
-            </div>
-            
-            <button type="submit" class="btn-primary" style="margin-top: 10px;">
-                <i class="fas fa-plus"></i>
-                Registrar Compra
-            </button>
-        </form>
-        <p id="form-general-message-compra" class="form-message"></p>
-    </div>
-
-    <div class="table-section">
-        <h4>Compras Registradas</h4>
-        <p>Historial de compras a proveedores</p>
-        <div class="table-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort-by="fecha" class="sortable">Fecha <i class="sort-icon fas fa-sort"></i></th>
-                        <th data-sort-by="proveedor.nombre" class="sortable">Proveedor <i class="sort-icon fas fa-sort"></i></th>
-                        <th>Productos</th> 
-                        <th>Costo Unit.</th> 
-                        <th data-sort-by="total" class="sortable">Total <i class="sort-icon fas fa-sort"></i></th>
-                    </tr>
-                </thead>
-                <tbody id="compras-historial-tabla-body">
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="5">
                             <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                                <span id="compras-page-info" style="margin-right: 15px;">Página 1 de 1</span>
-                                <button class="btn-outline" id="compras-prev-page" disabled>
+                                <span id="user-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                <button class="btn-outline" id="user-prev-page" disabled>
                                     <i class="fas fa-arrow-left"></i>
                                 </button>
-                                <button class="btn-outline" id="compras-next-page">
+                                <button class="btn-outline" id="user-next-page">
                                     <i class="fas fa-arrow-right"></i>
                                 </button>
                             </div>
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
-</section>
-
-           <section id="usuarios-section" class="spa-section" style="display:none">
-    <div class="section-header">
-        </div>
-
-    <div class="form-section">
-        <h4>Registrar Nuevo Usuario</h4>
-        <form id="user-form" class="product-form" novalidate>
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="user-nombre">Nombre</label>
-                    <input type="text" id="user-nombre" placeholder="Ingrese el nombre">
-                    <div class="error-message" id="error-user-nombre"></div>
-                </div>
-                <div class="form-group">
-                    <label for="user-apellido">Apellido</label>
-                    <input type="text" id="user-apellido" placeholder="Ingrese el apellido">
-                    <div class="error-message" id="error-user-apellido"></div>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="user-email">Email</label>
-                    <input type="email" id="user-email" placeholder="correo@ejemplo.com">
-                    <div class="error-message" id="error-user-email"></div>
-                </div>
-                <div class="form-group">
-                    <label for="user-rol">Rol</label>
-                    <select id="user-rol">
-                    </select>
-                    <div class="error-message" id="error-user-rol"></div>
-                </div>
-            </div>
-
-            <class="form-row">
-                <div class="form-group">
-                    <label for="user-password">Contraseña</label>
-                    <input type="password" id="user-password" placeholder="Ingrese la contraseña">
-                    <div class="error-message" id="error-user-password"></div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="user-confirm-password">Confirmar Contraseña</label>
-                    <input type="password" id="user-confirm-password" placeholder="Confirme la contraseña">
-                    <div class="error-message" id="error-user-confirm-password"></div>
-                </div> 
-                <button type="submit" class="btn-primary" style="margin-top: 20px;">
-                <i class="fas fa-plus"></i>
-                Registrar Usuario
-            </button>
-            
-        </form>
-        <p id="form-general-message-usuario" class="form-message"></p>
-    </div>
-
-    <div class="table-section">
-        <h4>Usuarios Registrados</h4>
-        <div class="table-container-usuarios">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                        <th data-sort-by="nombre" class="sortable">Nombre <i class="sort-icon fas fa-sort"></i></th>
-                        <th data-sort-by="apellido" class="sortable">Apellido <i class="sort-icon fas fa-sort"></i></th>
-                        <th data-sort-by="email" class="sortable">Email <i class="sort-icon fas fa-sort"></i></th>
-                        <th data-sort-by="rol.idRol" class="sortable">Rol <i class="sort-icon fas fa-sort"></i></th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody id="user-table-body">
-                    </tbody>
-            </table>
-
-            <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-            <span id="user-page-info" style="margin-right: 15px;">Página 1 de 1</span>
-            <button class="btn-outline" id="user-prev-page" disabled>
-                <i class="fas fa-arrow-left"></i>
-            </button>
-            <button class="btn-outline" id="user-next-page">
-                <i class="fas fa-arrow-right"></i>
-            </button>
-        </div>
-        </div>
-    </div>
-</section>
-
-
-
-
-<section id="ventas-section" class="spa-section" style="display:none">
-    <div class="section-header"></div>
-
-    <div class="form-section">
-        <h4>Registrar Nueva Venta</h4>
-        <form class="sale-form" id="venta-form">
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="fecha-venta">Fecha</label>
-                    <input type="date" id="fecha-venta">
-                    <div class="error-message" id="errorFechaVenta"></div>
-                </div>
-                
-                <div class="form-group">
-                    <label for="venta-cliente-search">Buscar Cliente (Nombre, Apellido o DNI)</label>
-                    
-                    <div class="search-with-add">
-                        <input type="text" id="venta-cliente-search" autocomplete="off" placeholder="Buscar cliente existente...">
-                        
-                        <button type="button" id="btn-add-cliente" class="btn-icon btn-add-quick" title="Crear Nuevo Cliente">
-                            <i class="fas fa-plus"></i>
-                        </button>
-                    </div>
-                    
-                    <input type="hidden" id="venta-cliente-id-hidden">
-                    <div class="product-results" id="venta-cliente-results"></div>
-                    <span class="error-message" id="errorVentaCliente"></span>
-                </div>
-            </div>
-            
-            <div class="product-selection">
-                <h5><i class="fas fa-box"></i> Selección de Producto</h5>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="product-search">Producto</label>
-                        <div class="product-search-container">
-                            <input type="text" id="product-search" placeholder="Buscar producto por nombre..." class="product-search-input">
-                            <div id="product-results" class="product-results" style="display: none;"></div>
                         </div>
-                        <div class="error-message" id="errorProducto"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="cantidad-producto">Cantidad</label>
-                        <input type="number" id="cantidad-producto" value="1" min="1">
-                        <div class="error-message" id="errorCompraCantidad"></div>
                     </div>
                 </div>
-                <button type="button" id="btn-agregar-producto" class="btn-secondary">
-                    <i class="fas fa-plus"></i>
-                    Agregar Producto a la Venta
-                </button>
-                <div class="error-message" id="errorDetalleGeneral"></div>
+            </section>
 
-                <div class="table-container" style="margin-top: 20px;">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Producto</th>
-                                <th>Cantidad</th>
-                                <th>Precio Unit.</th>
-                                <th>Subtotal</th>
-                                <th>Quitar</th>
-                            </tr>
-                        </thead>
-                        <tbody id="venta-detalle-temporal">
-                        </tbody>
-                    </table>
+
+
+
+            <section id="ventas-section" class="spa-section" style="display:none">
+                <div class="section-header">
+                    <h2>Gestión de Ventas</h2>
+                    <p>Administra las ventas del sistema.</p>
                 </div>
-            </div>
 
-            <div class="total-section">
-                <h4 id="total-venta">$ Total: $0.00</h4>
-            </div>
+                <!-- Subsección: Registrar Venta -->
+                <div id="ventas-create-container" class="subsection-container" style="display: none;">
+                    <div class="form-section">
+                        <h4>Registrar Nueva Venta</h4>
+                        <form class="sale-form" id="venta-form">
 
-            <button type="submit" class="btn-primary" id="btn-registrar-venta">
-                <i class="fas fa-plus"></i>
-                Registrar Venta
-            </button>
-        </form>
-        <p id="form-general-message-venta" class="form-message"></p>
-    </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fecha-venta">Fecha</label>
+                                    <input type="date" id="fecha-venta">
+                                    <div class="error-message" id="errorFechaVenta"></div>
+                                </div>
 
-    <div class="table-section">
-        <h4>Ventas Registradas</h4>
-        <p>Historial de ventas realizadas</p>
-        <div class="table-container-venta">
-            <table class="data-table" id="tabla-ventas">
-                <thead>
-                    <tr>
-                        <th data-sort-by="fecha" class="sortable">Fecha <i class="sort-icon fas fa-sort"></i></th>
-                        <th data-sort-by="cliente.nombre" class="sortable">Cliente <i class="sort-icon fas fa-sort"></i></th>
-                        <th>Producto</th> <th data-sort-by="total" class="sortable">Total <i class="sort-icon fas fa-sort"></i></th>
-                    </tr>
-                </thead>
-                <tbody id="tabla-ventas-body">
-                </tbody>
-            </table>
-            <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                <span id="ventas-page-info" style="margin-right: 15px;">Página 1 de 1</span>
-                <button class="btn-outline" id="ventas-prev-page" disabled>
-                    <i class="fas fa-arrow-left"></i>
-                </button>
-                <button class="btn-outline" id="ventas-next-page">
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-            </div>
-        </div>
-    </div>
+                                <div class="form-group">
+                                    <label for="venta-cliente-search">Buscar Cliente (Nombre, Apellido o DNI)</label>
 
-    <div id="modal-add-cliente-overlay" class="modal"> <div class="modal-content"> <button id="modal-add-cliente-close" class="modal-close">&times;</button>
+                                    <div class="search-with-add">
+                                        <input type="text" id="venta-cliente-search" autocomplete="off"
+                                            placeholder="Buscar cliente existente...">
 
-        <header class="modal-header">
-            <h2>Crear Nuevo Cliente</h2>
-            </header>
-        
-        <form id="add-cliente-form" class="modal-form" novalidate>
-            
-            <div class="form-message" id="form-general-message-add-cliente"></div>
+                                        <button type="button" id="btn-add-cliente" class="btn-icon btn-add-quick"
+                                            title="Crear Nuevo Cliente">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
 
-            <div class="form-group">
-                <label for="addClienteNombre">Nombre</label>
-                <input type="text" id="addClienteNombre">
-                <span class="error-message" id="errorAddClienteNombre"></span>
-            </div>
+                                    <input type="hidden" id="venta-cliente-id-hidden">
+                                    <div class="product-results" id="venta-cliente-results"></div>
+                                    <span class="error-message" id="errorVentaCliente"></span>
+                                </div>
+                            </div>
 
-            <div class="form-group">
-                <label for="addClienteApellido">Apellido</label>
-                <input type="text" id="addClienteApellido">
-            </div>
+                            <div class="product-selection">
+                                <h5><i class="fas fa-box"></i> Selección de Producto</h5>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="product-search">Producto</label>
+                                        <div class="product-search-container">
+                                            <input type="text" id="product-search"
+                                                placeholder="Buscar producto por nombre..."
+                                                class="product-search-input">
+                                            <div id="product-results" class="product-results" style="display: none;">
+                                            </div>
+                                        </div>
+                                        <div class="error-message" id="errorProducto"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="cantidad-producto">Cantidad</label>
+                                        <input type="number" id="cantidad-producto" value="1" min="1">
+                                        <div class="error-message" id="errorCompraCantidad"></div>
+                                    </div>
+                                </div>
+                                <button type="button" id="btn-agregar-producto" class="btn-secondary">
+                                    <i class="fas fa-plus"></i>
+                                    Agregar Producto a la Venta
+                                </button>
+                                <div class="error-message" id="errorDetalleGeneral"></div>
 
-            <div class="form-group">
-                <label for="addClienteDNI">DNI</label>
-                <input type="text" id="addClienteDNI">
-                <span class="error-message" id="errorAddClienteDNI"></span>
-            </div>
-            
-            <div class="form-group">
-                <label for="addClienteTelefono">Teléfono</label>
-                <input type="tel" id="addClienteTelefono">
-            </div>
+                                <div class="table-container" style="margin-top: 20px;">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Cantidad</th>
+                                                <th>Precio Unit.</th>
+                                                <th>Subtotal</th>
+                                                <th>Quitar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="venta-detalle-temporal">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
 
-            <div class="modal-footer">
-                <button type="submit" class="btn btn-primary">Guardar Cliente</button>
-            </div>
-        </form>
-    </div>
-</div>
+                            <div class="total-section">
+                                <h4 id="total-venta">$ Total: $0.00</h4>
+                            </div>
 
-</section>
+                            <button type="submit" class="btn-primary" id="btn-registrar-venta">
+                                <i class="fas fa-plus"></i>
+                                Registrar Venta
+                            </button>
+                        </form>
+                        <p id="form-general-message-venta" class="form-message"></p>
+                    </div>
+                </div>
+
+                <!-- Subsección: Ver Ventas -->
+                <div id="ventas-list-container" class="subsection-container">
+                    <div class="table-section">
+                        <h4>Ventas Registradas</h4>
+                        <p>Historial de ventas realizadas</p>
+                        <div class="table-container-venta">
+                            <table class="data-table" id="tabla-ventas">
+                                <thead>
+                                    <tr>
+                                        <th data-sort-by="fecha" class="sortable">Fecha <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="cliente.nombre" class="sortable">Cliente <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Producto</th>
+                                        <th data-sort-by="total" class="sortable">Total <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-ventas-body">
+                                </tbody>
+                            </table>
+                            <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                <span id="ventas-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                <button class="btn-outline" id="ventas-prev-page" disabled>
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <button class="btn-outline" id="ventas-next-page">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="modal-add-cliente-overlay" class="modal">
+                    <div class="modal-content"> <button id="modal-add-cliente-close"
+                            class="modal-close">&times;</button>
+
+                        <header class="modal-header">
+                            <h2>Crear Nuevo Cliente</h2>
+                        </header>
+
+                        <form id="add-cliente-form" class="modal-form" novalidate>
+
+                            <div class="form-message" id="form-general-message-add-cliente"></div>
+
+                            <div class="form-group">
+                                <label for="addClienteNombre">Nombre</label>
+                                <input type="text" id="addClienteNombre">
+                                <span class="error-message" id="errorAddClienteNombre"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="addClienteApellido">Apellido</label>
+                                <input type="text" id="addClienteApellido">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="addClienteDNI">DNI</label>
+                                <input type="text" id="addClienteDNI">
+                                <span class="error-message" id="errorAddClienteDNI"></span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="addClienteTelefono">Teléfono</label>
+                                <input type="tel" id="addClienteTelefono">
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">Guardar Cliente</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </section>
 
 
 
@@ -750,76 +885,76 @@
                 </div>
 
                 <div id="reporte-informes" class="reports-section" style="display: none; margin-top: 20px;">
-                    </div>
+                </div>
 
-                </section>
+            </section>
 
             <section id="stock-section" class="spa-section" style="display:none">
-    
-    <div class="section-header">
-        <h3>Gestión de Stock</h3>
-        <p>Consultá y administrá el inventario de tus productos.</p>
-    </div>
 
-    <div class="search-section">
-        <div class="search-box">
-            <i class="fas fa-search"></i>
-            
-            <input type="text" placeholder="Buscar productos por nombre..." id="stock-search-input">
-        </div>
-    </div>
+                <div class="section-header">
+                    <h3>Gestión de Stock</h3>
+                    <p>Consultá y administrá el inventario de tus productos.</p>
+                </div>
 
-    <div class="table-section">
-        <div class="table-container">
-            <table class="data-table">
-                <thead>
-                    <tr>
-                <th data-sort-by="nombre">
-                    Nombre <i class="sort-icon fas fa-sort"></i>
-                </th>
-                
-                <th data-sort-by="categoria">
-                    Categoría <i class="sort-icon fas fa-sort"></i>
-                </th>
-                
-                <th>Descripción</th>
-                
-                <th data-sort-by="precio">
-                    Precio <i class="sort-icon fas fa-sort"></i>
-                </th>
-                
-                <th data-sort-by="stock">
-                    Stock <i class="sort-icon fas fa-sort"></i>
-                </th>
-                
-                <th>Acciones</th>
-            </tr>
-                </thead>
-                
-                <tbody id="stock-table-body">
-                    </tbody>
-                    <tfoot>
-                    <tr>
-                        <td colspan="6">
-                            <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                                <span id="page-info" style="margin-right: 15px;">Página 1 de 1</span>
-                                <button class="btn-outline" id="prev-page" disabled>
-                                    <i class="fas fa-arrow-left"></i>
-                                </button>
-                                <button class="btn-outline" id="next-page">
-                                    <i class="fas fa-arrow-right"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
-    </div>
+                <div class="search-section">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+
+                        <input type="text" placeholder="Buscar productos por nombre..." id="stock-search-input">
+                    </div>
+                </div>
+
+                <div class="table-section">
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th data-sort-by="nombre">
+                                        Nombre <i class="sort-icon fas fa-sort"></i>
+                                    </th>
+
+                                    <th data-sort-by="categoria">
+                                        Categoría <i class="sort-icon fas fa-sort"></i>
+                                    </th>
+
+                                    <th>Descripción</th>
+
+                                    <th data-sort-by="precio">
+                                        Precio <i class="sort-icon fas fa-sort"></i>
+                                    </th>
+
+                                    <th data-sort-by="stock">
+                                        Stock <i class="sort-icon fas fa-sort"></i>
+                                    </th>
+
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+
+                            <tbody id="stock-table-body">
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="6">
+                                        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                            <span id="page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                            <button class="btn-outline" id="prev-page" disabled>
+                                                <i class="fas fa-arrow-left"></i>
+                                            </button>
+                                            <button class="btn-outline" id="next-page">
+                                                <i class="fas fa-arrow-right"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
 
 
-    
-</section>
+
+            </section>
 
 
 
@@ -828,7 +963,7 @@
         </main>
     </div>
 
-<div id="logout-modal" class="modal">
+    <div id="logout-modal" class="modal">
         <div class="modal-content modal-compact">
             <h3>Confirmar Salida</h3>
             <p>¿Estás seguro de que deseas cerrar sesión?</p>
@@ -839,196 +974,197 @@
         </div>
     </div>
 
-    <div id="modal-edit-proveedor-overlay" class="modal"> 
-    
-    <div class="modal-content">
-        
-        <button id="modal-edit-proveedor-close" class="modal-close">&times;</button>
-        
-        <h2>Editar Proveedor</h2>
-        
-        <form id="edit-proveedor-form" class="form-container">
-            <input type="hidden" id="editProveedorId">
-            
-            <div class="form-group">
-                <label for="editProveedorNombre">Nombre:</label>
-                <input type="text" id="editProveedorNombre" class="form-control">
-                <div class="error-message" id="errorEditNombre"></div>
-            </div>
-            
-            <div class="form-group">
-                <label for="editProveedorTelefono">Teléfono:</label>
-                <input type="text" id="editProveedorTelefono" class="form-control">
-                <div class="error-message" id="errorEditTelefono"></div>
-            </div>
-            
-            <div class="form-group">
-                <label for="editProveedorEmail">Email:</label>
-                <input type="email" id="editProveedorEmail" class="form-control">
-                <div class="error-message" id="errorEditEmail"></div>
-            </div>
-            
-            <div class="form-group">
-                <label for="editProveedorDireccion">Dirección:</label>
-                <input type="text" id="editProveedorDireccion" class="form-control">
-                <div class="error-message" id="errorEditDireccion"></div>
-            </div>
+    <div id="modal-edit-proveedor-overlay" class="modal">
 
-            <div class="form-group">
-                <label for="edit-productos-select-input">Productos que provee:</label>
-                <div class="custom-multi-select-container" id="edit-productos-multi-select-container">
-                    <div class="tags-container" id="edit-tags-container"></div>
-                    <input type="text" id="edit-productos-select-input" class="custom-select-input" placeholder="Buscar productos...">
+        <div class="modal-content">
+
+            <button id="modal-edit-proveedor-close" class="modal-close">&times;</button>
+
+            <h2>Editar Proveedor</h2>
+
+            <form id="edit-proveedor-form" class="form-container">
+                <input type="hidden" id="editProveedorId">
+
+                <div class="form-group">
+                    <label for="editProveedorNombre">Nombre:</label>
+                    <input type="text" id="editProveedorNombre" class="form-control">
+                    <div class="error-message" id="errorEditNombre"></div>
                 </div>
-                <select id="editProveedorProductosSelect" multiple hidden></select>
-                <div class="options-container" id="edit-productos-options-container"></div>
-                <div class="error-message" id="editProveedorProductosError"></div>
-            </div>
 
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-            </div>
-            <div id="form-general-message-edit-proveedor" class="form-message"></div>
-        </form>
+                <div class="form-group">
+                    <label for="editProveedorTelefono">Teléfono:</label>
+                    <input type="text" id="editProveedorTelefono" class="form-control">
+                    <div class="error-message" id="errorEditTelefono"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editProveedorEmail">Email:</label>
+                    <input type="email" id="editProveedorEmail" class="form-control">
+                    <div class="error-message" id="errorEditEmail"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="editProveedorDireccion">Dirección:</label>
+                    <input type="text" id="editProveedorDireccion" class="form-control">
+                    <div class="error-message" id="errorEditDireccion"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-productos-select-input">Productos que provee:</label>
+                    <div class="custom-multi-select-container" id="edit-productos-multi-select-container">
+                        <div class="tags-container" id="edit-tags-container"></div>
+                        <input type="text" id="edit-productos-select-input" class="custom-select-input"
+                            placeholder="Buscar productos...">
+                    </div>
+                    <select id="editProveedorProductosSelect" multiple hidden></select>
+                    <div class="options-container" id="edit-productos-options-container"></div>
+                    <div class="error-message" id="editProveedorProductosError"></div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+                <div id="form-general-message-edit-proveedor" class="form-message"></div>
+            </form>
+        </div>
     </div>
-</div>
 
     <div class="modal" id="delete-confirm-modal" style="display: none;">
-    <div class="modal-content" style="max-width: 400px; text-align: center;">
-        
-        <h3>Confirmar Eliminación</h3>
-        
-        <p id="delete-modal-message">¿Estás seguro de que querés borrar este producto?</p>
-        
-        <div class="modal-buttons" style="justify-content: center;">
-            <button type="button" class="btn-outline" id="cancel-delete-btn">
-                Cerrar
-            </button>
-            <button type="button" class="btn-danger" id="confirm-delete-btn">
-                Aceptar
-            </button>
-        </div>
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
 
-    </div>
-</div>
+            <h3>Confirmar Eliminación</h3>
 
-<div class="modal" id="edit-product-modal" style="display: none;">
-    <div class="modal-content" style="max-width: 600px;">
-        <div class="modal-header">
-            <h3><i class="fas fa-edit"></i> Editar Producto</h3>
-            <button class="modal-close" id="edit-modal-close-btn">&times;</button>
-        </div>
-        
-        <form id="edit-product-form">
-    <input type="hidden" id="edit-product-id"> 
+            <p id="delete-modal-message">¿Estás seguro de que querés borrar este producto?</p>
 
-    <div class="form-row">
-    <div class="form-group">
-        <label for="edit-nombre">Nombre</label>
-        <input type="text" id="edit-nombre">
-        <div class="error-message" id="error-edit-nombre"></div>
-    </div>
-    <div class="form-group">
-        <label for="edit-categoria">Categoría</label>
-        <input type="text" id="edit-categoria" >
-        <div class="error-message" id="error-edit-categoria"></div>
-    </div>
-</div>
-
-<div class="form-group"> 
-    <label for="edit-descripcion">Descripción</label>
-    <textarea id="edit-descripcion"></textarea>
-    <div class="error-message" id="error-edit-descripcion"></div>
-</div>
-
-<div class="form-row">
-    <div class="form-group">
-        <label for="edit-precio">Precio Venta</label>
-        <input type="number" id="edit-precio" step="0.01" min="0">
-        <div class="error-message" id="error-edit-precio"></div>
-    </div>
-    <div class="form-group">
-        <label for="edit-stock-actual">Stock Actual (Solo Lectura)</label>
-        <input type="text" id="edit-stock-actual" disabled>
-    </div>
-</div>
-
-<div class="form-group"> 
-    <label for="edit-cantidad-ajuste">Ajuste de Stock (Cantidad a añadir)</label>
-    <input type="number" id="edit-cantidad-ajuste" value="0">
-    <div class="error-message" id="error-edit-ajuste"></div>
-</div>
-
-<p id="edit-form-general-message" class="form-message"></p>
-
-    <div class="modal-buttons">
-        <button type="submit" class="btn-primary">Guardar Cambios</button>
-    </div>
-</form>
-
-    </div>
-</div>
-
-
-<div class="modal" id="modal-edit-usuario-overlay" style="display:none;"> 
-    <div class="modal-content" style="max-width: 600px;">
-        <button id="modal-edit-usuario-close" class="modal-close">&times;</button>
-        <h2>Editar Usuario</h2>
-        
-        <form id="edit-usuario-form" class="form-container">
-            <input type="hidden" id="editUsuarioId">
-            
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="editUsuarioNombre">Nombre:</label>
-                    <input type="text" id="editUsuarioNombre" class="form-control">
-                    <div class="error-message" id="errorEditUsuarioNombre"></div>
-                </div>
-                <div class="form-group">
-                    <label for="editUsuarioApellido">Apellido:</label>
-                    <input type="text" id="editUsuarioApellido" class="form-control">
-                    <div class="error-message" id="errorEditUsuarioApellido"></div>
-                </div>
+            <div class="modal-buttons" style="justify-content: center;">
+                <button type="button" class="btn-outline" id="cancel-delete-btn">
+                    Cerrar
+                </button>
+                <button type="button" class="btn-danger" id="confirm-delete-btn">
+                    Aceptar
+                </button>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="editUsuarioEmail">Email:</label>
-                    <input type="email" id="editUsuarioEmail" class="form-control">
-                    <div class="error-message" id="errorEditUsuarioEmail"></div>
+        </div>
+    </div>
+
+    <div class="modal" id="edit-product-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar Producto</h3>
+                <button class="modal-close" id="edit-modal-close-btn">&times;</button>
+            </div>
+
+            <form id="edit-product-form">
+                <input type="hidden" id="edit-product-id">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-nombre">Nombre</label>
+                        <input type="text" id="edit-nombre">
+                        <div class="error-message" id="error-edit-nombre"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-categoria">Categoría</label>
+                        <input type="text" id="edit-categoria">
+                        <div class="error-message" id="error-edit-categoria"></div>
+                    </div>
                 </div>
+
                 <div class="form-group">
-                    <label for="editUsuarioRol">Rol:</label>
-                    <select id="editUsuarioRol" class="form-control">
+                    <label for="edit-descripcion">Descripción</label>
+                    <textarea id="edit-descripcion"></textarea>
+                    <div class="error-message" id="error-edit-descripcion"></div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-precio">Precio Venta</label>
+                        <input type="number" id="edit-precio" step="0.01" min="0">
+                        <div class="error-message" id="error-edit-precio"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-stock-actual">Stock Actual (Solo Lectura)</label>
+                        <input type="text" id="edit-stock-actual" disabled>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="edit-cantidad-ajuste">Ajuste de Stock (Cantidad a añadir)</label>
+                    <input type="number" id="edit-cantidad-ajuste" value="0">
+                    <div class="error-message" id="error-edit-ajuste"></div>
+                </div>
+
+                <p id="edit-form-general-message" class="form-message"></p>
+
+                <div class="modal-buttons">
+                    <button type="submit" class="btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+
+        </div>
+    </div>
+
+
+    <div class="modal" id="modal-edit-usuario-overlay" style="display:none;">
+        <div class="modal-content" style="max-width: 600px;">
+            <button id="modal-edit-usuario-close" class="modal-close">&times;</button>
+            <h2>Editar Usuario</h2>
+
+            <form id="edit-usuario-form" class="form-container">
+                <input type="hidden" id="editUsuarioId">
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editUsuarioNombre">Nombre:</label>
+                        <input type="text" id="editUsuarioNombre" class="form-control">
+                        <div class="error-message" id="errorEditUsuarioNombre"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editUsuarioApellido">Apellido:</label>
+                        <input type="text" id="editUsuarioApellido" class="form-control">
+                        <div class="error-message" id="errorEditUsuarioApellido"></div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editUsuarioEmail">Email:</label>
+                        <input type="email" id="editUsuarioEmail" class="form-control">
+                        <div class="error-message" id="errorEditUsuarioEmail"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="editUsuarioRol">Rol:</label>
+                        <select id="editUsuarioRol" class="form-control">
                         </select>
-                    <div class="error-message" id="errorEditUsuarioRol"></div>
+                        <div class="error-message" id="errorEditUsuarioRol"></div>
+                    </div>
                 </div>
-            </div>
-            
 
 
-            <div class="form-actions">
-                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-            </div>
-            <div id="form-general-message-edit-usuario" class="form-message"></div>
-        </form>
-    </div>
-</div>
 
-
-<div id="confirmation-modal" class="modal">
-    <div class="modal-content modal-compact">
-        <span class="close-modal">&times;</span>
-        <h3 id="confirmation-message" style="margin-top: 10px; margin-bottom: 20px; font-size: 18px;">
-            ¿Estás seguro?
-        </h3>
-        
-        <div class="modal-buttons">
-            <button id="btn-confirm-cancel" class="btn-secondary">Cancelar</button>
-            <button id="btn-confirm-yes" class="btn-primary">Confirmar</button>
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+                <div id="form-general-message-edit-usuario" class="form-message"></div>
+            </form>
         </div>
     </div>
-</div>
+
+
+    <div id="confirmation-modal" class="modal">
+        <div class="modal-content modal-compact">
+            <span class="close-modal">&times;</span>
+            <h3 id="confirmation-message" style="margin-top: 10px; margin-bottom: 20px; font-size: 18px;">
+                ¿Estás seguro?
+            </h3>
+
+            <div class="modal-buttons">
+                <button id="btn-confirm-cancel" class="btn-secondary">Cancelar</button>
+                <button id="btn-confirm-yes" class="btn-primary">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
 
     <script src="js/admin.js"></script>
@@ -1041,8 +1177,8 @@
     <script src="js/ventas.js"></script>
     <script src="js/informes.js"></script>
     <script src="js/stock.js"></script>
-    
-    
-    </body>
+
+
+</body>
 
 </html>

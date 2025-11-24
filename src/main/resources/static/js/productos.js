@@ -4,7 +4,7 @@
  * - Validar y enviar el formulario para registrar nuevos productos.
  * - Controlar la paginación y ordenamiento de la tabla.
  */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
 
     // ===============================
     // SELECTORES DE ELEMENTOS DEL DOM
@@ -17,7 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const stockMinInput = document.getElementById('product-stock-min');
     const stockMaxInput = document.getElementById('product-stock-max');
     const generalMessage = document.getElementById('form-general-message-producto');
-    
+
     // Selectores de error
     const nameError = document.getElementById('name-error');
     const categoryError = document.getElementById('category-error');
@@ -29,17 +29,17 @@ document.addEventListener('DOMContentLoaded', function() {
     const prevPageBtn = document.getElementById('product-prev-page');
     const nextPageBtn = document.getElementById('product-next-page');
     const pageInfo = document.getElementById('product-page-info');
-    
+
     // CORRECCIÓN: Para el control de scroll y foco
-    const mainContent = document.querySelector('.main-content'); 
+    const mainContent = document.querySelector('.main-content');
 
     // ===============================
     // URLs DE LA API Y ESTADO
     // ===============================
-    const API_PRODUCTOS_URL = '/api/productos'; 
-    
+    const API_PRODUCTOS_URL = '/api/productos';
+
     // --- Estado de Paginación y Ordenamiento ---
-    let currentPage = 0; 
+    let currentPage = 0;
     let totalPages = 1;
     const itemsPerPage = 10;
     let sortField = 'fechaCreacion'; // Campo de ordenamiento inicial
@@ -50,37 +50,37 @@ document.addEventListener('DOMContentLoaded', function() {
     // FUNCIÓN PARA CARGAR PRODUCTOS (FINAL)
     // ===============================
     async function loadProducts() {
-        if (!productTableBody || !mainContent) return; 
-        
+        if (!productTableBody || !mainContent) return;
+
         // 1. GUARDAR scroll y preparar animación (Fade Out)
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         productTableBody.classList.add('loading');
-        
+
         // Esperar fade-out
-        await new Promise(resolve => setTimeout(resolve, 200)); 
-        
+        await new Promise(resolve => setTimeout(resolve, 200));
+
         try {
             // 2. Añadir parámetros de ordenamiento
             const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
             const url = `${API_PRODUCTOS_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
-            
+
             const response = await fetch(url);
 
             if (!response.ok) {
                 throw new Error(`Error del servidor: ${response.status}`);
             }
-            
-            const pageData = await response.json(); 
+
+            const pageData = await response.json();
             totalPages = pageData.totalPages;
-            
+
             // 3. Renderizar y finalizar animación
-            renderProductTable(pageData.content); 
-            updatePaginationControls(); 
-            updateSortIndicators(); 
-            
+            renderProductTable(pageData.content);
+            updatePaginationControls();
+            updateSortIndicators();
+
             requestAnimationFrame(() => {
                 // Restaurar scroll y forzar foco para estabilidad
-                mainContent.focus(); 
+                mainContent.focus();
                 window.scrollTo(0, scrollPosition);
                 // INICIAR FADE-IN
                 productTableBody.classList.remove('loading');
@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('Error al cargar los productos:', error);
             productTableBody.innerHTML = `<tr><td colspan="6">Error al cargar productos.</td></tr>`;
-            productTableBody.classList.remove('loading'); 
+            productTableBody.classList.remove('loading');
         }
     }
 
@@ -101,7 +101,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleSortClick(event) {
         event.preventDefault();
         event.currentTarget.blur(); // Evita que el encabezado mantenga el foco
-        
+
         const th = event.currentTarget;
         const newSortField = th.getAttribute('data-sort-by');
 
@@ -114,23 +114,23 @@ document.addEventListener('DOMContentLoaded', function() {
             sortDirection = 'asc';
         }
 
-        currentPage = 0; 
+        currentPage = 0;
         loadProducts();
     }
-    
+
     function updateSortIndicators() {
         const headers = document.querySelectorAll('#productos-section .data-table th[data-sort-by]');
         headers.forEach(th => {
             th.classList.remove('sort-asc', 'sort-desc');
-            
+
             const icon = th.querySelector('.sort-icon');
             if (icon) {
                 icon.className = 'sort-icon fas fa-sort';
             }
-            
+
             if (th.getAttribute('data-sort-by') === sortField) {
                 th.classList.add(`sort-${sortDirection}`);
-                
+
                 if (icon) {
                     icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
                 }
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     function renderProductTable(products) {
         if (!productTableBody) return;
-        
+
         productTableBody.innerHTML = '';
         if (products.length === 0) {
             productTableBody.innerHTML = '<tr><td colspan="6">No hay productos registrados.</td></tr>';
@@ -152,9 +152,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
         products.forEach(product => {
             let fechaFormateada = "N/A";
-            if (product.fechaCreacion) { 
+            if (product.fechaCreacion) {
                 const parts = product.fechaCreacion.split('-');
-                fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`; 
+                fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
             }
 
             // NOTA: Se asume que el backend devuelve stockMinimo y stockMaximo correctamente en ProductoResponseDTO
@@ -176,14 +176,14 @@ document.addEventListener('DOMContentLoaded', function() {
     // LÓGICA DEL FORMULARIO DE REGISTRO
     // ===============================
     if (productForm) {
-        productForm.addEventListener('submit', async function(e) {
+        productForm.addEventListener('submit', async function (e) {
             e.preventDefault();
 
             // 1. Limpiar mensajes
             document.querySelectorAll('#product-form .error-message').forEach(el => el.textContent = '');
             generalMessage.textContent = '';
             generalMessage.className = 'form-message';
-            
+
             // 2. Obtener valores
             const nombre = nameInput.value.trim();
             const categoria = categoryInput.value.trim();
@@ -206,13 +206,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 nombre: nombre,
                 categoria: categoria,
                 descripcion: descripcion,
-                stockMinimo: stockMinimo, 
+                stockMinimo: stockMinimo,
                 stockMaximo: stockMaximo
             };
 
             // 5. Enviar
             try {
-                const response = await fetch(API_PRODUCTOS_URL, { 
+                const response = await fetch(API_PRODUCTOS_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(productoDTO)
@@ -226,16 +226,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 generalMessage.textContent = "¡Producto registrado con éxito!";
                 generalMessage.classList.add('success');
                 productForm.reset();
-                
+
                 // Reseteamos a la página 0 y recargamos la tabla
-                currentPage = 0; 
+                currentPage = 0;
                 loadProducts();
+
+                // Volver a la vista de lista
+                showSubsection('productos-list');
 
                 document.dispatchEvent(new Event('productosActualizados'));
 
             } catch (error) {
                 console.error('Error al registrar el producto:', error);
-                generalMessage.textContent = `${error.message}`; 
+                generalMessage.textContent = `${error.message}`;
                 generalMessage.classList.add('error');
             }
         });
@@ -246,15 +249,15 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     function updatePaginationControls() {
         if (!pageInfo || !prevPageBtn || !nextPageBtn) return;
-        
+
         pageInfo.textContent = `Página ${currentPage + 1} de ${totalPages || 1}`;
         prevPageBtn.disabled = (currentPage === 0);
         nextPageBtn.disabled = (currentPage + 1 >= totalPages);
     }
 
     if (prevPageBtn) {
-        prevPageBtn.addEventListener('click', (event) => { 
-            event.preventDefault(); 
+        prevPageBtn.addEventListener('click', (event) => {
+            event.preventDefault();
             if (currentPage > 0) {
                 currentPage--;
                 loadProducts();
@@ -263,25 +266,49 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (nextPageBtn) {
-        nextPageBtn.addEventListener('click', (event) => { 
-            event.preventDefault(); 
+        nextPageBtn.addEventListener('click', (event) => {
+            event.preventDefault();
             if (currentPage + 1 < totalPages) {
                 currentPage++;
                 loadProducts();
             }
         });
     }
-    
+
+    // ===============================
+    // LÓGICA DE SUBSECCIONES
+    // ===============================
+    // ===============================
+    // LÓGICA DE SUBSECCIONES
+    // ===============================
+    const subsectionContainers = document.querySelectorAll('.subsection-container');
+
+    function showSubsection(subsectionId) {
+        // 1. Ocultar todos los contenedores
+        subsectionContainers.forEach(container => {
+            container.style.display = 'none';
+        });
+
+        // 2. Mostrar contenedor seleccionado
+        const targetContainer = document.getElementById(`${subsectionId}-container`);
+        if (targetContainer) {
+            targetContainer.style.display = 'block';
+        }
+    }
+
+    // Exponer globalmente para ser llamado desde admin.js
+    window.showProductSubsection = showSubsection;
+
     // ===============================
     // LISTENERS Y EJECUCIÓN INICIAL
     // ===============================
-    
+
     // LISTENERS DE ORDENAMIENTO
     const sortableHeaders = document.querySelectorAll('#productos-section .data-table th[data-sort-by]');
     sortableHeaders.forEach(th => {
         th.addEventListener('click', handleSortClick);
     });
-    
+
     // CARGA INICIAL
-    loadProducts(); 
+    loadProducts();
 });

@@ -1,16 +1,16 @@
-document.addEventListener('DOMContentLoaded', function() {
-    
+document.addEventListener('DOMContentLoaded', function () {
+
     // ===============================
     // URLs DE LA API
     // ===============================
     const API_PROVEEDORES_URL = '/api/proveedores';
-    const API_PRODUCTOS_URL = '/api/productos/select'; 
+    const API_PRODUCTOS_URL = '/api/productos/select';
 
     // ===============================
     // ESTADO GLOBAL
     // ===============================
-    let allProducts = []; 
-    let proveedorActualEditando = null; 
+    let allProducts = [];
+    let proveedorActualEditando = null;
     let currentDeleteProviderId = null;
 
     // ===============================
@@ -25,9 +25,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const telefonoError = document.getElementById('errorTelefono');
     const emailError = document.getElementById('errorEmail');
     const direccionError = document.getElementById('errorDireccion');
-    
+
     const mainContent = document.querySelector('.main-content');
-    
+
     let currentPage = 0;
     let totalPages = 1;
     const itemsPerPage = 10;
@@ -35,8 +35,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // ===============================
     // ESTADO DE ORDENAMIENTO
     // ===============================
-    let sortField = 'nombre'; 
-    let sortDirection = 'asc'; 
+    let sortField = 'nombre';
+    let sortDirection = 'asc';
 
     // ===============================
     // SELECTORES DE ORDENAMIENTO
@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailInput = document.getElementById('proveedorEmail');
     const direccionInput = document.getElementById('proveedorDireccion');
     const generalMessage = document.getElementById('form-general-message-proveedor');
-    
+
     // Multi-select de Registro
     const registerSelect = {
         container: document.getElementById('productos-multi-select-container'),
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const editEmailInput = document.getElementById('editProveedorEmail');
     const editDireccionInput = document.getElementById('editProveedorDireccion');
     const editGeneralMessage = document.getElementById('form-general-message-edit-proveedor');
-    
+
     // Multi-select de Edición
     const editSelect = {
         container: document.getElementById('edit-productos-multi-select-container'),
@@ -103,23 +103,23 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!proveedorTabla || !mainContent) return;
 
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
-        proveedorTabla.classList.add('loading'); 
+        proveedorTabla.classList.add('loading');
 
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
             const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
             const url = `${API_PROVEEDORES_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
-            
+
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
-            
-            const pageData = await response.json(); 
+
+            const pageData = await response.json();
             totalPages = pageData.totalPages;
-            
-            renderProveedoresTabla(pageData.content); 
+
+            renderProveedoresTabla(pageData.content);
             updatePaginationControls();
-            updateSortIndicators(); 
+            updateSortIndicators();
 
             requestAnimationFrame(() => {
                 window.scrollTo(0, scrollPosition);
@@ -142,13 +142,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
         proveedores.forEach(proveedor => {
             const productosNombres = proveedor.productos && proveedor.productos.length > 0
-                ? proveedor.productos.map(p => p.nombreProducto).join(', ') 
+                ? proveedor.productos.map(p => p.nombreProducto).join(', ')
                 : 'Sin productos asignados';
 
             const row = `
                 <tr>
                     <td>${proveedor.nombre || 'N/A'}</td>
-                    <td>${proveedor.email|| 'N/A'}</td>
+                    <td>${proveedor.email || 'N/A'}</td>
                     <td>${proveedor.telefono || 'N/A'}</td>
                     <td>${productosNombres}</td>
                     <td>${proveedor.direccion || 'N/A'}</td>
@@ -196,7 +196,7 @@ document.addEventListener('DOMContentLoaded', function() {
         event.preventDefault();
         event.currentTarget.blur();
         const th = event.currentTarget;
-        const newSortField = th.getAttribute('data-sort-by'); 
+        const newSortField = th.getAttribute('data-sort-by');
         if (!newSortField) return;
 
         if (sortField === newSortField) {
@@ -205,18 +205,18 @@ document.addEventListener('DOMContentLoaded', function() {
             sortField = newSortField;
             sortDirection = 'asc';
         }
-        currentPage = 0; 
+        currentPage = 0;
         loadProveedores();
     }
 
     function updateSortIndicators() {
         tableHeaders.forEach(th => {
-            th.classList.remove('sort-asc', 'sort-desc'); 
+            th.classList.remove('sort-asc', 'sort-desc');
             const icon = th.querySelector('.sort-icon');
-            if (icon) icon.className = 'sort-icon fas fa-sort'; 
-            
+            if (icon) icon.className = 'sort-icon fas fa-sort';
+
             if (th.getAttribute('data-sort-by') === sortField) {
-                th.classList.add(`sort-${sortDirection}`); 
+                th.classList.add(`sort-${sortDirection}`);
                 if (icon) icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
             }
         });
@@ -229,10 +229,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================================
     // LÓGICA DEL MULTI-SELECT
     // ==========================================================
-    
+
     async function fetchAllProducts() {
         // Si ya hay datos, los devolvemos, pero la función 'inicializar' y los eventos pueden limpiar este array para forzar recarga
-        if (allProducts.length > 0) return allProducts; 
+        if (allProducts.length > 0) return allProducts;
         try {
             const response = await fetch(API_PRODUCTOS_URL);
             if (!response.ok) throw new Error('No se pudieron cargar los productos');
@@ -240,7 +240,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return allProducts;
         } catch (error) {
             console.error("Error fatal al cargar lista de productos:", error);
-            return []; 
+            return [];
         }
     }
 
@@ -263,11 +263,11 @@ document.addEventListener('DOMContentLoaded', function() {
             visualOption.classList.add('option');
             visualOption.textContent = producto.nombreProducto;
             visualOption.dataset.value = producto.idProducto;
-            
+
             visualOption.addEventListener('click', () => {
                 seleccionarProducto(visualOption, realOption, selectUI);
             });
-            
+
             selectUI.options.appendChild(visualOption);
 
             if (preSeleccionadosSet.has(producto.idProducto)) {
@@ -280,13 +280,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function seleccionarProducto(visualOption, realOption, selectUI) {
         realOption.selected = true;
         // Agregamos la clase 'selected-option' para saber que está elegido
-        visualOption.classList.add('selected-option'); 
-        
+        visualOption.classList.add('selected-option');
+
         crearTag(visualOption.textContent, visualOption.dataset.value, visualOption, realOption, selectUI);
-        
+
         // Lo ocultamos visualmente de la lista
         visualOption.style.display = 'none';
-        
+
         selectUI.options.style.display = 'none';
         selectUI.input.value = '';
         selectUI.input.placeholder = '';
@@ -300,16 +300,16 @@ document.addEventListener('DOMContentLoaded', function() {
         const closeBtn = document.createElement('span');
         closeBtn.classList.add('tag-close');
         closeBtn.innerHTML = '&times;';
-        
+
         closeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             realOption.selected = false;
-            
+
             // Quitamos la marca de seleccionado
             visualOption.classList.remove('selected-option');
-            
+
             selectUI.tags.removeChild(tag);
-            
+
             // Volvemos a mostrarlo en la lista
             visualOption.style.display = 'block';
 
@@ -333,7 +333,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (selectUI.input) {
             selectUI.input.addEventListener('input', () => {
                 const filtro = selectUI.input.value.toLowerCase();
-                
+
                 selectUI.options.querySelectorAll('.option').forEach(opcion => {
                     const textoOpcion = opcion.textContent.toLowerCase();
                     const isSelected = opcion.classList.contains('selected-option');
@@ -349,7 +349,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
     }
-    
+
     document.addEventListener('click', (e) => {
         if (registerSelect.container && !registerSelect.container.contains(e.target) && !registerSelect.options.contains(e.target)) {
             registerSelect.options.style.display = 'none';
@@ -363,9 +363,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // LÓGICA DEL FORMULARIO DE REGISTRO
     // ==========================================================
     if (proveedorForm) {
-        proveedorForm.addEventListener('submit', async function(event) {
+        proveedorForm.addEventListener('submit', async function (event) {
             event.preventDefault();
-            
+
             document.querySelectorAll('#proveedor-form .error-message').forEach(el => el.textContent = '');
             generalMessage.textContent = '';
             generalMessage.className = 'form-message';
@@ -380,20 +380,20 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!nombre) { nombreError.textContent = 'Debe rellenar este campo'; isValid = false; }
             if (!telefono) { telefonoError.textContent = 'Debe rellenar este campo'; isValid = false; }
             if (!email) { emailError.textContent = 'Debe rellenar este campo'; isValid = false; }
-            else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) { 
+            else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
                 emailError.textContent = 'El formato del email no es válido';
                 isValid = false;
             }
             if (!direccion) { direccionError.textContent = 'Debe rellenar este campo'; isValid = false; }
             if (productosIds.length === 0) {
-                 registerSelect.errorDiv.textContent = 'Debes seleccionar al menos un producto.';
-                 isValid = false;
+                registerSelect.errorDiv.textContent = 'Debes seleccionar al menos un producto.';
+                isValid = false;
             }
 
             if (!isValid) {
-                 generalMessage.textContent = "Debe completar todos los campos obligatorios.";
-                 generalMessage.classList.add('error');
-                 return;
+                generalMessage.textContent = "Debe completar todos los campos obligatorios.";
+                generalMessage.classList.add('error');
+                return;
             }
 
             const proveedorDTO = { nombre, telefono, email, direccion, productosIds };
@@ -413,12 +413,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 generalMessage.classList.add('success');
                 proveedorForm.reset();
                 setupMultiSelect(registerSelect, []);
-                
+
                 currentPage = 0;
                 sortField = 'nombre';
                 sortDirection = 'asc';
                 loadProveedores();
-                
+
+                // Volver a la vista de lista
+                showSubsection('proveedores-list');
+
                 // --- AVISO CRUCIAL: Informar a Compras.js y otros ---
                 document.dispatchEvent(new Event('proveedoresActualizados'));
 
@@ -429,14 +432,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     const handleEditEsc = (e) => { if (e.key === 'Escape') closeEditModal(); };
     const handleDeleteEsc = (e) => { if (e.key === 'Escape') closeDeleteModal(); };
 
     function openDeleteModal(id, nombre) {
-        currentDeleteProviderId = id; 
+        currentDeleteProviderId = id;
         deleteModalMessage.textContent = `¿Estás seguro de que quieres eliminar al proveedor "${nombre}"?`;
-        if(deleteConfirmModal) {
+        if (deleteConfirmModal) {
             deleteConfirmModal.style.display = 'block';
             window.addEventListener('keydown', handleDeleteEsc);
         }
@@ -444,20 +447,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function closeDeleteModal() {
         currentDeleteProviderId = null;
-        if(deleteConfirmModal) {
+        if (deleteConfirmModal) {
             deleteConfirmModal.style.display = 'none';
-            window.removeEventListener('keydown', handleDeleteEsc); 
+            window.removeEventListener('keydown', handleDeleteEsc);
         }
     }
 
     function openEditModal(data) {
-        proveedorActualEditando = data; 
+        proveedorActualEditando = data;
         editIdInput.value = data.id;
         editNombreInput.value = data.nombre;
         editTelefonoInput.value = data.telefono;
         editEmailInput.value = data.email;
         editDireccionInput.value = data.direccion;
-        setupMultiSelect(editSelect, data.productos); 
+        setupMultiSelect(editSelect, data.productos);
         modalOverlay.style.display = 'block';
         window.addEventListener('keydown', handleEditEsc);
     }
@@ -471,7 +474,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (proveedorTabla) {
-        proveedorTabla.addEventListener('click', async function(e) {
+        proveedorTabla.addEventListener('click', async function (e) {
             const editButton = e.target.closest('.btn-edit-proveedor');
             const deleteButton = e.target.closest('.btn-delete-proveedor');
 
@@ -497,7 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (editForm) {
-        editForm.addEventListener('submit', async function(e) {
+        editForm.addEventListener('submit', async function (e) {
             e.preventDefault();
             const id = editIdInput.value;
             const dto = {
@@ -516,7 +519,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             dto.productosAgregar = [...newIDs].filter(id => !originalIDs.has(id));
             dto.productosQuitar = [...originalIDs].filter(id => !newIDs.has(id));
-            
+
             try {
                 const response = await fetch(`${API_PROVEEDORES_URL}/${id}`, {
                     method: 'PUT',
@@ -531,7 +534,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 editGeneralMessage.classList.add('success');
                 setTimeout(() => {
                     closeEditModal();
-                    loadProveedores(); 
+                    loadProveedores();
                     // También avisamos al editar
                     document.dispatchEvent(new Event('proveedoresActualizados'));
                 }, 1000);
@@ -560,13 +563,13 @@ document.addEventListener('DOMContentLoaded', function() {
                     const errorText = await response.text();
                     throw new Error(errorText || 'No se pudo eliminar el proveedor');
                 }
-                loadProveedores(); 
+                loadProveedores();
                 // También avisamos al eliminar
                 document.dispatchEvent(new Event('proveedoresActualizados'));
             } catch (error) {
                 alert('Error al eliminar: ' + error.message);
             } finally {
-                closeDeleteModal(); 
+                closeDeleteModal();
             }
         });
     }
@@ -574,26 +577,52 @@ document.addEventListener('DOMContentLoaded', function() {
     // ==========================================================
     // CARGA INICIAL Y EXPOSICIÓN
     // ==========================================================
-    
+
     async function inicializar() {
         await fetchAllProducts();
-        setupMultiSelect(registerSelect, []); 
-        loadProveedores(); 
+        setupMultiSelect(registerSelect, []);
+        loadProveedores();
     }
     inicializar();
 
-    window.cargarDatosProveedores = async function() {
+    window.cargarDatosProveedores = async function () {
         allProducts = []; // Limpiar cache de productos
         await fetchAllProducts();
         setupMultiSelect(registerSelect, []);
         currentPage = 0;
-        loadProveedores(); 
+        loadProveedores();
     };
 
+    // ===============================
+    // LÓGICA DE SUBSECCIONES
+    // ===============================
+    const subsectionContainers = document.querySelectorAll('.subsection-container');
+
+    function showSubsection(subsectionId) {
+        // 1. Ocultar todos los contenedores
+        subsectionContainers.forEach(container => {
+            // Solo ocultar los que son hijos directos de la sección de proveedores o genéricos si se comparten clases
+            // Para evitar conflictos, mejor filtramos por ID si es posible, o asumimos que la clase es única por vista activa
+            // Dado que admin.js oculta las secciones principales (spa-section), aquí solo nos preocupamos por los contenedores internos
+            if (container.id.startsWith('proveedores-')) {
+                container.style.display = 'none';
+            }
+        });
+
+        // 2. Mostrar contenedor seleccionado
+        const targetContainer = document.getElementById(`${subsectionId}-container`);
+        if (targetContainer) {
+            targetContainer.style.display = 'block';
+        }
+    }
+
+    // Exponer globalmente
+    window.showProveedorSubsection = showSubsection;
+
     // Escuchar si se agregan productos para actualizar el multi-select
-    document.addEventListener('productosActualizados', async function() {
+    document.addEventListener('productosActualizados', async function () {
         console.log('Proveedor.js: Detectada actualización de productos. Recargando lista...');
-        allProducts = []; 
+        allProducts = [];
         await fetchAllProducts();
         setupMultiSelect(registerSelect, []);
     });

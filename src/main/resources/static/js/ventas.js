@@ -5,9 +5,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // ===============================
     const API_VENTAS_URL = '/api/ventas';
     const API_PRODUCTOS_URL = '/api/productos/select';
-    
-    const API_CLIENTES_URL = '/api/clientes/select'; 
-    const API_CLIENTES_BASE_URL = '/api/clientes';   
+
+    const API_CLIENTES_URL = '/api/clientes/select';
+    const API_CLIENTES_BASE_URL = '/api/clientes';
 
     // =================================================================
     // --- CONFIGURACIÓN DE FORMATO ---
@@ -24,7 +24,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ===============================
     const ventaForm = document.getElementById('venta-form');
     const fechaVentaInput = document.getElementById('fecha-venta');
-    
+
     // --- Selectores Buscador Cliente ---
     const clienteSearchInput = document.getElementById('venta-cliente-search');
     const clienteHiddenInput = document.getElementById('venta-cliente-id-hidden');
@@ -35,12 +35,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const productSearchInput = document.getElementById('product-search');
     const cantidadProductoInput = document.getElementById('cantidad-producto');
     const productResultsContainer = document.getElementById('product-results');
-    
+
     // --- Selectores Detalle Venta ("Carrito") ---
     const btnAgregarProducto = document.getElementById('btn-agregar-producto');
     const ventaDetalleTemporalBody = document.getElementById('venta-detalle-temporal');
     const totalVentaDisplay = document.getElementById('total-venta');
-    
+
     // --- Mensajes de Error ---
     const errorFechaVenta = document.getElementById('errorFechaVenta');
     const errorProducto = document.getElementById('errorProducto');
@@ -70,43 +70,43 @@ document.addEventListener('DOMContentLoaded', function () {
     // ESTADO GLOBAL
     // ===============================
     let todosLosProductos = [];
-    let todosLosClientes = []; 
+    let todosLosClientes = [];
     let productoSeleccionado = null;
-    let detallesVenta = []; 
+    let detallesVenta = [];
 
     // --- Estado de Paginación ---
-    let currentPageVentas = 0; 
+    let currentPageVentas = 0;
     const pageSizeVentas = 7;
     let totalPagesVentas = 0;
-    let ventasSortField = 'fecha'; 
-    let ventasSortDirection = 'desc'; 
+    let ventasSortField = 'fecha';
+    let ventasSortDirection = 'desc';
 
-    
+
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS
     // ==========================================================
 
-    async function loadVentas(page = 0) { 
+    async function loadVentas(page = 0) {
         if (!ventaTableBody || !mainContent) return;
 
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         ventaTableBody.classList.add('loading');
         await new Promise(resolve => setTimeout(resolve, 200));
-        
+
         try {
             const sortParam = `${ventasSortField},${ventasSortDirection}`;
-            const url = `${API_VENTAS_URL}?page=${page}&size=${pageSizeVentas}&sort=${sortParam}`; 
+            const url = `${API_VENTAS_URL}?page=${page}&size=${pageSizeVentas}&sort=${sortParam}`;
 
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
 
-            const pageData = await response.json(); 
-            currentPageVentas = pageData.number; 
-            totalPagesVentas = pageData.totalPages; 
+            const pageData = await response.json();
+            currentPageVentas = pageData.number;
+            totalPagesVentas = pageData.totalPages;
 
             renderVentasTable(pageData.content);
-            updateVentasPaginationControls(); 
-            updateVentasSortIndicators(); 
+            updateVentasPaginationControls();
+            updateVentasSortIndicators();
 
             requestAnimationFrame(() => {
                 window.scrollTo(0, scrollPosition);
@@ -141,9 +141,9 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadClientesParaVenta() {
         if (!clienteSearchInput) return;
         try {
-            const response = await fetch(API_CLIENTES_URL); 
+            const response = await fetch(API_CLIENTES_URL);
             if (!response.ok) throw new Error('Error al cargar clientes');
-            todosLosClientes = await response.json(); 
+            todosLosClientes = await response.json();
         } catch (error) {
             console.error(error);
             clienteSearchInput.placeholder = "Error al cargar clientes";
@@ -154,8 +154,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÓGICA DEL MODAL DE CREACIÓN RÁPIDA DE CLIENTES
     // ==========================================================
 
-    const handleAddClienteEsc = (e) => { 
-        if (e.key === 'Escape') closeAddClienteModal(); 
+    const handleAddClienteEsc = (e) => {
+        if (e.key === 'Escape') closeAddClienteModal();
     };
 
     function resetAddClienteModal() {
@@ -165,23 +165,23 @@ document.addEventListener('DOMContentLoaded', function () {
             addClienteMessage.className = 'form-message';
         }
         document.querySelectorAll('#add-cliente-form .error-message')
-                .forEach(el => el.textContent = '');
+            .forEach(el => el.textContent = '');
     }
 
     function openAddClienteModal() {
         if (!addClienteModal) return;
         resetAddClienteModal();
-        addClienteModal.style.display = 'flex'; 
+        addClienteModal.style.display = 'flex';
         document.getElementById('addClienteNombre').focus();
-        
+
         // Agregar listener para ESC
         window.addEventListener('keydown', handleAddClienteEsc);
     }
 
     function closeAddClienteModal() {
         if (!addClienteModal) return;
-        addClienteModal.style.display = 'none'; 
-        
+        addClienteModal.style.display = 'none';
+
         // Remover listener para ESC
         window.removeEventListener('keydown', handleAddClienteEsc);
     }
@@ -192,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let isValid = true;
         const nombre = document.getElementById('addClienteNombre').value.trim();
         const dni = document.getElementById('addClienteDNI').value.trim();
-        
+
         if (!nombre) {
             document.getElementById('errorAddClienteNombre').textContent = 'El nombre es obligatorio.';
             isValid = false;
@@ -222,14 +222,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(errorData.message || `Error ${response.status}`);
             }
 
-            const nuevoCliente = await response.json(); 
+            const nuevoCliente = await response.json();
             closeAddClienteModal();
 
             const nombreCompleto = `${nuevoCliente.nombre} ${nuevoCliente.apellido || ''} (${nuevoCliente.dni})`;
             clienteSearchInput.value = nombreCompleto.trim();
-            clienteHiddenInput.value = nuevoCliente.idCliente; 
-            if (clienteError) clienteError.textContent = ''; 
-            
+            clienteHiddenInput.value = nuevoCliente.idCliente;
+            if (clienteError) clienteError.textContent = '';
+
             loadClientesParaVenta();
 
         } catch (error) {
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return `<div class="product-result-item" data-id="${c.id}">${nombreCompleto.trim()}</div>`;
             }).join('');
         }
-        clienteResultsContainer.style.display = 'block'; 
+        clienteResultsContainer.style.display = 'block';
     }
 
     function filtrarClientes() {
@@ -265,7 +265,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const nombreCompleto = `${c.nombre.toLowerCase()} ${c.apellido ? c.apellido.toLowerCase() : ''} ${c.dni.toLowerCase()}`;
             return terminosBusqueda.every(term => nombreCompleto.includes(term));
         });
-        
+
         renderResultadosClientes(clientesFiltrados);
     }
 
@@ -274,7 +274,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!target || !target.dataset.id) return;
 
         const clienteIdNum = parseInt(target.dataset.id, 10);
-        const cliente = todosLosClientes.find(c => c.id === clienteIdNum); 
+        const cliente = todosLosClientes.find(c => c.id === clienteIdNum);
 
         if (cliente) {
             const nombreCompleto = `${cliente.nombre} ${cliente.apellido || ''} (${cliente.dni})`;
@@ -343,7 +343,7 @@ document.addEventListener('DOMContentLoaded', function () {
             errorDetalleGeneral.textContent = 'La cantidad debe ser un número mayor a 0.';
             return;
         }
-        
+
         const productoExistente = detallesVenta.find(item => item.idProducto === productoSeleccionado.idProducto);
 
         if (productoExistente) {
@@ -357,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
         renderDetalleTemporal();
-        
+
         productoSeleccionado = null;
         productSearchInput.value = '';
         cantidadProductoInput.value = '1';
@@ -377,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function () {
         detallesVenta.forEach(item => {
             const subtotal = item.precioVenta * item.cantidad;
             totalAcumulado += subtotal;
-            
+
             const row = `
                 <tr>
                     <td>${item.nombreProducto}</td>
@@ -393,7 +393,7 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
             ventaDetalleTemporalBody.innerHTML += row;
         });
-        
+
         totalVentaDisplay.textContent = `$ Total: $${formatoMoneda.format(totalAcumulado)}`;
     }
 
@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function saveVenta(event) {
         event.preventDefault();
-        
+
         generalMessage.textContent = '';
         generalMessage.className = 'form-message';
         if (errorFechaVenta) errorFechaVenta.textContent = '';
@@ -419,7 +419,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (errorFechaVenta) errorFechaVenta.textContent = 'La fecha es obligatoria.';
             isValid = false;
         }
-        
+
         if (!idCliente) {
             if (clienteError) clienteError.textContent = 'Debe seleccionar un cliente.';
             isValid = false;
@@ -433,11 +433,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!isValid) {
             generalMessage.textContent = 'Por favor, complete todos los campos obligatorios.';
             generalMessage.classList.add('error');
-            return; 
+            return;
         }
 
         showConfirmationModal("¿Estás seguro de que deseas registrar esta venta?", async () => {
-            
+
             try {
                 const detallesParaBackend = detallesVenta.map(item => {
                     return {
@@ -477,13 +477,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 ventaForm.reset();
                 detallesVenta = [];
                 renderDetalleTemporal();
-                clienteHiddenInput.value = ''; 
-                
-                await new Promise(resolve => setTimeout(resolve, 250)); 
+                clienteHiddenInput.value = '';
+
+                await new Promise(resolve => setTimeout(resolve, 250));
                 currentPageVentas = 0;
                 ventasSortField = 'fecha';
                 ventasSortDirection = 'desc';
-                loadVentas(currentPageVentas); 
+                loadVentas(currentPageVentas);
+                showSubsection('ventas-list'); // Redirigir a la lista
 
             } catch (error) {
                 console.error('Error al registrar la venta:', error);
@@ -499,8 +500,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function crearFilaVentaHTML(venta) {
         const parts = venta.fecha.split('-');
         const fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
-        
-        const productosTexto = formatProductosList(venta.productos); 
+
+        const productosTexto = formatProductosList(venta.productos);
         const nombreClienteTexto = venta.nombreCliente || 'Cliente N/A';
 
         return `
@@ -516,7 +517,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderVentasTable(ventas) {
         if (!ventaTableBody) return;
         ventaTableBody.innerHTML = '';
-        
+
         if (!Array.isArray(ventas) || ventas.length === 0) {
             ventaTableBody.innerHTML = '<tr><td colspan="4">No hay ventas registradas.</td></tr>';
             return;
@@ -538,13 +539,13 @@ document.addEventListener('DOMContentLoaded', function () {
         ventasPrevPageBtn.disabled = currentPageVentas === 0 || totalPagesVentas === 0;
         ventasNextPageBtn.disabled = currentPageVentas >= totalPagesVentas - 1 || totalPagesVentas === 0;
     }
-    
+
     function updateVentasSortIndicators() {
         ventasTableHeaders.forEach(th => {
             th.classList.remove('sort-asc', 'sort-desc');
             const icon = th.querySelector('.sort-icon');
             if (icon) icon.className = 'sort-icon fas fa-sort';
-            
+
             if (th.getAttribute('data-sort-by') === ventasSortField) {
                 th.classList.add(`sort-${ventasSortDirection}`);
                 if (icon) icon.className = `sort-icon fas fa-sort-${ventasSortDirection === 'asc' ? 'up' : 'down'}`;
@@ -565,10 +566,10 @@ document.addEventListener('DOMContentLoaded', function () {
             ventasSortField = newSortField;
             ventasSortDirection = 'asc';
         }
-        currentPageVentas = 0; 
+        currentPageVentas = 0;
         loadVentas(0);
     }
-    
+
     function handleVentasPrevPage() {
         if (currentPageVentas > 0) {
             loadVentas(currentPageVentas - 1);
@@ -606,7 +607,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (clienteSearchInput) {
         clienteSearchInput.addEventListener('input', () => {
-            clienteHiddenInput.value = ''; 
+            clienteHiddenInput.value = '';
             if (clienteError) clienteError.textContent = '';
             filtrarClientes();
         });
@@ -618,7 +619,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (productSearchInput) {
         productSearchInput.addEventListener('input', buscarProductos);
-        productSearchInput.addEventListener('focus', buscarProductos); 
+        productSearchInput.addEventListener('focus', buscarProductos);
     }
     if (productResultsContainer) {
         productResultsContainer.addEventListener('click', seleccionarProducto);
@@ -628,7 +629,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (ventaDetalleTemporalBody) {
-        ventaDetalleTemporalBody.addEventListener('click', function(event) {
+        ventaDetalleTemporalBody.addEventListener('click', function (event) {
             const deleteButton = event.target.closest('.btn-delete-detalle');
             if (deleteButton) {
                 const idParaQuitar = Number(deleteButton.dataset.id);
@@ -637,14 +638,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-    
+
     document.addEventListener('click', function (event) {
         const isClickInsideProductInput = productSearchInput && productSearchInput.contains(event.target);
         const isClickInsideProductResults = productResultsContainer && productResultsContainer.contains(event.target);
         if (!isClickInsideProductInput && !isClickInsideProductResults) {
             if (productResultsContainer) productResultsContainer.style.display = 'none';
         }
-        
+
         const isClickInsideClientInput = clienteSearchInput && clienteSearchInput.contains(event.target);
         const isClickInsideClientResults = clienteResultsContainer && clienteResultsContainer.contains(event.target);
         if (!isClickInsideClientInput && !isClickInsideClientResults) {
@@ -665,15 +666,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================================
     // CARGA INICIAL Y EXPOSICIÓN DE FUNCIONES (MODIFICADO)
     // ==========================================================
-    
+
     // 1. Carga inicial estándar
     loadProductosParaSelect();
-    loadClientesParaVenta(); 
-    loadVentas(); 
-    renderDetalleTemporal(); 
+    loadClientesParaVenta();
+    loadVentas();
+    renderDetalleTemporal();
 
     // --- NUEVO: Exponer la función para que admin.js pueda llamarla al cambiar de pestaña ---
-    window.cargarDatosVentas = async function() {
+    window.cargarDatosVentas = async function () {
         // Recargamos productos y clientes (para asegurar que estén frescos)
         await loadProductosParaSelect();
         await loadClientesParaVenta();
@@ -684,9 +685,32 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // --- NUEVO: Escuchar evento de actualización automática de productos ---
-    document.addEventListener('productosActualizados', function() {
+    document.addEventListener('productosActualizados', function () {
         console.log('Ventas.js: Detectada actualización de productos. Recargando lista...');
         loadProductosParaSelect();
     });
+
+    // ===============================
+    // LÓGICA DE SUBSECCIONES
+    // ===============================
+    const subsectionContainers = document.querySelectorAll('.subsection-container');
+
+    function showSubsection(subsectionId) {
+        // 1. Ocultar todos los contenedores que sean de ventas
+        subsectionContainers.forEach(container => {
+            if (container.id.startsWith('ventas-')) {
+                container.style.display = 'none';
+            }
+        });
+
+        // 2. Mostrar contenedor seleccionado
+        const targetContainer = document.getElementById(`${subsectionId}-container`);
+        if (targetContainer) {
+            targetContainer.style.display = 'block';
+        }
+    }
+
+    // Exponer globalmente
+    window.showVentasSubsection = showSubsection;
 
 });

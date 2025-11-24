@@ -1092,7 +1092,7 @@ body {
         grid-template-columns: 1fr;
     }
 
-    
+
 
     /* Optimizaciones para formularios de login en móviles */
     .login-container {
@@ -1210,12 +1210,14 @@ body {
 /* --- ESTILOS PARA MENSAJES DE VALIDACIÓN --- */
 
 .input-error {
-    border-color: #e74c3c !important; /* Rojo para resaltar el campo con error */
+    border-color: #e74c3c !important;
+    /* Rojo para resaltar el campo con error */
 }
 
 /* Estilo para los mensajes de error debajo de cada campo (ej: "Complete este campo") */
 .error-message {
-    color: #e74c3c; /* Rojo para errores */
+    color: #e74c3c;
+    /* Rojo para errores */
     font-size: 12px;
     margin-top: 5px;
     font-weight: 500;
@@ -1233,15 +1235,19 @@ body {
 
 /* Estilo para el mensaje de éxito (verde) */
 .form-message.success {
-    color: #27ae60; /* Verde oscuro */
-    background-color: #e9f7ef; /* Fondo verde muy claro */
+    color: #27ae60;
+    /* Verde oscuro */
+    background-color: #e9f7ef;
+    /* Fondo verde muy claro */
     border-color: #a3d9b8;
 }
 
 /* Estilo para el mensaje de error general (rojo) */
 .form-message.error {
-    color: #c0392b; /* Rojo oscuro */
-    background-color: #fbeae9; /* Fondo rojo muy claro */
+    color: #c0392b;
+    /* Rojo oscuro */
+    background-color: #fbeae9;
+    /* Fondo rojo muy claro */
     border-color: #f1c0bc;
 }
 
@@ -1262,7 +1268,8 @@ body {
 /* El contenedor que se ve como un campo de texto */
 .custom-multi-select-container {
     display: flex;
-    flex-wrap: wrap; /* Permite que los tags pasen a la siguiente línea si no hay espacio */
+    flex-wrap: wrap;
+    /* Permite que los tags pasen a la siguiente línea si no hay espacio */
     align-items: center;
     padding: 8px 10px;
     border: 1px solid #ccc;
@@ -1282,7 +1289,8 @@ body {
 .tags-container {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px; /* Espacio entre etiquetas */
+    gap: 6px;
+    /* Espacio entre etiquetas */
 }
 
 /* Estilo de cada etiqueta (tag) */
@@ -1305,6 +1313,7 @@ body {
     font-size: 16px;
     transition: transform 0.2s;
 }
+
 .tag-close:hover {
     transform: scale(1.2);
 }
@@ -1313,17 +1322,21 @@ body {
 .custom-multi-select-container .custom-select-input {
     border: none;
     outline: none;
-    flex-grow: 1; /* Ocupa el espacio restante */
-    min-width: 150px; 
+    flex-grow: 1;
+    /* Ocupa el espacio restante */
+    min-width: 150px;
     padding: 5px;
     font-size: 14px;
 }
 
 /* Contenedor del menú desplegable (dropdown) */
 .options-container {
-    display: none; /* Oculto por defecto */
-    position: absolute; /* CLAVE: Para que flote sobre el contenido */
-    top: 100%; /* Se posiciona justo debajo del contenedor principal */
+    display: none;
+    /* Oculto por defecto */
+    position: absolute;
+    /* CLAVE: Para que flote sobre el contenido */
+    top: 100%;
+    /* Se posiciona justo debajo del contenedor principal */
     left: 0;
     width: 100%;
     border: 1px solid #ccc;
@@ -1331,9 +1344,11 @@ body {
     background-color: white;
     max-height: 220px;
     overflow-y: auto;
-    z-index: 1000; /* Asegura que esté por encima de otros elementos */
+    z-index: 1000;
+    /* Asegura que esté por encima de otros elementos */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    margin-top: 4px; /* Pequeño espacio entre el input y el dropdown */
+    margin-top: 4px;
+    /* Pequeño espacio entre el input y el dropdown */
 }
 
 /* Estilo para cada opción del menú */
@@ -1355,25 +1370,29 @@ body {
      * (Nº de items por página) x (altura de fila) + (altura de cabecera)
      * Ejemplo: (7 filas * 50px) + 50px = 400px 
      */
-    min-height: 650px; 
+    min-height: 650px;
 }
 
 
 
-.table-container-venta{
+.table-container-venta {
     min-height: 600px;
 }
 
 .modal {
-    display: none; /* Oculto por defecto */
-    position: fixed; /* Flota sobre toda la página */
+    display: none;
+    /* Oculto por defecto */
+    position: fixed;
+    /* Flota sobre toda la página */
     z-index: 1000;
     left: 0;
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto; /* Permite scroll */
-    background-color: rgba(0, 0, 0, 0.6); /* Fondo oscuro */
+    overflow: auto;
+    /* Permite scroll */
+    background-color: rgba(0, 0, 0, 0.6);
+    /* Fondo oscuro */
 }
 
 /* * La caja blanca (contenido).
@@ -1382,13 +1401,15 @@ body {
 */
 .modal .modal-content {
     background-color: #fefefe;
-    margin: 5% auto; /* 5% desde arriba y centrado */
+    margin: 5% auto;
+    /* 5% desde arriba y centrado */
     padding: 25px;
     border-radius: 8px;
     width: 90%;
-    max-width: 600px; /* Ancho máximo */
+    max-width: 600px;
+    /* Ancho máximo */
     position: relative;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     animation: fadeIn 0.3s;
     height: 600px;
 }
@@ -1417,8 +1438,15 @@ body {
 
 /* Animación */
 @keyframes fadeIn {
-    from {opacity: 0; transform: translateY(-50px);}
-    to {opacity: 1; transform: translateY(0);}
+    from {
+        opacity: 0;
+        transform: translateY(-50px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ... Código CSS existente ... */
@@ -1429,9 +1457,12 @@ body {
 
 /* Nuevo estilo para modales pequeños y cuadrados (como el de Borrado y Salida) */
 .modal .modal-content.modal-compact {
-    max-width: 400px; /* Ancho máximo para hacerlo más compacto */
-    text-align: center; /* Centrar el texto */
-    padding: 15px 30px; /* Reducido a 15px verticalmente para hacerlo más corto */
+    max-width: 400px;
+    /* Ancho máximo para hacerlo más compacto */
+    text-align: center;
+    /* Centrar el texto */
+    padding: 15px 30px;
+    /* Reducido a 15px verticalmente para hacerlo más corto */
     height: 150px;
 }
 
@@ -1442,16 +1473,18 @@ body {
 
 .data-table th[data-sort-by] {
     cursor: pointer;
-    user-select: none; 
+    user-select: none;
     /* AÑADIDO: Aplicamos transición a todas las propiedades durante 0.3 segundos */
-    transition: all 0.7s ease-in-out; 
+    transition: all 0.7s ease-in-out;
 }
 
 /* AÑADIDO: Estilo para la columna que actualmente está ordenando */
 .data-table th.sort-asc,
 .data-table th.sort-desc {
-    background-color: #e9ecef; /* Un gris muy claro */
-    color: #007bff; /* Hace que el texto y el ícono sean azules para resaltar */
+    background-color: #e9ecef;
+    /* Un gris muy claro */
+    color: #007bff;
+    /* Hace que el texto y el ícono sean azules para resaltar */
 }
 
 /* AÑADIDO: Ajustamos el icono para que herede el color */
@@ -1463,39 +1496,43 @@ body {
 
 
 .main-content:focus {
-    outline: none; /* Elimina el contorno predeterminado del navegador */
+    outline: none;
+    /* Elimina el contorno predeterminado del navegador */
 }
 
 
 .low-stock-section .table-container {
-    min-height: 600px; /* Altura suficiente para 7 filas. */
+    min-height: 600px;
+    /* Altura suficiente para 7 filas. */
 }
 
 /* REGLAS DE ANIMACIÓN: Aplica transición de fade-out/fade-in */
 #low-stock-table-body {
     opacity: 1;
     /* Suaviza el cambio de opacidad en 0.2 segundos (200ms) */
-    transition: opacity 0.2s ease-in-out; 
+    transition: opacity 0.2s ease-in-out;
 }
 
 #low-stock-table-body.loading {
-    opacity: 0; /* Oculta la tabla cuando se están cargando nuevos datos */
+    opacity: 0;
+    /* Oculta la tabla cuando se están cargando nuevos datos */
 }
 
 
 #product-table-body {
     opacity: 1;
-    transition: opacity 0.2s ease-in-out; 
+    transition: opacity 0.2s ease-in-out;
 }
 
 #product-table-body.loading {
-    opacity: 0; /* Oculta la tabla cuando se están cargando nuevos datos */
+    opacity: 0;
+    /* Oculta la tabla cuando se están cargando nuevos datos */
 }
 
 
-#proveedor-tabla{
+#proveedor-tabla {
     opacity: 1;
-    transition: opacity 0.2s ease-in-out; 
+    transition: opacity 0.2s ease-in-out;
 
 }
 
@@ -1506,12 +1543,13 @@ body {
 }
 
 #proveedor-tabla.loading {
-    opacity: 0; /* Oculta la tabla de proveedores mientras carga */
+    opacity: 0;
+    /* Oculta la tabla de proveedores mientras carga */
 }
 
 .table-container-proveedor {
     /* (7 filas * 50px aprox) + 50px cabecera = 400px */
-    min-height: 650px; 
+    min-height: 650px;
 }
 
 #compras-historial-tabla-body {
@@ -1523,7 +1561,8 @@ body {
  * la tabla se oculta con la transición.
  */
 #compras-historial-tabla-body.loading {
-    opacity: 0; /* Oculta la tabla de historial mientras carga */
+    opacity: 0;
+    /* Oculta la tabla de historial mientras carga */
 }
 
 /* * IMPORTANTE: Previene que la paginación "salte"
@@ -1532,7 +1571,7 @@ body {
  */
 #compras-section .table-section .table-container {
     /* (10 filas * 50px aprox) + 50px cabecera = 550px */
-    min-height: 650px; 
+    min-height: 650px;
 }
 
 #user-table-body {
@@ -1541,14 +1580,15 @@ body {
 }
 
 #user-table-body.loading {
-    opacity: 0; /* Oculta la tabla de usuarios mientras carga */
+    opacity: 0;
+    /* Oculta la tabla de usuarios mientras carga */
 }
 
 /* Previene que la paginación "salte" */
 .table-container-usuarios {
     /* (7 filas * 50px aprox) + 50px cabecera = 400px */
     /* Ajusta este valor si 7 filas es incorrecto */
-    min-height: 600px; 
+    min-height: 600px;
 }
 
 
@@ -1558,7 +1598,8 @@ body {
 }
 
 #tabla-ventas-body.loading {
-    opacity: 0; /* Oculta la tabla de ventas mientras carga */
+    opacity: 0;
+    /* Oculta la tabla de ventas mientras carga */
 }
 
 /* * El contenedor de la tabla de ventas tiene la clase '.table-container-venta' 
@@ -1566,18 +1607,19 @@ body {
  */
 .table-container-venta {
     /* (7 filas * 50px aprox) + 50px cabecera = 400px */
-    min-height: 600px; 
+    min-height: 600px;
 }
 
 
 #stock-table-body {
     opacity: 1;
     /* Suaviza el cambio de opacidad en 0.2 segundos (200ms) */
-    transition: opacity 0.2s ease-in-out; 
+    transition: opacity 0.2s ease-in-out;
 }
 
 #stock-table-body.loading {
-    opacity: 0; /* Oculta la tabla cuando se están cargando nuevos datos */
+    opacity: 0;
+    /* Oculta la tabla cuando se están cargando nuevos datos */
 }
 
 /* * Previene que la paginación "salte" cuando la tabla se oculta.
@@ -1590,7 +1632,7 @@ body {
  */
 #stock-section .table-container {
     /* (7 filas * 50px aprox) + 50px cabecera = 400px */
-    min-height: 450px; 
+    min-height: 450px;
 }
 
 
@@ -1598,13 +1640,15 @@ body {
 .search-with-add {
     display: flex;
     align-items: center;
-    gap: 8px; /* Espacio entre el input y el botón */
+    gap: 8px;
+    /* Espacio entre el input y el botón */
 }
 
 .search-with-add input[type="text"] {
     /* El input ocupa todo el espacio menos el botón */
     flex: 1;
-    margin-bottom: 0; /* Quitamos el margen inferior que tienen los form-group */
+    margin-bottom: 0;
+    /* Quitamos el margen inferior que tienen los form-group */
 }
 
 .btn-add-quick {
@@ -1613,18 +1657,18 @@ body {
     justify-content: center;
     gap: 8px;
     padding: 8px 10px;
-    height: 38px; 
+    height: 38px;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     flex-shrink: 0;
-    
+
     /* --- ¡CAMBIO DIRECTO! --- */
     /* Este es un color azul "primario" estándar */
-    background-color: #0d6efd; 
-    
+    background-color: #0d6efd;
+
     /* Esto es para el ícono '+' (es correcto) */
-    color: white; 
+    color: white;
 }
 
 .btn-add-quick:hover {
@@ -1634,22 +1678,81 @@ body {
 /* --- Estilos para el nuevo modal --- */
 /* (Se ocultará con JS, pero lo definimos aquí) */
 #modal-add-cliente-overlay {
-    display: none; 
+    display: none;
 }
 
 
 #modal-add-cliente-overlay .form-group {
-    margin-bottom: 22px; /* Elige el valor que te guste, ej: 25px */
+    margin-bottom: 22px;
+    /* Elige el valor que te guste, ej: 25px */
 }
 
 /* Aumenta el espacio *encima* de la sección del botón */
 #modal-add-cliente-overlay .modal-footer {
-    margin-top: 30px; /* Elige el valor que te guste, ej: 35px */
+    margin-top: 30px;
+    /* Elige el valor que te guste, ej: 35px */
 }
 
 .modal-buttons {
     display: flex;
     gap: 15px;
-    justify-content: center; /* Centra los botones */
+    justify-content: center;
+    /* Centra los botones */
     margin-top: 20px;
+}
+
+/* Sidebar Submenu */
+.sidebar-menu .has-submenu>.submenu-toggle {
+    /* justify-content: space-between; REMOVED to fix alignment */
+}
+
+.sidebar-menu .submenu {
+    list-style: none;
+    padding-left: 20px;
+    display: none;
+    background: #f8f9fa;
+}
+
+.sidebar-menu .has-submenu.open .submenu {
+    display: block;
+}
+
+.sidebar-menu .submenu li a {
+    padding: 10px 20px;
+    font-size: 13px;
+    border-left: 2px solid transparent;
+}
+
+.sidebar-menu .submenu li a:hover,
+.sidebar-menu .submenu li a.active {
+    color: #007bff;
+    border-left-color: #007bff;
+    background: transparent;
+}
+
+.arrow-icon {
+    transition: transform 0.3s;
+    font-size: 12px;
+    margin-left: auto;
+    /* Pushes arrow to the right */
+}
+
+.sidebar-menu .has-submenu.open .arrow-icon {
+    transform: rotate(180deg);
+}
+
+.subsection-container {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(5px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
