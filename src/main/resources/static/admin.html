@@ -508,8 +508,9 @@
                                                 <th>Producto</th>
                                                 <th>Cantidad</th>
                                                 <th>Costo Unit.</th>
+                                                <th>Precio Venta</th>
                                                 <th>Subtotal</th>
-                                                <th>Quitar</th>
+                                                <th>Acciones</th>
                                             </tr>
                                         </thead>
                                         <tbody id="compra-detalle-temporal">
@@ -534,7 +535,35 @@
                 <div id="compras-list-container" class="subsection-container">
                     <div class="table-section">
                         <h4>Compras Registradas</h4>
-                        <p>Historial de compras a proveedores</p>
+                        <p>Historial de compras</p>
+                        <!-- Filtro por Fechas -->
+                        <div
+                            style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px; padding: 14px; background: #f8f9fa; border-radius: 6px;">
+                            <label style="font-size: 14px; color: #666; margin: 0; white-space: nowrap;">
+                                <i class="fas fa-calendar" style="margin-right: 5px;"></i>Desde:
+                            </label>
+                            <input type="date" id="compras-fecha-inicio"
+                                style="padding: 8px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px; max-width: 155px;">
+
+                            <label style="font-size: 14px; color: #666; margin: 0; white-space: nowrap;">
+                                Hasta:
+                            </label>
+                            <input type="date" id="compras-fecha-fin"
+                                style="padding: 8px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px; max-width: 155px;">
+
+                            <button type="button" class="btn-primary" id="compras-btn-filtrar"
+                                style="padding: 8px 16px; font-size: 14px;">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                            <button type="button" class="btn-outline" id="compras-btn-limpiar-filtro"
+                                style="padding: 8px 16px; font-size: 14px;">
+                                <i class="fas fa-eraser"></i> Limpiar Filtros
+                            </button>
+                            <button type="button" class="btn-primary" id="compras-btn-exportar-pdf"
+                                style="padding: 8px 16px; font-size: 14px; margin-left: auto;">
+                                <i class="fas fa-file-pdf"></i> Exportar PDF
+                            </button>
+                        </div>
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
@@ -547,13 +576,14 @@
                                         <th>Costo Unit.</th>
                                         <th data-sort-by="total" class="sortable">Total <i
                                                 class="sort-icon fas fa-sort"></i></th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="compras-historial-tabla-body">
                                 </tbody>
                                 <tfoot>
                                     <tr>
-                                        <td colspan="5">
+                                        <td colspan="6">
                                             <div class="pagination-controls"
                                                 style="text-align: right; padding: 10px 0;">
                                                 <span id="compras-page-info" style="margin-right: 15px;">Página 1 de
@@ -1151,6 +1181,55 @@
         </div>
     </div>
 
+
+    <!-- Modal de Detalle de Compra -->
+    <div id="purchase-detail-modal" class="modal">
+        <div class="modal-content modal-large">
+            <span class="close-modal" onclick="cerrarModalDetalleCompra()">&times;</span>
+            <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                <i class="fas fa-receipt"></i> Detalle de Compra
+            </h3>
+
+            <div class="purchase-detail-info" style="margin-bottom: 20px;">
+                <div class="info-grid"
+                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                    <div class="info-item">
+                        <strong style="color: #666; font-size: 13px;">Fecha:</strong>
+                        <p id="modal-compra-fecha" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                    </div>
+                    <div class="info-item">
+                        <strong style="color: #666; font-size: 13px;">Proveedor:</strong>
+                        <p id="modal-compra-proveedor" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                    </div>
+                    <div class="info-item">
+                        <strong style="color: #666; font-size: 13px;">Total:</strong>
+                        <p id="modal-compra-total"
+                            style="margin: 5px 0 0 0; font-size: 15px; font-weight: 600; color: #28a745;"></p>
+                    </div>
+                </div>
+            </div>
+
+            <h4 style="margin-bottom: 15px; color: #333; font-size: 16px;">Productos Comprados</h4>
+            <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Producto</th>
+                            <th>Cantidad</th>
+                            <th>Precio Unitario</th>
+                            <th>Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody id="modal-compra-productos">
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="modal-buttons" style="margin-top: 20px; justify-content: flex-end;">
+                <button onclick="cerrarModalDetalleCompra()" class="btn-secondary">Cerrar</button>
+            </div>
+        </div>
+    </div>
 
     <div id="confirmation-modal" class="modal">
         <div class="modal-content modal-compact">

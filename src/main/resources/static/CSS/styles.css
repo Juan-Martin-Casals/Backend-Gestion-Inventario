@@ -1457,13 +1457,13 @@ body {
 
 /* Nuevo estilo para modales pequeños y cuadrados (como el de Borrado y Salida) */
 .modal .modal-content.modal-compact {
-    max-width: 400px;
+    max-width: 500px;
     /* Ancho máximo para hacerlo más compacto */
     text-align: center;
     /* Centrar el texto */
     padding: 15px 30px;
     /* Reducido a 15px verticalmente para hacerlo más corto */
-    height: 150px;
+    height: 200px;
 }
 
 /* Ajustar los botones dentro de este modal compacto para centrar */
@@ -1755,4 +1755,25 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* Inline Edit Inputs */
+.inline-edit-input {
+    padding: 8px 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 14px;
+    background: #fff;
+    transition: border-color 0.3s;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.inline-edit-input:focus {
+    outline: none;
+    border-color: #007bff;
+}
+
+.inline-edit-input[type="number"] {
+    max-width: 100px;
 }

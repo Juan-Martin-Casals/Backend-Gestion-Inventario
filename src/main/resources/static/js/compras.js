@@ -29,6 +29,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let detalleItems = [];
     let todosLosProveedores = [];
     let todosLosProductos = [];
+    let editIndex = -1; // Index of item being edited inline
+    let originalItemData = null; // Backup of original data for cancel
 
     // ===============================
     // SELECTORES
@@ -66,6 +68,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const historialItemsPerPage = 10;
     let historialSortField = 'fecha';
     let historialSortDirection = 'desc';
+
+    // Variable para rastrear el proveedor anterior
+    let previousProveedorId = null;
+    let previousProveedorNombre = '';
 
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS
@@ -138,13 +144,46 @@ document.addEventListener('DOMContentLoaded', function () {
         const proveedor = todosLosProveedores.find(p => p.id === proveedorIdNum);
 
         if (proveedor) {
-            proveedorSearchInput.value = proveedor.nombre;
-            proveedorHiddenInput.value = proveedor.id;
-            proveedorResultsContainer.style.display = 'none';
-            if (proveedorError) proveedorError.textContent = '';
-            productoSearchInput.value = '';
-            productoHiddenInput.value = '';
-            fetchProductosDelProveedor(proveedor.id);
+            const newProveedorId = proveedor.id.toString();
+            const newProveedorNombre = proveedor.nombre;
+
+            // Verificar si hay productos en el detalle y si el proveedor es diferente
+            if (detalleItems.length > 0 && previousProveedorId && newProveedorId !== previousProveedorId) {
+                showConfirmationModal(
+                    `Ya tienes ${detalleItems.length} producto${detalleItems.length > 1 ? 's' : ''} agregado${detalleItems.length > 1 ? 's' : ''}.\nCambiar de proveedor borrará el detalle actual.\n¿Deseas continuar?`,
+                    () => {
+                        // Usuario confirmó: limpiar detalle y cambiar proveedor
+                        detalleItems = [];
+                        renderDetalleTemporal();
+                        proveedorSearchInput.value = newProveedorNombre;
+                        proveedorHiddenInput.value = newProveedorId;
+                        previousProveedorId = newProveedorId;
+                        previousProveedorNombre = newProveedorNombre;
+                        fetchProductosDelProveedor(newProveedorId);
+                        proveedorResultsContainer.style.display = 'none';
+                        if (proveedorError) proveedorError.textContent = '';
+                        productoSearchInput.value = '';
+                        productoHiddenInput.value = '';
+                    },
+                    () => {
+                        // Usuario canceló: revertir al proveedor anterior
+                        proveedorSearchInput.value = previousProveedorNombre;
+                        proveedorHiddenInput.value = previousProveedorId;
+                        proveedorResultsContainer.style.display = 'none';
+                    }
+                );
+            } else {
+                // No hay productos o es el mismo proveedor: cambiar sin confirmación
+                proveedorSearchInput.value = newProveedorNombre;
+                proveedorHiddenInput.value = newProveedorId;
+                previousProveedorId = newProveedorId;
+                previousProveedorNombre = newProveedorNombre;
+                fetchProductosDelProveedor(newProveedorId);
+                proveedorResultsContainer.style.display = 'none';
+                if (proveedorError) proveedorError.textContent = '';
+                productoSearchInput.value = '';
+                productoHiddenInput.value = '';
+            }
         }
     }
 
@@ -162,6 +201,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
         proveedorSearchInput.addEventListener('focus', filtrarProveedores);
+        proveedorSearchInput.addEventListener('click', function () {
+            if (this.value) {
+                this.select();
+            }
+            filtrarProveedores();
+        });
     }
     if (proveedorResultsContainer) proveedorResultsContainer.addEventListener('click', seleccionarProveedor);
 
@@ -215,6 +260,12 @@ document.addEventListener('DOMContentLoaded', function () {
             filtrarProductos();
         });
         productoSearchInput.addEventListener('focus', filtrarProductos);
+        productoSearchInput.addEventListener('click', function () {
+            if (this.value) {
+                this.select();
+            }
+            filtrarProductos();
+        });
     }
     if (productoResultsContainer) productoResultsContainer.addEventListener('click', seleccionarProducto);
 
@@ -235,34 +286,137 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!detalleTemporalTabla || !totalDisplay) return;
         detalleTemporalTabla.innerHTML = '';
         let totalCompra = 0;
-        if (detalleItems.length === 0) detalleTemporalTabla.innerHTML = '<tr><td colspan="5">Aún no has agregado productos.</td></tr>';
+        if (detalleItems.length === 0) detalleTemporalTabla.innerHTML = '<tr><td colspan="7">Aún no has agregado productos.</td></tr>';
 
         detalleItems.forEach((item, index) => {
             const subtotal = item.cantidad * item.precioUnitario;
             totalCompra += subtotal;
             const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${item.nombreProducto}</td>
-                <td>${item.cantidad}</td>
-                <td>$${formatoMoneda.format(item.precioUnitario)}</td>
-                <td>$${formatoMoneda.format(subtotal)}</td>
-                <td>
-                    <button type="button" class="btn-icon btn-danger btn-quitar-item" data-index="${index}" title="Quitar">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            `;
+
+            // Check if this row is in edit mode
+            if (editIndex === index) {
+                row.innerHTML = `
+                    <td>${item.nombreProducto}</td>
+                    <td><input type="number" class="inline-edit-input" id="inline-cantidad-${index}" value="${item.cantidad}" min="1"></td>
+                    <td><input type="text" class="inline-edit-input" id="inline-costo-${index}" value="${formatoMoneda.format(item.precioUnitario)}"></td>
+                    <td><input type="text" class="inline-edit-input" id="inline-venta-${index}" value="${formatoMoneda.format(item.nuevoPrecioVenta)}"></td>
+                    <td>$${formatoMoneda.format(subtotal)}</td>
+                    <td>
+                        <button type="button" class="btn-icon btn-success btn-guardar-inline" data-index="${index}" title="Guardar">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        <button type="button" class="btn-icon btn-secondary" onclick="cancelarEdicionInline()" title="Cancelar">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </td>
+                `;
+            } else {
+                row.innerHTML = `
+                    <td>${item.nombreProducto}</td>
+                    <td>${item.cantidad}</td>
+                    <td>$${formatoMoneda.format(item.precioUnitario)}</td>
+                    <td>$${formatoMoneda.format(item.nuevoPrecioVenta)}</td>
+                    <td>$${formatoMoneda.format(subtotal)}</td>
+                    <td>
+                        <button type="button" class="btn-icon btn-warning btn-editar-item" data-index="${index}" title="Editar">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button" class="btn-icon btn-danger btn-quitar-item" data-index="${index}" title="Quitar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                `;
+            }
             detalleTemporalTabla.appendChild(row);
         });
         totalDisplay.textContent = `$ Total Compra: $${formatoMoneda.format(totalCompra)}`;
+
         document.querySelectorAll('.btn-quitar-item').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const indexToRemove = parseInt(e.currentTarget.dataset.index);
+                // If we're editing this item, clear edit state
+                if (editIndex === indexToRemove) {
+                    editIndex = -1;
+                    originalItemData = null;
+                } else if (editIndex > indexToRemove) {
+                    editIndex--;
+                }
                 detalleItems.splice(indexToRemove, 1);
                 renderDetalleTemporal();
             });
         });
+
+        document.querySelectorAll('.btn-editar-item').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const indexToEdit = parseInt(e.currentTarget.dataset.index);
+                activarEdicionInline(indexToEdit);
+            });
+        });
+
+        document.querySelectorAll('.btn-guardar-inline').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const indexToSave = parseInt(e.currentTarget.dataset.index);
+                guardarEdicionInline(indexToSave);
+            });
+        });
     }
+
+    function activarEdicionInline(index) {
+        // Save original data for cancel
+        originalItemData = JSON.parse(JSON.stringify(detalleItems[index]));
+        editIndex = index;
+        renderDetalleTemporal();
+    }
+
+    function guardarEdicionInline(index) {
+        const cantidadInput = document.getElementById(`inline-cantidad-${index}`);
+        const costoInput = document.getElementById(`inline-costo-${index}`);
+        const ventaInput = document.getElementById(`inline-venta-${index}`);
+
+        const cantidad = parseInt(cantidadInput.value);
+        const precioUnitario = parsearMoneda(costoInput.value);
+        const nuevoPrecioVenta = parsearMoneda(ventaInput.value);
+
+        // Validate inputs
+        let isValid = true;
+        if (isNaN(cantidad) || cantidad <= 0) {
+            cantidadInput.style.border = '2px solid red';
+            isValid = false;
+        }
+        if (isNaN(precioUnitario) || precioUnitario <= 0) {
+            costoInput.style.border = '2px solid red';
+            isValid = false;
+        }
+        if (isNaN(nuevoPrecioVenta) || nuevoPrecioVenta < 0) {
+            ventaInput.style.border = '2px solid red';
+            isValid = false;
+        }
+
+        if (!isValid) return;
+
+        // Update the item
+        detalleItems[index].cantidad = cantidad;
+        detalleItems[index].precioUnitario = precioUnitario;
+        detalleItems[index].nuevoPrecioVenta = nuevoPrecioVenta;
+
+        // Clear edit state
+        editIndex = -1;
+        originalItemData = null;
+        renderDetalleTemporal();
+    }
+
+    function cancelarEdicionInline() {
+        if (editIndex >= 0 && originalItemData) {
+            // Restore original data
+            detalleItems[editIndex] = originalItemData;
+        }
+        editIndex = -1;
+        originalItemData = null;
+        renderDetalleTemporal();
+    }
+
+    // Expose cancelarEdicionInline globally for inline onclick
+    window.cancelarEdicionInline = cancelarEdicionInline;
 
     function handleAgregarDetalle() {
         document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
@@ -280,7 +434,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (isNaN(cantidad) || cantidad <= 0) { document.getElementById('errorCompraCantidad').textContent = 'Cantidad inválida.'; isValid = false; }
         if (isNaN(precioUnitario) || precioUnitario <= 0) { document.getElementById('errorCompraCosto').textContent = 'Costo inválido.'; isValid = false; }
         if (isNaN(nuevoPrecioVenta) || nuevoPrecioVenta < 0) { document.getElementById('errorCompraVenta').textContent = 'Precio de venta inválido.'; isValid = false; }
-        if (isValid && detalleItems.some(item => item.idProducto === idProductoNum)) { if (productoError) productoError.textContent = 'Este producto ya está en el detalle.'; isValid = false; }
+
+        // Check for duplicates
+        if (isValid && detalleItems.some(item => item.idProducto === idProductoNum)) {
+            if (productoError) productoError.textContent = 'Este producto ya está en el detalle.';
+            isValid = false;
+        }
+
         if (!isValid) return;
 
         detalleItems.push({
@@ -290,6 +450,7 @@ document.addEventListener('DOMContentLoaded', function () {
             precioUnitario: precioUnitario,
             nuevoPrecioVenta: nuevoPrecioVenta
         });
+
         renderDetalleTemporal();
         productoSearchInput.value = '';
         productoHiddenInput.value = '';
@@ -336,6 +497,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     renderDetalleTemporal();
                     proveedorSearchInput.value = '';
                     proveedorHiddenInput.value = '';
+                    previousProveedorId = null;
+                    previousProveedorNombre = '';
                     productoSearchInput.value = '';
                     productoHiddenInput.value = '';
                     todosLosProductos = [];
@@ -361,6 +524,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // HISTORIAL
     // ===============================================
 
+    // Variables para filtro de fechas
+    let todasLasCompras = []; // Almacena todas las compras sin filtrar
+    let comprasFiltradas = null; // Compras filtradas por fecha
+
     async function loadComprasHistorial() {
         if (!historialTabla || !mainContent) return;
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
@@ -374,13 +541,17 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
             const pageData = await response.json();
             historialTotalPages = pageData.totalPages;
-            renderComprasTabla(pageData.content);
+            todasLasCompras = pageData.content; // Guardar todas las compras
+
+            // Si hay filtro activo, aplicarlo
+            const comprasAMostrar = comprasFiltradas !== null ? comprasFiltradas : todasLasCompras;
+            renderComprasTabla(comprasAMostrar);
             updateHistorialPaginationControls();
             updateHistorialSortIndicators();
             requestAnimationFrame(() => { window.scrollTo(0, scrollPosition); historialTabla.classList.remove('loading'); });
         } catch (error) {
             console.error('Error al cargar el historial de compras:', error);
-            historialTabla.innerHTML = `<tr><td colspan="5">Error al cargar historial.</td></tr>`;
+            historialTabla.innerHTML = `<tr><td colspan="6">Error al cargar historial.</td></tr>`;
             historialTabla.classList.remove('loading');
         }
     }
@@ -388,7 +559,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderComprasTabla(compras) {
         if (!historialTabla) return;
         historialTabla.innerHTML = '';
-        if (compras.length === 0) { historialTabla.innerHTML = '<tr><td colspan="5">No hay compras registradas.</td></tr>'; return; }
+        if (compras.length === 0) { historialTabla.innerHTML = '<tr><td colspan="6">No hay compras registradas.</td></tr>'; return; }
 
         compras.forEach(compra => {
             const productosTexto = compra.productosComprados && compra.productosComprados.length > 0 ? compra.productosComprados.map(p => `${p.nombreProducto} (x${p.cantidad})`).join('<br>') : 'Sin productos';
@@ -406,6 +577,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>${productosTexto}</td>
                     <td>${costosTexto}</td> 
                     <td>${totalFormateado}</td>
+                    <td>
+                        <button type="button" class="btn-icon btn-primary" onclick="mostrarDetalleCompra(${compra.id})" title="Ver Detalle">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
                 </tr>`;
             historialTabla.innerHTML += row;
         });
@@ -494,4 +670,195 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Exponer globalmente
     window.showComprasSubsection = showSubsection;
+
+    // ==========================================================
+    // FILTRO POR FECHAS
+    // ==========================================================
+
+    const btnFiltrar = document.getElementById('compras-btn-filtrar');
+    const btnLimpiarFiltro = document.getElementById('compras-btn-limpiar-filtro');
+    const btnExportarPdf = document.getElementById('compras-btn-exportar-pdf');
+    const fechaInicio = document.getElementById('compras-fecha-inicio');
+    const fechaFin = document.getElementById('compras-fecha-fin');
+
+    if (btnFiltrar) {
+        btnFiltrar.addEventListener('click', filtrarComprasPorFecha);
+    }
+
+    if (btnLimpiarFiltro) {
+        btnLimpiarFiltro.addEventListener('click', limpiarFiltroFechas);
+    }
+
+    if (btnExportarPdf) {
+        btnExportarPdf.addEventListener('click', exportarPdfCompras);
+    }
+
+    async function filtrarComprasPorFecha() {
+        const inicio = fechaInicio.value;
+        const fin = fechaFin.value;
+
+        if (!inicio || !fin) {
+            alert('Por favor selecciona ambas fechas');
+            return;
+        }
+
+        const fechaInicioDate = new Date(inicio);
+        const fechaFinDate = new Date(fin);
+
+        if (fechaInicioDate > fechaFinDate) {
+            alert('La fecha de inicio no puede ser mayor que la fecha de fin');
+            return;
+        }
+
+        // Agregar animación de carga
+        historialTabla.classList.add('loading');
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        // Filtrar compras
+        comprasFiltradas = todasLasCompras.filter(compra => {
+            if (!compra.fecha) return false;
+
+            // Parsear fecha de la compra
+            let fechaCompra;
+            if (Array.isArray(compra.fecha)) {
+                // Si viene como array [año, mes, día]
+                fechaCompra = new Date(compra.fecha[0], compra.fecha[1] - 1, compra.fecha[2]);
+            } else if (typeof compra.fecha === 'string') {
+                fechaCompra = new Date(compra.fecha.split('T')[0]);
+            } else {
+                return false;
+            }
+
+            return fechaCompra >= fechaInicioDate && fechaCompra <= fechaFinDate;
+        });
+
+        renderComprasTabla(comprasFiltradas);
+
+        if (comprasFiltradas.length === 0) {
+            historialTabla.innerHTML = '<tr><td colspan="6">No se encontraron compras en el rango de fechas seleccionado.</td></tr>';
+        }
+
+        // Remover animación de carga
+        requestAnimationFrame(() => historialTabla.classList.remove('loading'));
+    }
+
+    async function limpiarFiltroFechas() {
+        // Agregar animación de carga
+        historialTabla.classList.add('loading');
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        fechaInicio.value = '';
+        fechaFin.value = '';
+        comprasFiltradas = null;
+        renderComprasTabla(todasLasCompras);
+
+        // Remover animación de carga
+        requestAnimationFrame(() => historialTabla.classList.remove('loading'));
+    }
+
+    async function exportarPdfCompras() {
+        const inicio = fechaInicio.value;
+        const fin = fechaFin.value;
+
+        // Construir URL con parámetros opcionales
+        let url = `${API_COMPRAS_URL}/exportar-pdf`;
+        const params = new URLSearchParams();
+
+        if (inicio) params.append('inicio', inicio);
+        if (fin) params.append('fin', fin);
+
+        if (params.toString()) {
+            url += `?${params.toString()}`;
+        }
+
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error('Error al generar PDF');
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = downloadUrl;
+
+            // Nombre del archivo con fechas si se especificaron
+            let filename = 'compras';
+            if (inicio && fin) {
+                filename += `_${inicio}_a_${fin}`;
+            }
+            filename += '.pdf';
+
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(downloadUrl);
+            a.remove();
+        } catch (error) {
+            console.error('Error al exportar PDF:', error);
+            alert('No se pudo generar el PDF.');
+        }
+    }
+
+    // ==========================================================
+    // MODAL DETALLE DE COMPRA
+    // ==========================================================
+
+    async function mostrarDetalleCompra(compraId) {
+        const modal = document.getElementById('purchase-detail-modal');
+        if (!modal) return;
+
+        try {
+            const response = await fetch(`${API_COMPRAS_URL}/${compraId}`);
+            if (!response.ok) throw new Error('Error al cargar el detalle');
+            const compra = await response.json();
+
+            // Formatear fecha
+            let fechaFormateada = compra.fecha || 'N/A';
+            if (typeof fechaFormateada === 'string' && fechaFormateada.includes('-')) {
+                const partes = fechaFormateada.split('T')[0].split('-');
+                fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+            }
+
+            // Llenar información general
+            document.getElementById('modal-compra-fecha').textContent = fechaFormateada;
+            document.getElementById('modal-compra-proveedor').textContent = compra.nombreProveedor || 'N/A';
+            document.getElementById('modal-compra-total').textContent = `$${formatoMoneda.format(compra.total || 0)}`;
+
+            // Llenar tabla de productos
+            const tbody = document.getElementById('modal-compra-productos');
+            tbody.innerHTML = '';
+
+            if (compra.productosComprados && compra.productosComprados.length > 0) {
+                compra.productosComprados.forEach(producto => {
+                    const subtotal = (producto.cantidad || 0) * (producto.precioUnitario || 0);
+                    const row = `
+                        <tr>
+                            <td>${producto.nombreProducto || 'N/A'}</td>
+                            <td>${producto.cantidad || 0}</td>
+                            <td>$${formatoMoneda.format(producto.precioUnitario || 0)}</td>
+                            <td>$${formatoMoneda.format(subtotal)}</td>
+                        </tr>
+                    `;
+                    tbody.innerHTML += row;
+                });
+            } else {
+                tbody.innerHTML = '<tr><td colspan="4">No hay productos en esta compra.</td></tr>';
+            }
+
+            // Mostrar modal
+            modal.style.display = 'block';
+        } catch (error) {
+            console.error('Error al cargar el detalle de la compra:', error);
+            alert('No se pudo cargar el detalle de la compra.');
+        }
+    }
+
+    function cerrarModalDetalleCompra() {
+        const modal = document.getElementById('purchase-detail-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    // Exponer funciones globalmente
+    window.mostrarDetalleCompra = mostrarDetalleCompra;
+    window.cerrarModalDetalleCompra = cerrarModalDetalleCompra;
 });
