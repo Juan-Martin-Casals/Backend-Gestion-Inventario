@@ -1008,6 +1008,46 @@ body {
     color: #333;
 }
 
+/* Mensaje de éxito destacado */
+.success-banner {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    color: white;
+    padding: 20px 40px;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(40, 167, 69, 0.4);
+    font-size: 18px;
+    font-weight: 600;
+    z-index: 9999;
+    display: none;
+    animation: slideDown 0.4s ease-out;
+}
+
+.success-banner.show {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.success-banner i {
+    font-size: 24px;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
 
 
 /* SPA Sections */
@@ -1469,6 +1509,20 @@ body {
 /* Ajustar los botones dentro de este modal compacto para centrar */
 .modal .modal-content.modal-compact .modal-buttons {
     justify-content: center;
+}
+
+/* Estilo para modales grandes (como el de detalle de compra) */
+.modal .modal-content.modal-large {
+    max-width: 800px;
+    /* Ancho máximo mayor */
+    height: auto;
+    /* Altura automática */
+    max-height: 85vh;
+    /* Máximo 85% de la altura de la ventana */
+    overflow-y: auto;
+    /* Scroll si es necesario */
+    margin: 3% auto;
+    /* Menos margen superior para aprovechar espacio */
 }
 
 .data-table th[data-sort-by] {

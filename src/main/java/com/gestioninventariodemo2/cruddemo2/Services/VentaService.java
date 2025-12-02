@@ -34,10 +34,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class VentaService {
 
-
-
-
-
     private final ProductoRepository productoRepository;
     private final VentaRepository ventaRepository;
     private final StockRepository stockRepository;
@@ -56,15 +52,16 @@ public class VentaService {
         if (ventaRequestDTO.getIdCliente() == null) {
             throw new IllegalArgumentException("Debe seleccionar un cliente");
         }
-        
+
         // 3. Buscar el cliente en la BD
         Cliente cliente = clienteRepository.findById(ventaRequestDTO.getIdCliente())
-                .orElseThrow(() -> new EntityNotFoundException("Cliente no encontrado con ID: " + ventaRequestDTO.getIdCliente()));
+                .orElseThrow(() -> new EntityNotFoundException(
+                        "Cliente no encontrado con ID: " + ventaRequestDTO.getIdCliente()));
 
         // 4. Crear la Venta y asignar los participantes
         Venta venta = new Venta();
         venta.setFecha(ventaRequestDTO.getFecha());
-        venta.setCliente(cliente); 
+        venta.setCliente(cliente);
         venta.setUsuario(usuario); // <-- ¡Guardamos al vendedor!
 
         double totalVenta = 0;
@@ -73,17 +70,20 @@ public class VentaService {
         // 5. Validar stock ANTES de procesar
         for (DetalleVentaRequestDTO detalleDTO : ventaRequestDTO.getDetalles()) {
             Stock stock = stockRepository.findByProductoIdProducto(detalleDTO.getProductoId())
-                    .orElseThrow(() -> new EntityNotFoundException("Stock no encontrado para producto ID: " + detalleDTO.getProductoId()));
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Stock no encontrado para producto ID: " + detalleDTO.getProductoId()));
 
             if (stock.getStockActual() < detalleDTO.getCantidad()) {
-                throw new StockInsuficienteException("Stock insuficiente para: " + stock.getProducto().getNombre() + ". Stock actual: " + stock.getStockActual());
+                throw new StockInsuficienteException("Stock insuficiente para: " + stock.getProducto().getNombre()
+                        + ". Stock actual: " + stock.getStockActual());
             }
         }
 
         // 6. Procesar la venta y descontar stock
         for (DetalleVentaRequestDTO detalleDTO : ventaRequestDTO.getDetalles()) {
             Producto producto = productoRepository.findById(detalleDTO.getProductoId())
-                    .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado con ID: " + detalleDTO.getProductoId()));
+                    .orElseThrow(() -> new EntityNotFoundException(
+                            "Producto no encontrado con ID: " + detalleDTO.getProductoId()));
 
             DetalleVenta detalleVenta = new DetalleVenta();
             detalleVenta.setProducto(producto);
@@ -96,16 +96,17 @@ public class VentaService {
 
             // Descontar stock
             Stock stock = stockRepository.findByProducto(producto)
-                    .orElseThrow(() -> new EntityNotFoundException("Stock no encontrado para: " + producto.getNombre()));
+                    .orElseThrow(
+                            () -> new EntityNotFoundException("Stock no encontrado para: " + producto.getNombre()));
             stock.setStockActual(stock.getStockActual() - detalleDTO.getCantidad());
             stockRepository.save(stock);
         }
 
         venta.setDetalleVentas(detalles);
         venta.setTotal(totalVenta);
-        
+
         Venta ventaGuardada = ventaRepository.save(venta);
-        
+
         return mapToVentaDTO(ventaGuardada);
     }
 
@@ -113,6 +114,13 @@ public class VentaService {
         // Usa findAll(Pageable) y luego mapea la Page<Venta> a Page<VentaResponseDTO>
         return ventaRepository.findAll(pageable)
                 .map(this::mapToVentaDTO);
+    }
+
+    public List<VentaResponseDTO> listarTodasLasVentas() {
+        // Obtener todas las ventas y mapearlas a DTOs
+        return ventaRepository.findAll().stream()
+                .map(this::mapToVentaDTO)
+                .collect(Collectors.toList());
     }
 
     private VentaResponseDTO mapToVentaDTO(Venta venta) {
@@ -139,7 +147,7 @@ public class VentaService {
         return VentaResponseDTO.builder()
                 .idVenta(venta.getIdVenta())
                 .fecha(venta.getFecha())
-                .nombreCliente(nombreCliente) 
+                .nombreCliente(nombreCliente)
                 .nombreVendedor(nombreVendedor) // <-- Usamos la variable segura
                 .total(venta.getTotal())
                 .productos(productosDTO)

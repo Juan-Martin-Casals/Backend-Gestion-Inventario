@@ -81,6 +81,34 @@ document.addEventListener('DOMContentLoaded', function () {
     let ventasSortField = 'fecha';
     let ventasSortDirection = 'desc';
 
+    // --- Variables para búsqueda y filtrado ---
+    let todasLasVentas = [];
+    let ventasFiltradas = [];
+    const ventasSearchInput = document.getElementById('ventas-search-input');
+    const ventasFechaInicio = document.getElementById('ventas-fecha-inicio');
+    const ventasFechaFin = document.getElementById('ventas-fecha-fin');
+    const ventasBtnFiltrar = document.getElementById('ventas-btn-filtrar');
+    const ventasBtnLimpiar = document.getElementById('ventas-btn-limpiar-filtro');
+    const ventasFiltroError = document.getElementById('ventas-filtro-error');
+
+    // Función helper para mostrar mensajes de error inline
+    function mostrarErrorFiltroVentas(mensaje) {
+        if (ventasFiltroError) {
+            ventasFiltroError.textContent = mensaje;
+            ventasFiltroError.style.display = 'block';
+            setTimeout(() => {
+                ventasFiltroError.style.display = 'none';
+            }, 4000);
+        }
+    }
+
+    function ocultarErrorFiltroVentas() {
+        if (ventasFiltroError) {
+            ventasFiltroError.style.display = 'none';
+            ventasFiltroError.textContent = '';
+        }
+    }
+
 
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS
@@ -583,6 +611,152 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================================
+    // BÚSQUEDA Y FILTRADO DE VENTAS
+    // ==========================================================
+
+    async function cargarTodasLasVentas() {
+        try {
+            const response = await fetch(`${API_VENTAS_URL}/all`);
+            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+            todasLasVentas = await response.json();
+            ventasFiltradas = [...todasLasVentas];
+        } catch (error) {
+            console.error('Error al cargar todas las ventas:', error);
+            todasLasVentas = [];
+            ventasFiltradas = [];
+        }
+    }
+
+    function aplicarFiltrosVentas() {
+        const textoBusqueda = ventasSearchInput ? ventasSearchInput.value.toLowerCase() : '';
+
+        ventasFiltradas = todasLasVentas.filter(venta => {
+            // Filtro por búsqueda (cliente o producto)
+            if (textoBusqueda) {
+                const cliente = (venta.nombreCliente || '').toLowerCase();
+                const productos = venta.productos || [];
+                const tieneProducto = productos.some(p =>
+                    p.nombreProducto.toLowerCase().includes(textoBusqueda)
+                );
+
+                if (!cliente.includes(textoBusqueda) && !tieneProducto) {
+                    return false;
+                }
+            }
+
+            return true;
+        });
+
+        renderVentasFiltradas();
+    }
+
+    async function filtrarVentasPorFecha() {
+        const inicio = ventasFechaInicio ? ventasFechaInicio.value : '';
+        const fin = ventasFechaFin ? ventasFechaFin.value : '';
+
+        if (!inicio || !fin) {
+            mostrarErrorFiltroVentas('Por favor selecciona ambas fechas');
+            return;
+        }
+
+        const fechaInicioDate = new Date(inicio);
+        const fechaFinDate = new Date(fin);
+
+        if (fechaInicioDate > fechaFinDate) {
+            mostrarErrorFiltroVentas('La fecha de inicio no puede ser mayor que la fecha de fin');
+            return;
+        }
+
+        ocultarErrorFiltroVentas();
+
+        const textoBusqueda = ventasSearchInput ? ventasSearchInput.value.toLowerCase() : '';
+
+        ventasFiltradas = todasLasVentas.filter(venta => {
+            if (!venta.fecha) return false;
+
+            const fechaVenta = new Date(venta.fecha);
+            const dentroRango = fechaVenta >= fechaInicioDate && fechaVenta <= fechaFinDate;
+
+            if (!dentroRango) return false;
+
+            // Aplicar búsqueda si existe
+            if (textoBusqueda) {
+                const cliente = (venta.nombreCliente || '').toLowerCase();
+                const productos = venta.productos || [];
+                const tieneProducto = productos.some(p =>
+                    p.nombreProducto.toLowerCase().includes(textoBusqueda)
+                );
+
+                return cliente.includes(textoBusqueda) || tieneProducto;
+            }
+
+            return true;
+        });
+
+        renderVentasFiltradas();
+    }
+
+    function limpiarFiltrosVentas() {
+        if (ventasSearchInput) ventasSearchInput.value = '';
+        if (ventasFechaInicio) ventasFechaInicio.value = '';
+        if (ventasFechaFin) ventasFechaFin.value = '';
+        ocultarErrorFiltroVentas();
+
+        ventasFiltradas = [...todasLasVentas];
+        renderVentasFiltradas();
+    }
+
+    function renderVentasFiltradas() {
+        if (!ventaTableBody) return;
+
+        ventaTableBody.classList.add('loading');
+
+        setTimeout(() => {
+            renderVentasTable(ventasFiltradas);
+            ventaTableBody.classList.remove('loading');
+        }, 100);
+    }
+
+    async function exportarVentasPdf() {
+        const inicio = ventasFechaInicio ? ventasFechaInicio.value : '';
+        const fin = ventasFechaFin ? ventasFechaFin.value : '';
+
+        // Construir URL con parámetros opcionales
+        let url = '/api/ventas/pdf';
+        const params = new URLSearchParams();
+
+        if (inicio && fin) {
+            params.append('inicio', inicio);
+            params.append('fin', fin);
+        }
+
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+
+        try {
+            const response = await fetch(url);
+
+            if (!response.ok) {
+                throw new Error('Error al generar el PDF');
+            }
+
+            const blob = await response.blob();
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = downloadUrl;
+            a.download = `reporte_ventas_${new Date().toISOString().split('T')[0]}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(downloadUrl);
+            document.body.removeChild(a);
+        } catch (error) {
+            console.error('Error al exportar PDF:', error);
+            mostrarErrorFiltroVentas('No se pudo generar el PDF');
+        }
+    }
+
+    // ==========================================================
     // ASIGNACIÓN DE EVENT LISTENERS
     // ==========================================================
 
@@ -667,10 +841,34 @@ document.addEventListener('DOMContentLoaded', function () {
     // CARGA INICIAL Y EXPOSICIÓN DE FUNCIONES (MODIFICADO)
     // ==========================================================
 
+    // Event listeners para búsqueda y filtrado
+    if (ventasBtnFiltrar) {
+        ventasBtnFiltrar.addEventListener('click', filtrarVentasPorFecha);
+    }
+    if (ventasBtnLimpiar) {
+        ventasBtnLimpiar.addEventListener('click', limpiarFiltrosVentas);
+    }
+    if (ventasSearchInput) {
+        ventasSearchInput.addEventListener('input', aplicarFiltrosVentas);
+    }
+    // Ocultar error cuando el usuario modifica las fechas
+    if (ventasFechaInicio) {
+        ventasFechaInicio.addEventListener('change', ocultarErrorFiltroVentas);
+    }
+    if (ventasFechaFin) {
+        ventasFechaFin.addEventListener('change', ocultarErrorFiltroVentas);
+    }
+    // Event listener para exportar PDF
+    const ventasBtnExportarPdf = document.getElementById('ventas-btn-exportar-pdf');
+    if (ventasBtnExportarPdf) {
+        ventasBtnExportarPdf.addEventListener('click', exportarVentasPdf);
+    }
+
     // 1. Carga inicial estándar
     loadProductosParaSelect();
     loadClientesParaVenta();
     loadVentas();
+    cargarTodasLasVentas(); // Cargar todas las ventas para búsqueda/filtrado
     renderDetalleTemporal();
 
     // --- NUEVO: Exponer la función para que admin.js pueda llamarla al cambiar de pestaña ---

@@ -74,6 +74,12 @@
             </ul>
         </aside>
 
+        <!-- Banner de éxito para compras -->
+        <div id="success-banner" class="success-banner">
+            <i class="fas fa-check-circle"></i>
+            <span id="success-banner-text">¡Compra registrada exitosamente!</span>
+        </div>
+
         <main class="main-content" tabindex="-1">
             <header class="main-header">
                 <div class="header-left">
@@ -457,8 +463,9 @@
                             <div class="product-selection">
                                 <h5><i class="fas fa-box"></i> Detalle de la Compra</h5>
 
+                                <!-- Fila 1: Producto y Cantidad -->
                                 <div class="form-row">
-                                    <div class="form-group" style="flex: 2;">
+                                    <div class="form-group" style="flex: 3;">
                                         <label for="compra-producto-search">Producto</label>
 
                                         <div class="product-search-container">
@@ -481,6 +488,7 @@
                                     </div>
                                 </div>
 
+                                <!-- Fila 2: Precios -->
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label for="compra-costo-unit">Precio de Costo (Unit.)</label>
@@ -517,15 +525,22 @@
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="total-section">
-                                    <h4 id="compra-total-display">$ Total Compra: $0.00</h4>
+                                <div class="total-section" style="text-align: right;">
+                                    <h4 id="compra-total-display">Total Compra: $0.00</h4>
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn-primary" style="margin-top: 10px;">
-                                <i class="fas fa-plus"></i>
-                                Registrar Compra
-                            </button>
+                            <div style="text-align: right;">
+                                <button type="submit" class="btn-primary" style="margin-top: 10px;">
+                                    <i class="fas fa-plus"></i>
+                                    Registrar Compra
+                                </button>
+                                <button type="button" class="btn-outline" id="limpiar-form-compra"
+                                    style="margin-top: 10px; margin-left: 10px;">
+                                    <i class="fas fa-eraser"></i>
+                                    Limpiar Formulario
+                                </button>
+                            </div>
                         </form>
                         <p id="form-general-message-compra" class="form-message"></p>
                     </div>
@@ -535,34 +550,56 @@
                 <div id="compras-list-container" class="subsection-container">
                     <div class="table-section">
                         <h4>Compras Registradas</h4>
-                        <p>Historial de compras</p>
-                        <!-- Filtro por Fechas -->
-                        <div
-                            style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px; padding: 14px; background: #f8f9fa; border-radius: 6px;">
-                            <label style="font-size: 14px; color: #666; margin: 0; white-space: nowrap;">
-                                <i class="fas fa-calendar" style="margin-right: 5px;"></i>Desde:
-                            </label>
-                            <input type="date" id="compras-fecha-inicio"
-                                style="padding: 8px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px; max-width: 155px;">
 
-                            <label style="font-size: 14px; color: #666; margin: 0; white-space: nowrap;">
-                                Hasta:
-                            </label>
-                            <input type="date" id="compras-fecha-fin"
-                                style="padding: 8px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 4px; max-width: 155px;">
+                        <!-- Búsqueda y Filtros -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <!-- Búsqueda -->
+                                <div style="flex: 1; min-width: 300px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search"
+                                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                        <input type="text" placeholder="Buscar por proveedor o producto..."
+                                            id="compras-search-input"
+                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                    </div>
+                                </div>
 
-                            <button type="button" class="btn-primary" id="compras-btn-filtrar"
-                                style="padding: 8px 16px; font-size: 14px;">
-                                <i class="fas fa-search"></i> Buscar
-                            </button>
-                            <button type="button" class="btn-outline" id="compras-btn-limpiar-filtro"
-                                style="padding: 8px 16px; font-size: 14px;">
-                                <i class="fas fa-eraser"></i> Limpiar Filtros
-                            </button>
-                            <button type="button" class="btn-primary" id="compras-btn-exportar-pdf"
-                                style="padding: 8px 16px; font-size: 14px; margin-left: auto;">
-                                <i class="fas fa-file-pdf"></i> Exportar PDF
-                            </button>
+                                <!-- Separador visual -->
+                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+
+                                <!-- Filtros de Fecha -->
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-calendar" style="color: #666;"></i>
+                                    <input type="date" id="compras-fecha-inicio"
+                                        style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
+                                    <span style="color: #666;">→</span>
+                                    <input type="date" id="compras-fecha-fin"
+                                        style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
+                                </div>
+
+                                <!-- Separador visual -->
+                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+
+                                <!-- Botones de Acción -->
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="button" class="btn-primary" id="compras-btn-filtrar"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-search"></i> Buscar
+                                    </button>
+                                    <button type="button" class="btn-outline" id="compras-btn-limpiar-filtro"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                    <button type="button" class="btn-primary" id="compras-btn-exportar-pdf"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Mensaje de error para filtros -->
+                            <div id="compras-filtro-error" class="error-message"
+                                style="margin-top: 10px; display: none;"></div>
                         </div>
                         <div class="table-container">
                             <table class="data-table">
@@ -800,11 +837,61 @@
                     </div>
                 </div>
 
-                <!-- Subsección: Ver Ventas -->
                 <div id="ventas-list-container" class="subsection-container">
                     <div class="table-section">
                         <h4>Ventas Registradas</h4>
                         <p>Historial de ventas realizadas</p>
+
+                        <!-- Búsqueda y Filtros -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <!-- Búsqueda -->
+                                <div style="flex: 1; min-width: 300px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search"
+                                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                        <input type="text" placeholder="Buscar por cliente o producto..."
+                                            id="ventas-search-input"
+                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                    </div>
+                                </div>
+
+                                <!-- Separador visual -->
+                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+
+                                <!-- Filtros de Fecha -->
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-calendar" style="color: #666;"></i>
+                                    <input type="date" id="ventas-fecha-inicio"
+                                        style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
+                                    <span style="color: #666;">→</span>
+                                    <input type="date" id="ventas-fecha-fin"
+                                        style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
+                                </div>
+
+                                <!-- Separador visual -->
+                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+
+                                <!-- Botones de Acción -->
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="button" class="btn-primary" id="ventas-btn-filtrar"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-search"></i> Buscar
+                                    </button>
+                                    <button type="button" class="btn-outline" id="ventas-btn-limpiar-filtro"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                    <button type="button" class="btn-primary" id="ventas-btn-exportar-pdf"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Mensaje de error para filtros -->
+                            <div id="ventas-filtro-error" class="error-message"
+                                style="margin-top: 10px; display: none;"></div>
+                        </div>
                         <div class="table-container-venta">
                             <table class="data-table" id="tabla-ventas">
                                 <thead>
@@ -1187,7 +1274,8 @@
         <div class="modal-content modal-large">
             <span class="close-modal" onclick="cerrarModalDetalleCompra()">&times;</span>
             <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-receipt"></i> Detalle de Compra
+                <i class="fas fa-receipt"></i> Detalle de Compra <span id="modal-compra-id"
+                    style="color: #666; font-weight: 400; font-size: 18px;"></span>
             </h3>
 
             <div class="purchase-detail-info" style="margin-bottom: 20px;">
@@ -1210,7 +1298,7 @@
             </div>
 
             <h4 style="margin-bottom: 15px; color: #333; font-size: 16px;">Productos Comprados</h4>
-            <div class="table-container" style="max-height: 400px; overflow-y: auto;">
+            <div class="table-container">
                 <table class="data-table">
                     <thead>
                         <tr>
@@ -1222,6 +1310,21 @@
                     </thead>
                     <tbody id="modal-compra-productos">
                     </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="4">
+                                <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                    <span id="modal-compra-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                    <button class="btn-outline" id="modal-compra-prev-page" disabled>
+                                        <i class="fas fa-arrow-left"></i>
+                                    </button>
+                                    <button class="btn-outline" id="modal-compra-next-page" disabled>
+                                        <i class="fas fa-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tfoot>
                 </table>
             </div>
 

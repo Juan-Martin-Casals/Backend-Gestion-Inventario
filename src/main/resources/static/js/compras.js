@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const historialPageInfo = document.getElementById('compras-page-info');
     const historialTableHeaders = document.querySelectorAll('#compras-section .data-table th[data-sort-by]');
     const mainContent = document.querySelector('.main-content');
+    const comprasSearchInput = document.getElementById('compras-search-input');
 
     let historialCurrentPage = 0;
     let historialTotalPages = 1;
@@ -72,6 +73,22 @@ document.addEventListener('DOMContentLoaded', function () {
     // Variable para rastrear el proveedor anterior
     let previousProveedorId = null;
     let previousProveedorNombre = '';
+
+    // ==========================================================
+    // FUNCIONES AUXILIARES
+    // ==========================================================
+
+    // Función para establecer la fecha actual en el campo de fecha
+    function establecerFechaActual() {
+        const fechaInput = document.getElementById('compra-fecha');
+        if (fechaInput && !fechaInput.value) {
+            const hoy = new Date();
+            const year = hoy.getFullYear();
+            const month = String(hoy.getMonth() + 1).padStart(2, '0');
+            const day = String(hoy.getDate()).padStart(2, '0');
+            fechaInput.value = `${year}-${month}-${day}`;
+        }
+    }
 
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS
@@ -282,6 +299,18 @@ document.addEventListener('DOMContentLoaded', function () {
     // CARRITO COMPRAS
     // ===============================================
 
+    // Función helper para auto-ocultar errores después de 4 segundos
+    function autoOcultarErrores() {
+        const errorElements = document.querySelectorAll('#compra-form .error-message');
+        errorElements.forEach(el => {
+            if (el.textContent.trim() !== '') {
+                setTimeout(() => {
+                    el.textContent = '';
+                }, 4000);
+            }
+        });
+    }
+
     function renderDetalleTemporal() {
         if (!detalleTemporalTabla || !totalDisplay) return;
         detalleTemporalTabla.innerHTML = '';
@@ -441,7 +470,10 @@ document.addEventListener('DOMContentLoaded', function () {
             isValid = false;
         }
 
-        if (!isValid) return;
+        if (!isValid) {
+            autoOcultarErrores();
+            return;
+        }
 
         detalleItems.push({
             idProducto: idProductoNum,
@@ -475,7 +507,18 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!fecha) { document.getElementById('errorCompraFecha').textContent = 'La fecha es obligatoria.'; isValid = false; }
             if (!idProveedor) { document.getElementById('errorCompraProveedor').textContent = 'El proveedor es obligatorio.'; isValid = false; }
             if (detalleItems.length === 0) { if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto al detalle.'; isValid = false; }
-            if (!isValid) { if (generalMessageCompra) { generalMessageCompra.textContent = "Debe completar todos los campos correctamente."; generalMessageCompra.classList.add('error'); } return; }
+            if (!isValid) {
+                if (generalMessageCompra) {
+                    generalMessageCompra.textContent = "Debe completar todos los campos correctamente.";
+                    generalMessageCompra.classList.add('error');
+                    setTimeout(() => {
+                        generalMessageCompra.textContent = '';
+                        generalMessageCompra.className = 'form-message';
+                    }, 4000);
+                }
+                autoOcultarErrores();
+                return;
+            }
 
             showConfirmationModal("¿Estás seguro de que deseas registrar esta compra?", async () => {
                 const compraRequestDTO = { fecha: fecha, idProveedor: parseInt(idProveedor), detalleCompras: detalleItems };
@@ -490,7 +533,16 @@ document.addEventListener('DOMContentLoaded', function () {
                         const errorData = await response.json();
                         throw new Error(errorData.message || `Error del servidor: ${response.status}`);
                     }
-                    if (generalMessageCompra) { generalMessageCompra.textContent = "¡Compra registrada exitosamente!"; generalMessageCompra.classList.add('success'); }
+
+                    // Mostrar banner de éxito grande y destacado
+                    const successBanner = document.getElementById('success-banner');
+                    if (successBanner) {
+                        successBanner.classList.add('show');
+                        // Auto-ocultar después de 5 segundos
+                        setTimeout(() => {
+                            successBanner.classList.remove('show');
+                        }, 5000);
+                    }
 
                     compraForm.reset();
                     detalleItems = [];
@@ -507,10 +559,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     await new Promise(resolve => setTimeout(resolve, 250));
                     historialCurrentPage = 0;
                     loadComprasHistorial();
-                    showSubsection('compras-list'); // Added this line
+                    // Permanece en la sección de registro para facilitar múltiples registros
 
                     document.dispatchEvent(new Event('productosActualizados'));
-                    document.dispatchEvent(new Event('comprasActualizadas')); // Added this line
+                    document.dispatchEvent(new Event('comprasActualizadas'));
 
                 } catch (error) {
                     console.error('Error al registrar la compra:', error);
@@ -524,9 +576,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // HISTORIAL
     // ===============================================
 
-    // Variables para filtro de fechas
+    // Variables para filtro de fechas y búsqueda
     let todasLasCompras = []; // Almacena todas las compras sin filtrar
     let comprasFiltradas = null; // Compras filtradas por fecha
+    let comprasBuscadas = null; // Compras filtradas por búsqueda
 
     async function loadComprasHistorial() {
         if (!historialTabla || !mainContent) return;
@@ -543,8 +596,8 @@ document.addEventListener('DOMContentLoaded', function () {
             historialTotalPages = pageData.totalPages;
             todasLasCompras = pageData.content; // Guardar todas las compras
 
-            // Si hay filtro activo, aplicarlo
-            const comprasAMostrar = comprasFiltradas !== null ? comprasFiltradas : todasLasCompras;
+            // Aplicar filtros (búsqueda y fechas)
+            const comprasAMostrar = aplicarFiltros();
             renderComprasTabla(comprasAMostrar);
             updateHistorialPaginationControls();
             updateHistorialSortIndicators();
@@ -562,8 +615,28 @@ document.addEventListener('DOMContentLoaded', function () {
         if (compras.length === 0) { historialTabla.innerHTML = '<tr><td colspan="6">No hay compras registradas.</td></tr>'; return; }
 
         compras.forEach(compra => {
-            const productosTexto = compra.productosComprados && compra.productosComprados.length > 0 ? compra.productosComprados.map(p => `${p.nombreProducto} (x${p.cantidad})`).join('<br>') : 'Sin productos';
-            const costosTexto = compra.productosComprados && compra.productosComprados.length > 0 ? compra.productosComprados.map(p => `$${formatoMoneda.format(p.precioUnitario || 0)}`).join('<br>') : 'N/A';
+            // Mostrar máximo 2 productos, si hay más agregar "+X más..."
+            let productosTexto = 'Sin productos';
+            let costosTexto = 'N/A';
+
+            if (compra.productosComprados && compra.productosComprados.length > 0) {
+                const productos = compra.productosComprados;
+                const maxProductos = 2;
+
+                if (productos.length <= maxProductos) {
+                    // Mostrar todos los productos
+                    productosTexto = productos.map(p => `${p.nombreProducto} (x${p.cantidad})`).join('<br>');
+                    costosTexto = productos.map(p => `$${formatoMoneda.format(p.precioUnitario || 0)}`).join('<br>');
+                } else {
+                    // Mostrar solo los primeros 2 + contador
+                    const productosAMostrar = productos.slice(0, maxProductos);
+                    const productosRestantes = productos.length - maxProductos;
+                    productosTexto = productosAMostrar.map(p => `${p.nombreProducto} (x${p.cantidad})`).join('<br>') +
+                        `<br><span style="color: #666; font-style: italic;">+${productosRestantes} más...</span>`;
+                    costosTexto = productosAMostrar.map(p => `$${formatoMoneda.format(p.precioUnitario || 0)}`).join('<br>') +
+                        '<br><span style="color: #666;">...</span>';
+                }
+            }
             const totalFormateado = `$${formatoMoneda.format(compra.total || 0)}`;
             let fechaFormateada = compra.fecha || 'N/A';
             if (typeof fechaFormateada === 'string' && fechaFormateada.includes('-')) {
@@ -622,11 +695,55 @@ document.addEventListener('DOMContentLoaded', function () {
     historialTableHeaders.forEach(header => { header.addEventListener('click', handleHistorialSortClick); });
 
     // ==========================================================
+    // FUNCIÓN LIMPIAR FORMULARIO
+    // ==========================================================
+    function limpiarFormularioCompra() {
+        // Limpiar campos del formulario
+        if (compraForm) compraForm.reset();
+
+        // Limpiar errores
+        document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
+        if (generalMessageCompra) {
+            generalMessageCompra.textContent = '';
+            generalMessageCompra.className = 'form-message';
+        }
+
+        // Limpiar inputs ocultos y búsquedas
+        proveedorSearchInput.value = '';
+        proveedorHiddenInput.value = '';
+        productoSearchInput.value = '';
+        productoHiddenInput.value = '';
+
+        // Limpiar detalle de compra
+        detalleItems = [];
+        renderDetalleTemporal();
+
+        // Resetear proveedor anterior
+        previousProveedorId = null;
+        previousProveedorNombre = '';
+
+        // Deshabilitar búsqueda de productos
+        productoSearchInput.disabled = true;
+        productoSearchInput.placeholder = "Seleccione un proveedor primero";
+        todosLosProductos = [];
+
+        // Establecer fecha actual nuevamente
+        establecerFechaActual();
+    }
+
+    // Event listener para el botón limpiar
+    const btnLimpiarForm = document.getElementById('limpiar-form-compra');
+    if (btnLimpiarForm) {
+        btnLimpiarForm.addEventListener('click', limpiarFormularioCompra);
+    }
+
+    // ==========================================================
     // CARGA INICIAL Y EXPOSICIÓN
     // ==========================================================
     loadProveedoresParaCompra();
     loadComprasHistorial();
     renderDetalleTemporal();
+    establecerFechaActual(); // Establecer fecha actual al cargar
     if (productoSearchInput) { productoSearchInput.disabled = true; productoSearchInput.placeholder = "Seleccione un proveedor primero"; }
 
     window.cargarDatosCompras = async function () {
@@ -634,6 +751,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (historialCurrentPage === 0) { loadComprasHistorial(); }
         const idProveedorSeleccionado = proveedorHiddenInput.value;
         if (idProveedorSeleccionado) { fetchProductosDelProveedor(idProveedorSeleccionado); }
+        establecerFechaActual(); // Establecer fecha actual al recargar datos
     };
 
     // Escucha actualizaciones de productos (ej: stock, precios)
@@ -680,6 +798,26 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnExportarPdf = document.getElementById('compras-btn-exportar-pdf');
     const fechaInicio = document.getElementById('compras-fecha-inicio');
     const fechaFin = document.getElementById('compras-fecha-fin');
+    const filtroError = document.getElementById('compras-filtro-error');
+
+    // Función helper para mostrar mensajes de error inline
+    function mostrarErrorFiltro(mensaje) {
+        if (filtroError) {
+            filtroError.textContent = mensaje;
+            filtroError.style.display = 'block';
+            // Auto-ocultar después de 4 segundos
+            setTimeout(() => {
+                filtroError.style.display = 'none';
+            }, 4000);
+        }
+    }
+
+    function ocultarErrorFiltro() {
+        if (filtroError) {
+            filtroError.style.display = 'none';
+            filtroError.textContent = '';
+        }
+    }
 
     if (btnFiltrar) {
         btnFiltrar.addEventListener('click', filtrarComprasPorFecha);
@@ -693,12 +831,89 @@ document.addEventListener('DOMContentLoaded', function () {
         btnExportarPdf.addEventListener('click', exportarPdfCompras);
     }
 
+    // Ocultar error cuando el usuario modifica las fechas
+    if (fechaInicio) {
+        fechaInicio.addEventListener('change', ocultarErrorFiltro);
+    }
+    if (fechaFin) {
+        fechaFin.addEventListener('change', ocultarErrorFiltro);
+    }
+
+    // ==========================================================
+    // FILTRO POR BÚSQUEDA
+    // ==========================================================
+
+    function filtrarComprasPorBusqueda() {
+        if (!comprasSearchInput) return;
+
+        const textoBusqueda = comprasSearchInput.value.toLowerCase().trim();
+
+        if (textoBusqueda === '') {
+            comprasBuscadas = null;
+        } else {
+            comprasBuscadas = todasLasCompras.filter(compra => {
+                // Buscar en nombre del proveedor
+                const coincideProveedor = compra.nombreProveedor &&
+                    compra.nombreProveedor.toLowerCase().includes(textoBusqueda);
+
+                // Buscar en nombres de productos
+                const coincideProducto = compra.productosComprados &&
+                    compra.productosComprados.some(p =>
+                        p.nombreProducto && p.nombreProducto.toLowerCase().includes(textoBusqueda)
+                    );
+
+                return coincideProveedor || coincideProducto;
+            });
+        }
+
+        // Renderizar tabla con filtros aplicados
+        const comprasAMostrar = aplicarFiltros();
+        renderComprasTabla(comprasAMostrar);
+    }
+
+    function aplicarFiltros() {
+        let comprasResultado = todasLasCompras;
+
+        // Aplicar filtro de búsqueda
+        if (comprasBuscadas !== null) {
+            comprasResultado = comprasBuscadas;
+        }
+
+        // Aplicar filtro de fechas sobre el resultado anterior
+        if (comprasFiltradas !== null) {
+            // Si hay búsqueda activa, filtrar las compras buscadas por fecha
+            if (comprasBuscadas !== null) {
+                const inicio = fechaInicio.value;
+                const fin = fechaFin.value;
+                const fechaInicioDate = new Date(inicio);
+                const fechaFinDate = new Date(fin);
+
+                comprasResultado = comprasBuscadas.filter(compra => {
+                    if (!compra.fecha) return false;
+                    let fechaCompra;
+                    if (Array.isArray(compra.fecha)) {
+                        fechaCompra = new Date(compra.fecha[0], compra.fecha[1] - 1, compra.fecha[2]);
+                    } else if (typeof compra.fecha === 'string') {
+                        fechaCompra = new Date(compra.fecha.split('T')[0]);
+                    } else {
+                        return false;
+                    }
+                    return fechaCompra >= fechaInicioDate && fechaCompra <= fechaFinDate;
+                });
+            } else {
+                comprasResultado = comprasFiltradas;
+            }
+        }
+
+        return comprasResultado;
+    }
+
     async function filtrarComprasPorFecha() {
         const inicio = fechaInicio.value;
         const fin = fechaFin.value;
 
         if (!inicio || !fin) {
-            alert('Por favor selecciona ambas fechas');
+            mostrarErrorFiltro('Por favor selecciona ambas fechas');
             return;
         }
 
@@ -706,15 +921,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const fechaFinDate = new Date(fin);
 
         if (fechaInicioDate > fechaFinDate) {
-            alert('La fecha de inicio no puede ser mayor que la fecha de fin');
+            mostrarErrorFiltro('La fecha de inicio no puede ser mayor que la fecha de fin');
             return;
         }
+
+        // Ocultar error si todo está bien
+        ocultarErrorFiltro();
 
         // Agregar animación de carga
         historialTabla.classList.add('loading');
         await new Promise(resolve => setTimeout(resolve, 200));
 
-        // Filtrar compras
+        // Filtrar compras por fecha
         comprasFiltradas = todasLasCompras.filter(compra => {
             if (!compra.fecha) return false;
 
@@ -732,9 +950,11 @@ document.addEventListener('DOMContentLoaded', function () {
             return fechaCompra >= fechaInicioDate && fechaCompra <= fechaFinDate;
         });
 
-        renderComprasTabla(comprasFiltradas);
+        // Aplicar todos los filtros
+        const comprasAMostrar = aplicarFiltros();
+        renderComprasTabla(comprasAMostrar);
 
-        if (comprasFiltradas.length === 0) {
+        if (comprasAMostrar.length === 0) {
             historialTabla.innerHTML = '<tr><td colspan="6">No se encontraron compras en el rango de fechas seleccionado.</td></tr>';
         }
 
@@ -750,7 +970,10 @@ document.addEventListener('DOMContentLoaded', function () {
         fechaInicio.value = '';
         fechaFin.value = '';
         comprasFiltradas = null;
-        renderComprasTabla(todasLasCompras);
+
+        // Aplicar filtros restantes
+        const comprasAMostrar = aplicarFiltros();
+        renderComprasTabla(comprasAMostrar);
 
         // Remover animación de carga
         requestAnimationFrame(() => historialTabla.classList.remove('loading'));
@@ -795,13 +1018,26 @@ document.addEventListener('DOMContentLoaded', function () {
             a.remove();
         } catch (error) {
             console.error('Error al exportar PDF:', error);
-            alert('No se pudo generar el PDF.');
+            mostrarErrorFiltro('No se pudo generar el PDF. Por favor intenta nuevamente.');
         }
+    }
+
+    // ==========================================================
+    // EVENT LISTENER PARA BÚSQUEDA
+    // ==========================================================
+
+    if (comprasSearchInput) {
+        comprasSearchInput.addEventListener('input', filtrarComprasPorBusqueda);
     }
 
     // ==========================================================
     // MODAL DETALLE DE COMPRA
     // ==========================================================
+
+    // Variables para paginación del modal
+    let modalProductosActuales = [];
+    let modalCurrentPage = 0;
+    const modalItemsPerPage = 5;
 
     async function mostrarDetalleCompra(compraId) {
         const modal = document.getElementById('purchase-detail-modal');
@@ -820,30 +1056,17 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Llenar información general
+            document.getElementById('modal-compra-id').textContent = `#${compra.id}`;
             document.getElementById('modal-compra-fecha').textContent = fechaFormateada;
             document.getElementById('modal-compra-proveedor').textContent = compra.nombreProveedor || 'N/A';
             document.getElementById('modal-compra-total').textContent = `$${formatoMoneda.format(compra.total || 0)}`;
 
-            // Llenar tabla de productos
-            const tbody = document.getElementById('modal-compra-productos');
-            tbody.innerHTML = '';
+            // Guardar productos y resetear paginación
+            modalProductosActuales = compra.productosComprados || [];
+            modalCurrentPage = 0;
 
-            if (compra.productosComprados && compra.productosComprados.length > 0) {
-                compra.productosComprados.forEach(producto => {
-                    const subtotal = (producto.cantidad || 0) * (producto.precioUnitario || 0);
-                    const row = `
-                        <tr>
-                            <td>${producto.nombreProducto || 'N/A'}</td>
-                            <td>${producto.cantidad || 0}</td>
-                            <td>$${formatoMoneda.format(producto.precioUnitario || 0)}</td>
-                            <td>$${formatoMoneda.format(subtotal)}</td>
-                        </tr>
-                    `;
-                    tbody.innerHTML += row;
-                });
-            } else {
-                tbody.innerHTML = '<tr><td colspan="4">No hay productos en esta compra.</td></tr>';
-            }
+            // Renderizar tabla con paginación
+            renderModalProductos();
 
             // Mostrar modal
             modal.style.display = 'block';
@@ -853,9 +1076,88 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function renderModalProductos() {
+        const tbody = document.getElementById('modal-compra-productos');
+        const pageInfo = document.getElementById('modal-compra-page-info');
+        const prevBtn = document.getElementById('modal-compra-prev-page');
+        const nextBtn = document.getElementById('modal-compra-next-page');
+
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        if (modalProductosActuales.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No hay productos en esta compra.</td></tr>';
+            if (pageInfo) pageInfo.textContent = 'Página 0 de 0';
+            if (prevBtn) prevBtn.disabled = true;
+            if (nextBtn) nextBtn.disabled = true;
+            return;
+        }
+
+        // Calcular paginación
+        const totalPages = Math.ceil(modalProductosActuales.length / modalItemsPerPage);
+        const startIndex = modalCurrentPage * modalItemsPerPage;
+        const endIndex = Math.min(startIndex + modalItemsPerPage, modalProductosActuales.length);
+        const productosEnPagina = modalProductosActuales.slice(startIndex, endIndex);
+
+        // Renderizar productos de la página actual
+        productosEnPagina.forEach(producto => {
+            const subtotal = (producto.cantidad || 0) * (producto.precioUnitario || 0);
+            const row = `
+                <tr>
+                    <td>${producto.nombreProducto || 'N/A'}</td>
+                    <td>${producto.cantidad || 0}</td>
+                    <td>$${formatoMoneda.format(producto.precioUnitario || 0)}</td>
+                    <td>$${formatoMoneda.format(subtotal)}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+
+        // Actualizar controles de paginación
+        if (pageInfo) {
+            pageInfo.textContent = `Página ${modalCurrentPage + 1} de ${totalPages}`;
+        }
+        if (prevBtn) {
+            prevBtn.disabled = (modalCurrentPage === 0);
+        }
+        if (nextBtn) {
+            nextBtn.disabled = (modalCurrentPage + 1 >= totalPages);
+        }
+    }
+
+    function modalPrevPage() {
+        if (modalCurrentPage > 0) {
+            modalCurrentPage--;
+            renderModalProductos();
+        }
+    }
+
+    function modalNextPage() {
+        const totalPages = Math.ceil(modalProductosActuales.length / modalItemsPerPage);
+        if (modalCurrentPage + 1 < totalPages) {
+            modalCurrentPage++;
+            renderModalProductos();
+        }
+    }
+
+    // Event listeners para botones de paginación del modal
+    const modalPrevBtn = document.getElementById('modal-compra-prev-page');
+    const modalNextBtn = document.getElementById('modal-compra-next-page');
+
+    if (modalPrevBtn) {
+        modalPrevBtn.addEventListener('click', modalPrevPage);
+    }
+    if (modalNextBtn) {
+        modalNextBtn.addEventListener('click', modalNextPage);
+    }
+
     function cerrarModalDetalleCompra() {
         const modal = document.getElementById('purchase-detail-modal');
         if (modal) modal.style.display = 'none';
+        // Resetear paginación al cerrar
+        modalProductosActuales = [];
+        modalCurrentPage = 0;
     }
 
     // Exponer funciones globalmente
