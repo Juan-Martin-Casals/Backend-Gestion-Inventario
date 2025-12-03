@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -53,6 +54,13 @@ public class VentaController {
     public ResponseEntity<List<VentaResponseDTO>> listarTodasLasVentas() {
         List<VentaResponseDTO> ventas = ventaService.listarTodasLasVentas();
         return ResponseEntity.ok(ventas);
+    }
+
+    // ENDPOINT PARA OBTENER UNA VENTA POR ID
+    @GetMapping("/{id}")
+    public ResponseEntity<VentaResponseDTO> obtenerVentaPorId(@PathVariable Long id) {
+        VentaResponseDTO venta = ventaService.obtenerVentaPorId(id);
+        return ResponseEntity.ok(venta);
     }
 
     // ENDPOINT PARA EXPORTAR PDF DE VENTAS

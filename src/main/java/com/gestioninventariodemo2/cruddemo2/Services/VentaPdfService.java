@@ -335,7 +335,7 @@ public class VentaPdfService {
                 }
 
                 // Datos de las ventas
-                for (VentaResponseDTO venta : ventas) {
+                for (VentaResponseDTO venta : ventasOrdenadas) {
                         // Fecha
                         String fechaStr = formatFecha(venta.getFecha());
                         table.addCell(new Cell().add(new Paragraph(fechaStr).setFontSize(10)).setPadding(5));

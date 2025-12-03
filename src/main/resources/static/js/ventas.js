@@ -531,13 +531,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const productosTexto = formatProductosList(venta.productos);
         const nombreClienteTexto = venta.nombreCliente || 'Cliente N/A';
+        const nombreVendedorTexto = venta.nombreVendedor || 'N/A';
 
         return `
             <tr>
                 <td>${fechaFormateada}</td>
                 <td>${nombreClienteTexto}</td> 
                 <td>${productosTexto}</td> 
-                <td>$${formatoMoneda.format(venta.total)}</td> 
+                <td>$${formatoMoneda.format(venta.total)}</td>
+                <td>${nombreVendedorTexto}</td>
+                <td>
+                    <button class="btn-icon btn-info" onclick="mostrarDetalleVenta(${venta.idVenta})" title="Ver detalle">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
             </tr>
         `;
     }
@@ -547,7 +554,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ventaTableBody.innerHTML = '';
 
         if (!Array.isArray(ventas) || ventas.length === 0) {
-            ventaTableBody.innerHTML = '<tr><td colspan="4">No hay ventas registradas.</td></tr>';
+            ventaTableBody.innerHTML = '<tr><td colspan="6">No hay ventas registradas.</td></tr>';
             return;
         }
 
@@ -557,8 +564,143 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function formatProductosList(productosList) {
         if (!productosList || productosList.length === 0) return "N/A";
-        return productosList.map(p => `${p.nombreProducto} (x${p.cantidad})`).join('<br>');
+
+        const maxProductos = 2;
+
+        if (productosList.length <= maxProductos) {
+            // Mostrar todos los productos
+            return productosList.map(p => `${p.nombreProducto} (x${p.cantidad})`).join('<br>');
+        } else {
+            // Mostrar solo los primeros 2 + contador
+            const productosAMostrar = productosList.slice(0, maxProductos);
+            const productosRestantes = productosList.length - maxProductos;
+            return productosAMostrar.map(p => `${p.nombreProducto} (x${p.cantidad})`).join('<br>') +
+                `<br><span style="color: #666; font-style: italic;">+${productosRestantes} más...</span>`;
+        }
     }
+
+    // ==========================================================
+    // MODAL DE DETALLE DE VENTA
+    // ==========================================================
+
+    let modalVentaProductos = [];
+    let modalVentaCurrentPage = 0;
+    const modalVentaItemsPerPage = 5;
+
+    async function mostrarDetalleVenta(ventaId) {
+        try {
+            const response = await fetch(`/api/ventas/${ventaId}`);
+            if (!response.ok) throw new Error('Error al obtener detalle de venta');
+
+            const venta = await response.json();
+
+            // Poblar información general
+            document.getElementById('modal-venta-id').textContent = `#${venta.idVenta}`;
+
+            const parts = venta.fecha.split('-');
+            const fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            document.getElementById('modal-venta-fecha').textContent = fechaFormateada;
+            document.getElementById('modal-venta-cliente').textContent = venta.nombreCliente || 'N/A';
+            document.getElementById('modal-venta-vendedor').textContent = venta.nombreVendedor || 'N/A';
+            document.getElementById('modal-venta-total').textContent = `$${formatoMoneda.format(venta.total)}`;
+
+            // Guardar productos y resetear paginación
+            modalVentaProductos = venta.productos || [];
+            modalVentaCurrentPage = 0;
+
+            // Renderizar tabla con paginación
+            renderModalVentaProductos();
+
+            // Mostrar modal
+            document.getElementById('venta-detail-modal').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('No se pudo cargar el detalle de la venta');
+        }
+    }
+
+    function cerrarModalDetalleVenta() {
+        document.getElementById('venta-detail-modal').style.display = 'none';
+    }
+
+    function renderModalVentaProductos() {
+        const tbody = document.getElementById('modal-venta-productos');
+        const pageInfo = document.getElementById('modal-venta-page-info');
+        const prevBtn = document.getElementById('modal-venta-prev-page');
+        const nextBtn = document.getElementById('modal-venta-next-page');
+
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+
+        if (modalVentaProductos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No hay productos en esta venta.</td></tr>';
+            if (pageInfo) pageInfo.textContent = 'Página 0 de 0';
+            if (prevBtn) prevBtn.disabled = true;
+            if (nextBtn) nextBtn.disabled = true;
+            return;
+        }
+
+        // Calcular paginación
+        const totalPages = Math.ceil(modalVentaProductos.length / modalVentaItemsPerPage);
+        const startIndex = modalVentaCurrentPage * modalVentaItemsPerPage;
+        const endIndex = Math.min(startIndex + modalVentaItemsPerPage, modalVentaProductos.length);
+        const productosEnPagina = modalVentaProductos.slice(startIndex, endIndex);
+
+        // Calcular precio unitario promedio
+        const totalVentaStr = document.getElementById('modal-venta-total').textContent;
+        const totalVenta = parseFloat(totalVentaStr.replace('$', '').replace(/\./g, '').replace(',', '.'));
+        const cantidadTotal = modalVentaProductos.reduce((sum, p) => sum + p.cantidad, 0);
+
+        // Renderizar productos de la página actual
+        productosEnPagina.forEach(producto => {
+            const precioUnitario = totalVenta / cantidadTotal;
+            const subtotal = precioUnitario * producto.cantidad;
+
+            const row = `
+                <tr>
+                    <td>${producto.nombreProducto || 'N/A'}</td>
+                    <td>${producto.cantidad || 0}</td>
+                    <td>$${formatoMoneda.format(precioUnitario)}</td>
+                    <td>$${formatoMoneda.format(subtotal)}</td>
+                </tr>
+            `;
+            tbody.innerHTML += row;
+        });
+
+        // Actualizar controles de paginación
+        if (pageInfo) {
+            pageInfo.textContent = `Página ${modalVentaCurrentPage + 1} de ${totalPages}`;
+        }
+        if (prevBtn) {
+            prevBtn.disabled = (modalVentaCurrentPage === 0);
+        }
+        if (nextBtn) {
+            nextBtn.disabled = (modalVentaCurrentPage + 1 >= totalPages);
+        }
+    }
+
+    function modalVentaPrevPage() {
+        if (modalVentaCurrentPage > 0) {
+            modalVentaCurrentPage--;
+            renderModalVentaProductos();
+        }
+    }
+
+    function modalVentaNextPage() {
+        const totalPages = Math.ceil(modalVentaProductos.length / modalVentaItemsPerPage);
+        if (modalVentaCurrentPage + 1 < totalPages) {
+            modalVentaCurrentPage++;
+            renderModalVentaProductos();
+        }
+    }
+
+    // Exponer funciones globalmente
+    window.mostrarDetalleVenta = mostrarDetalleVenta;
+    window.cerrarModalDetalleVenta = cerrarModalDetalleVenta;
+    window.modalVentaPrevPage = modalVentaPrevPage;
+    window.modalVentaNextPage = modalVentaNextPage;
 
     function updateVentasPaginationControls() {
         if (!ventasPageInfo || !ventasPrevPageBtn || !ventasNextPageBtn) return;
@@ -594,8 +736,43 @@ document.addEventListener('DOMContentLoaded', function () {
             ventasSortField = newSortField;
             ventasSortDirection = 'asc';
         }
-        currentPageVentas = 0;
-        loadVentas(0);
+
+        // Ordenar las ventas filtradas localmente en lugar de recargar del servidor
+        ordenarVentasFiltradas();
+        renderVentasFiltradas();
+    }
+
+    function ordenarVentasFiltradas() {
+        ventasFiltradas.sort((a, b) => {
+            let valorA, valorB;
+
+            switch (ventasSortField) {
+                case 'fecha':
+                    valorA = new Date(a.fecha);
+                    valorB = new Date(b.fecha);
+                    break;
+                case 'cliente.nombre':
+                    valorA = (a.nombreCliente || '').toLowerCase();
+                    valorB = (b.nombreCliente || '').toLowerCase();
+                    break;
+                case 'total':
+                    valorA = a.total;
+                    valorB = b.total;
+                    break;
+                case 'vendedor.nombre':
+                    valorA = (a.nombreVendedor || '').toLowerCase();
+                    valorB = (b.nombreVendedor || '').toLowerCase();
+                    break;
+                default:
+                    return 0;
+            }
+
+            if (valorA < valorB) return ventasSortDirection === 'asc' ? -1 : 1;
+            if (valorA > valorB) return ventasSortDirection === 'asc' ? 1 : -1;
+            return 0;
+        });
+
+        updateVentasSortIndicators();
     }
 
     function handleVentasPrevPage() {
@@ -631,15 +808,18 @@ document.addEventListener('DOMContentLoaded', function () {
         const textoBusqueda = ventasSearchInput ? ventasSearchInput.value.toLowerCase() : '';
 
         ventasFiltradas = todasLasVentas.filter(venta => {
-            // Filtro por búsqueda (cliente o producto)
+            // Filtro por búsqueda (cliente, producto o vendedor)
             if (textoBusqueda) {
                 const cliente = (venta.nombreCliente || '').toLowerCase();
+                const vendedor = (venta.nombreVendedor || '').toLowerCase();
                 const productos = venta.productos || [];
                 const tieneProducto = productos.some(p =>
                     p.nombreProducto.toLowerCase().includes(textoBusqueda)
                 );
 
-                if (!cliente.includes(textoBusqueda) && !tieneProducto) {
+                if (!cliente.includes(textoBusqueda) &&
+                    !tieneProducto &&
+                    !vendedor.includes(textoBusqueda)) {
                     return false;
                 }
             }
@@ -745,7 +925,19 @@ document.addEventListener('DOMContentLoaded', function () {
             const downloadUrl = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = downloadUrl;
-            a.download = `reporte_ventas_${new Date().toISOString().split('T')[0]}.pdf`;
+
+            // Generar nombre del archivo según filtros
+            let nombreArchivo = 'reporte_ventas';
+            if (inicio && fin) {
+                // Formato: reporte_ventas_2024-12-01_al_2024-12-15.pdf
+                nombreArchivo += `_${inicio}_al_${fin}`;
+            } else {
+                // Formato: reporte_ventas_2024-12-03.pdf
+                nombreArchivo += `_${new Date().toISOString().split('T')[0]}`;
+            }
+            nombreArchivo += '.pdf';
+
+            a.download = nombreArchivo;
             document.body.appendChild(a);
             a.click();
             window.URL.revokeObjectURL(downloadUrl);

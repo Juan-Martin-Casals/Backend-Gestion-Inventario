@@ -850,7 +850,7 @@
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
-                                        <input type="text" placeholder="Buscar por cliente o producto..."
+                                        <input type="text" placeholder="Buscar por cliente, producto o vendedor..."
                                             id="ventas-search-input"
                                             style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
                                     </div>
@@ -903,6 +903,9 @@
                                         <th>Producto</th>
                                         <th data-sort-by="total" class="sortable">Total <i
                                                 class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="vendedor.nombre" class="sortable">Vendedor <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabla-ventas-body">
@@ -917,6 +920,76 @@
                                     <i class="fas fa-arrow-right"></i>
                                 </button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal: Detalle de Venta -->
+                <div id="venta-detail-modal" class="modal">
+                    <div class="modal-content modal-large">
+                        <span class="close-modal" onclick="cerrarModalDetalleVenta()">&times;</span>
+                        <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-shopping-cart"></i> Detalle de Venta <span id="modal-venta-id"
+                                style="color: #666; font-weight: 400; font-size: 18px;"></span>
+                        </h3>
+
+                        <div class="venta-detail-info" style="margin-bottom: 20px;">
+                            <div class="info-grid"
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                                <div class="info-item">
+                                    <strong style="color: #666; font-size: 13px;">Fecha:</strong>
+                                    <p id="modal-venta-fecha" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                                </div>
+                                <div class="info-item">
+                                    <strong style="color: #666; font-size: 13px;">Cliente:</strong>
+                                    <p id="modal-venta-cliente" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                                </div>
+                                <div class="info-item">
+                                    <strong style="color: #666; font-size: 13px;">Vendedor:</strong>
+                                    <p id="modal-venta-vendedor" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                                </div>
+                                <div class="info-item">
+                                    <strong style="color: #666; font-size: 13px;">Total:</strong>
+                                    <p id="modal-venta-total"
+                                        style="margin: 5px 0 0 0; font-size: 15px; font-weight: 600; color: #28a745;">
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 style="margin-bottom: 15px; color: #333; font-size: 16px;">Productos Vendidos</h4>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unitario</th>
+                                        <th>Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modal-venta-productos">
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4">
+                                            <div class="pagination-controls"
+                                                style="text-align: right; padding: 10px 0;">
+                                                <span id="modal-venta-page-info" style="margin-right: 15px;">Página 1 de
+                                                    1</span>
+                                                <button class="btn-outline" id="modal-venta-prev-page"
+                                                    onclick="modalVentaPrevPage()" disabled>
+                                                    <i class="fas fa-arrow-left"></i>
+                                                </button>
+                                                <button class="btn-outline" id="modal-venta-next-page"
+                                                    onclick="modalVentaNextPage()" disabled>
+                                                    <i class="fas fa-arrow-right"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
                     </div>
                 </div>

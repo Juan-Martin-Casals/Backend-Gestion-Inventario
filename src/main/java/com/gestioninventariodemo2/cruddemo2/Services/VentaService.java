@@ -123,6 +123,12 @@ public class VentaService {
                 .collect(Collectors.toList());
     }
 
+    public VentaResponseDTO obtenerVentaPorId(Long id) {
+        Venta venta = ventaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Venta no encontrada con ID: " + id));
+        return mapToVentaDTO(venta);
+    }
+
     private VentaResponseDTO mapToVentaDTO(Venta venta) {
         List<ProductoVentaDTO> productosDTO = venta.getDetalleVentas().stream()
                 .map(detalle -> ProductoVentaDTO.builder()
