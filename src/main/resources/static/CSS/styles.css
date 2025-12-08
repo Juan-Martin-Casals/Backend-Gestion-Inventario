@@ -1451,7 +1451,7 @@ body {
     position: relative;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     animation: fadeIn 0.3s;
-    height: 600px;
+    height: 250px;
 }
 
 /* * El botón de cerrar (X).
@@ -1503,7 +1503,7 @@ body {
     /* Centrar el texto */
     padding: 15px 30px;
     /* Reducido a 15px verticalmente para hacerlo más corto */
-    height: 200px;
+    height: 250px;
 }
 
 /* Ajustar los botones dentro de este modal compacto para centrar */
@@ -1524,6 +1524,41 @@ body {
     margin: 3% auto;
     /* Menos margen superior para aprovechar espacio */
 }
+
+/* Estilo para modal de cliente - más ancho y rectangular */
+.modal .modal-content.modal-content-wide {
+    max-width: 800px;
+    /* Ancho máximo mayor para dos columnas */
+    width: 95%;
+    /* Usa más ancho de pantalla en dispositivos pequeños */
+    height: auto;
+    /* Altura automática */
+    max-height: 650px;
+    /* Limita la altura total del modal */
+    margin: 3% auto;
+    /* Menos margen superior */
+    overflow-y: visible;
+    /* Sin scroll */
+    padding: 15px 25px;
+    /* Reducido padding vertical */
+}
+
+/* Reducir espaciado interno del modal de cliente */
+#modal-add-cliente-overlay .form-row {
+    margin-bottom: 12px;
+    /* Menos espacio entre filas */
+}
+
+#modal-add-cliente-overlay .modal-header {
+    margin-bottom: 15px;
+    /* Menos espacio después del título */
+}
+
+#modal-add-cliente-overlay .modal-footer {
+    margin-top: 15px;
+    /* Menos espacio antes del botón */
+}
+
 
 .data-table th[data-sort-by] {
     cursor: pointer;
@@ -1689,6 +1724,23 @@ body {
     min-height: 450px;
 }
 
+/* ==========================
+   TABLA DE CATEGORÍAS - ANIMACIONES
+   ========================== */
+#categorias-table-body {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#categorias-table-body.loading {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+#categorias-section .table-container {
+    min-height: 450px;
+}
 
 
 .search-with-add {

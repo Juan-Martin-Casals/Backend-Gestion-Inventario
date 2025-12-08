@@ -13,6 +13,7 @@ public class StockTablaDTO {
     private Long id;
     private String nombre;
     private String categoria;
+    private Long idCategoria;
     private String descripcion;
     private Double precio;
     private int stock;

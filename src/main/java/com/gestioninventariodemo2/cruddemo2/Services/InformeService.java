@@ -28,90 +28,92 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class InformeService {
 
-    private final VentaRepository ventaRepository;
+        private final VentaRepository ventaRepository;
 
-    private final StockRepository stockRepository;
+        private final StockRepository stockRepository;
 
-    public InformeResponseDTO generarInforme(LocalDate inicio, LocalDate fin) {
-        InformeResponseDTO resumen = ventaRepository.obtenerResumenVentas(inicio, fin);
-        String top = ventaRepository.obtenerProductoMasVendido(inicio, fin);
-        resumen.setProductoMasVendido(top);
-        return resumen;
-    }
+        public InformeResponseDTO generarInforme(LocalDate inicio, LocalDate fin) {
+                InformeResponseDTO resumen = ventaRepository.obtenerResumenVentas(inicio, fin);
+                String top = ventaRepository.obtenerProductoMasVendido(inicio, fin);
+                resumen.setProductoMasVendido(top);
+                return resumen;
+        }
 
-    public ResumenStockDTO obtenerResumenStock() {
-        int stockBajoNivel = 5; // El mismo límite que usás en el frontend
+        public ResumenStockDTO obtenerResumenStock() {
+                int stockBajoNivel = 5; // El mismo límite que usás en el frontend
 
-        long totalProductos = stockRepository.count();
-        long productosAgotados = stockRepository.countByStockActualEquals(0);
-        long productosBajoStock = stockRepository.countByStockActualGreaterThanAndStockActualLessThanEqual(0,
-                stockBajoNivel);
+                long totalProductos = stockRepository.count();
+                long productosAgotados = stockRepository.countByStockActualEquals(0);
+                long productosBajoStock = stockRepository.countByStockActualGreaterThanAndStockActualLessThanEqual(0,
+                                stockBajoNivel);
 
-        return ResumenStockDTO.builder()
-                .totalProductos(totalProductos)
-                .productosAgotados(productosAgotados)
-                .productosBajoStock(productosBajoStock)
-                .build();
-    }
+                return ResumenStockDTO.builder()
+                                .totalProductos(totalProductos)
+                                .productosAgotados(productosAgotados)
+                                .productosBajoStock(productosBajoStock)
+                                .build();
+        }
 
-    public Page<StockTablaDTO> obtenerProductosConStockBajo(Pageable pageable) {
-        int stockBajoNivel = 5;
-        String estadoActivo = "ACTIVO";
+        public Page<StockTablaDTO> obtenerProductosConStockBajo(Pageable pageable) {
+                int stockBajoNivel = 5;
+                String estadoActivo = "ACTIVO";
 
-        // 1. Busca en la BD usando paginación y ordenamiento
-        // ¡CAMBIO CLAVE AQUÍ!
-        // Cambiamos el método a uno que NO tiene el sufijo "OrderByStockActualAsc".
-        // Esto permite que el ordenamiento sea tomado de la variable 'pageable'.
-        Page<Stock> stocksBajos = stockRepository.findByStockActualLessThanEqualAndProductoEstado(
-                stockBajoNivel,
-                estadoActivo,
-                pageable);
+                // 1. Busca en la BD usando paginación y ordenamiento
+                // ¡CAMBIO CLAVE AQUÍ!
+                // Cambiamos el método a uno que NO tiene el sufijo "OrderByStockActualAsc".
+                // Esto permite que el ordenamiento sea tomado de la variable 'pageable'.
+                Page<Stock> stocksBajos = stockRepository.findByStockActualLessThanEqualAndProductoEstado(
+                                stockBajoNivel,
+                                estadoActivo,
+                                pageable);
 
-        // 2. Convierte esa 'Page' de Stock a una 'Page' de StockTablaDTO
-        return stocksBajos.map(stock -> StockTablaDTO.builder()
-                .id(stock.getProducto().getIdProducto())
-                .nombre(stock.getProducto().getNombre())
-                .categoria(stock.getProducto().getCategoria())
-                .descripcion(stock.getProducto().getDescripcion())
-                .precio(stock.getProducto().getPrecio())
-                .stock(stock.getStockActual())
-                .build());
-    }
+                // 2. Convierte esa 'Page' de Stock a una 'Page' de StockTablaDTO
+                return stocksBajos.map(stock -> StockTablaDTO.builder()
+                                .id(stock.getProducto().getIdProducto())
+                                .nombre(stock.getProducto().getNombre())
+                                .categoria(stock.getProducto().getCategoria() != null
+                                                ? stock.getProducto().getCategoria().getNombre()
+                                                : "Sin categoría")
+                                .descripcion(stock.getProducto().getDescripcion())
+                                .precio(stock.getProducto().getPrecio())
+                                .stock(stock.getStockActual())
+                                .build());
+        }
 
-    public InformeDashboardDTO obtenerDashboard() {
-        LocalDate primerDiaMes = LocalDate.now().withDayOfMonth(1);
-        LocalDate hoy = LocalDate.now();
+        public InformeDashboardDTO obtenerDashboard() {
+                LocalDate primerDiaMes = LocalDate.now().withDayOfMonth(1);
+                LocalDate hoy = LocalDate.now();
 
-        return InformeDashboardDTO.builder()
-                .ventasMes(ventaRepository.countVentasEnRango(primerDiaMes, hoy))
-                .ventasHistoricas(ventaRepository.countVentasHistoricas())
-                .productoMes(ventaRepository.sumProductosEnRango(primerDiaMes, hoy))
-                .productoHistoricos(ventaRepository.sumProductosHistoricos())
-                .recaudacionMes(ventaRepository.sumRecaudacionEnRango(primerDiaMes, hoy))
-                .productoMasVendidoMes(
-                        ventaRepository.obtenerProductoMasVendidoEnRango(primerDiaMes, hoy)
-                                .stream().findFirst().orElse(null))
-                .productoMenosVendidoMes(
-                        ventaRepository.obtenerProductoMenosVendidoEnRango(primerDiaMes, hoy)
-                                .stream().findFirst().orElse(null))
-                .build();
-    }
+                return InformeDashboardDTO.builder()
+                                .ventasMes(ventaRepository.countVentasEnRango(primerDiaMes, hoy))
+                                .ventasHistoricas(ventaRepository.countVentasHistoricas())
+                                .productoMes(ventaRepository.sumProductosEnRango(primerDiaMes, hoy))
+                                .productoHistoricos(ventaRepository.sumProductosHistoricos())
+                                .recaudacionMes(ventaRepository.sumRecaudacionEnRango(primerDiaMes, hoy))
+                                .productoMasVendidoMes(
+                                                ventaRepository.obtenerProductoMasVendidoEnRango(primerDiaMes, hoy)
+                                                                .stream().findFirst().orElse(null))
+                                .productoMenosVendidoMes(
+                                                ventaRepository.obtenerProductoMenosVendidoEnRango(primerDiaMes, hoy)
+                                                                .stream().findFirst().orElse(null))
+                                .build();
+        }
 
-    public byte[] generarInformePDF(InformeResponseDTO informe) throws IOException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PdfWriter writer = new PdfWriter(baos);
-        PdfDocument pdf = new PdfDocument(writer);
-        Document document = new Document(pdf);
+        public byte[] generarInformePDF(InformeResponseDTO informe) throws IOException {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                PdfWriter writer = new PdfWriter(baos);
+                PdfDocument pdf = new PdfDocument(writer);
+                Document document = new Document(pdf);
 
-        document.add(new Paragraph("📊 Informe de Ventas").setBold().setFontSize(16));
-        document.add(new Paragraph("Periodo: " + informe.getInicio() + " a " + informe.getFin()));
-        document.add(new Paragraph("Cantidad de ventas: " + informe.getTotalVentas()));
-        document.add(new Paragraph("Total de productos vendidos: " + informe.getTotalCantidad()));
-        document.add(new Paragraph("Recaudación total: $" + informe.getTotalImporte()));
-        document.add(new Paragraph("Producto más vendido: " + informe.getProductoMasVendido()));
+                document.add(new Paragraph("📊 Informe de Ventas").setBold().setFontSize(16));
+                document.add(new Paragraph("Periodo: " + informe.getInicio() + " a " + informe.getFin()));
+                document.add(new Paragraph("Cantidad de ventas: " + informe.getTotalVentas()));
+                document.add(new Paragraph("Total de productos vendidos: " + informe.getTotalCantidad()));
+                document.add(new Paragraph("Recaudación total: $" + informe.getTotalImporte()));
+                document.add(new Paragraph("Producto más vendido: " + informe.getProductoMasVendido()));
 
-        document.close();
-        return baos.toByteArray();
-    }
+                document.close();
+                return baos.toByteArray();
+        }
 
 }

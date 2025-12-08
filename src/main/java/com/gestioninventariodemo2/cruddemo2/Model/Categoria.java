@@ -2,6 +2,8 @@ package com.gestioninventariodemo2.cruddemo2.Model;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -15,36 +17,21 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "clientes")
+@Table(name = "categorias")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Cliente {
+public class Categoria {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idCliente;
+    private Long idCategoria;
 
-    @Column(name = "nombre")
+    @Column(name = "nombre", unique = true, nullable = false)
     private String nombre;
 
-    @Column(name = "apellido")
-    private String apellido;
-
-    @Column(name = "dni")
-    private String dni;
-
-    @Column(name = "telefono")
-    private String telefono;
-
-    @Column(name = "direccion")
-    private String direccion;
-
-    @Column(name = "email")
-    private String email;
-
-    @OneToMany(mappedBy = "cliente")
-    private List<Venta> ventas;
-
+    @JsonIgnore
+    @OneToMany(mappedBy = "categoria")
+    private List<Producto> productos;
 }

@@ -13,5 +13,6 @@ public class ProductoSelectDTO {
     private Long idProducto;
     private String nombreProducto;
     private Double precioVenta;
-    
+    private Integer stockActual;
+
 }

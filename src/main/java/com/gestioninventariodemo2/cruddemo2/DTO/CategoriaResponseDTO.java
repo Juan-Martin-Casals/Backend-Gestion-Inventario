@@ -9,12 +9,9 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ActualizarProductoDTO {
+public class CategoriaResponseDTO {
 
-    private String nombre;
     private Long idCategoria;
-    private String descripcion;
-    private double precio;
-    private int cantidadExtraStock;
-
+    private String nombre;
+    private int cantidadProductos;
 }

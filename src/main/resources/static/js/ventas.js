@@ -5,9 +5,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // ===============================
     const API_VENTAS_URL = '/api/ventas';
     const API_PRODUCTOS_URL = '/api/productos/select';
-
     const API_CLIENTES_URL = '/api/clientes/select';
     const API_CLIENTES_BASE_URL = '/api/clientes';
+    const API_METODOS_PAGO_URL = '/api/metodos-pago/activos';
 
     // =================================================================
     // --- CONFIGURACIÓN DE FORMATO ---
@@ -47,6 +47,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const errorDetalleGeneral = document.getElementById('errorDetalleGeneral');
     const generalMessage = document.getElementById('form-general-message-venta');
 
+    // --- Selectores Método de Pago ---
+    const metodoPagoSelect = document.getElementById('metodo-pago');
+    const camposDatosExtra = document.getElementById('campos-datos-extra');
+    const camposTarjeta = document.getElementById('campos-tarjeta');
+    const nroTransaccionInput = document.getElementById('nro-transaccion');
+    const tipoTarjetaSelect = document.getElementById('tipo-tarjeta');
+    const ultimosDigitosInput = document.getElementById('ultimos-digitos');
+    const errorMetodoPago = document.getElementById('errorMetodoPago');
+    const errorNroTransaccion = document.getElementById('errorNroTransaccion');
+
     // ===================================
     // SELECTORES - MODAL NUEVO CLIENTE
     // ===================================
@@ -55,6 +65,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const addClienteCloseBtn = document.getElementById('modal-add-cliente-close');
     const addClienteForm = document.getElementById('add-cliente-form');
     const addClienteMessage = document.getElementById('form-general-message-add-cliente');
+
+    // ===============================
+    // ESTABLECER FECHA ACTUAL
+    // ===============================
+    function setFechaActual() {
+        const hoy = new Date();
+        const año = hoy.getFullYear();
+        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        const dia = String(hoy.getDate()).padStart(2, '0');
+        const fechaFormateada = `${año}-${mes}-${dia}`;
+
+        if (fechaVentaInput) {
+            fechaVentaInput.value = fechaFormateada;
+        }
+    }
+
+    // Establecer fecha al cargar
+    setFechaActual();
 
     // ===============================
     // SELECTORES TABLA HISTORIAL
@@ -73,6 +101,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let todosLosClientes = [];
     let productoSeleccionado = null;
     let detallesVenta = [];
+    let editIndexVenta = -1; // Para edición inline
 
     // --- Estado de Paginación ---
     let currentPageVentas = 0;
@@ -217,25 +246,68 @@ document.addEventListener('DOMContentLoaded', function () {
     async function handleAddClienteSubmit(event) {
         event.preventDefault();
 
-        let isValid = true;
-        const nombre = document.getElementById('addClienteNombre').value.trim();
-        const dni = document.getElementById('addClienteDNI').value.trim();
+        // Limpiar errores previos
+        document.getElementById('errorAddClienteNombre').textContent = '';
+        document.getElementById('errorAddClienteApellido').textContent = '';
+        document.getElementById('errorAddClienteDNI').textContent = '';
+        document.getElementById('errorAddClienteTelefono').textContent = '';
+        document.getElementById('errorAddClienteDireccion').textContent = '';
+        document.getElementById('errorAddClienteEmail').textContent = '';
+        if (addClienteMessage) {
+            addClienteMessage.textContent = '';
+            addClienteMessage.classList.remove('error', 'success');
+        }
 
+        let isValid = true;
+
+        // Obtener valores
+        const nombre = document.getElementById('addClienteNombre').value.trim();
+        const apellido = document.getElementById('addClienteApellido').value.trim();
+        const dni = document.getElementById('addClienteDNI').value.trim();
+        const telefono = document.getElementById('addClienteTelefono').value.trim();
+        const direccion = document.getElementById('addClienteDireccion').value.trim();
+        const email = document.getElementById('addClienteEmail').value.trim();
+
+        // Validación: campos obligatorios
         if (!nombre) {
             document.getElementById('errorAddClienteNombre').textContent = 'El nombre es obligatorio.';
             isValid = false;
         }
+
+        if (!apellido) {
+            document.getElementById('errorAddClienteApellido').textContent = 'El apellido es obligatorio.';
+            isValid = false;
+        }
+
         if (!dni) {
             document.getElementById('errorAddClienteDNI').textContent = 'El DNI es obligatorio.';
             isValid = false;
         }
+
+        if (!telefono) {
+            document.getElementById('errorAddClienteTelefono').textContent = 'El teléfono es obligatorio.';
+            isValid = false;
+        }
+
+        if (!direccion) {
+            document.getElementById('errorAddClienteDireccion').textContent = 'La dirección es obligatoria.';
+            isValid = false;
+        }
+
+        if (!email) {
+            document.getElementById('errorAddClienteEmail').textContent = 'El email es obligatorio.';
+            isValid = false;
+        }
+
         if (!isValid) return;
 
         const clienteRequestDTO = {
             nombre: nombre,
-            apellido: document.getElementById('addClienteApellido').value.trim(),
+            apellido: apellido || null,
             dni: dni,
-            telefono: document.getElementById('addClienteTelefono').value.trim()
+            telefono: telefono || null,
+            direccion: direccion || null,
+            email: email || null
         };
 
         try {
@@ -333,9 +405,23 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         productResultsContainer.innerHTML = productos.map(producto => {
+            const stockActual = producto.stockActual || 0;
+            const stockColor = stockActual > 10 ? '#28a745' : stockActual > 0 ? '#ffc107' : '#dc3545';
+            const stockText = stockActual > 0 ? `Stock: ${stockActual}` : 'Sin stock';
+
             return `
                 <div class="product-result-item" data-id="${producto.idProducto}">
-                    ${producto.nombreProducto} <span>($${formatoMoneda.format(producto.precioVenta)})</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span style="font-weight: 500;">${producto.nombreProducto}</span>
+                        <div style="display: flex; gap: 15px; align-items: center;">
+                            <span style="color: ${stockColor}; font-weight: 600; font-size: 12px;">
+                                <i class="fas fa-box"></i> ${stockText}
+                            </span>
+                            <span style="color: #667eea; font-weight: 600;">
+                                $${formatoMoneda.format(producto.precioVenta)}
+                            </span>
+                        </div>
+                    </div>
                 </div>
             `;
         }).join('');
@@ -402,28 +488,101 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        detallesVenta.forEach(item => {
+        detallesVenta.forEach((item, index) => {
             const subtotal = item.precioVenta * item.cantidad;
             totalAcumulado += subtotal;
 
-            const row = `
-                <tr>
-                    <td>${item.nombreProducto}</td>
-                    <td>${item.cantidad}</td>
-                    <td>$${formatoMoneda.format(item.precioVenta)}</td>
-                    <td>$${formatoMoneda.format(subtotal)}</td>
-                    <td>
-                        <button type="button" class="btn-icon btn-danger btn-delete-detalle" data-id="${item.idProducto}" title="Quitar">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
+            let row;
+            if (editIndexVenta === index) {
+                // Modo edición
+                row = `
+                    <tr>
+                        <td>${item.nombreProducto}</td>
+                        <td><input type="number" class="inline-edit-input" id="inline-cantidad-venta-${index}" value="${item.cantidad}" min="1"></td>
+                        <td><input type="text" class="inline-edit-input" id="inline-precio-venta-${index}" value="${formatoMoneda.format(item.precioVenta)}"></td>
+                        <td>$${formatoMoneda.format(subtotal)}</td>
+                        <td>
+                            <button type="button" class="btn-icon btn-success btn-guardar-venta-inline" data-index="${index}" title="Guardar">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button type="button" class="btn-icon btn-secondary" onclick="cancelarEdicionVentaInline()" title="Cancelar">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                // Modo normal
+                row = `
+                    <tr>
+                        <td>${item.nombreProducto}</td>
+                        <td>${item.cantidad}</td>
+                        <td>$${formatoMoneda.format(item.precioVenta)}</td>
+                        <td>$${formatoMoneda.format(subtotal)}</td>
+                        <td>
+                            <button type="button" class="btn-icon btn-warning btn-editar-venta-item" data-index="${index}" title="Editar">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button type="button" class="btn-icon btn-danger btn-delete-detalle" data-id="${item.idProducto}" title="Quitar">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
             ventaDetalleTemporalBody.innerHTML += row;
         });
 
         totalVentaDisplay.textContent = `$ Total: $${formatoMoneda.format(totalAcumulado)}`;
     }
+
+    // ==========================================================
+    // FUNCIONES DE EDICIÓN INLINE
+    // ==========================================================
+
+    function editarVentaItemInline(index) {
+        editIndexVenta = index;
+        renderDetalleTemporal();
+    }
+
+    function guardarVentaEdicionInline(index) {
+        // Obtener valores de los inputs
+        const cantidadInput = document.getElementById(`inline-cantidad-venta-${index}`);
+        const precioInput = document.getElementById(`inline-precio-venta-${index}`);
+
+        if (!cantidadInput || !precioInput) return;
+
+        const nuevaCantidad = parseInt(cantidadInput.value);
+        const precioTexto = precioInput.value.replace(/\$/g, '').replace(/\./g, '').replace(',', '.');
+        const nuevoPrecio = parseFloat(precioTexto);
+
+        // Validaciones
+        if (isNaN(nuevaCantidad) || nuevaCantidad <= 0) {
+            alert('La cantidad debe ser un número mayor a 0');
+            return;
+        }
+
+        if (isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
+            alert('El precio debe ser un número válido mayor a 0');
+            return;
+        }
+
+        // Actualizar el item
+        detallesVenta[index].cantidad = nuevaCantidad;
+        detallesVenta[index].precioVenta = nuevoPrecio;
+
+        // Salir del modo edición
+        editIndexVenta = -1;
+        renderDetalleTemporal();
+    }
+
+    function cancelarEdicionVentaInline() {
+        editIndexVenta = -1;
+        renderDetalleTemporal();
+    }
+
+    // Exponer funciones globalmente
+    window.cancelarEdicionVentaInline = cancelarEdicionVentaInline;
 
     // ==========================================================
     // LÓGICA DE ENVÍO DE FORMULARIO (SUBMIT)
@@ -458,6 +617,23 @@ document.addEventListener('DOMContentLoaded', function () {
             isValid = false;
         }
 
+        // Validar método de pago
+        const idMetodoPago = metodoPagoSelect.value;
+        if (!idMetodoPago) {
+            if (errorMetodoPago) errorMetodoPago.textContent = 'Debe seleccionar un método de pago.';
+            isValid = false;
+        }
+
+        // Validar datos extra si el método lo requiere
+        const selectedOption = metodoPagoSelect.options[metodoPagoSelect.selectedIndex];
+        if (selectedOption && selectedOption.dataset.requiereExtra === 'true') {
+            const nroTransaccion = nroTransaccionInput.value.trim();
+            if (!nroTransaccion) {
+                if (errorNroTransaccion) errorNroTransaccion.textContent = 'El número de transacción es obligatorio.';
+                isValid = false;
+            }
+        }
+
         if (!isValid) {
             generalMessage.textContent = 'Por favor, complete todos los campos obligatorios.';
             generalMessage.classList.add('error');
@@ -478,6 +654,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     fecha: fechaVenta,
                     idCliente: parseInt(idCliente),
                     detalles: detallesParaBackend,
+                    // Datos del pago
+                    idMetodoPago: parseInt(idMetodoPago),
+                    nroTransaccion: nroTransaccionInput.value.trim() || null,
+                    tipoTarjeta: tipoTarjetaSelect.value || null,
+                    ultimosDigitos: ultimosDigitosInput.value.trim() || null,
                 };
 
                 const response = await fetch(API_VENTAS_URL, {
@@ -504,6 +685,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 ventaForm.reset();
                 detallesVenta = [];
+                editIndexVenta = -1; // Reset edit mode
                 renderDetalleTemporal();
                 clienteHiddenInput.value = '';
 
@@ -996,11 +1178,30 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (ventaDetalleTemporalBody) {
         ventaDetalleTemporalBody.addEventListener('click', function (event) {
+            // Botón eliminar
             const deleteButton = event.target.closest('.btn-delete-detalle');
             if (deleteButton) {
                 const idParaQuitar = Number(deleteButton.dataset.id);
                 detallesVenta = detallesVenta.filter(item => item.idProducto !== idParaQuitar);
+                editIndexVenta = -1; // Reset edit mode
                 renderDetalleTemporal();
+                return;
+            }
+
+            // Botón editar
+            const editButton = event.target.closest('.btn-editar-venta-item');
+            if (editButton) {
+                const index = Number(editButton.dataset.index);
+                editarVentaItemInline(index);
+                return;
+            }
+
+            // Botón guardar
+            const saveButton = event.target.closest('.btn-guardar-venta-inline');
+            if (saveButton) {
+                const index = Number(saveButton.dataset.index);
+                guardarVentaEdicionInline(index);
+                return;
             }
         });
     }
@@ -1099,6 +1300,81 @@ document.addEventListener('DOMContentLoaded', function () {
             targetContainer.style.display = 'block';
         }
     }
+
+    // ==========================================================
+    // MÉTODOS DE PAGO
+    // ==========================================================
+
+    /**
+     * Cargar métodos de pago activos desde la API
+     */
+    async function cargarMetodosPago() {
+        try {
+            const response = await fetch(API_METODOS_PAGO_URL);
+            if (!response.ok) throw new Error('Error al cargar métodos de pago');
+
+            const metodos = await response.json();
+
+            // Limpiar y poblar select
+            metodoPagoSelect.innerHTML = '<option value="">-- Seleccione un método --</option>';
+            metodos.forEach(metodo => {
+                const option = document.createElement('option');
+                option.value = metodo.idMetodoPago;
+                option.textContent = metodo.nombre;
+                option.dataset.requiereExtra = metodo.requiereDatosExtra;
+                option.dataset.nombre = metodo.nombre;
+                metodoPagoSelect.appendChild(option);
+            });
+        } catch (error) {
+            console.error('Error:', error);
+            errorMetodoPago.textContent = 'No se pudieron cargar los métodos de pago';
+        }
+    }
+
+    /**
+     * Manejar cambio de método de pago
+     */
+    function handleMetodoPagoChange() {
+        const selectedOption = metodoPagoSelect.options[metodoPagoSelect.selectedIndex];
+
+        if (!selectedOption || !selectedOption.value) {
+            // No hay método seleccionado
+            camposDatosExtra.style.display = 'none';
+            camposTarjeta.style.display = 'none';
+            return;
+        }
+
+        const requiereExtra = selectedOption.dataset.requiereExtra === 'true';
+        const nombreMetodo = selectedOption.dataset.nombre;
+
+        if (requiereExtra) {
+            // Mostrar campos de datos extra
+            camposDatosExtra.style.display = 'block';
+
+            // Si es Tarjeta, mostrar campos adicionales
+            if (nombreMetodo === 'Tarjeta') {
+                camposTarjeta.style.display = 'block';
+            } else {
+                camposTarjeta.style.display = 'none';
+            }
+        } else {
+            // Ocultar campos extra (Efectivo)
+            camposDatosExtra.style.display = 'none';
+            camposTarjeta.style.display = 'none';
+        }
+
+        // Limpiar errores
+        errorMetodoPago.textContent = '';
+        errorNroTransaccion.textContent = '';
+    }
+
+    // Event listener para cambio de método
+    if (metodoPagoSelect) {
+        metodoPagoSelect.addEventListener('change', handleMetodoPagoChange);
+    }
+
+    // Cargar métodos al iniciar
+    cargarMetodosPago();
 
     // Exponer globalmente
     window.showVentasSubsection = showSubsection;

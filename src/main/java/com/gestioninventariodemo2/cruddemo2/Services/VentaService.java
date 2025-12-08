@@ -39,6 +39,8 @@ public class VentaService {
     private final StockRepository stockRepository;
     private final ClienteRepository clienteRepository;
     private final UsuarioRepository usuarioRepository;
+    private final MetodoPagoService metodoPagoService;
+    private final PagoService pagoService;
 
     @Transactional
     public VentaResponseDTO registrarVenta(VentaRequestDTO ventaRequestDTO, UserDetails userDetails) {
@@ -107,6 +109,9 @@ public class VentaService {
 
         Venta ventaGuardada = ventaRepository.save(venta);
 
+        // 7. Registrar el pago automáticamente
+        registrarPagoVenta(ventaRequestDTO, ventaGuardada, usuario);
+
         return mapToVentaDTO(ventaGuardada);
     }
 
@@ -158,6 +163,37 @@ public class VentaService {
                 .total(venta.getTotal())
                 .productos(productosDTO)
                 .build();
+    }
+
+    /**
+     * Registrar el pago de una venta
+     */
+    private void registrarPagoVenta(VentaRequestDTO ventaRequestDTO, Venta venta, Usuario usuario) {
+        // Validar que se haya enviado el método de pago
+        if (ventaRequestDTO.getIdMetodoPago() == null) {
+            throw new IllegalArgumentException("Debe seleccionar un método de pago");
+        }
+
+        // Obtener el método de pago
+        var metodoPago = metodoPagoService.obtenerPorId(ventaRequestDTO.getIdMetodoPago());
+
+        // Validar si el método requiere datos extra
+        if (metodoPago.getRequiereDatosExtra()) {
+            if (ventaRequestDTO.getNroTransaccion() == null || ventaRequestDTO.getNroTransaccion().isBlank()) {
+                throw new IllegalArgumentException(
+                        "El método de pago " + metodoPago.getNombre() + " requiere número de transacción");
+            }
+        }
+
+        // Registrar el pago
+        pagoService.registrarPago(
+                venta,
+                metodoPago,
+                java.math.BigDecimal.valueOf(venta.getTotal()), // El importe siempre es el total de la venta
+                ventaRequestDTO.getNroTransaccion(),
+                ventaRequestDTO.getTipoTarjeta(),
+                ventaRequestDTO.getUltimosDigitos(),
+                usuario);
     }
 
 }

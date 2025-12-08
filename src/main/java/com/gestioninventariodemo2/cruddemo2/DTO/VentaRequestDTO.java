@@ -14,12 +14,12 @@ import lombok.NoArgsConstructor;
 @Builder
 public class VentaRequestDTO {
     private Long idCliente;
-    private LocalDate fecha;
     private List<DetalleVentaRequestDTO> detalles;
+    private LocalDate fecha;
 
-    // NUEVO: Datos del pago
+    // Datos del pago (NUEVO)
     private Long idMetodoPago; // Obligatorio
-    private String nroTransaccion; // Opcional
-    private String tipoTarjeta; // Opcional ('Débito' o 'Crédito')
-    private String ultimosDigitos; // Opcional (4 dígitos)
+    private String nroTransaccion; // Opcional para Tarjeta/Transferencia
+    private String tipoTarjeta; // Opcional: 'Débito' o 'Crédito'
+    private String ultimosDigitos; // Opcional: últimos 4 dígitos
 }

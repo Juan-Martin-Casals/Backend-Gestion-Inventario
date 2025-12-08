@@ -79,6 +79,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     window.showVentasSubsection(subsectionId);
                 }
             }
+            // Manejo de Subsecciones (Categorías)
+            else if (sectionId === 'categorias' && subsectionId) {
+                if (typeof window.showCategoriaSubsection === 'function') {
+                    window.showCategoriaSubsection(subsectionId);
+                }
+            }
 
             // ACTUALIZACIÓN: Agregar los casos que faltan
             if (sectionId === 'principal' && typeof window.loadPrincipalData === 'function') {
