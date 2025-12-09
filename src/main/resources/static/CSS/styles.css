@@ -1883,3 +1883,321 @@ body {
 .inline-edit-input[type="number"] {
     max-width: 100px;
 }
+
+/* ========================================
+   TRUNCATE LONG TEXT IN PRODUCT TABLE
+   ======================================== */
+
+/* Limitar el ancho de las columnas de nombre y descripción */
+.data-table td:nth-child(1),
+/* Nombre */
+.data-table td:nth-child(3) {
+    /* Descripción */
+    max-width: 250px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ========================================
+   INVENTORY MANAGEMENT STYLES
+   ======================================== */
+
+/* Stock Filter Buttons */
+.stock-filters {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-filter {
+    padding: 10px 18px;
+    border: 2px solid #ddd;
+    background: white;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    transition: all 0.3s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.btn-filter:hover {
+    border-color: #007bff;
+    color: #007bff;
+    background: #f8f9fa;
+}
+
+.btn-filter.active {
+    background: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+.btn-filter i {
+    font-size: 16px;
+}
+
+/* Stock Badges */
+.stock-display {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.stock-badge {
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.stock-badge.good {
+    background: #d4edda;
+    color: #155724;
+}
+
+.stock-badge.low {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.stock-badge.empty {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.stock-badge i {
+    font-size: 10px;
+}
+
+/* Action Buttons in Table */
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.btn-action {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s;
+    color: #666;
+    font-size: 16px;
+}
+
+.btn-action:hover {
+    background: #f8f9fa;
+}
+
+.btn-action.view:hover {
+    color: #007bff;
+}
+
+.btn-action.edit:hover {
+    color: #28a745;
+}
+
+.btn-action.delete:hover {
+    color: #dc3545;
+}
+
+/* Product Detail Modal */
+.modal-large {
+    max-width: 700px;
+    width: 90%;
+}
+
+.detail-section {
+    margin-bottom: 25px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 12px;
+}
+
+.detail-section h4 {
+    color: #333;
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.detail-section h4 i {
+    color: #007bff;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.detail-item.full-width {
+    grid-column: 1 / -1;
+}
+
+.detail-item label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-item span {
+    font-size: 15px;
+    color: #333;
+    font-weight: 500;
+}
+
+.price-highlight {
+    font-size: 20px !important;
+    color: #28a745 !important;
+    font-weight: 700 !important;
+}
+
+.stock-highlight {
+    font-size: 18px !important;
+    font-weight: 700 !important;
+}
+
+/* Modal Footer */
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 20px;
+    border-top: 1px solid #eee;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .stock-filters {
+        flex-direction: column;
+    }
+
+    .btn-filter {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ========================================
+   MODAL OVERLAY FIX
+   ======================================== */
+
+/* Modal overlay - capa semi-transparente que cubre toda la pantalla */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    /* Oculto por defecto */
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+    padding: 20px;
+}
+
+/* Cuando el modal está visible */
+.modal-overlay[style*="display: flex"] {
+    display: flex !important;
+}
+
+/* Contenido del modal */
+.modal-content {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    animation: modalSlideIn 0.3s ease-out;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header del modal */
+.modal-header {
+    padding: 20px 25px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #333;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.modal-header h3 i {
+    color: #007bff;
+}
+
+/* Botón cerrar del modal */
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: #999;
+    cursor: pointer;
+    padding: 0;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.modal-close:hover {
+    background: #f8f9fa;
+    color: #333;
+}
+
+/* Body del modal */
+.modal-body {
+    padding: 25px;
+}

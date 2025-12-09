@@ -25,7 +25,8 @@
                     <ul class="submenu">
                         <li><a href="#" data-section="productos" data-subsection="productos-create">Crear Producto</a>
                         </li>
-                        <li><a href="#" data-section="productos" data-subsection="productos-list">Ver Productos</a></li>
+                        <li><a href="#" data-section="productos" data-subsection="productos-list">Gestión de
+                                Inventario</a></li>
                     </ul>
                 </li>
                 <li class="has-submenu">
@@ -80,7 +81,6 @@
                     </ul>
                 </li>
                 <li><a href="#" data-section="informes"><i class="fas fa-chart-bar"></i> Informes</a></li>
-                <li><a href="#" data-section="stock"><i class="fas fa-warehouse"></i> Stock</a></li>
                 <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
             </ul>
         </aside>
@@ -285,10 +285,11 @@
                     </div>
                 </div>
 
-                <!-- Subsección: Ver Productos -->
+                <!-- Subsección: Ver Productos (ahora Gestión de Inventario) -->
                 <div id="productos-list-container" class="subsection-container">
                     <div class="table-section">
-                        <h4>Productos Registrados</h4>
+                        <h4>Gestión de Inventario</h4>
+
                         <div class="table-container-product">
                             <table class="data-table">
                                 <thead>
@@ -298,10 +299,9 @@
                                         <th data-sort-by="categoria" class="sortable">Categoría <i
                                                 class="sort-icon fas fa-sort"></i></th>
                                         <th>Descripción</th>
-                                        <th data-sort-by="fechaCreacion" class="sortable">Fecha Creación <i
+                                        <th data-sort-by="stock" class="sortable">Stock <i
                                                 class="sort-icon fas fa-sort"></i></th>
-                                        <th>Stock Mín.</th>
-                                        <th>Stock Máx.</th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="product-table-body">
@@ -313,7 +313,7 @@
                         </div>
                         <tfoot>
                             <tr>
-                                <td colspan="6">
+                                <td colspan="5">
                                     <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
                                         <span id="product-page-info" style="margin-right: 15px;">Página 1 de 1</span>
                                         <button class="btn-outline" id="product-prev-page" disabled>
@@ -329,6 +329,84 @@
                     </div>
                 </div>
             </section>
+
+            <!-- Modal de Detalles del Producto -->
+            <div id="product-detail-modal" class="modal-overlay" style="display: none;">
+                <div class="modal-content modal-large">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-box"></i> Detalle del Producto</h3>
+                        <button class="modal-close" id="product-detail-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Información Básica -->
+                        <div class="detail-section">
+                            <h4><i class="fas fa-info-circle"></i> Información Básica</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <label>Nombre:</label>
+                                    <span id="detail-nombre"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Categoría:</label>
+                                    <span id="detail-categoria"></span>
+                                </div>
+                                <div class="detail-item full-width">
+                                    <label>Descripción:</label>
+                                    <span id="detail-descripcion"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información Comercial -->
+                        <div class="detail-section">
+                            <h4><i class="fas fa-dollar-sign"></i> Información Comercial</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <label>Precio de Venta:</label>
+                                    <span id="detail-precio" class="price-highlight"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Fecha de Creación:</label>
+                                    <span id="detail-fecha"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gestión de Stock -->
+                        <div class="detail-section">
+                            <h4><i class="fas fa-warehouse"></i> Gestión de Stock</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <label>Stock Actual:</label>
+                                    <span id="detail-stock-actual" class="stock-highlight"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Stock Mínimo:</label>
+                                    <span id="detail-stock-min"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Stock Máximo:</label>
+                                    <span id="detail-stock-max"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Estado:</label>
+                                    <span id="detail-stock-estado"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-primary" id="product-detail-edit">
+                            <i class="fas fa-edit"></i> Editar Producto
+                        </button>
+                        <button class="btn-outline" id="product-detail-close-btn">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
 
             <section id="proveedores-section" class="spa-section" style="display:none">
                 <div class="section-header">

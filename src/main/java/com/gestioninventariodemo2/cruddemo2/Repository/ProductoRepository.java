@@ -11,9 +11,10 @@ import org.springframework.data.repository.query.Param;
 
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
 
-public interface ProductoRepository extends JpaRepository<Producto,Long>{
+public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     List<Producto> findByNombreContainingIgnoreCase(String nombre);
+
     @Modifying // Indica que esta query va a MODIFICAR la base de datos
     @Query("UPDATE Producto p SET p.estado = ?2 WHERE p.idProducto = ?1")
     void actualizarEstado(Long idProducto, String nuevoEstado);

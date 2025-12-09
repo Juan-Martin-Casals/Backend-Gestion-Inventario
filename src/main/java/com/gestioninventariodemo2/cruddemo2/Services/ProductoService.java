@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.gestioninventariodemo2.cruddemo2.DTO.ActualizarProductoDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoActualizadoDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.ProductoInventarioDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoSelectDTO;
@@ -263,6 +264,138 @@ public class ProductoService {
         return productos.stream()
                 .map(this::mapToDTO)
                 .toList();
+    }
+
+    /**
+     * Lista todos los productos con su información de inventario completa.
+     * Combina datos de producto y stock en un solo DTO.
+     * Calcula el estado del stock automáticamente.
+     * 
+     * @param pageable paginación y ordenamiento
+     * @return Page de ProductoInventarioDTO
+     */
+    @Transactional(readOnly = true)
+    public Page<ProductoInventarioDTO> listarInventario(Pageable pageable) {
+        // Detectar si se está ordenando por campos de stock
+        boolean isStockSort = pageable.getSort().isSorted() &&
+                pageable.getSort().stream().anyMatch(order -> order.getProperty().toLowerCase().contains("stock"));
+
+        Page<Producto> paginaProductos;
+
+        if (isStockSort) {
+            // Si es ordenamiento por stock, obtener TODOS los productos activos
+            // y hacer el ordenamiento en memoria
+            List<Producto> todosLosProductos = productoRepository.findAllByEstado("ACTIVO");
+
+            // Convertir a DTOs
+            List<ProductoInventarioDTO> todosLosDTOs = todosLosProductos.stream()
+                    .map(p -> {
+                        int stockActual = 0;
+                        int stockMin = 0;
+                        int stockMax = 0;
+
+                        if (p.getStocks() != null && !p.getStocks().isEmpty()) {
+                            Stock stock = p.getStocks().get(0);
+                            stockActual = stock.getStockActual();
+                            stockMin = stock.getStockMinimo();
+                            stockMax = stock.getStockMaximo();
+                        }
+
+                        String estadoStock;
+                        if (stockActual == 0) {
+                            estadoStock = "AGOTADO";
+                        } else if (stockActual < stockMin) {
+                            estadoStock = "BAJO";
+                        } else {
+                            estadoStock = "BUENO";
+                        }
+
+                        return ProductoInventarioDTO.builder()
+                                .idProducto(p.getIdProducto())
+                                .nombre(p.getNombre())
+                                .categoria(p.getCategoria() != null ? p.getCategoria().getNombre() : "Sin categoría")
+                                .descripcion(p.getDescripcion())
+                                .precio(p.getPrecio())
+                                .fechaCreacion(p.getFechaCreacion())
+                                .stockActual(stockActual)
+                                .stockMinimo(stockMin)
+                                .stockMaximo(stockMax)
+                                .estadoStock(estadoStock)
+                                .build();
+                    })
+                    .collect(Collectors.toList());
+
+            // Ordenar en memoria
+            org.springframework.data.domain.Sort.Order sortOrder = pageable.getSort().iterator().next();
+            java.util.Comparator<ProductoInventarioDTO> comparator = null;
+
+            if ("stock".equals(sortOrder.getProperty()) || "stockActual".equals(sortOrder.getProperty())) {
+                comparator = java.util.Comparator.comparingInt(ProductoInventarioDTO::getStockActual);
+            } else if ("stockMinimo".equals(sortOrder.getProperty())) {
+                comparator = java.util.Comparator.comparingInt(ProductoInventarioDTO::getStockMinimo);
+            } else if ("stockMaximo".equals(sortOrder.getProperty())) {
+                comparator = java.util.Comparator.comparingInt(ProductoInventarioDTO::getStockMaximo);
+            }
+
+            if (comparator != null) {
+                if (sortOrder.getDirection() == org.springframework.data.domain.Sort.Direction.DESC) {
+                    comparator = comparator.reversed();
+                }
+                todosLosDTOs.sort(comparator);
+            }
+
+            // Paginar manualmente
+            int start = (int) pageable.getOffset();
+            int end = Math.min(start + pageable.getPageSize(), todosLosDTOs.size());
+            List<ProductoInventarioDTO> paginatedList = todosLosDTOs.subList(start, end);
+
+            return new org.springframework.data.domain.PageImpl<>(
+                    paginatedList,
+                    pageable,
+                    todosLosDTOs.size());
+
+        } else {
+            // Para ordenamiento por otros campos, usar el método normal del repositorio
+            paginaProductos = productoRepository.findAllByEstado("ACTIVO", pageable);
+
+            return paginaProductos.map(p -> {
+                // Valores por defecto
+                int stockActual = 0;
+                int stockMin = 0;
+                int stockMax = 0;
+
+                // Obtener stock si existe
+                if (p.getStocks() != null && !p.getStocks().isEmpty()) {
+                    Stock stock = p.getStocks().get(0);
+                    stockActual = stock.getStockActual();
+                    stockMin = stock.getStockMinimo();
+                    stockMax = stock.getStockMaximo();
+                }
+
+                // Calcular estado del stock
+                String estadoStock;
+                if (stockActual == 0) {
+                    estadoStock = "AGOTADO";
+                } else if (stockActual < stockMin) {
+                    estadoStock = "BAJO";
+                } else {
+                    estadoStock = "BUENO";
+                }
+
+                return ProductoInventarioDTO.builder()
+                        .idProducto(p.getIdProducto())
+                        .nombre(p.getNombre())
+                        .categoria(p.getCategoria() != null ? p.getCategoria().getNombre() : "Sin categoría")
+                        .descripcion(p.getDescripcion())
+                        .precio(p.getPrecio())
+                        .fechaCreacion(p.getFechaCreacion())
+                        .stockActual(stockActual)
+                        .stockMinimo(stockMin)
+                        .stockMaximo(stockMax)
+                        .estadoStock(estadoStock)
+                        .build();
+            });
+        }
     }
 
     public ProductoResponseDTO mapToDTO(Producto producto) {

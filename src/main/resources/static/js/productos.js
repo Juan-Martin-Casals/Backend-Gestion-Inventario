@@ -75,7 +75,8 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             // 2. Añadir parámetros de ordenamiento
             const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
-            const url = `${API_PRODUCTOS_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
+            // CAMBIO: Usar endpoint de inventario en lugar de productos
+            const url = `${API_PRODUCTOS_URL}/inventario?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
 
             const response = await fetch(url);
 
@@ -101,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (error) {
             console.error('Error al cargar los productos:', error);
-            productTableBody.innerHTML = `<tr><td colspan="6">Error al cargar productos.</td></tr>`;
+            productTableBody.innerHTML = `<tr><td colspan="5">Error al cargar productos.</td></tr>`;
             productTableBody.classList.remove('loading');
         }
     }
@@ -171,10 +172,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Función auxiliar para eliminar acentos (búsqueda insensible a acentos)
+    function removeAccents(str) {
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    }
+
     function filtrarCategorias() {
-        const query = categorySearchInput.value.toLowerCase();
+        const query = removeAccents(categorySearchInput.value.toLowerCase());
         const categoriasFiltradas = todasLasCategorias.filter(c =>
-            c.nombre.toLowerCase().includes(query)
+            removeAccents(c.nombre.toLowerCase()).includes(query)
         );
         renderResultadosCategorias(categoriasFiltradas);
     }
@@ -259,8 +265,20 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `Error ${response.status}`);
+                // Leer como texto primero para evitar consumir el stream dos veces
+                const errorText = await response.text();
+                let errorMessage;
+
+                try {
+                    // Intentar parsear como JSON
+                    const errorData = JSON.parse(errorText);
+                    errorMessage = errorData.message || errorText;
+                } catch {
+                    // Si no es JSON válido, usar el texto tal cual
+                    errorMessage = errorText;
+                }
+
+                throw new Error(errorMessage);
             }
 
             const nuevaCategoria = await response.json();
@@ -283,7 +301,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Listeners de categorías
     if (categorySearchInput) {
-        categorySearchInput.addEventListener('input', filtrarCategorias);
+        categorySearchInput.addEventListener('input', function () {
+            filtrarCategorias();
+            // Limpiar el campo oculto si el usuario borra el texto
+            if (categorySearchInput.value.trim() === '') {
+                categoryHiddenInput.value = '';
+            }
+        });
         categorySearchInput.addEventListener('focus', filtrarCategorias);
     }
 
@@ -321,34 +345,101 @@ document.addEventListener('DOMContentLoaded', function () {
     // ===============================
     // FUNCIÓN PARA RENDERIZAR LA TABLA
     // ===============================
+    /**
+     * Genera el HTML del badge de stock según el estado
+     */
+    function getStockBadge(stockActual, estadoStock) {
+        let badgeClass = '';
+
+        switch (estadoStock) {
+            case 'BUENO':
+                badgeClass = 'good';
+                break;
+            case 'BAJO':
+                badgeClass = 'low';
+                break;
+            case 'AGOTADO':
+                badgeClass = 'empty';
+                break;
+            default:
+                badgeClass = 'good';
+        }
+
+        // Retorna solo el número con el badge de color, sin texto ni icono
+        return `<span class="stock-badge ${badgeClass}">${stockActual}</span>`;
+    }
+
+    /**
+     * Renderiza la tabla de productos con información de inventario
+     */
     function renderProductTable(products) {
         if (!productTableBody) return;
 
         productTableBody.innerHTML = '';
         if (products.length === 0) {
-            productTableBody.innerHTML = '<tr><td colspan="6">No hay productos registrados.</td></tr>';
+            productTableBody.innerHTML = '<tr><td colspan="5">No hay productos registrados.</td></tr>';
             return;
         }
 
         products.forEach(product => {
-            let fechaFormateada = "N/A";
-            if (product.fechaCreacion) {
-                const parts = product.fechaCreacion.split('-');
-                fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
-            }
+            const stockBadge = getStockBadge(product.stockActual, product.estadoStock);
 
-            // NOTA: Se asume que el backend devuelve stockMinimo y stockMaximo correctamente en ProductoResponseDTO
             const row = `
                 <tr>
                     <td>${product.nombre || 'N/A'}</td>
                     <td>${product.categoria || 'N/A'}</td>
                     <td>${product.descripcion || 'N/A'}</td>
-                    <td>${fechaFormateada}</td>
-                    <td>${product.stockMinimo}</td>
-                    <td>${product.stockMaximo}</td>
+                    <td>${stockBadge}</td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-action view" title="Ver detalles" data-id="${product.idProducto}">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn-action edit" title="Editar" data-id="${product.idProducto}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn-action delete" title="Eliminar" data-id="${product.idProducto}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
                 </tr>
             `;
             productTableBody.innerHTML += row;
+        });
+
+        // Agregar event listeners para los botones de acción
+        attachActionListeners();
+    }
+
+    /**
+     * Adjunta event listeners a los botones de acción
+     */
+    function attachActionListeners() {
+        // Botones "Ver detalles"
+        document.querySelectorAll('.btn-action.view').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.currentTarget.getAttribute('data-id');
+                openDetailModal(productId);
+            });
+        });
+
+        // Botones "Editar" (reutilizar lógica existente si existe)
+        document.querySelectorAll('.btn-action.edit').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.currentTarget.getAttribute('data-id');
+                // TODO: Implementar edición (puede usar modal existente)
+                console.log('Editar producto:', productId);
+            });
+        });
+
+        // Botones "Eliminar" (reutilizar lógica existente si existe)
+        document.querySelectorAll('.btn-action.delete').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const productId = e.currentTarget.getAttribute('data-id');
+                // TODO: Implementar confirmación y eliminación
+                console.log('Eliminar producto:', productId);
+            });
         });
     }
 
@@ -378,7 +469,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!descripcion) { descriptionError.textContent = 'Complete este campo'; isValid = false; }
             if (isNaN(stockMinimo) || stockMinimo < 0) { stockMinError.textContent = 'Debe ser un número positivo.'; isValid = false; }
             if (isNaN(stockMaximo) || stockMaximo <= 0) { stockMaxError.textContent = 'Debe ser un número mayor a 0.'; isValid = false; }
-            if (isValid && stockMinimo >= stockMaximo) { stockMaxError.textContent = 'El máx. debe ser mayor que el mín.'; isValid = false; }
+            // Validar relación entre stock mínimo y máximo (solo si ambos son números válidos)
+            if (!isNaN(stockMinimo) && !isNaN(stockMaximo) && stockMinimo >= stockMaximo) {
+                stockMaxError.textContent = 'El máx. debe ser mayor que el mín.';
+                isValid = false;
+            }
             if (!isValid) { generalMessage.textContent = "Complete los campos."; generalMessage.classList.add('error'); return; }
 
             // 4. Construir DTO
@@ -412,8 +507,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 currentPage = 0;
                 loadProducts();
 
-                // Volver a la vista de lista
-                showSubsection('productos-list');
+                // El usuario se queda en el formulario para seguir creando productos
+                // El mensaje desaparece automáticamente después de 4 segundos
+                setTimeout(() => {
+                    generalMessage.textContent = '';
+                    generalMessage.classList.remove('success');
+                }, 4000);
 
                 document.dispatchEvent(new Event('productosActualizados'));
 
@@ -479,6 +578,157 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Exponer globalmente para ser llamado desde admin.js
     window.showProductSubsection = showSubsection;
+
+    // ===============================
+    // MODAL DE DETALLES
+    // ===============================
+    const detailModal = document.getElementById('product-detail-modal');
+    const detailCloseBtn = document.getElementById('product-detail-close');
+    const detailCloseBtnFooter = document.getElementById('product-detail-close-btn');
+
+    /**
+     * Abre el modal y carga los detalles del producto
+     */
+    async function openDetailModal(productId) {
+        try {
+            // Cargar datos del producto desde el endpoint de inventario
+            const response = await fetch(`${API_PRODUCTOS_URL}/inventario?page=0&size=1000`);
+            if (!response.ok) throw new Error('Error al cargar datos del producto');
+
+            const pageData = await response.json();
+            const product = pageData.content.find(p => p.idProducto == productId);
+
+            if (!product) {
+                alert('Producto no encontrado');
+                return;
+            }
+
+            // Llenar el modal con los datos
+            document.getElementById('detail-nombre').textContent = product.nombre || 'N/A';
+            document.getElementById('detail-categoria').textContent = product.categoria || 'N/A';
+            document.getElementById('detail-descripcion').textContent = product.descripcion || 'N/A';
+            document.getElementById('detail-precio').textContent = product.precio > 0 ? `$${product.precio.toFixed(2)}` : 'No establecido';
+
+            // Fecha formateada
+            let fechaFormateada = "N/A";
+            if (product.fechaCreacion) {
+                const parts = product.fechaCreacion.split('-');
+                fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            document.getElementById('detail-fecha').textContent = fechaFormateada;
+
+            // Información de stock
+            document.getElementById('detail-stock-actual').textContent = product.stockActual;
+            document.getElementById('detail-stock-min').textContent = product.stockMinimo;
+            document.getElementById('detail-stock-max').textContent = product.stockMaximo;
+
+            // Badge de estado
+            const estadoBadge = getStockBadge(product.stockActual, product.estadoStock);
+            document.getElementById('detail-stock-estado').innerHTML = estadoBadge;
+
+            // Guardar el ID para el botón de editar
+            document.getElementById('product-detail-edit').setAttribute('data-id', productId);
+
+            // Mostrar modal
+            detailModal.style.display = 'flex';
+        } catch (error) {
+            console.error('Error al abrir modal de detalles:', error);
+            alert('Error al cargar los detalles del producto');
+        }
+    }
+
+    /**
+     * Cierra el modal de detalles
+     */
+    function closeDetailModal() {
+        detailModal.style.display = 'none';
+    }
+
+    // Event listeners del modal
+    if (detailCloseBtn) {
+        detailCloseBtn.addEventListener('click', closeDetailModal);
+    }
+    if (detailCloseBtnFooter) {
+        detailCloseBtnFooter.addEventListener('click', closeDetailModal);
+    }
+
+    // Cerrar modal al hacer clic fuera
+    if (detailModal) {
+        detailModal.addEventListener('click', (e) => {
+            if (e.target === detailModal) {
+                closeDetailModal();
+            }
+        });
+    }
+
+    // Botón editar en el modal
+    const editBtn = document.getElementById('product-detail-edit');
+    if (editBtn) {
+        editBtn.addEventListener('click', () => {
+            const productId = editBtn.getAttribute('data-id');
+            closeDetailModal();
+            // TODO: Abrir modal de edición
+            console.log('Editar producto desde modal:', productId);
+        });
+    }
+
+    // ===============================
+    // FILTROS DE STOCK
+    // ===============================
+    let currentFilter = 'all'; // Filtro activo
+    let allProducts = []; // Cache de todos los productos
+
+    /**
+     * Aplica filtro de stock
+     */
+    async function applyStockFilter(filter) {
+        currentFilter = filter;
+
+        try {
+            // Cargar TODOS los productos (sin paginación para filtros)
+            const response = await fetch(`${API_PRODUCTOS_URL}/inventario?page=0&size=1000`);
+            if (!response.ok) throw new Error('Error al cargar productos');
+
+            const pageData = await response.json();
+            allProducts = pageData.content;
+
+            // Filtrar según el criterio
+            let filteredProducts = allProducts;
+
+            switch (filter) {
+                case 'low':
+                    filteredProducts = allProducts.filter(p => p.estadoStock === 'BAJO');
+                    break;
+                case 'empty':
+                    filteredProducts = allProducts.filter(p => p.estadoStock === 'AGOTADO');
+                    break;
+                case 'all':
+                default:
+                    filteredProducts = allProducts;
+            }
+
+            // Renderizar productos filtrados
+            renderProductTable(filteredProducts);
+
+            // Actualizar botones activos
+            document.querySelectorAll('.btn-filter').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.btn-filter[data-filter="${filter}"]`).classList.add('active');
+
+        } catch (error) {
+            console.error('Error al aplicar filtro:', error);
+            productTableBody.innerHTML = `<tr><td colspan="5">Error al filtrar productos.</td></tr>`;
+        }
+    }
+
+    // Event listeners para filtros
+    document.querySelectorAll('.btn-filter').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const filter = btn.getAttribute('data-filter');
+            applyStockFilter(filter);
+        });
+    });
 
     // ===============================
     // LISTENERS Y EJECUCIÓN INICIAL

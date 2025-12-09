@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
+import com.gestioninventariodemo2.cruddemo2.DTO.ProductoInventarioDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoSelectDTO;
@@ -29,64 +29,71 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ProductoController {
 
-
     private final ProductoService productoService;
 
-
     @PostMapping
-    public ResponseEntity<Producto> crearProducto(@RequestBody ProductoRequestDTO dto){
+    public ResponseEntity<Producto> crearProducto(@RequestBody ProductoRequestDTO dto) {
         Producto nuevo = productoService.crearProducto(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);
     }
 
     @GetMapping
-    public ResponseEntity<Page<ProductoResponseDTO>> listarProductos(Pageable pageable){ // Spring inyecta Pageable
+    public ResponseEntity<Page<ProductoResponseDTO>> listarProductos(Pageable pageable) { // Spring inyecta Pageable
         Page<ProductoResponseDTO> productos = productoService.listarProductos(pageable);
         return ResponseEntity.ok(productos); // Devuelve el objeto Page
     }
 
+    /**
+     * Endpoint para la gestión de inventario.
+     * Devuelve productos con información de stock combinada.
+     */
+    @GetMapping("/inventario")
+    public ResponseEntity<Page<ProductoInventarioDTO>> listarInventario(Pageable pageable) {
+        Page<ProductoInventarioDTO> inventario = productoService.listarInventario(pageable);
+        return ResponseEntity.ok(inventario);
+    }
+
     @GetMapping("/select")
-    public ResponseEntity<List<ProductoSelectDTO>> listarProductosSelect(){
+    public ResponseEntity<List<ProductoSelectDTO>> listarProductosSelect() {
         List<ProductoSelectDTO> productos = productoService.listarProductosSelect();
         return ResponseEntity.ok(productos);
     }
 
     @GetMapping("/por-proveedor/{idProveedor}")
-    public ResponseEntity<List<ProductoSelectDTO>> listarProductosPorProveedor(@PathVariable Long idProveedor){
+    public ResponseEntity<List<ProductoSelectDTO>> listarProductosPorProveedor(@PathVariable Long idProveedor) {
         List<ProductoSelectDTO> productos = productoService.listarProductosSelectPorProveedor(idProveedor);
         return ResponseEntity.ok(productos);
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<String> eliminarProducto(@PathVariable Long id) { // <-- Cambiado a ResponseEntity<String>
+        try {
+            // 1. Intentamos ejecutar el borrado
+            productoService.eliminarProducto(id);
 
+            // 2. Si NO lanzó excepción, fue un BORRADO FÍSICO exitoso
+            // Devolvemos 204 No Content (sin cuerpo)
+            return ResponseEntity.noContent().build();
 
-   @DeleteMapping("/{id}")
-public ResponseEntity<String> eliminarProducto(@PathVariable Long id) { // <-- Cambiado a ResponseEntity<String>
-    try {
-        // 1. Intentamos ejecutar el borrado
-        productoService.eliminarProducto(id);
-        
-        // 2. Si NO lanzó excepción, fue un BORRADO FÍSICO exitoso
-        // Devolvemos 204 No Content (sin cuerpo)
-        return ResponseEntity.noContent().build(); 
+        } catch (IllegalArgumentException ex) {
+            // 3. ¡ES UN BORRADO LÓGICO EXITOSO!
+            // Capturamos la excepción que nosotros mismos lanzamos
+            if (ex.getMessage().contains("INACTIVO")) {
+                // Devolvemos 200 OK con el mensaje de éxito
+                return ResponseEntity.ok(ex.getMessage());
+            } else {
+                // Es un error de validación diferente
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+            }
 
-    } catch (IllegalArgumentException ex) {
-        // 3. ¡ES UN BORRADO LÓGICO EXITOSO!
-        // Capturamos la excepción que nosotros mismos lanzamos
-        if (ex.getMessage().contains("INACTIVO")) {
-            // Devolvemos 200 OK con el mensaje de éxito
-            return ResponseEntity.ok(ex.getMessage()); 
-        } else {
-            // Es un error de validación diferente
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+        } catch (EntityNotFoundException ex) {
+            // 4. Si el producto no existía (desde el findById)
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+
+        } catch (Exception ex) {
+            // 5. Cualquier otro error 500 inesperado
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error inesperado en el servidor: " + ex.getMessage());
         }
-        
-    } catch (EntityNotFoundException ex) {
-        // 4. Si el producto no existía (desde el findById)
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-        
-    } catch (Exception ex) {
-        // 5. Cualquier otro error 500 inesperado
-        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error inesperado en el servidor: " + ex.getMessage());
     }
-}
 }

@@ -33,7 +33,9 @@ public class CategoriaService {
 
         String nombreNormalizado = dto.getNombre().trim();
 
-        if (categoriaRepository.existsByNombre(nombreNormalizado)) {
+        // Validación case-insensitive e ignora acentos: "Lápices" == "Lapices" ==
+        // "lapices"
+        if (categoriaRepository.existsByNombreIgnoreCaseAndAccents(nombreNormalizado)) {
             throw new IllegalArgumentException("Ya existe una categoría con el nombre: " + nombreNormalizado);
         }
 
@@ -91,9 +93,10 @@ public class CategoriaService {
         Categoria categoria = obtenerPorId(id);
         String nombreNormalizado = dto.getNombre().trim();
 
-        // Verificar que no exista otra categoría con el mismo nombre
+        // Verificar que no exista otra categoría con el mismo nombre (case-insensitive
+        // e ignora acentos)
         if (!categoria.getNombre().equalsIgnoreCase(nombreNormalizado)
-                && categoriaRepository.existsByNombre(nombreNormalizado)) {
+                && categoriaRepository.existsByNombreIgnoreCaseAndAccents(nombreNormalizado)) {
             throw new IllegalArgumentException("Ya existe una categoría con el nombre: " + nombreNormalizado);
         }
 
