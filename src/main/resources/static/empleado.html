@@ -8,6 +8,13 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/dashboard-informes.css">
+    <style>
+        /* Ocultar botones de editar y eliminar en productos para empleados */
+        #productos-section .btn-action.edit,
+        #productos-section .btn-action.delete {
+            display: none !important;
+        }
+    </style>
 </head>
 
 <body>
@@ -28,7 +35,8 @@
                         <li><a href="#" data-section="ventas" data-subsection="ventas-list">Ver Ventas</a></li>
                     </ul>
                 </li>
-                <li><a href="#" data-section="stock"><i class="fas fa-warehouse"></i> Stock</a></li>
+                <li><a href="#" data-section="productos" data-subsection="productos-list"><i
+                            class="fas fa-warehouse"></i> Gestión de Stock</a></li>
                 <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
             </ul>
         </aside>
@@ -91,7 +99,7 @@
                             </div>
                             <div class="stat-content">
                                 <h3 id="ventas-hoy-amount">$0.00</h3>
-                                <p>Ventas de Hoy</p>
+                                <p>Ingresos de Hoy</p>
                             </div>
                         </div>
                         <div class="stat-card">
@@ -120,7 +128,7 @@
             <section id="ventas-section" class="spa-section" style="display:none">
                 <div class="section-header">
                     <h2>Gestión de Ventas</h2>
-                    <p>Administra tus ventas.</p>
+                    <p>Administra las ventas del sistema.</p>
                 </div>
 
                 <!-- Subsección: Registrar Venta -->
@@ -132,20 +140,23 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="fecha-venta">Fecha</label>
-                                    <input type="date" id="fecha-venta">
+                                    <input type="date" id="fecha-venta" readonly style="cursor: not-allowed;">
                                     <div class="error-message" id="errorFechaVenta"></div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="venta-cliente-search">Buscar Cliente (Nombre, Apellido o DNI)</label>
-                                    <div class="search-with-add" style="display: flex; gap: 10px;">
+
+                                    <div class="search-with-add">
                                         <input type="text" id="venta-cliente-search" autocomplete="off"
                                             placeholder="Buscar cliente existente...">
+
                                         <button type="button" id="btn-add-cliente" class="btn-icon btn-add-quick"
-                                            style="width: auto; padding: 0 15px;" title="Crear Nuevo Cliente">
+                                            title="Crear Nuevo Cliente">
                                             <i class="fas fa-plus"></i>
                                         </button>
                                     </div>
+
                                     <input type="hidden" id="venta-cliente-id-hidden">
                                     <div class="product-results" id="venta-cliente-results"></div>
                                     <span class="error-message" id="errorVentaCliente"></span>
@@ -186,7 +197,7 @@
                                                 <th>Cantidad</th>
                                                 <th>Precio Unit.</th>
                                                 <th>Subtotal</th>
-                                                <th>Quitar</th>
+                                                <th>Acciones</th>
                                             </tr>
                                         </thead>
                                         <tbody id="venta-detalle-temporal">
@@ -195,24 +206,100 @@
                                 </div>
                             </div>
 
-                            <div class="total-section">
+                            <div class="total-section" style="text-align: right;">
                                 <h4 id="total-venta">$ Total: $0.00</h4>
                             </div>
 
-                            <button type="submit" class="btn-primary" id="btn-registrar-venta">
-                                <i class="fas fa-plus"></i>
-                                Registrar Venta
-                            </button>
+                            <!-- Sección: Método de Pago -->
+                            <div class="payment-section"
+                                style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
+                                <h5 style="margin-bottom: 15px; color: #333;">
+                                    <i class="fas fa-credit-card"></i> Método de Pago
+                                </h5>
+
+                                <div class="form-group">
+                                    <label for="metodo-pago">Seleccionar Método *</label>
+                                    <select id="metodo-pago" class="form-control">
+                                        <option value="">-- Seleccione un método --</option>
+                                    </select>
+                                    <div class="error-message" id="errorMetodoPago"></div>
+                                </div>
+
+                                <!-- Campo para Tipo de Tarjeta (solo visible si selecciona Tarjeta) -->
+                                <div id="campos-tipo-tarjeta" style="display: none; margin-top: 15px;">
+                                    <div class="form-group">
+                                        <label for="tipo-tarjeta">Tipo de Tarjeta *</label>
+                                        <select id="tipo-tarjeta" class="form-control">
+                                            <option value="">-- Seleccione --</option>
+                                            <option value="Débito">Débito</option>
+                                            <option value="Crédito">Crédito</option>
+                                        </select>
+                                        <div class="error-message" id="errorTipoTarjeta"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="text-align: right;">
+                                <button type="submit" class="btn-primary" id="btn-registrar-venta">
+                                    <i class="fas fa-plus"></i>
+                                    Registrar Venta
+                                </button>
+                            </div>
                         </form>
                         <p id="form-general-message-venta" class="form-message"></p>
                     </div>
                 </div>
 
-                <!-- Subsección: Ver Ventas -->
                 <div id="ventas-list-container" class="subsection-container">
                     <div class="table-section">
                         <h4>Ventas Registradas</h4>
                         <p>Historial de ventas realizadas</p>
+
+                        <!-- Búsqueda y Filtros -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <!-- Búsqueda -->
+                                <div style="flex: 1; min-width: 300px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search"
+                                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                        <input type="text" placeholder="Buscar por cliente, producto o vendedor..."
+                                            id="ventas-search-input"
+                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                    </div>
+                                </div>
+
+                                <!-- Separador visual -->
+                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+
+                                <!-- Filtros de Fecha -->
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-calendar" style="color: #666;"></i>
+                                    <input type="date" id="ventas-fecha-inicio"
+                                        style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
+                                    <span style="color: #666;">→</span>
+                                    <input type="date" id="ventas-fecha-fin"
+                                        style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
+                                </div>
+
+                                <!-- Separador visual -->
+                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="button" class="btn-primary" id="ventas-btn-filtrar"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-search"></i> Buscar
+                                    </button>
+                                    <button type="button" class="btn-outline" id="ventas-btn-limpiar-filtro"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Mensaje de error para filtros -->
+                            <div id="ventas-filtro-error" class="error-message"
+                                style="margin-top: 10px; display: none;"></div>
+                        </div>
                         <div class="table-container-venta">
                             <table class="data-table" id="tabla-ventas">
                                 <thead>
@@ -224,6 +311,9 @@
                                         <th>Producto</th>
                                         <th data-sort-by="total" class="sortable">Total <i
                                                 class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="vendedor.nombre" class="sortable">Vendedor <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="tabla-ventas-body">
@@ -242,10 +332,79 @@
                     </div>
                 </div>
 
-                <!-- Modal de Creación Rápida de Clientes -->
+                <!-- Modal: Detalle de Venta -->
+                <div id="venta-detail-modal" class="modal">
+                    <div class="modal-content modal-large">
+                        <span class="close-modal" onclick="cerrarModalDetalleVenta()">&times;</span>
+                        <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                            <i class="fas fa-shopping-cart"></i> Detalle de Venta <span id="modal-venta-id"
+                                style="color: #666; font-weight: 400; font-size: 18px;"></span>
+                        </h3>
+
+                        <div class="venta-detail-info" style="margin-bottom: 20px;">
+                            <div class="info-grid"
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                                <div class="info-item">
+                                    <strong style="color: #666; font-size: 13px;">Fecha:</strong>
+                                    <p id="modal-venta-fecha" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                                </div>
+                                <div class="info-item">
+                                    <strong style="color: #666; font-size: 13px;">Cliente:</strong>
+                                    <p id="modal-venta-cliente" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                                </div>
+                                <div class="info-item">
+                                    <strong style="color: #666; font-size: 13px;">Vendedor:</strong>
+                                    <p id="modal-venta-vendedor" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                                </div>
+                                <div class="info-item">
+                                    <strong style="color: #666; font-size: 13px;">Total:</strong>
+                                    <p id="modal-venta-total"
+                                        style="margin: 5px 0 0 0; font-size: 15px; font-weight: 600; color: #28a745;">
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4 style="margin-bottom: 15px; color: #333; font-size: 16px;">Productos Vendidos</h4>
+                        <div class="table-container">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Producto</th>
+                                        <th>Cantidad</th>
+                                        <th>Precio Unitario</th>
+                                        <th>Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modal-venta-productos">
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4">
+                                            <div class="pagination-controls"
+                                                style="text-align: right; padding: 10px 0;">
+                                                <span id="modal-venta-page-info" style="margin-right: 15px;">Página 1 de
+                                                    1</span>
+                                                <button class="btn-outline" id="modal-venta-prev-page"
+                                                    onclick="modalVentaPrevPage()" disabled>
+                                                    <i class="fas fa-arrow-left"></i>
+                                                </button>
+                                                <button class="btn-outline" id="modal-venta-next-page"
+                                                    onclick="modalVentaNextPage()" disabled>
+                                                    <i class="fas fa-arrow-right"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
                 <div id="modal-add-cliente-overlay" class="modal">
-                    <div class="modal-content">
-                        <button id="modal-add-cliente-close" class="modal-close">&times;</button>
+                    <div class="modal-content modal-content-wide"> <button id="modal-add-cliente-close"
+                            class="modal-close">&times;</button>
 
                         <header class="modal-header">
                             <h2>Crear Nuevo Cliente</h2>
@@ -255,26 +414,46 @@
 
                             <div class="form-message" id="form-general-message-add-cliente"></div>
 
-                            <div class="form-group">
-                                <label for="addClienteNombre">Nombre <span class="required">*</span></label>
-                                <input type="text" id="addClienteNombre" required>
-                                <span class="error-message" id="errorAddClienteNombre"></span>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="addClienteNombre">Nombre</label>
+                                    <input type="text" id="addClienteNombre">
+                                    <span class="error-message" id="errorAddClienteNombre"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="addClienteApellido">Apellido</label>
+                                    <input type="text" id="addClienteApellido">
+                                    <span class="error-message" id="errorAddClienteApellido"></span>
+                                </div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="addClienteApellido">Apellido</label>
-                                <input type="text" id="addClienteApellido">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="addClienteDNI">DNI</label>
+                                    <input type="text" id="addClienteDNI">
+                                    <span class="error-message" id="errorAddClienteDNI"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="addClienteTelefono">Teléfono</label>
+                                    <input type="tel" id="addClienteTelefono">
+                                    <span class="error-message" id="errorAddClienteTelefono"></span>
+                                </div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="addClienteDNI">DNI <span class="required">*</span></label>
-                                <input type="text" id="addClienteDNI" required>
-                                <span class="error-message" id="errorAddClienteDNI"></span>
-                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="addClienteDireccion">Dirección</label>
+                                    <input type="text" id="addClienteDireccion" placeholder="Calle, número, ciudad">
+                                    <span class="error-message" id="errorAddClienteDireccion"></span>
+                                </div>
 
-                            <div class="form-group">
-                                <label for="addClienteTelefono">Teléfono</label>
-                                <input type="tel" id="addClienteTelefono">
+                                <div class="form-group">
+                                    <label for="addClienteEmail">Email</label>
+                                    <input type="email" id="addClienteEmail" placeholder="ejemplo@mail.com">
+                                    <span class="error-message" id="errorAddClienteEmail"></span>
+                                </div>
                             </div>
 
                             <div class="modal-footer">
@@ -286,54 +465,356 @@
 
             </section>
 
-            <section id="stock-section" class="spa-section" style="display:none">
-
+            <section id="productos-section" class="spa-section" style="display:none">
                 <div class="section-header">
-                    <h3>Gestión de Stock</h3>
-                    <p>Consultá el inventario de tus productos.</p>
+                    <h2>Gestión de Stock</h2>
+                    <p>Consulta y gestiona el inventario de productos.</p>
                 </div>
 
-                <div class="search-section">
-                    <div class="search-box">
-                        <i class="fas fa-search"></i>
-                        <input type="text" placeholder="Buscar productos por nombre..." id="stock-search-input">
+
+
+                <!-- Subsección: Crear Producto -->
+                <div id="productos-create-container" class="subsection-container" style="display: none;">
+                    <div class="form-section">
+                        <h4>Registrar Nuevo Producto</h4>
+                        <form id="product-form" class="product-form" novalidate>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="product-name">Nombre del Producto</label>
+                                    <input type="text" id="product-name" name="nombre"
+                                        placeholder="Ingrese el nombre del producto">
+                                    <div class="error-message" id="name-error"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="product-category-search">Categoría</label>
+                                    <div class="search-with-add">
+                                        <input type="text" id="product-category-search" autocomplete="off"
+                                            placeholder="Buscar categoría...">
+                                        <button type="button" id="btn-add-categoria" class="btn-icon btn-add-quick"
+                                            title="Crear Nueva Categoría">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <input type="hidden" id="product-category-id-hidden">
+                                    <div class="product-results" id="product-category-results"></div>
+                                    <div class="error-message" id="category-error"></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="product-description">Descripción</label>
+                                <textarea id="product-description" name="descripcion"
+                                    placeholder="Descripción del producto"></textarea>
+                                <div class="error-message" id="description-error"></div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="product-stock-min">Stock Mínimo</label>
+                                    <input type="number" id="product-stock-min" value="5">
+                                    <div class="error-message" id="stock-min-error"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="product-stock-max">Stock Máximo</label>
+                                    <input type="number" id="product-stock-max" value="100">
+                                    <div class="error-message" id="stock-max-error"></div>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                                <i class="fas fa-plus"></i>
+                                Registrar Producto
+                            </button>
+                        </form>
+                        <p id="form-general-message-producto" class="form-message"></p>
                     </div>
                 </div>
 
-                <div class="table-section">
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th data-sort-by="nombre">Nombre <i class="sort-icon fas fa-sort"></i></th>
-                                    <th data-sort-by="categoria">Categoría <i class="sort-icon fas fa-sort"></i></th>
-                                    <th>Descripción</th>
-                                    <th data-sort-by="precio">Precio <i class="sort-icon fas fa-sort"></i></th>
-                                    <th data-sort-by="stock">Stock <i class="sort-icon fas fa-sort"></i></th>
-                                </tr>
-                            </thead>
+                <!-- Subsección: Ver Productos (ahora Gestión de Inventario) -->
+                <div id="productos-list-container" class="subsection-container">
+                    <div class="table-section">
 
-                            <tbody id="stock-table-body">
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="5">
-                                        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                                            <span id="page-info" style="margin-right: 15px;">Página 1 de 1</span>
-                                            <button class="btn-outline" id="prev-page" disabled>
-                                                <i class="fas fa-arrow-left"></i>
-                                            </button>
-                                            <button class="btn-outline" id="next-page">
-                                                <i class="fas fa-arrow-right"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
+
+                        <!-- Búsqueda de Productos -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <!-- Búsqueda -->
+                                <div style="flex: 1; min-width: 300px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search"
+                                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                        <input type="text" placeholder="Buscar por nombre, categoría o descripción..."
+                                            id="product-search-input"
+                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                    </div>
+                                </div>
+
+                                <!-- Botón Limpiar -->
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="button" class="btn-outline" id="product-btn-limpiar-busqueda"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Mensaje de error para búsqueda -->
+                            <div id="product-search-error" class="error-message"
+                                style="margin-top: 10px; display: none;"></div>
+                        </div>
+
+                        <div class="table-container-product">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th data-sort-by="nombre" class="sortable">Nombre <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="categoria" class="sortable">Categoría <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="descripcion" class="sortable">Descripción <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="stock" class="sortable">Stock <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="product-table-body">
+
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="pagination-controls">
+                        </div>
+                        <tfoot>
+                            <tr>
+                                <td colspan="5">
+                                    <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                        <span id="product-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                        <button class="btn-outline" id="product-prev-page" disabled>
+                                            <i class="fas fa-arrow-left"></i>
+                                        </button>
+                                        <button class="btn-outline" id="product-next-page">
+                                            <i class="fas fa-arrow-right"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tfoot>
                     </div>
                 </div>
             </section>
+
+            <!-- Modal de Detalles del Producto -->
+            <div id="product-detail-modal" class="modal-overlay" style="display: none;">
+                <div class="modal-content modal-large">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-box"></i> Detalle del Producto</h3>
+                        <button class="modal-close" id="product-detail-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Información Básica -->
+                        <div class="detail-section">
+                            <h4><i class="fas fa-info-circle"></i> Información Básica</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <label>Nombre:</label>
+                                    <span id="detail-nombre"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Categoría:</label>
+                                    <span id="detail-categoria"></span>
+                                </div>
+                                <div class="detail-item full-width">
+                                    <label>Descripción:</label>
+                                    <span id="detail-descripcion"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información Comercial -->
+                        <div class="detail-section">
+                            <h4><i class="fas fa-dollar-sign"></i> Información Comercial</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <label>Precio de Venta:</label>
+                                    <span id="detail-precio" class="price-highlight"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Fecha de Creación:</label>
+                                    <span id="detail-fecha"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Gestión de Stock -->
+                        <div class="detail-section">
+                            <h4><i class="fas fa-warehouse"></i> Gestión de Stock</h4>
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <label>Stock Actual:</label>
+                                    <span id="detail-stock-actual" class="stock-highlight"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Stock Mínimo:</label>
+                                    <span id="detail-stock-min"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Stock Máximo:</label>
+                                    <span id="detail-stock-max"></span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Estado:</label>
+                                    <span id="detail-stock-estado"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-outline" id="product-detail-close-btn">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Edición del Producto -->
+            <div id="product-edit-modal" class="modal-overlay" style="display: none;">
+                <div class="modal-content modal-large">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-edit"></i> Editar Producto</h3>
+                        <button class="modal-close" id="product-edit-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="product-edit-form" novalidate>
+                            <input type="hidden" id="edit-product-id">
+
+                            <div class="form-group">
+                                <label for="edit-product-name">Nombre del Producto *</label>
+                                <input type="text" id="edit-product-name" placeholder="Nombre del producto">
+                                <div class="error-message" id="edit-name-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-product-category-search">Categoría *</label>
+                                <input type="text" id="edit-product-category-search" placeholder="Buscar categoría..."
+                                    autocomplete="off">
+                                <input type="hidden" id="edit-product-category-id-hidden">
+                                <div id="edit-product-category-results" class="product-results" style="display: none;">
+                                </div>
+                                <div class="error-message" id="edit-category-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-product-description">Descripción *</label>
+                                <textarea id="edit-product-description" rows="3"
+                                    placeholder="Descripción del producto"></textarea>
+                                <div class="error-message" id="edit-description-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-product-price">Precio de Venta *</label>
+                                <input type="number" id="edit-product-price" placeholder="0.00" step="0.01" min="0">
+                                <div class="error-message" id="edit-price-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-product-stock-min">Stock Mínimo *</label>
+                                <input type="number" id="edit-product-stock-min" placeholder="0" min="0">
+                                <div class="error-message" id="edit-stock-min-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-product-stock-max">Stock Máximo *</label>
+                                <input type="number" id="edit-product-stock-max" placeholder="0" min="0">
+                                <div class="error-message" id="edit-stock-max-error"></div>
+                            </div>
+
+                            <div id="edit-form-message" class="form-message"></div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-primary" id="product-edit-save">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                        <button type="button" class="btn-outline" id="product-edit-cancel">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal: Agregar Categoría Rápida -->
+            <div class="modal-overlay" id="modal-add-categoria-overlay" style="display: none;">
+                <div class="modal-content" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-plus-circle"></i> Nueva Categoría</h3>
+                        <button class="modal-close" id="modal-add-categoria-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="modal-body" style="padding: 25px;">
+                        <form id="add-categoria-form">
+                            <div class="form-group">
+                                <label for="addCategoriaNombre">Nombre de la Categoría *</label>
+                                <input type="text" id="addCategoriaNombre"
+                                    placeholder="Ej: Electrónica, Ropa, Alimentos..." style="padding: 12px;">
+                                <div class="error-message" id="errorAddCategoriaNombre"></div>
+                            </div>
+
+                            <p id="form-general-message-add-categoria" class="form-message"></p>
+                        </form>
+                    </div>
+
+                    <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
+                        <button type="button" class="btn-outline"
+                            onclick="document.getElementById('modal-add-categoria-overlay').style.display='none'">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary" form="add-categoria-form">
+                            <i class="fas fa-check"></i> Crear Categoría
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Confirmación de Eliminación -->
+            <div id="product-delete-modal" class="modal-overlay" style="display: none;">
+                <div class="modal-content" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i> Confirmar Eliminación
+                        </h3>
+                        <button class="modal-close" id="product-delete-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="delete-product-id">
+                        <p style="font-size: 16px; margin-bottom: 15px;">
+                            ¿Estás seguro de que deseas eliminar el siguiente producto?
+                        </p>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                            <strong id="delete-product-name" style="font-size: 18px; color: #2c3e50;"></strong>
+                        </div>
+                        <p style="color: #e74c3c; font-weight: bold; margin-bottom: 10px;">
+                            <i class="fas fa-exclamation-circle"></i> Esta acción no se puede deshacer
+                        </p>
+                        <div id="delete-form-message" class="form-message"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-primary" id="product-delete-confirm"
+                            style="background-color: #e74c3c;">
+                            <i class="fas fa-trash"></i> Sí, Eliminar
+                        </button>
+                        <button type="button" class="btn-outline" id="product-delete-cancel">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
 
         </main>
     </div>
@@ -366,7 +847,8 @@
     <script src="js/empleado.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/principal.js"></script>
-    <script src="js/ventasEmpleado.js"></script>
+    <script src="js/ventas.js"></script>
+    <script src="js/productos.js"></script>
     <script src="js/stock.js"></script>
 
 </body>

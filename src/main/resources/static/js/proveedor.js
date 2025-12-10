@@ -189,13 +189,13 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>${productosDisplay}</td>
                     <td>${proveedor.direccion || 'N/A'}</td>
                     <td>
-                        <button class="btn-icon btn-view-proveedor" data-id="${proveedor.id}" title="Ver detalles">
+                        <button class="btn-action view" data-id="${proveedor.id}" title="Ver detalles">
                             <i class="fas fa-eye"></i>
                         </button>
-                        <button class="btn-icon btn-edit-proveedor" data-id="${proveedor.id}" title="Editar">
+                        <button class="btn-action edit" data-id="${proveedor.id}" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn-icon btn-delete-proveedor" data-id="${proveedor.id}" title="Eliminar">
+                        <button class="btn-action delete" data-id="${proveedor.id}" title="Eliminar">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -576,9 +576,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (proveedorTabla) {
         proveedorTabla.addEventListener('click', async function (e) {
-            const viewButton = e.target.closest('.btn-view-proveedor');
-            const editButton = e.target.closest('.btn-edit-proveedor');
-            const deleteButton = e.target.closest('.btn-delete-proveedor');
+            const viewButton = e.target.closest('.btn-action.view');
+            const editButton = e.target.closest('.btn-action.edit');
+            const deleteButton = e.target.closest('.btn-action.delete');
 
             // Botón Ver Detalles
             if (viewButton) {

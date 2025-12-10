@@ -190,10 +190,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>${user.email || 'N/A'}</td>
                     <td>${user.descripcionRol || 'Sin Rol'}</td>
                     <td>
-                        <button class="btn-icon btn-edit-usuario" data-id="${user.id}" title="Editar">
+                        <button class="btn-action edit" data-id="${user.id}" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button class="btn-icon btn-delete-usuario" data-id="${user.id}" data-nombre="${user.nombre}" title="Eliminar">
+                        <button class="btn-action delete" data-id="${user.id}" data-nombre="${user.nombre}" title="Eliminar">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -557,8 +557,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Clics en botones de la tabla ---
     if (userTableBody) {
         userTableBody.addEventListener('click', async function (e) {
-            const editButton = e.target.closest('.btn-edit-usuario');
-            const deleteButton = e.target.closest('.btn-delete-usuario');
+            const editButton = e.target.closest('.btn-action.edit');
+            const deleteButton = e.target.closest('.btn-action.delete');
 
             // --- Clic en EDITAR ---
             if (editButton) {

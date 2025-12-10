@@ -100,18 +100,26 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadProducts() {
         if (!productTableBody || !mainContent) return;
 
-        // 1. GUARDAR scroll y preparar animación (Fade Out)
+        // 1. GUARDAR scroll, elemento activo y preparar animación (Fade Out)
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+        const activeElement = document.activeElement; // Guardar elemento con foco
         productTableBody.classList.add('loading');
 
         // Esperar fade-out
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
-            // 2. Añadir parámetros de ordenamiento
+            // 2. Añadir parámetros de ordenamiento y búsqueda
             const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
-            // CAMBIO: Usar endpoint de inventario en lugar de productos
-            const url = `${API_PRODUCTOS_URL}/inventario?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
+
+            // Obtener término de búsqueda si existe
+            let searchParam = '';
+            if (productSearchInputElement && productSearchInputElement.value.trim() !== '') {
+                searchParam = `&search=${encodeURIComponent(productSearchInputElement.value.trim())}`;
+            }
+
+            // CAMBIO: Usar endpoint de inventario con parámetro de búsqueda
+            const url = `${API_PRODUCTOS_URL}/inventario?page=${currentPage}&size=${itemsPerPage}${sortParam}${searchParam}`;
 
             const response = await fetch(url, { cache: 'no-store' });
 
@@ -121,21 +129,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const pageData = await response.json();
             totalPages = pageData.totalPages;
-            todosLosProductos = pageData.content; // Guardar todos los productos
+            todosLosProductos = pageData.content; // Guardar productos de la página actual
 
-            // Si hay una búsqueda activa, reaplicarla con los nuevos datos
-            if (productSearchInputElement && productSearchInputElement.value.trim() !== '') {
-                const textoBusqueda = removeAccents(productSearchInputElement.value.toLowerCase().trim());
-                productosBuscados = todosLosProductos.filter(producto => {
-                    const coincideNombre = producto.nombre &&
-                        removeAccents(producto.nombre.toLowerCase()).includes(textoBusqueda);
-                    const coincideCategoria = producto.categoria &&
-                        removeAccents(producto.categoria.toLowerCase()).includes(textoBusqueda);
-                    const coincideDescripcion = producto.descripcion &&
-                        removeAccents(producto.descripcion.toLowerCase()).includes(textoBusqueda);
-                    return coincideNombre || coincideCategoria || coincideDescripcion;
-                });
-            }
+            // Ya no necesitamos filtrado local, el backend hace la búsqueda
+            productosBuscados = null;
 
             // 3. Aplicar filtros y renderizar
             const productosAMostrar = aplicarFiltros();
@@ -144,9 +141,14 @@ document.addEventListener('DOMContentLoaded', function () {
             updateSortIndicators();
 
             requestAnimationFrame(() => {
-                // Restaurar scroll y forzar foco para estabilidad
-                mainContent.focus();
+                // Restaurar scroll
                 window.scrollTo(0, scrollPosition);
+
+                // Restaurar foco si era el input de búsqueda
+                if (activeElement === productSearchInputElement && productSearchInputElement) {
+                    productSearchInputElement.focus();
+                }
+
                 // INICIAR FADE-IN
                 productTableBody.classList.remove('loading');
             });
@@ -472,8 +474,11 @@ document.addEventListener('DOMContentLoaded', function () {
      * Adjunta event listeners a los botones de acción
      */
     function attachActionListeners() {
+        // Limitar el alcance solo a la tabla de productos
+        if (!productTableBody) return;
+
         // Botones "Ver detalles"
-        document.querySelectorAll('.btn-action.view').forEach(btn => {
+        productTableBody.querySelectorAll('.btn-action.view').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const productId = e.currentTarget.getAttribute('data-id');
                 openDetailModal(productId);
@@ -481,7 +486,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Botones "Editar"
-        document.querySelectorAll('.btn-action.edit').forEach(btn => {
+        productTableBody.querySelectorAll('.btn-action.edit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const productId = e.currentTarget.getAttribute('data-id');
                 openEditModal(productId);
@@ -489,7 +494,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // Botones "Eliminar"
-        document.querySelectorAll('.btn-action.delete').forEach(btn => {
+        productTableBody.querySelectorAll('.btn-action.delete').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const productId = e.currentTarget.getAttribute('data-id');
                 const productName = e.currentTarget.getAttribute('data-name');
@@ -1091,20 +1096,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }, 150); // Delay de 150ms para la animación
     }
 
-    // Event listeners para búsqueda en tiempo real con debounce
-    if (productSearchInputElement) {
-        productSearchInputElement.addEventListener('input', () => {
-            // Cancelar búsqueda anterior si existe
-            if (searchTimeout) {
-                clearTimeout(searchTimeout);
-            }
-
-            // Esperar 200ms después de que el usuario deja de escribir
-            searchTimeout = setTimeout(() => {
-                filtrarProductosPorBusqueda();
-            }, 100);
-        });
-    }
+    // Event listeners de búsqueda eliminados (ahora están al final del archivo para evitar duplicación)
 
     if (productBtnLimpiar) {
         productBtnLimpiar.addEventListener('click', limpiarBusqueda);
@@ -1174,6 +1166,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Rehabilitar botón
                 deleteConfirmBtn.disabled = false;
                 deleteConfirmBtn.textContent = 'Aceptar';
+            }
+        });
+    }
+
+    // ==========================================================
+    // EVENT LISTENERS PARA BÚSQUEDA EN TIEMPO REAL
+    // ==========================================================
+    if (productSearchInputElement) {
+        productSearchInputElement.addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentPage = 0; // Volver a primera página al buscar
+                loadProducts();
+            }, 300); // Debounce de 300ms
+        });
+    }
+
+    if (productBtnLimpiar) {
+        productBtnLimpiar.addEventListener('click', function () {
+            if (productSearchInputElement) {
+                productSearchInputElement.value = '';
+                currentPage = 0;
+                loadProducts();
             }
         });
     }

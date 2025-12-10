@@ -144,9 +144,12 @@ public class ProductoService {
                 .stream()
                 .map(p -> {
                     int stockActual = 0;
+                    int stockMinimo = 0;
+
                     // Obtener el stock si existe
                     if (p.getStocks() != null && !p.getStocks().isEmpty()) {
                         stockActual = p.getStocks().get(0).getStockActual();
+                        stockMinimo = p.getStocks().get(0).getStockMinimo();
                     }
 
                     return ProductoSelectDTO.builder()
@@ -154,6 +157,7 @@ public class ProductoService {
                             .nombreProducto(p.getNombre())
                             .precioVenta(p.getPrecio())
                             .stockActual(stockActual)
+                            .stockMinimo(stockMinimo)
                             .build();
                 })
                 .toList();
@@ -284,6 +288,18 @@ public class ProductoService {
      */
     @Transactional(readOnly = true)
     public Page<ProductoInventarioDTO> listarInventario(Pageable pageable) {
+        return listarInventario(null, pageable);
+    }
+
+    /**
+     * Lista productos filtrados por búsqueda con su información de inventario.
+     * 
+     * @param searchTerm término de búsqueda (opcional)
+     * @param pageable   paginación y ordenamiento
+     * @return Page de ProductoInventarioDTO
+     */
+    @Transactional(readOnly = true)
+    public Page<ProductoInventarioDTO> listarInventario(String searchTerm, Pageable pageable) {
         // Detectar si se está ordenando por campos de stock
         boolean isStockSort = pageable.getSort().isSorted() &&
                 pageable.getSort().stream().anyMatch(order -> order.getProperty().toLowerCase().contains("stock"));
@@ -364,7 +380,12 @@ public class ProductoService {
 
         } else {
             // Para ordenamiento por otros campos, usar el método normal del repositorio
-            paginaProductos = productoRepository.findAllByEstado("ACTIVO", pageable);
+            // Si hay búsqueda, usar el método de búsqueda
+            if (searchTerm != null && !searchTerm.trim().isEmpty()) {
+                paginaProductos = productoRepository.searchInventario(searchTerm.trim(), pageable);
+            } else {
+                paginaProductos = productoRepository.findAllByEstado("ACTIVO", pageable);
+            }
 
             return paginaProductos.map(p -> {
                 // Valores por defecto

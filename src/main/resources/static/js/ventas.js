@@ -296,6 +296,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!email) {
             document.getElementById('errorAddClienteEmail').textContent = 'El email es obligatorio.';
             isValid = false;
+        } else {
+            // Validar formato de email
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                document.getElementById('errorAddClienteEmail').textContent = 'El formato del email no es válido.';
+                isValid = false;
+            }
         }
 
         if (!isValid) return;
@@ -435,7 +442,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
         productResultsContainer.innerHTML = productos.map(producto => {
             const stockActual = producto.stockActual || 0;
-            const stockColor = stockActual > 10 ? '#28a745' : stockActual > 0 ? '#ffc107' : '#dc3545';
+            const stockMinimo = producto.stockMinimo || 0;
+
+            // Determinar color basado en stockMinimo
+            let stockColor;
+            if (stockActual === 0) {
+                stockColor = '#dc3545'; // Rojo - agotado
+            } else if (stockActual < stockMinimo) {
+                stockColor = '#ffc107'; // Amarillo - stock bajo
+            } else {
+                stockColor = '#28a745'; // Verde - stock óptimo
+            }
+
             const stockText = stockActual > 0 ? `Stock: ${stockActual}` : 'Sin stock';
 
             return `
@@ -711,21 +729,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 generalMessage.textContent = '¡Venta registrada con éxito!';
                 generalMessage.classList.add('success');
 
+                // Resetear formulario completamente
                 ventaForm.reset();
                 detallesVenta = [];
                 editIndexVenta = -1; // Reset edit mode
                 renderDetalleTemporal();
                 clienteHiddenInput.value = '';
+
                 // Resetear cliente anterior
                 previousClienteId = null;
                 previousClienteNombre = '';
+
+                // Restablecer fecha actual
+                setFechaActual();
+
+                // Ocultar select de tipo de tarjeta
+                if (tipoTarjetaSelect && tipoTarjetaSelect.parentElement) {
+                    tipoTarjetaSelect.parentElement.style.display = 'none';
+                }
+
+                // Ocultar mensaje de éxito después de 3 segundos
+                setTimeout(() => {
+                    generalMessage.textContent = '';
+                    generalMessage.classList.remove('success');
+                }, 3000);
 
                 await new Promise(resolve => setTimeout(resolve, 250));
                 currentPageVentas = 0;
                 ventasSortField = 'fecha';
                 ventasSortDirection = 'desc';
                 loadVentas(currentPageVentas);
-                showSubsection('ventas-list'); // Redirigir a la lista
+
+                // Actualizar estadísticas del dashboard si existe la función
+                if (typeof window.loadPrincipalData === 'function') {
+                    window.loadPrincipalData();
+                }
 
             } catch (error) {
                 console.error('Error al registrar la venta:', error);
@@ -754,7 +792,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>$${formatoMoneda.format(venta.total)}</td>
                 <td>${nombreVendedorTexto}</td>
                 <td>
-                    <button class="btn-icon btn-info" onclick="mostrarDetalleVenta(${venta.idVenta})" title="Ver detalle">
+                    <button class="btn-action view" onclick="mostrarDetalleVenta(${venta.idVenta})" title="Ver detalle">
                         <i class="fas fa-eye"></i>
                     </button>
                 </td>
@@ -1288,12 +1326,27 @@ document.addEventListener('DOMContentLoaded', function () {
         ventasBtnExportarPdf.addEventListener('click', exportarVentasPdf);
     }
 
+
     // 1. Carga inicial estándar
     loadProductosParaSelect();
     loadClientesParaVenta();
     loadVentas();
     cargarTodasLasVentas(); // Cargar todas las ventas para búsqueda/filtrado
     renderDetalleTemporal();
+
+    // --- NUEVO: Establecer fechas por defecto (primer día del mes hasta hoy) ---
+    if (ventasFechaInicio && ventasFechaFin) {
+        const hoy = new Date();
+        const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
+        // Formatear fechas a YYYY-MM-DD
+        const fechaInicio = primerDiaMes.toISOString().split('T')[0];
+        const fechaFin = hoy.toISOString().split('T')[0];
+
+        ventasFechaInicio.value = fechaInicio;
+        ventasFechaFin.value = fechaFin;
+    }
+
 
     // --- NUEVO: Exponer la función para que admin.js pueda llamarla al cambiar de pestaña ---
     window.cargarDatosVentas = async function () {
@@ -1332,6 +1385,10 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Exponer la función globalmente para que pueda ser llamada desde otras partes del código
+    window.showSubsection = showSubsection;
+    window.showVentasSubsection = showSubsection;
+
     // ==========================================================
     // MÉTODOS DE PAGO
     // ==========================================================
@@ -1349,6 +1406,11 @@ document.addEventListener('DOMContentLoaded', function () {
             // Limpiar y poblar select
             metodoPagoSelect.innerHTML = '<option value="">-- Seleccione un método --</option>';
             metodos.forEach(metodo => {
+                // Filtrar Mercado Pago
+                if (metodo.nombre && metodo.nombre.toLowerCase().includes('mercado pago')) {
+                    return; // Saltar este método
+                }
+
                 const option = document.createElement('option');
                 option.value = metodo.idMetodoPago;
                 option.textContent = metodo.nombre;
@@ -1410,8 +1472,5 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Cargar métodos al iniciar
     cargarMetodosPago();
-
-    // Exponer globalmente
-    window.showVentasSubsection = showSubsection;
 
 });

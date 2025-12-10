@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoInventarioDTO;
@@ -46,10 +47,13 @@ public class ProductoController {
     /**
      * Endpoint para la gestión de inventario.
      * Devuelve productos con información de stock combinada.
+     * Acepta parámetro opcional de búsqueda.
      */
     @GetMapping("/inventario")
-    public ResponseEntity<Page<ProductoInventarioDTO>> listarInventario(Pageable pageable) {
-        Page<ProductoInventarioDTO> inventario = productoService.listarInventario(pageable);
+    public ResponseEntity<Page<ProductoInventarioDTO>> listarInventario(
+            @RequestParam(required = false) String search,
+            Pageable pageable) {
+        Page<ProductoInventarioDTO> inventario = productoService.listarInventario(search, pageable);
         return ResponseEntity.ok(inventario);
     }
 

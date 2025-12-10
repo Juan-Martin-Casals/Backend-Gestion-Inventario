@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
 import com.gestioninventariodemo2.cruddemo2.Model.Stock;
@@ -33,10 +34,16 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual >= s.stockMinimo")
     Integer countStockOptimo();
 
-    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual < s.stockMinimo AND s.stockActual > 0")
+    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual < s.stockMinimo AND s.stockActual > 0 AND s.producto.estado = 'ACTIVO'")
     Integer countStockBajo();
 
-    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual = 0")
+    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual = 0 AND s.stockMinimo > 0 AND s.producto.estado = 'ACTIVO'")
     Integer countStockAgotado();
+
+    // Query personalizada para encontrar productos donde stockActual < stockMinimo
+    // (incluye agotados pero excluye óptimos)
+    @Query("SELECT s FROM Stock s WHERE s.stockActual < s.stockMinimo AND s.producto.estado = :estado")
+    Page<Stock> findByStockActualLessThanStockMinimoAndProductoEstado(@Param("estado") String estado,
+            Pageable pageable);
 
 }

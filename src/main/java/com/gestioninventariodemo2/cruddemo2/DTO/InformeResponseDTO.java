@@ -12,8 +12,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 
-
-
 public class InformeResponseDTO {
 
     private LocalDate inicio;
@@ -22,15 +20,7 @@ public class InformeResponseDTO {
     private Long totalCantidad;
     private Double totalImporte;
     private String productoMasVendido;
-    
-
-    
-
-
-    
-    
-
-
-
+    private Integer cantidadVentas; // Cantidad de ventas realizadas
+    private Integer cantidadProductosVendidos; // Cantidad total de productos vendidos
 
 }

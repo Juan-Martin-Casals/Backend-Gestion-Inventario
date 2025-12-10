@@ -143,8 +143,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (!isReadOnly) {
                     accionesHtml = `
                         <td>
-                            <button class="btn-icon btn-edit-producto" data-id="${producto.id}"><i class="fas fa-edit"></i></button>
-                            <button class="btn-icon btn-delete-producto" data-id="${producto.id}"><i class="fas fa-trash"></i></button>
+                            <button class="btn-action edit" data-id="${producto.id}"><i class="fas fa-edit"></i></button>
+                            <button class="btn-action delete" data-id="${producto.id}"><i class="fas fa-trash"></i></button>
                         </td>`;
                 }
 
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // =================================================================
 
     function removerFilaDelDOM(id) {
-        const botonParaBorrar = tableBody.querySelector(`.btn-delete-producto[data-id="${id}"]`);
+        const botonParaBorrar = tableBody.querySelector(`.btn-action.delete[data-id="${id}"]`);
         if (botonParaBorrar) {
             const fila = botonParaBorrar.closest('tr');
             if (fila) fila.remove();
@@ -430,12 +430,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const target = event.target;
             // Usamos .closest para atrapar clicks en el ícono <i> o en el botón
-            const deleteButton = target.closest('.btn-delete-producto');
+            const deleteButton = target.closest('.btn-action.delete');
             if (deleteButton && deleteModal) {
                 idParaBorrar = deleteButton.dataset.id;
                 deleteModal.style.display = 'block';
             }
-            const editButton = target.closest('.btn-edit-producto');
+            const editButton = target.closest('.btn-action.edit');
             if (editButton && editModal) {
                 openEditModal(editButton.dataset.id);
             }

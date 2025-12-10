@@ -162,11 +162,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td>${categoria.nombre}</td>
                         <td>${cantidadProductos} producto(s)</td>
                         <td>
-                            <button class="btn-icon btn-view-productos" data-id="${categoria.idCategoria}" data-nombre="${categoria.nombre}" title="Ver productos">
+                            <button class="btn-action view" data-id="${categoria.idCategoria}" data-nombre="${categoria.nombre}" title="Ver productos">
                                 <i class="fas fa-eye"></i>
                             </button>
-                            <button class="btn-icon btn-edit-categoria" data-id="${categoria.idCategoria}"><i class="fas fa-edit"></i></button>
-                            <button class="btn-icon btn-delete-categoria" data-id="${categoria.idCategoria}"><i class="fas fa-trash"></i></button>
+                            <button class="btn-action edit" data-id="${categoria.idCategoria}"><i class="fas fa-edit"></i></button>
+                            <button class="btn-action delete" data-id="${categoria.idCategoria}"><i class="fas fa-trash"></i></button>
                         </td>
                     </tr>
                 `;
@@ -552,16 +552,16 @@ document.addEventListener('DOMContentLoaded', function () {
         tableBody.addEventListener('click', (event) => {
             const target = event.target;
 
-            const viewButton = target.closest('.btn-view-productos');
+            const viewButton = target.closest('.btn-action.view');
             if (viewButton) {
                 abrirModalProductos(viewButton.dataset.id, viewButton.dataset.nombre);
             }
 
-            const editButton = target.closest('.btn-edit-categoria');
+            const editButton = target.closest('.btn-action.edit');
             if (editButton) {
                 openEditModal(editButton.dataset.id);
             }
-            const deleteButton = target.closest('.btn-delete-categoria');
+            const deleteButton = target.closest('.btn-action.delete');
             if (deleteButton) {
                 confirmarEliminacion(deleteButton.dataset.id);
             }

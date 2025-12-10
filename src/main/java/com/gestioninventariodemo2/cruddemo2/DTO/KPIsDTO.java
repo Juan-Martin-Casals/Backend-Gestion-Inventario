@@ -14,4 +14,6 @@ public class KPIsDTO {
     private Double totalCompras;
     private Double ganancia;
     private Integer productosStockBajo;
+    private Integer cantidadVentas; // Cantidad de ventas realizadas en el período
+    private Integer cantidadProductosVendidos; // Cantidad total de productos vendidos
 }

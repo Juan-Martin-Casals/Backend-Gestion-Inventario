@@ -48,12 +48,15 @@ public class InformeService {
         }
 
         public ResumenStockDTO obtenerResumenStock() {
-                int stockBajoNivel = 5; // El mismo límite que usás en el frontend
-
+                // Contar solo productos ACTIVOS
                 long totalProductos = stockRepository.count();
-                long productosAgotados = stockRepository.countByStockActualEquals(0);
-                long productosBajoStock = stockRepository.countByStockActualGreaterThanAndStockActualLessThanEqual(0,
-                                stockBajoNivel);
+
+                // Usar el mismo método que usa el admin para consistencia
+                Integer productosAgotadosInt = stockRepository.countStockAgotado();
+                long productosAgotados = productosAgotadosInt != null ? productosAgotadosInt.longValue() : 0;
+
+                Integer productosBajoStockInt = stockRepository.countStockBajo();
+                long productosBajoStock = productosBajoStockInt != null ? productosBajoStockInt.longValue() : 0;
 
                 return ResumenStockDTO.builder()
                                 .totalProductos(totalProductos)
@@ -63,19 +66,15 @@ public class InformeService {
         }
 
         public Page<StockTablaDTO> obtenerProductosConStockBajo(Pageable pageable) {
-                int stockBajoNivel = 5;
                 String estadoActivo = "ACTIVO";
 
-                // 1. Busca en la BD usando paginación y ordenamiento
-                // ¡CAMBIO CLAVE AQUÍ!
-                // Cambiamos el método a uno que NO tiene el sufijo "OrderByStockActualAsc".
-                // Esto permite que el ordenamiento sea tomado de la variable 'pageable'.
-                Page<Stock> stocksBajos = stockRepository.findByStockActualLessThanEqualAndProductoEstado(
-                                stockBajoNivel,
+                // Busca productos donde stockActual < stockMinimo (configurado por producto)
+                // Usar query personalizada que compare con stockMinimo
+                Page<Stock> stocksBajos = stockRepository.findByStockActualLessThanStockMinimoAndProductoEstado(
                                 estadoActivo,
                                 pageable);
 
-                // 2. Convierte esa 'Page' de Stock a una 'Page' de StockTablaDTO
+                // Convierte esa 'Page' de Stock a una 'Page' de StockTablaDTO
                 return stocksBajos.map(stock -> StockTablaDTO.builder()
                                 .id(stock.getProducto().getIdProducto())
                                 .nombre(stock.getProducto().getNombre())
@@ -145,11 +144,24 @@ public class InformeService {
                 // Productos con stock bajo (stock < stockMinimo)
                 Integer productosStockBajo = stockRepository.countProductosConStockBajo();
 
+                // Cantidad de ventas realizadas en el período
+                Long cantidadVentasLong = ventaRepository.countVentasEnRango(inicio, fin);
+                Integer cantidadVentas = cantidadVentasLong != null ? cantidadVentasLong.intValue() : 0;
+
+                // Cantidad total de productos vendidos (suma de cantidades de todos los
+                // detalles de venta)
+                Long cantidadProductosVendidosLong = ventaRepository.sumProductosEnRango(inicio, fin);
+                Integer cantidadProductosVendidos = cantidadProductosVendidosLong != null
+                                ? cantidadProductosVendidosLong.intValue()
+                                : 0;
+
                 return KPIsDTO.builder()
                                 .totalVentas(totalVentas)
                                 .totalCompras(totalCompras)
                                 .ganancia(ganancia)
                                 .productosStockBajo(productosStockBajo)
+                                .cantidadVentas(cantidadVentas)
+                                .cantidadProductosVendidos(cantidadProductosVendidos)
                                 .build();
         }
 

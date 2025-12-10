@@ -27,4 +27,17 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
 
     @Query("SELECT p FROM Producto p JOIN p.productoProveedores pp WHERE pp.proveedor.idProveedor = :idProveedor AND p.estado = 'ACTIVO'")
     List<Producto> findActivosByProveedorId(@Param("idProveedor") Long idProveedor);
+
+    // Búsqueda en inventario: nombre, descripción y categoría
+    @Query("""
+                SELECT p FROM Producto p
+                LEFT JOIN p.categoria c
+                WHERE p.estado = 'ACTIVO'
+                AND (
+                    LOWER(p.nombre) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+                    OR LOWER(p.descripcion) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+                    OR LOWER(c.nombre) LIKE LOWER(CONCAT('%', :searchTerm, '%'))
+                )
+            """)
+    Page<Producto> searchInventario(@Param("searchTerm") String searchTerm, Pageable pageable);
 }

@@ -651,7 +651,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>${costosTexto}</td> 
                     <td>${totalFormateado}</td>
                     <td>
-                        <button type="button" class="btn-icon btn-primary" onclick="mostrarDetalleCompra(${compra.id})" title="Ver Detalle">
+                        <button type="button" class="btn-action view" onclick="mostrarDetalleCompra(${compra.id})" title="Ver Detalle">
                             <i class="fas fa-eye"></i>
                         </button>
                     </td>
@@ -838,6 +838,20 @@ document.addEventListener('DOMContentLoaded', function () {
     if (fechaFin) {
         fechaFin.addEventListener('change', ocultarErrorFiltro);
     }
+
+    // --- NUEVO: Establecer fechas por defecto (primer día del mes hasta hoy) ---
+    if (fechaInicio && fechaFin) {
+        const hoy = new Date();
+        const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
+        // Formatear fechas a YYYY-MM-DD
+        const fechaInicioDefault = primerDiaMes.toISOString().split('T')[0];
+        const fechaFinDefault = hoy.toISOString().split('T')[0];
+
+        fechaInicio.value = fechaInicioDefault;
+        fechaFin.value = fechaFinDefault;
+    }
+
 
     // ==========================================================
     // FILTRO POR BÚSQUEDA

@@ -1,52 +1,57 @@
 document.addEventListener('DOMContentLoaded', function () {
+
     // =========================================
     // NAVEGACIÓN SIDEBAR (SPA)
     // =========================================
-    const links = document.querySelectorAll('.sidebar-menu a[data-section]');
+    const links = document.querySelectorAll('.sidebar-menu a');
     const sections = document.querySelectorAll('.spa-section');
 
     function hideAllSections() {
         sections.forEach(section => section.style.display = 'none');
-        links.forEach(link => link.classList.remove('active'));
     }
 
     links.forEach(link => {
         link.addEventListener('click', function (e) {
+            e.preventDefault(); // Prevent # in URL for ALL links
 
             // Lógica para Submenú Toggle
             if (this.classList.contains('submenu-toggle')) {
-                e.preventDefault();
                 const parentLi = this.parentElement;
                 parentLi.classList.toggle('open');
                 return; // No navegar, solo abrir/cerrar
             }
 
-            e.preventDefault();
-
-            // Remover active de todos los links (incluyendo submenús)
-            document.querySelectorAll('.sidebar-menu a').forEach(l => l.classList.remove('active'));
-            this.classList.add('active');
+            // Skip logout button (let it be handled separately)
+            if (this.id === 'logout-btn') {
+                return;
+            }
 
             const sectionId = this.getAttribute('data-section');
             const subsectionId = this.getAttribute('data-subsection');
 
-            if (sectionId) {
-                hideAllSections();
-                const targetSection = document.getElementById(`${sectionId}-section`);
-                if (targetSection) {
-                    targetSection.style.display = 'block';
-                }
+            // If no section ID, skip
+            if (!sectionId) return;
 
-                // Actualizar título del header
-                const sectionTitle = document.getElementById('section-title');
-                if (sectionTitle) {
-                    const titleText = this.innerText.trim();
-                    sectionTitle.textContent = titleText;
-                }
+            // Remover active de todos los links
+            links.forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
 
-                // Guardar sección actual
-                localStorage.setItem('lastSectionEmpleado', sectionId);
+            // Hide all sections and show target section
+            hideAllSections();
+            const targetSection = document.getElementById(`${sectionId}-section`);
+            if (targetSection) {
+                targetSection.style.display = 'block';
             }
+
+            // Actualizar título del header
+            const sectionTitle = document.getElementById('section-title');
+            if (sectionTitle) {
+                const titleText = this.innerText.trim();
+                sectionTitle.textContent = titleText;
+            }
+
+            // Guardar sección actual
+            localStorage.setItem('lastSectionEmpleado', sectionId);
 
             // Manejo de Subsecciones (Ventas)
             if (sectionId === 'ventas' && subsectionId) {
@@ -55,20 +60,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
+            // Manejo de Subsecciones (Productos)
+            if (sectionId === 'productos' && subsectionId) {
+                if (typeof window.showProductSubsection === 'function') {
+                    window.showProductSubsection(subsectionId);
+                }
+            }
+
             // Cargar datos si es necesario
-            if (sectionId === 'ventas' && typeof window.cargarDatosVentas === 'function') {
+            if (sectionId === 'principal' && typeof window.loadPrincipalData === 'function') {
+                window.loadPrincipalData();
+            } else if (sectionId === 'ventas' && typeof window.cargarDatosVentas === 'function') {
                 window.cargarDatosVentas();
+            } else if (sectionId === 'productos' && typeof window.loadProducts === 'function') {
+                window.loadProducts();
             }
         });
     });
 
-    // Recuperar última sección visitada
+    // Inicialización: Mostrar sección principal por defecto
     const lastSection = localStorage.getItem('lastSectionEmpleado') || 'principal';
-    const activeLink = document.querySelector(`.sidebar-menu a[data-section="${lastSection}"]`);
-    if (activeLink) {
-        activeLink.click();
-    } else if (links.length > 0) {
-        links[0].click(); // Default a la primera
+    const activeLinkToClick = Array.from(links).find(link => link.getAttribute('data-section') === lastSection && !link.classList.contains('submenu-toggle'));
+    if (activeLinkToClick) {
+        activeLinkToClick.click();
     }
 
     // =========================================
@@ -109,4 +123,19 @@ document.addEventListener('DOMContentLoaded', function () {
     if (fechaInput) {
         fechaInput.value = new Date().toISOString().split('T')[0];
     }
+
+    // =========================================
+    // CERRAR MODALES CON ESC
+    // =========================================
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            // Buscar todos los modales visibles
+            const modals = document.querySelectorAll('.modal, .modal-overlay');
+            modals.forEach(modal => {
+                if (modal.style.display === 'flex' || modal.style.display === 'block') {
+                    modal.style.display = 'none';
+                }
+            });
+        }
+    });
 });
