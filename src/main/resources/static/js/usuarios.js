@@ -38,6 +38,14 @@ document.addEventListener('DOMContentLoaded', function () {
     let totalPages = 1;
 
     // ===============================
+    // VARIABLES DE BÚSQUEDA
+    // ===============================
+    const searchInput = document.getElementById('user-search-input');
+    const clearSearchBtn = document.getElementById('user-clear-search');
+    let todosLosUsuarios = []; // Guardar todos los usuarios de la página actual
+    let usuariosFiltrados = null; // Para guardar resultados filtrados
+
+    // ===============================
     // ¡NUEVO! ESTADO Y SELECTORES DE ORDENAMIENTO
     // ===============================
     let sortField = 'nombre'; // Campo de ordenamiento inicial
@@ -139,9 +147,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const pageData = await response.json();
             totalPages = pageData.totalPages;
+            todosLosUsuarios = pageData.content;
 
-            // 3. Renderizar datos
-            renderUserTable(pageData.content);
+            // 3. Reaplicar búsqueda si existe
+            if (searchInput && searchInput.value.trim() !== '') {
+                filtrarUsuarios();
+            } else {
+                renderUserTable(todosLosUsuarios);
+            }
+
             updatePaginationControls();
             updateSortIndicators(); // ¡NUEVO!
 
@@ -288,16 +302,57 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // 3. Validaciones
             let isValid = true;
-            if (!nombre) { document.getElementById('error-user-nombre').textContent = 'Complete este campo'; isValid = false; }
-            if (!apellido) { document.getElementById('error-user-apellido').textContent = 'Complete este campo'; isValid = false; }
-            if (!email) { document.getElementById('error-user-email').textContent = 'Complete este campo'; isValid = false; }
-            if (!idRol) { document.getElementById('error-user-rol').textContent = 'Seleccione un rol'; isValid = false; }
-            if (!password) { document.getElementById('error-user-password').textContent = 'Complete este campo'; isValid = false; }
-            if (password !== confirmPassword) {
+
+            // Validación de nombre
+            if (!nombre) {
+                document.getElementById('error-user-nombre').textContent = 'El nombre es obligatorio';
+                isValid = false;
+            }
+
+            // Validación de apellido
+            if (!apellido) {
+                document.getElementById('error-user-apellido').textContent = 'El apellido es obligatorio';
+                isValid = false;
+            }
+
+            // Validación de email
+            if (!email) {
+                document.getElementById('error-user-email').textContent = 'El email es obligatorio';
+                isValid = false;
+            } else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                document.getElementById('error-user-email').textContent = 'El formato del email no es válido';
+                isValid = false;
+            }
+
+            // Validación de rol
+            if (!idRol) {
+                document.getElementById('error-user-rol').textContent = 'Debe seleccionar un rol';
+                isValid = false;
+            }
+
+            // Validación de contraseña
+            if (!password) {
+                document.getElementById('error-user-password').textContent = 'La contraseña es obligatoria';
+                isValid = false;
+            } else if (password.length < 6) {
+                document.getElementById('error-user-password').textContent = 'La contraseña debe tener al menos 6 caracteres';
+                isValid = false;
+            }
+
+            // Validación de confirmación de contraseña
+            if (!confirmPassword) {
+                document.getElementById('error-user-confirm-password').textContent = 'Debe confirmar la contraseña';
+                isValid = false;
+            } else if (password !== confirmPassword) {
                 document.getElementById('error-user-confirm-password').textContent = 'Las contraseñas no coinciden';
                 isValid = false;
             }
-            if (!isValid) { generalMessage.textContent = "Complete los campos."; generalMessage.classList.add('error'); return; }
+
+            if (!isValid) {
+                generalMessage.textContent = "Por favor, complete todos los campos correctamente.";
+                generalMessage.classList.add('error');
+                return;
+            }
 
             // 4. Construir DTO
             const usuarioDTO = {
@@ -367,9 +422,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         // ¡NUEVO! Mostrar el modal
-        // Esta línea faltaba en el código que pegaste
+        // Usamos flex para centrar el modal
         if (modalEdit) {
-            modalEdit.style.display = 'block';
+            modalEdit.style.display = 'flex';
             window.addEventListener('keydown', handleEditEsc); // Agregamos evento
         }
     }
@@ -379,6 +434,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modalEdit) {
             modalEdit.style.display = 'none';
             window.removeEventListener('keydown', handleEditEsc); // Quitamos evento
+        }
+
+        // Limpiar todos los mensajes de error
+        document.querySelectorAll('#edit-usuario-form .error-message').forEach(el => el.textContent = '');
+
+        // Limpiar mensaje general
+        if (editGeneralMessage) {
+            editGeneralMessage.textContent = '';
+            editGeneralMessage.className = 'form-message';
         }
     }
 
@@ -395,13 +459,42 @@ document.addEventListener('DOMContentLoaded', function () {
                 idRol: parseInt(editRolSelect.value)
             };
 
-            // Validaciones (similar al de registro pero sin password)
+            // Limpiar mensajes previos
+            document.querySelectorAll('#edit-usuario-form .error-message').forEach(el => el.textContent = '');
+            editGeneralMessage.textContent = '';
+            editGeneralMessage.className = 'form-message';
+
+            // Validaciones
             let isValid = true;
-            if (!dto.nombre) { document.getElementById('errorEditUsuarioNombre').textContent = 'Complete este campo'; isValid = false; }
-            if (!dto.apellido) { document.getElementById('errorEditUsuarioApellido').textContent = 'Complete este campo'; isValid = false; }
-            if (!dto.email) { document.getElementById('errorEditUsuarioEmail').textContent = 'Complete este campo'; isValid = false; }
-            if (!dto.idRol) { document.getElementById('errorEditUsuarioRol').textContent = 'Seleccione un rol'; isValid = false; }
-            if (!isValid) { editGeneralMessage.textContent = "Complete los campos."; editGeneralMessage.classList.add('error'); return; }
+
+            if (!dto.nombre) {
+                document.getElementById('errorEditUsuarioNombre').textContent = 'El nombre es obligatorio';
+                isValid = false;
+            }
+
+            if (!dto.apellido) {
+                document.getElementById('errorEditUsuarioApellido').textContent = 'El apellido es obligatorio';
+                isValid = false;
+            }
+
+            if (!dto.email) {
+                document.getElementById('errorEditUsuarioEmail').textContent = 'El email es obligatorio';
+                isValid = false;
+            } else if (!dto.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                document.getElementById('errorEditUsuarioEmail').textContent = 'El formato del email no es válido';
+                isValid = false;
+            }
+
+            if (!dto.idRol) {
+                document.getElementById('errorEditUsuarioRol').textContent = 'Debe seleccionar un rol';
+                isValid = false;
+            }
+
+            if (!isValid) {
+                editGeneralMessage.textContent = "Por favor, complete todos los campos correctamente.";
+                editGeneralMessage.classList.add('error');
+                return;
+            }
 
 
             try {
@@ -531,9 +624,87 @@ document.addEventListener('DOMContentLoaded', function () {
     if (modalEditCloseBtn) {
         modalEditCloseBtn.addEventListener('click', closeEditModal);
     }
+
+    // Event listener para el botón Cancelar del modal de edición
+    const modalEditCancelBtn = document.getElementById('modal-edit-usuario-cancel');
+    if (modalEditCancelBtn) {
+        modalEditCancelBtn.addEventListener('click', closeEditModal);
+    }
+
     if (modalEdit) {
         modalEdit.addEventListener('click', (e) => {
             if (e.target === modalEdit) closeEditModal();
+        });
+    }
+
+    // ==========================================================
+    // FUNCIÓN DE BÚSQUEDA/FILTRADO
+    // ==========================================================
+    async function filtrarUsuarios() {
+        if (!searchInput) {
+            renderUserTable(todosLosUsuarios);
+            return;
+        }
+
+        const query = searchInput.value.trim().toLowerCase();
+
+        if (query === '') {
+            usuariosFiltrados = null;
+            renderUserTable(todosLosUsuarios);
+            return;
+        }
+
+        // Añadir animación de loading
+        if (userTableBody) {
+            userTableBody.classList.add('loading');
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        usuariosFiltrados = todosLosUsuarios.filter(usuario => {
+            // Buscar en nombre
+            if (usuario.nombre?.toLowerCase().includes(query)) return true;
+
+            // Buscar en apellido
+            if (usuario.apellido?.toLowerCase().includes(query)) return true;
+
+            // Buscar en email
+            if (usuario.email?.toLowerCase().includes(query)) return true;
+
+            // Buscar en rol
+            if (usuario.descripcionRol?.toLowerCase().includes(query)) return true;
+
+            return false;
+        });
+
+        renderUserTable(usuariosFiltrados);
+
+        if (userTableBody) {
+            userTableBody.classList.remove('loading');
+        }
+    }
+
+    // ==========================================================
+    // EVENT LISTENERS DE BÚSQUEDA
+    // ==========================================================
+    if (searchInput) {
+        searchInput.addEventListener('input', filtrarUsuarios);
+    }
+
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', async () => {
+            // Añadir animación de loading
+            if (userTableBody) {
+                userTableBody.classList.add('loading');
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+
+            searchInput.value = '';
+            filtrarUsuarios();
+
+            // Remover animación después de filtrar
+            if (userTableBody) {
+                userTableBody.classList.remove('loading');
+            }
         });
     }
 

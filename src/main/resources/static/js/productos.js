@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // CAMBIO: Usar endpoint de inventario en lugar de productos
             const url = `${API_PRODUCTOS_URL}/inventario?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
 
-            const response = await fetch(url);
+            const response = await fetch(url, { cache: 'no-store' });
 
             if (!response.ok) {
                 throw new Error(`Error del servidor: ${response.status}`);
@@ -122,6 +122,20 @@ document.addEventListener('DOMContentLoaded', function () {
             const pageData = await response.json();
             totalPages = pageData.totalPages;
             todosLosProductos = pageData.content; // Guardar todos los productos
+
+            // Si hay una búsqueda activa, reaplicarla con los nuevos datos
+            if (productSearchInputElement && productSearchInputElement.value.trim() !== '') {
+                const textoBusqueda = removeAccents(productSearchInputElement.value.toLowerCase().trim());
+                productosBuscados = todosLosProductos.filter(producto => {
+                    const coincideNombre = producto.nombre &&
+                        removeAccents(producto.nombre.toLowerCase()).includes(textoBusqueda);
+                    const coincideCategoria = producto.categoria &&
+                        removeAccents(producto.categoria.toLowerCase()).includes(textoBusqueda);
+                    const coincideDescripcion = producto.descripcion &&
+                        removeAccents(producto.descripcion.toLowerCase()).includes(textoBusqueda);
+                    return coincideNombre || coincideCategoria || coincideDescripcion;
+                });
+            }
 
             // 3. Aplicar filtros y renderizar
             const productosAMostrar = aplicarFiltros();
@@ -633,7 +647,8 @@ document.addEventListener('DOMContentLoaded', function () {
     async function openDetailModal(productId) {
         try {
             // Cargar datos del producto desde el endpoint de inventario
-            const response = await fetch(`${API_PRODUCTOS_URL}/inventario?page=0&size=1000`);
+            // Cargar datos del producto desde el endpoint de inventario
+            const response = await fetch(`${API_PRODUCTOS_URL}/inventario?page=0&size=1000`, { cache: 'no-store' });
             if (!response.ok) throw new Error('Error al cargar datos del producto');
 
             const pageData = await response.json();
@@ -663,15 +678,36 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('detail-stock-min').textContent = product.stockMinimo;
             document.getElementById('detail-stock-max').textContent = product.stockMaximo;
 
-            // Badge de estado
-            const estadoBadge = getStockBadge(product.stockActual, product.estadoStock);
-            document.getElementById('detail-stock-estado').innerHTML = estadoBadge;
+            // Mostrar estado como texto con badge
+            let estadoTexto = 'N/A';
+            let estadoClase = '';
 
-            // Guardar el ID para el botón de editar
-            document.getElementById('product-detail-edit').setAttribute('data-id', productId);
+            if (product.estadoStock === 'AGOTADO' || product.stockActual === 0) {
+                estadoTexto = 'Agotado';
+                estadoClase = 'empty';
+            } else if (product.estadoStock === 'BAJO' || product.stockActual < product.stockMinimo) {
+                estadoTexto = 'Bajo';
+                estadoClase = 'low';
+            } else {
+                estadoTexto = 'Óptimo';
+                estadoClase = 'good';
+            }
+
+            const estadoBadge = `<span class="stock-badge ${estadoClase}" style="padding-left: 6px; padding-right: 8px;">${estadoTexto}</span>`;
+            document.getElementById('detail-stock-estado').innerHTML = estadoBadge;
 
             // Mostrar modal
             detailModal.style.display = 'flex';
+
+            // Cerrar modal con ESC
+            const handleEscKey = (e) => {
+                if (e.key === 'Escape') {
+                    closeDetailModal();
+                }
+            };
+
+            document.addEventListener('keydown', handleEscKey);
+            detailModal._escHandler = handleEscKey;
         } catch (error) {
             console.error('Error al abrir modal de detalles:', error);
             alert('Error al cargar los detalles del producto');
@@ -683,6 +719,12 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function closeDetailModal() {
         detailModal.style.display = 'none';
+
+        // Remover listener de ESC
+        if (detailModal._escHandler) {
+            document.removeEventListener('keydown', detailModal._escHandler);
+            detailModal._escHandler = null;
+        }
     }
 
     // Event listeners del modal
@@ -702,15 +744,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Botón editar en el modal
-    const editBtn = document.getElementById('product-detail-edit');
-    if (editBtn) {
-        editBtn.addEventListener('click', () => {
-            const productId = editBtn.getAttribute('data-id');
-            closeDetailModal();
-            openEditModal(productId);
-        });
-    }
+    // Botón editar removido del modal
 
     // ===============================
     // FILTROS DE STOCK
@@ -726,7 +760,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             // Cargar TODOS los productos (sin paginación para filtros)
-            const response = await fetch(`${API_PRODUCTOS_URL}/inventario?page=0&size=1000`);
+            const response = await fetch(`${API_PRODUCTOS_URL}/inventario?page=0&size=1000`, { cache: 'no-store' });
             if (!response.ok) throw new Error('Error al cargar productos');
 
             const pageData = await response.json();
@@ -828,7 +862,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function openEditModal(productId) {
         try {
             // Cargar datos del producto
-            const response = await fetch(`${API_PRODUCTOS_URL}/inventario?page=0&size=1000`);
+            const response = await fetch(`${API_PRODUCTOS_URL}/inventario?page=0&size=1000`, { cache: 'no-store' });
             if (!response.ok) throw new Error('Error al cargar datos del producto');
 
             const pageData = await response.json();

@@ -350,7 +350,7 @@ document.addEventListener('DOMContentLoaded', function () {
         let isValid = true;
         if (editNombre.value.trim() === "") { errorEditNombre.textContent = 'Campo obligatorio'; isValid = false; }
         if (!idCategoria) { errorEditCategoria.textContent = 'Debe seleccionar una categoría'; isValid = false; }
-        if (editPrecio.value <= 0 || isNaN(parseFloat(editPrecio.value))) { errorEditPrecio.textContent = 'Precio inválido'; isValid = false; }
+        if (parseFloat(editPrecio.value) < 0 || isNaN(parseFloat(editPrecio.value)) || editPrecio.value.trim() === "") { errorEditPrecio.textContent = 'Precio inválido'; isValid = false; }
         if (isNaN(ajuste)) { errorEditAjuste.textContent = 'Número inválido'; isValid = false; }
 
         if (!isValid) return;

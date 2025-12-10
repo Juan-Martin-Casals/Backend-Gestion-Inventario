@@ -26,4 +26,7 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
             ORDER BY DATE(c.fecha)
             """, nativeQuery = true)
     List<Object[]> sumComprasPorDia(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+
+    // Query para obtener compras completas en un rango
+    List<Compra> findByFechaBetween(LocalDate inicio, LocalDate fin);
 }

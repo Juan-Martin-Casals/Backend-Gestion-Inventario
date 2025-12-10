@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let allProducts = [];
     let proveedorActualEditando = null;
     let currentDeleteProviderId = null;
+    let todosLosProveedores = [];
 
     // ===============================
     // SELECTORES - TABLA Y PAGINACIÓN
@@ -27,6 +28,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const direccionError = document.getElementById('errorDireccion');
 
     const mainContent = document.querySelector('.main-content');
+
+    // ===============================
+    // VARIABLES DE BÚSQUEDA
+    // ===============================
+    const searchInput = document.getElementById('proveedor-search-input');
+    const clearSearchBtn = document.getElementById('proveedor-clear-search');
+    let proveedoresFiltrados = null; // Para guardar resultados filtrados
 
     let currentPage = 0;
     let totalPages = 1;
@@ -87,6 +95,13 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     // ===============================
+    // SELECTORES - MODAL DE DETALLES
+    // ===============================
+    const detailModal = document.getElementById('modal-detail-proveedor-overlay');
+    const detailCloseBtn = document.getElementById('modal-detail-proveedor-close');
+    const detailCloseBtnFooter = document.getElementById('modal-detail-proveedor-close-btn');
+
+    // ===============================
     // SELECTORES - MODAL DE BORRADO
     // ===============================
     const deleteConfirmModal = document.getElementById('delete-confirm-modal');
@@ -114,12 +129,20 @@ document.addEventListener('DOMContentLoaded', function () {
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
 
-            const pageData = await response.json();
-            totalPages = pageData.totalPages;
+            const data = await response.json(); // Renamed pageData to data for consistency with the change
+            currentPage = data.number;
+            totalPages = data.totalPages;
+            todosLosProveedores = data.content;
 
-            renderProveedoresTabla(pageData.content);
+            // Reaplicar búsqueda si existe
+            if (searchInput && searchInput.value.trim() !== '') {
+                filtrarProveedores(); // Assuming filtrarProveedores exists and uses todosLosProveedores
+            } else {
+                renderProveedoresTabla(todosLosProveedores);
+            }
+
             updatePaginationControls();
-            updateSortIndicators();
+            updateSortIndicators(); // Keep this line as it was in the original
 
             requestAnimationFrame(() => {
                 window.scrollTo(0, scrollPosition);
@@ -140,19 +163,35 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        const MAX_PRODUCTOS_TABLA = 3;
+
         proveedores.forEach(proveedor => {
-            const productosNombres = proveedor.productos && proveedor.productos.length > 0
-                ? proveedor.productos.map(p => p.nombreProducto).join(', ')
-                : 'Sin productos asignados';
+            // Truncar lista de productos si hay más de MAX_PRODUCTOS_TABLA
+            let productosDisplay = 'Sin productos asignados';
+
+            if (proveedor.productos && proveedor.productos.length > 0) {
+                const nombresProductos = proveedor.productos.map(p => p.nombreProducto);
+
+                if (nombresProductos.length <= MAX_PRODUCTOS_TABLA) {
+                    productosDisplay = nombresProductos.join(', ');
+                } else {
+                    const primeros = nombresProductos.slice(0, MAX_PRODUCTOS_TABLA).join(', ');
+                    const restantes = nombresProductos.length - MAX_PRODUCTOS_TABLA;
+                    productosDisplay = `${primeros} <span style="color: #666; font-style: italic;">y ${restantes} más...</span>`;
+                }
+            }
 
             const row = `
                 <tr>
                     <td>${proveedor.nombre || 'N/A'}</td>
                     <td>${proveedor.email || 'N/A'}</td>
                     <td>${proveedor.telefono || 'N/A'}</td>
-                    <td>${productosNombres}</td>
+                    <td>${productosDisplay}</td>
                     <td>${proveedor.direccion || 'N/A'}</td>
                     <td>
+                        <button class="btn-icon btn-view-proveedor" data-id="${proveedor.id}" title="Ver detalles">
+                            <i class="fas fa-eye"></i>
+                        </button>
                         <button class="btn-icon btn-edit-proveedor" data-id="${proveedor.id}" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -469,15 +508,85 @@ document.addEventListener('DOMContentLoaded', function () {
         modalOverlay.style.display = 'none';
         window.removeEventListener('keydown', handleEditEsc);
         proveedorActualEditando = null;
+
+        // Limpiar todos los mensajes de error
+        document.querySelectorAll('#edit-proveedor-form .error-message').forEach(el => el.textContent = '');
         editGeneralMessage.textContent = '';
         editGeneralMessage.className = 'form-message';
     }
 
+    // ==========================================================
+    // FUNCIONES DEL MODAL DE DETALLES
+    // ==========================================================
+    const handleDetailEsc = (e) => { if (e.key === 'Escape') closeDetailModal(); };
+
+    async function openDetailModal(id) {
+        try {
+            const response = await fetch(`${API_PROVEEDORES_URL}/${id}`);
+            if (!response.ok) throw new Error('Error al cargar proveedor');
+            const proveedor = await response.json();
+
+            // Llenar información general
+            document.getElementById('detail-proveedor-nombre').textContent = proveedor.nombre || 'N/A';
+            document.getElementById('detail-proveedor-email').textContent = proveedor.email || 'N/A';
+            document.getElementById('detail-proveedor-telefono').textContent = proveedor.telefono || 'N/A';
+            document.getElementById('detail-proveedor-direccion').textContent = proveedor.direccion
+            // Mostrar productos como tags ordenados alfabéticamente
+            const productosContainer = document.getElementById('detail-proveedor-productos');
+            if (proveedor.productos && proveedor.productos.length > 0) {
+                // Ordenar productos alfabéticamente por nombre
+                const productosOrdenados = proveedor.productos
+                    .map(p => p.nombreProducto)
+                    .sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+
+                productosContainer.innerHTML = productosOrdenados
+                    .map(nombre => `<span class="product-tag" style="background: #007bff; color: white; padding: 4px 10px; border-radius: 15px; font-size: 14px; margin: 4px; display: inline-block; font-weight: 500;">${nombre}</span>`)
+                    .join('');
+            } else {
+                productosContainer.innerHTML = '<p style="color: #666; margin: 0;">Sin productos asignados</p>';
+            }
+
+            detailModal.style.display = 'flex';
+            window.addEventListener('keydown', handleDetailEsc);
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error al cargar detalles del proveedor');
+        }
+    }
+
+    function closeDetailModal() {
+        if (detailModal) {
+            detailModal.style.display = 'none';
+            window.removeEventListener('keydown', handleDetailEsc);
+        }
+    }
+
+    // Event listeners para modal de detalles
+    if (detailCloseBtn) detailCloseBtn.addEventListener('click', closeDetailModal);
+    if (detailCloseBtnFooter) detailCloseBtnFooter.addEventListener('click', closeDetailModal);
+    if (detailModal) {
+        detailModal.addEventListener('click', (e) => {
+            if (e.target === detailModal) closeDetailModal();
+        });
+    }
+
+    // ==========================================================
+    // EVENT LISTENERS DE LA TABLA
+    // ==========================================================
+
     if (proveedorTabla) {
         proveedorTabla.addEventListener('click', async function (e) {
+            const viewButton = e.target.closest('.btn-view-proveedor');
             const editButton = e.target.closest('.btn-edit-proveedor');
             const deleteButton = e.target.closest('.btn-delete-proveedor');
 
+            // Botón Ver Detalles
+            if (viewButton) {
+                const id = viewButton.dataset.id;
+                openDetailModal(id);
+            }
+
+            // Botón Editar
             if (editButton) {
                 const id = editButton.dataset.id;
                 try {
@@ -491,6 +600,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
+            // Botón Eliminar
             if (deleteButton) {
                 const id = deleteButton.dataset.id;
                 const nombre = deleteButton.closest('tr').cells[0].textContent;
@@ -502,12 +612,63 @@ document.addEventListener('DOMContentLoaded', function () {
     if (editForm) {
         editForm.addEventListener('submit', async function (e) {
             e.preventDefault();
+
+            // 1. Limpiar mensajes de error previos
+            document.querySelectorAll('#edit-proveedor-form .error-message').forEach(el => el.textContent = '');
+            editGeneralMessage.textContent = '';
+            editGeneralMessage.className = 'form-message';
+
+            // 2. Obtener valores
             const id = editIdInput.value;
+            const nombre = editNombreInput.value.trim();
+            const telefono = editTelefonoInput.value.trim();
+            const email = editEmailInput.value.trim();
+            const direccion = editDireccionInput.value.trim();
+            const productosSeleccionados = Array.from(editSelect.hiddenSelect.selectedOptions);
+
+            // 3. Validar campos
+            let isValid = true;
+
+            if (!nombre) {
+                document.getElementById('errorEditNombre').textContent = 'El nombre es obligatorio';
+                isValid = false;
+            }
+
+            if (!telefono) {
+                document.getElementById('errorEditTelefono').textContent = 'El teléfono es obligatorio';
+                isValid = false;
+            }
+
+            if (!email) {
+                document.getElementById('errorEditEmail').textContent = 'El email es obligatorio';
+                isValid = false;
+            } else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                document.getElementById('errorEditEmail').textContent = 'El formato del email no es válido';
+                isValid = false;
+            }
+
+            if (!direccion) {
+                document.getElementById('errorEditDireccion').textContent = 'La dirección es obligatoria';
+                isValid = false;
+            }
+
+            if (productosSeleccionados.length === 0) {
+                editSelect.errorDiv.textContent = 'Debes seleccionar al menos un producto';
+                isValid = false;
+            }
+
+            if (!isValid) {
+                editGeneralMessage.textContent = 'Por favor, completa todos los campos correctamente';
+                editGeneralMessage.classList.add('error');
+                return;
+            }
+
+            // 4. Construir DTO
             const dto = {
-                nombre: editNombreInput.value.trim(),
-                telefono: editTelefonoInput.value.trim(),
-                email: editEmailInput.value.trim(),
-                direccion: editDireccionInput.value.trim(),
+                nombre: nombre,
+                telefono: telefono,
+                email: email,
+                direccion: direccion,
                 productosAgregar: [],
                 productosQuitar: []
             };
@@ -570,6 +731,81 @@ document.addEventListener('DOMContentLoaded', function () {
                 alert('Error al eliminar: ' + error.message);
             } finally {
                 closeDeleteModal();
+            }
+        });
+    }
+
+    // ==========================================================
+    // FUNCIÓN DE BÚSQUEDA/FILTRADO
+    // ==========================================================
+    let searchTimeout;
+
+    async function filtrarProveedores() {
+        if (!searchInput) {
+            renderProveedoresTabla(todosLosProveedores);
+            return;
+        }
+
+        const query = searchInput.value.trim().toLowerCase();
+
+        if (query === '') {
+            proveedoresFiltrados = null;
+            renderProveedoresTabla(todosLosProveedores);
+            return;
+        }
+
+        // Añadir animación de loading (como en stock.js)
+        if (proveedorTabla) {
+            proveedorTabla.classList.add('loading');
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        proveedoresFiltrados = todosLosProveedores.filter(proveedor => {
+            // Buscar en nombre
+            if (proveedor.nombre?.toLowerCase().includes(query)) return true;
+
+            // Buscar en email
+            if (proveedor.email?.toLowerCase().includes(query)) return true;
+
+            // Buscar en teléfono
+            if (proveedor.telefono?.toLowerCase().includes(query)) return true;
+
+            // Buscar en productos
+            if (proveedor.productos && proveedor.productos.some(p =>
+                p.nombreProducto?.toLowerCase().includes(query)
+            )) return true;
+
+            return false;
+        });
+
+        renderProveedoresTabla(proveedoresFiltrados);
+
+        if (proveedorTabla) {
+            proveedorTabla.classList.remove('loading');
+        }
+    }
+
+    // ==========================================================
+    // EVENT LISTENERS DE BÚSQUEDA
+    // ==========================================================
+    if (searchInput) {
+        searchInput.addEventListener('input', filtrarProveedores);
+    }
+
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', async () => {
+            // Añadir animación de loading
+            if (proveedorTabla) {
+                proveedorTabla.classList.add('loading');
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+
+            searchInput.value = '';
+            filtrarProveedores();
+
+            // Remover animación después de filtrar
+            if (proveedorTabla) {
+                proveedorTabla.classList.remove('loading');
             }
         });
     }

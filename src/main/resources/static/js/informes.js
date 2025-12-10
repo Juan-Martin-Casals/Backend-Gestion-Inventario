@@ -47,13 +47,49 @@ document.addEventListener('DOMContentLoaded', () => {
     fechaInicioInput.value = formatFechaInput(primerDiaMes);
     fechaFinInput.value = formatFechaInput(hoy);
 
+    // Función para mostrar errores de validación
+    const mostrarErrorFecha = (mensaje) => {
+        const errorContainer = document.getElementById('fecha-error-message');
+        const errorText = document.getElementById('fecha-error-text');
+        if (errorContainer && errorText) {
+            errorText.textContent = mensaje;
+            errorContainer.style.display = 'block';
+        }
+    };
+
+    // Función para ocultar errores
+    const ocultarErrorFecha = () => {
+        const errorContainer = document.getElementById('fecha-error-message');
+        if (errorContainer) {
+            errorContainer.style.display = 'none';
+        }
+    };
+
+    // Función para validar fechas
+    const validarFechas = (inicio, fin) => {
+        if (!inicio || !fin) {
+            mostrarErrorFecha('Por favor selecciona un rango de fechas válido');
+            return false;
+        }
+
+        const fechaInicio = new Date(inicio);
+        const fechaFin = new Date(fin);
+
+        if (fechaInicio > fechaFin) {
+            mostrarErrorFecha('La fecha de inicio no puede ser posterior a la fecha de fin');
+            return false;
+        }
+
+        ocultarErrorFecha();
+        return true;
+    };
+
     // Cargar datos al entrar a la sección
     const cargarDashboard = async () => {
         const inicio = fechaInicioInput.value;
         const fin = fechaFinInput.value;
 
-        if (!inicio || !fin) {
-            alert('Por favor selecciona un rango de fechas válido');
+        if (!validarFechas(inicio, fin)) {
             return;
         }
 
@@ -308,6 +344,56 @@ document.addEventListener('DOMContentLoaded', () => {
         fechaFinInput.value = formatFechaInput(hoy);
         cargarDashboard();
     });
+
+    // Event Listener para Exportar PDF
+    const exportarPdfBtn = document.getElementById('exportar-pdf');
+    if (exportarPdfBtn) {
+        exportarPdfBtn.addEventListener('click', async () => {
+            const inicio = fechaInicioInput.value;
+            const fin = fechaFinInput.value;
+
+            if (!validarFechas(inicio, fin)) {
+                return;
+            }
+
+            try {
+                // Deshabilitar el botón mientras se genera el PDF
+                exportarPdfBtn.disabled = true;
+                exportarPdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando PDF...';
+
+                const response = await fetch(`/api/informes/exportar-pdf?inicio=${inicio}&fin=${fin}`);
+
+                if (!response.ok) {
+                    throw new Error('Error al generar el PDF');
+                }
+
+                // Convertir la respuesta en un Blob
+                const blob = await response.blob();
+
+                // Crear URL temporal para el blob
+                const url = window.URL.createObjectURL(blob);
+
+                // Crear enlace temporal para descargar
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Informe_Completo_${inicio}_${fin}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+
+                // Limpiar
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+            } catch (error) {
+                console.error('Error al exportar PDF:', error);
+                alert('❌ Error al generar el PDF. Por favor intenta nuevamente.');
+            } finally {
+                // Restaurar el botón
+                exportarPdfBtn.disabled = false;
+                exportarPdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar PDF';
+            }
+        });
+    }
 
     // Cargar dashboard automáticamente cuando se muestra la sección
     const observer = new MutationObserver((mutations) => {

@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/dashboard-informes.css">
+
     <!-- Chart.js for dashboard charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
@@ -29,7 +30,7 @@
                         <li><a href="#" data-section="productos" data-subsection="productos-create">Crear Producto</a>
                         </li>
                         <li><a href="#" data-section="productos" data-subsection="productos-list">Gestión de
-                                Inventario</a></li>
+                                Stock</a></li>
                     </ul>
                 </li>
                 <li class="has-submenu">
@@ -221,8 +222,8 @@
 
             <section id="productos-section" class="spa-section" style="display:none">
                 <div class="section-header">
-                    <h3>Gestión de Productos</h3>
-                    <p>Administra el inventario de productos.</p>
+                    <h3>Gestión de Stock</h3>
+
                 </div>
 
 
@@ -286,7 +287,7 @@
                 <!-- Subsección: Ver Productos (ahora Gestión de Inventario) -->
                 <div id="productos-list-container" class="subsection-container">
                     <div class="table-section">
-                        <h4>Gestión de Inventario</h4>
+
 
                         <!-- Búsqueda de Productos -->
                         <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
@@ -424,9 +425,6 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn-primary" id="product-detail-edit">
-                            <i class="fas fa-edit"></i> Editar Producto
-                        </button>
                         <button class="btn-outline" id="product-detail-close-btn">
                             Cerrar
                         </button>
@@ -607,6 +605,35 @@
                 <div id="proveedores-list-container" class="subsection-container">
                     <div class="table-section">
                         <h4>Proveedores Registrados</h4>
+
+                        <!-- Búsqueda de Proveedores -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <!-- Búsqueda -->
+                                <div style="flex: 1; min-width: 300px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search"
+                                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                        <input type="text"
+                                            placeholder="Buscar por nombre, email, teléfono o producto..."
+                                            id="proveedor-search-input"
+                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                    </div>
+                                </div>
+
+                                <!-- Botón Limpiar -->
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="button" class="btn-outline" id="proveedor-clear-search"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Mensaje de error para búsqueda -->
+                            <div id="proveedor-search-error" class="error-message"
+                                style="margin-top: 10px; display: none;"></div>
+                        </div>
+
                         <div class="table-container table-container-proveedor">
                             <table class="data-table">
                                 <thead>
@@ -933,6 +960,34 @@
                 <div id="usuarios-list-container" class="subsection-container">
                     <div class="table-section">
                         <h4>Usuarios Registrados</h4>
+
+                        <!-- Búsqueda de Usuarios -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <!-- Búsqueda -->
+                                <div style="flex: 1; min-width: 300px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search"
+                                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                        <input type="text" placeholder="Buscar por nombre, apellido, email o rol..."
+                                            id="user-search-input"
+                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                    </div>
+                                </div>
+
+                                <!-- Botón Limpiar -->
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="button" class="btn-outline" id="user-clear-search"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Mensaje de error para búsqueda -->
+                            <div id="user-search-error" class="error-message" style="margin-top: 10px; display: none;">
+                            </div>
+                        </div>
+
                         <div class="table-container-usuarios">
                             <table class="data-table">
                                 <thead>
@@ -966,7 +1021,58 @@
                 </div>
             </section>
 
+            <!-- Modal de Edición de Usuario -->
+            <div id="modal-edit-usuario-overlay" class="modal-overlay" style="display: none;">
+                <div class="modal-content modal-large">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-user-edit"></i> Editar Usuario</h3>
+                        <button class="modal-close" id="modal-edit-usuario-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="edit-usuario-form" novalidate>
+                            <input type="hidden" id="editUsuarioId">
 
+                            <div class="form-group">
+                                <label for="editUsuarioNombre">Nombre *</label>
+                                <input type="text" id="editUsuarioNombre" placeholder="Nombre del usuario">
+                                <div class="error-message" id="errorEditUsuarioNombre"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="editUsuarioApellido">Apellido *</label>
+                                <input type="text" id="editUsuarioApellido" placeholder="Apellido del usuario">
+                                <div class="error-message" id="errorEditUsuarioApellido"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="editUsuarioEmail">Email *</label>
+                                <input type="email" id="editUsuarioEmail" placeholder="correo@ejemplo.com">
+                                <div class="error-message" id="errorEditUsuarioEmail"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="editUsuarioRol">Rol *</label>
+                                <select id="editUsuarioRol">
+                                    <!-- Se llena dinámicamente -->
+                                </select>
+                                <div class="error-message" id="errorEditUsuarioRol"></div>
+                            </div>
+
+                            <div id="form-general-message-edit-usuario" class="form-message"></div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn-primary" form="edit-usuario-form">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                        <button type="button" class="btn-outline" id="modal-edit-usuario-cancel">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
 
 
             <section id="ventas-section" class="spa-section" style="display:none">
@@ -1368,6 +1474,12 @@
                         </div>
                     </div>
 
+                    <!-- Mensaje de error para validación de fechas -->
+                    <div id="fecha-error-message"
+                        style="color: #dc3545; font-weight: 500; margin-top: 10px; display: none; padding: 10px; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545;">
+                        <i class="fas fa-exclamation-circle"></i> <span id="fecha-error-text"></span>
+                    </div>
+
                     <!-- Indicador de período -->
                     <div class="periodo-indicator">
                         <i class="fas fa-info-circle"></i>
@@ -1514,11 +1626,27 @@
                 <!-- Subsección: Ver Categorías -->
                 <div id="categorias-list-container" class="subsection-container">
 
-                    <div class="search-section">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" placeholder="Buscar categoría por nombre..."
-                                id="categorias-search-input">
+                    <!-- Búsqueda de Categorías -->
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <!-- Búsqueda -->
+                            <div style="flex: 1; min-width: 300px;">
+                                <div style="position: relative;">
+                                    <i class="fas fa-search"
+                                        style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                    <input type="text" placeholder="Buscar categoría por nombre..."
+                                        id="categorias-search-input"
+                                        style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                </div>
+                            </div>
+
+                            <!-- Botón Limpiar -->
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" class="btn-outline" id="categorias-clear-search"
+                                    style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
                         </div>
                     </div>
 
@@ -1560,47 +1688,61 @@
             </section>
 
             <!-- Modal: Editar Categoría -->
-            <div class="modal" id="edit-categoria-modal" style="display: none;">
+            <div class="modal-overlay" id="edit-categoria-modal" style="display: none;">
                 <div class="modal-content modal-compact">
                     <div class="modal-header">
                         <h3><i class="fas fa-edit"></i> Editar Categoría</h3>
                         <button class="modal-close" id="edit-categoria-modal-close-btn">&times;</button>
                     </div>
 
-                    <form id="edit-categoria-form">
-                        <input type="hidden" id="edit-categoria-id">
+                    <div class="modal-body" style="padding: 30px;">
+                        <form id="edit-categoria-form">
+                            <input type="hidden" id="edit-categoria-id">
 
-                        <div class="form-group">
-                            <label for="edit-categoria-nombre">Nombre de la Categoría</label>
-                            <input type="text" id="edit-categoria-nombre">
-                            <div class="error-message" id="error-edit-categoria-nombre"></div>
-                        </div>
+                            <div class="form-group" style="margin-bottom: 25px;">
+                                <label for="edit-categoria-nombre" style="margin-bottom: 8px; display: block;">Nombre de
+                                    la Categoría</label>
+                                <input type="text" id="edit-categoria-nombre" style="padding: 12px;">
+                                <div class="error-message" id="error-edit-categoria-nombre"></div>
+                            </div>
 
-                        <p id="edit-categoria-form-general-message" class="form-message"></p>
+                            <p id="edit-categoria-form-general-message" class="form-message"></p>
 
-                        <div class="modal-buttons">
-                            <button type="submit" class="btn-primary">Guardar Cambios</button>
-                        </div>
-                    </form>
+                            <div class="modal-buttons" style="margin-top: 25px;">
+                                <button type="submit" class="btn-primary">Guardar Cambios</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
 
             <!-- Modal: Confirmar Eliminación de Categoría -->
-            <div class="modal" id="delete-categoria-confirm-modal" style="display: none;">
-                <div class="modal-content" style="max-width: 400px; text-align: center;">
-                    <h3>Confirmar Eliminación</h3>
-                    <p id="delete-categoria-modal-message">¿Estás seguro de que querés eliminar esta categoría?</p>
+            <div class="modal-overlay" id="delete-categoria-confirm-modal" style="display: none;">
+                <div class="modal-content" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i> Confirmar Eliminación
+                        </h3>
+                        <button class="modal-close" id="close-delete-categoria-modal">&times;</button>
+                    </div>
 
-                    <div class="modal-buttons" style="justify-content: center;">
+                    <div class="modal-body" style="padding: 25px; text-align: center;">
+                        <p id="delete-categoria-modal-message" style="font-size: 16px; color: #333; line-height: 1.6;">
+                            ¿Estás seguro de que querés eliminar esta categoría?
+                        </p>
+                    </div>
+
+                    <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
                         <button type="button" class="btn-outline" id="cancel-delete-categoria-btn">
                             Cancelar
                         </button>
-                        <button type="button" class="btn-danger" id="confirm-delete-categoria-btn">
-                            Eliminar
+                        <button type="button" class="btn-primary" id="confirm-delete-categoria-btn"
+                            style="background-color: #e74c3c;">
+                            <i class="fas fa-trash"></i> Sí, Eliminar
                         </button>
                     </div>
                 </div>
             </div>
+
 
             <!-- Modal: Ver Productos de Categoría -->
             <div class="modal" id="productos-categoria-modal" style="display: none;">
@@ -1728,123 +1870,151 @@
         </div>
     </div>
 
-    <div id="modal-edit-proveedor-overlay" class="modal">
-
-        <div class="modal-content">
-
-            <button id="modal-edit-proveedor-close" class="modal-close">&times;</button>
-
-            <h2>Editar Proveedor</h2>
-
-            <form id="edit-proveedor-form" class="form-container">
-                <input type="hidden" id="editProveedorId">
-
-                <div class="form-group">
-                    <label for="editProveedorNombre">Nombre:</label>
-                    <input type="text" id="editProveedorNombre" class="form-control">
-                    <div class="error-message" id="errorEditNombre"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="editProveedorTelefono">Teléfono:</label>
-                    <input type="text" id="editProveedorTelefono" class="form-control">
-                    <div class="error-message" id="errorEditTelefono"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="editProveedorEmail">Email:</label>
-                    <input type="email" id="editProveedorEmail" class="form-control">
-                    <div class="error-message" id="errorEditEmail"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="editProveedorDireccion">Dirección:</label>
-                    <input type="text" id="editProveedorDireccion" class="form-control">
-                    <div class="error-message" id="errorEditDireccion"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="edit-productos-select-input">Productos que provee:</label>
-                    <div class="custom-multi-select-container" id="edit-productos-multi-select-container">
-                        <div class="tags-container" id="edit-tags-container"></div>
-                        <input type="text" id="edit-productos-select-input" class="custom-select-input"
-                            placeholder="Buscar productos...">
-                    </div>
-                    <select id="editProveedorProductosSelect" multiple hidden></select>
-                    <div class="options-container" id="edit-productos-options-container"></div>
-                    <div class="error-message" id="editProveedorProductosError"></div>
-                </div>
-
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                </div>
-                <div id="form-general-message-edit-proveedor" class="form-message"></div>
-            </form>
-        </div>
-    </div>
-
-    <div class="modal" id="delete-confirm-modal" style="display: none; padding-top: 15vh;">
-        <div class="modal-content" style="max-width: 400px; text-align: center;">
-
-            <h3>Confirmar Eliminación</h3>
-
-            <p id="delete-modal-message">¿Estás seguro de que querés borrar este producto?</p>
-
-            <div class="modal-buttons" style="justify-content: center;">
-                <button type="button" class="btn-outline" id="cancel-delete-btn">
-                    Cerrar
-                </button>
-                <button type="button" class="btn-danger" id="confirm-delete-btn">
-                    Aceptar
+    <!-- Modal de Edición de Proveedor -->
+    <div id="modal-edit-proveedor-overlay" class="modal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3><i class="fas fa-edit"></i> Editar Proveedor</h3>
+                <button id="modal-edit-proveedor-close" class="modal-close">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
 
+            <div class="modal-body">
+                <form id="edit-proveedor-form" novalidate>
+                    <input type="hidden" id="editProveedorId">
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editProveedorNombre">Nombre del Proveedor *</label>
+                            <input type="text" id="editProveedorNombre" placeholder="Nombre del proveedor">
+                            <div class="error-message" id="errorEditNombre"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="editProveedorTelefono">Teléfono *</label>
+                            <input type="text" id="editProveedorTelefono" placeholder="123456789">
+                            <div class="error-message" id="errorEditTelefono"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editProveedorEmail">Email *</label>
+                            <input type="email" id="editProveedorEmail" placeholder="email@ejemplo.com">
+                            <div class="error-message" id="errorEditEmail"></div>
+                        </div>
+                        <div class="form-group">
+                            <label for="editProveedorDireccion">Dirección *</label>
+                            <input type="text" id="editProveedorDireccion" placeholder="Dirección completa">
+                            <div class="error-message" id="errorEditDireccion"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="edit-productos-select-input">Productos que Ofrece *</label>
+                        <div id="edit-productos-multi-select-container" class="custom-multi-select-container">
+                            <div id="edit-tags-container" class="tags-container"></div>
+                            <input type="text" id="edit-productos-select-input" class="custom-select-input"
+                                placeholder="Buscar y seleccionar productos...">
+                        </div>
+                        <div id="edit-productos-options-container" class="options-container"></div>
+                        <select id="editProveedorProductosSelect" multiple style="display: none;"></select>
+                        <div class="error-message" id="editProveedorProductosError"></div>
+                    </div>
+
+                    <div id="form-general-message-edit-proveedor" class="form-message"></div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="submit" form="edit-proveedor-form" class="btn-primary">
+                    <i class="fas fa-save"></i> Guardar Cambios
+                </button>
+                <button type="button" class="btn-outline"
+                    onclick="document.getElementById('modal-edit-proveedor-overlay').style.display='none'">
+                    Cancelar
+                </button>
+            </div>
         </div>
     </div>
 
 
-    <div class="modal" id="modal-edit-usuario-overlay" style="display:none;">
-        <div class="modal-content" style="max-width: 600px;">
-            <button id="modal-edit-usuario-close" class="modal-close">&times;</button>
-            <h2>Editar Usuario</h2>
+    <!-- Modal de Detalles de Proveedor -->
+    <div id="modal-detail-proveedor-overlay" class="modal" style="display: none;">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h3><i class="fas fa-eye"></i> Detalles del Proveedor</h3>
+                <button id="modal-detail-proveedor-close" class="modal-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
 
-            <form id="edit-usuario-form" class="form-container">
-                <input type="hidden" id="editUsuarioId">
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="editUsuarioNombre">Nombre:</label>
-                        <input type="text" id="editUsuarioNombre" class="form-control">
-                        <div class="error-message" id="errorEditUsuarioNombre"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="editUsuarioApellido">Apellido:</label>
-                        <input type="text" id="editUsuarioApellido" class="form-control">
-                        <div class="error-message" id="errorEditUsuarioApellido"></div>
+            <div class="modal-body">
+                <!-- Información General -->
+                <div class="detail-section">
+                    <h4><i class="fas fa-info-circle"></i> Información General</h4>
+                    <div class="detail-grid">
+                        <div class="detail-item">
+                            <label>Nombre:</label>
+                            <span id="detail-proveedor-nombre"></span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Email:</label>
+                            <span id="detail-proveedor-email"></span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Teléfono:</label>
+                            <span id="detail-proveedor-telefono"></span>
+                        </div>
+                        <div class="detail-item">
+                            <label>Dirección:</label>
+                            <span id="detail-proveedor-direccion"></span>
+                        </div>
                     </div>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="editUsuarioEmail">Email:</label>
-                        <input type="email" id="editUsuarioEmail" class="form-control">
-                        <div class="error-message" id="errorEditUsuarioEmail"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="editUsuarioRol">Rol:</label>
-                        <select id="editUsuarioRol" class="form-control">
-                        </select>
-                        <div class="error-message" id="errorEditUsuarioRol"></div>
-                    </div>
+                <!-- Productos Ofrecidos -->
+                <div class="detail-section">
+                    <h4><i class="fas fa-box"></i> Productos Ofrecidos</h4>
+                    <div id="detail-proveedor-productos"
+                        style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
                 </div>
+            </div>
 
+            <div class="modal-footer">
+                <button class="btn-outline" id="modal-detail-proveedor-close-btn">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
 
+    <!-- Modal de Confirmación de Eliminación (Genérico) -->
+    <div class="modal" id="delete-confirm-modal" style="display: none;">
+        <div class="modal-content" style="max-width: 450px; padding: 0;">
+            <div class="modal-header" style="padding: 20px 25px;">
+                <h3 style="margin: 0; font-size: 18px;">
+                    <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i> Confirmar Eliminación
+                </h3>
+                <button class="modal-close" onclick="this.closest('.modal').style.display='none'">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
 
-                <div class="form-actions">
-                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                </div>
-                <div id="form-general-message-edit-usuario" class="form-message"></div>
-            </form>
+            <div class="modal-body" style="padding: 20px 25px;">
+                <p id="delete-modal-message" style="font-size: 15px; margin: 0; text-align: center; line-height: 1.5;">
+                    ¿Estás seguro de que deseas eliminar este elemento?
+                </p>
+            </div>
+
+            <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
+                <button type="button" class="btn-outline" id="cancel-delete-btn">
+                    Cancelar
+                </button>
+                <button type="button" class="btn-primary" id="confirm-delete-btn" style="background-color: #e74c3c;">
+                    <i class="fas fa-trash"></i> Sí, Eliminar
+                </button>
+            </div>
         </div>
     </div>
 

@@ -182,8 +182,8 @@ public class ProductoService {
             throw new IllegalArgumentException("Todos los campos obligatorios deben estar completos");
         }
 
-        if (dto.getPrecio() <= 0) {
-            throw new IllegalArgumentException("El precio debe ser un valor numérico válido");
+        if (dto.getPrecio() < 0) {
+            throw new IllegalArgumentException("El precio no puede ser negativo");
         }
 
         if (dto.getCantidadExtraStock() < 0) {

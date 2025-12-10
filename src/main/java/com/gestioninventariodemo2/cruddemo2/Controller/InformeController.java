@@ -26,6 +26,7 @@ import com.gestioninventariodemo2.cruddemo2.DTO.StockTablaDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.TopProductoDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.VentasComprasDiariasDTO;
 import com.gestioninventariodemo2.cruddemo2.Services.InformeService;
+import com.gestioninventariodemo2.cruddemo2.Services.InformePdfService;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,6 +36,7 @@ import lombok.RequiredArgsConstructor;
 public class InformeController {
 
     private final InformeService informeService;
+    private final InformePdfService informePdfService;
 
     @GetMapping("/resumen")
     public ResponseEntity<?> getResumen(
@@ -74,13 +76,12 @@ public class InformeController {
             @RequestParam LocalDate inicio,
             @RequestParam LocalDate fin) {
         try {
-            InformeResponseDTO informe = informeService.generarInforme(inicio, fin);
-            byte[] pdfBytes = informeService.generarInformePDF(informe);
+            byte[] pdfBytes = informePdfService.generarPdfInformeCompleto(inicio, fin);
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_PDF);
             headers.setContentDisposition(ContentDisposition.builder("attachment")
-                    .filename("informe_ventas_" + inicio + "_a_" + fin + ".pdf")
+                    .filename("Informe_Completo_" + inicio + "_" + fin + ".pdf")
                     .build());
 
             return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);

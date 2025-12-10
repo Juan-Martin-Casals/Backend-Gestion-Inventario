@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
         editCategoriaId.value = categoria.idCategoria;
         editCategoriaNombre.value = categoria.nombre;
 
-        if (editModal) editModal.style.display = 'block';
+        if (editModal) editModal.style.display = 'flex';
     }
 
     async function handleEditSubmit(event) {
@@ -329,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         categoriaIdParaBorrar = id;
-        deleteModal.style.display = 'block';
+        deleteModal.style.display = 'flex';
     }
 
     async function eliminarCategoria() {
@@ -451,6 +451,26 @@ document.addEventListener('DOMContentLoaded', function () {
     // Búsqueda
     if (searchInput) searchInput.addEventListener('input', filtrarCategorias);
 
+    // Botón limpiar búsqueda
+    const clearSearchBtn = document.getElementById('categorias-clear-search');
+    if (clearSearchBtn) {
+        clearSearchBtn.addEventListener('click', async () => {
+            // Añadir animación de loading
+            if (tableBody) {
+                tableBody.classList.add('loading');
+                await new Promise(resolve => setTimeout(resolve, 200));
+            }
+
+            if (searchInput) searchInput.value = '';
+            filtrarCategorias();
+
+            // Remover animación después de filtrar
+            if (tableBody) {
+                tableBody.classList.remove('loading');
+            }
+        });
+    }
+
     // Ordenamiento
     const tableHeaders = document.querySelectorAll('#categorias-section .data-table th[data-sort-by]');
     tableHeaders.forEach(th => th.addEventListener('click', handleSortClick));
@@ -461,6 +481,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Modales
     if (editModalCloseBtn) editModalCloseBtn.addEventListener('click', () => { editModal.style.display = 'none'; });
+
+    // Delete modal - close button (X)
+    const closeDeleteModalBtn = document.getElementById('close-delete-categoria-modal');
+    if (closeDeleteModalBtn) closeDeleteModalBtn.addEventListener('click', () => {
+        deleteModal.style.display = 'none';
+        categoriaIdParaBorrar = null;
+    });
+
     if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => { deleteModal.style.display = 'none'; categoriaIdParaBorrar = null; });
     if (confirmDeleteBtn) confirmDeleteBtn.addEventListener('click', eliminarCategoria);
     if (productosModalClose) productosModalClose.addEventListener('click', () => { productosModal.style.display = 'none'; });
