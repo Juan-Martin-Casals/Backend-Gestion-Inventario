@@ -135,7 +135,7 @@
                             </div>
                             <div class="stat-content">
                                 <h3 id="stock-bajo-count">0</h3>
-                                <p>Productos Bajo Mínimo</p>
+                                <p>Productos Con Stock Bajo</p>
                             </div>
                         </div>
                     </div>
@@ -222,8 +222,8 @@
 
             <section id="productos-section" class="spa-section" style="display:none">
                 <div class="section-header">
-                    <h3>Gestión de Stock</h3>
-
+                    <h2>Gestión de Productos</h2>
+                    <p>Gestiona tus productos.</p>
                 </div>
 
 
@@ -495,6 +495,41 @@
                         </button>
                         <button type="button" class="btn-outline" id="product-edit-cancel">
                             Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal: Agregar Categoría Rápida -->
+            <div class="modal-overlay" id="modal-add-categoria-overlay" style="display: none;">
+                <div class="modal-content" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-plus-circle"></i> Nueva Categoría</h3>
+                        <button class="modal-close" id="modal-add-categoria-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="modal-body" style="padding: 25px;">
+                        <form id="add-categoria-form">
+                            <div class="form-group">
+                                <label for="addCategoriaNombre">Nombre de la Categoría *</label>
+                                <input type="text" id="addCategoriaNombre"
+                                    placeholder="Ej: Electrónica, Ropa, Alimentos..." style="padding: 12px;">
+                                <div class="error-message" id="errorAddCategoriaNombre"></div>
+                            </div>
+
+                            <p id="form-general-message-add-categoria" class="form-message"></p>
+                        </form>
+                    </div>
+
+                    <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
+                        <button type="button" class="btn-outline"
+                            onclick="document.getElementById('modal-add-categoria-overlay').style.display='none'">
+                            Cancelar
+                        </button>
+                        <button type="submit" class="btn-primary" form="add-categoria-form">
+                            <i class="fas fa-check"></i> Crear Categoría
                         </button>
                     </div>
                 </div>
@@ -1169,40 +1204,22 @@
 
                                 <div class="form-group">
                                     <label for="metodo-pago">Seleccionar Método *</label>
-                                    <select id="metodo-pago" class="form-control" required>
+                                    <select id="metodo-pago" class="form-control">
                                         <option value="">-- Seleccione un método --</option>
                                     </select>
                                     <div class="error-message" id="errorMetodoPago"></div>
                                 </div>
 
-                                <!-- Campos para Tarjeta/Transferencia (ocultos por defecto) -->
-                                <div id="campos-datos-extra" style="display: none; margin-top: 15px;">
-                                    <div class="form-row">
-                                        <div class="form-group">
-                                            <label for="nro-transaccion">Nro. de Transacción/Tarjeta *</label>
-                                            <input type="text" id="nro-transaccion" class="form-control"
-                                                placeholder="Ingrese número de transacción">
-                                            <div class="error-message" id="errorNroTransaccion"></div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Campos específicos para Tarjeta -->
-                                    <div id="campos-tarjeta" style="display: none;">
-                                        <div class="form-row">
-                                            <div class="form-group">
-                                                <label for="tipo-tarjeta">Tipo de Tarjeta</label>
-                                                <select id="tipo-tarjeta" class="form-control">
-                                                    <option value="">-- Seleccione --</option>
-                                                    <option value="Débito">Débito</option>
-                                                    <option value="Crédito">Crédito</option>
-                                                </select>
-                                            </div>
-                                            <div class="form-group">
-                                                <label for="ultimos-digitos">Últimos 4 Dígitos</label>
-                                                <input type="text" id="ultimos-digitos" class="form-control"
-                                                    maxlength="4" placeholder="1234">
-                                            </div>
-                                        </div>
+                                <!-- Campo para Tipo de Tarjeta (solo visible si selecciona Tarjeta) -->
+                                <div id="campos-tipo-tarjeta" style="display: none; margin-top: 15px;">
+                                    <div class="form-group">
+                                        <label for="tipo-tarjeta">Tipo de Tarjeta *</label>
+                                        <select id="tipo-tarjeta" class="form-control">
+                                            <option value="">-- Seleccione --</option>
+                                            <option value="Débito">Débito</option>
+                                            <option value="Crédito">Crédito</option>
+                                        </select>
+                                        <div class="error-message" id="errorTipoTarjeta"></div>
                                     </div>
                                 </div>
                             </div>
@@ -2098,30 +2115,6 @@
         </div>
     </div>
 
-
-    <!-- Modal: Crear Nueva Categoría -->
-    <div id="modal-add-categoria-overlay" class="modal">
-        <div class="modal-content modal-compact">
-            <button id="modal-add-categoria-close" class="modal-close">&times;</button>
-
-            <header class="modal-header">
-                <h2>Crear Nueva Categoría</h2>
-            </header>
-
-            <form id="add-categoria-form" class="modal-form" novalidate>
-                <div class="form-group">
-                    <label for="addCategoriaNombre">Nombre de la Categoría</label>
-                    <input type="text" id="addCategoriaNombre" placeholder="Ej: Útiles, Electrónica, Ropa..." required>
-                    <span class="error-message" id="errorAddCategoriaNombre"></span>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="submit" class="btn btn-primary">Guardar Categoría</button>
-                </div>
-            </form>
-            <div id="form-general-message-add-categoria" class="form-message"></div>
-        </div>
-    </div>
 
     <script src="js/admin.js"></script>
     <script src="js/utils.js"></script>

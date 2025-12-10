@@ -1167,7 +1167,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Restaurar botón
                 deleteConfirmBtn.disabled = false;
                 deleteConfirmBtn.textContent = 'Aceptar';
-
             } catch (error) {
                 console.error('Error al eliminar producto:', error);
                 alert(`Error al eliminar: ${error.message}`);

@@ -46,7 +46,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // =================================================================
 
     /**
-     * Carga el resumen de ventas del mes (InformeDashboardDTO)
+     * Carga el resumen de ventas del mes (InformeDashboardDTO) 
+     * Compatible con admin.html (necesita todos los elementos)
      */
     async function loadDashboardData() {
         try {
@@ -55,16 +56,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const data = await response.json();
 
-            // Rellenamos las tarjetas del mes
+            // Rellenamos las tarjetas del mes (solo en admin.html, opcionales)
             if (ventasMesCount) ventasMesCount.textContent = data.ventasMes;
             if (ventasHistoricasCount) ventasHistoricasCount.textContent = data.ventasHistoricas;
             if (productosMesCount) productosMesCount.textContent = data.productoMes;
             if (recaudacionMesAmount) {
-                // Usamos 'es-AR' para que use puntos para los miles (ej: 54.000)
                 const formato = new Intl.NumberFormat('es-AR', {
                     style: 'decimal',
-                    minimumFractionDigits: 0, // Sin decimales mínimos
-                    maximumFractionDigits: 0  // Sin decimales máximos (entero)
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0
                 });
                 recaudacionMesAmount.textContent = `$${formato.format(data.recaudacionMes)}`;
             }
@@ -75,7 +75,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     /**
-     * Nueva función: Carga datos de HOY
+     * Carga datos de HOY
+     * Compatible con ambos: admin.html y empleado.html
      */
     async function loadTodayData() {
         try {
@@ -88,7 +89,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const data = await response.json();
 
-            // Actualizar las tarjetas de "Resumen de Hoy"
+            // Actualizar las tarjetas de "Resumen de Hoy" (existen en admin y empleado)
             const ventasHoyAmount = document.getElementById('ventas-hoy-amount');
             const ventasHoyCount = document.getElementById('ventas-hoy-count');
             const productosVendidosHoy = document.getElementById('productos-vendidos-hoy');
@@ -97,12 +98,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 ventasHoyAmount.textContent = `$${data.totalVentas ? data.totalVentas.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}`;
             }
 
-            // Para cantidad de ventas y productos vendidos necesitaríamos endpoints adicionales
-            // Por ahora mostramos los datos parciales disponibles
+            // Cantidad de ventas y productos vendidos (necesitaría endpoints adicionales)
             if (ventasHoyCount) ventasHoyCount.textContent = '-';
             if (productosVendidosHoy) productosVendidosHoy.textContent = '-';
 
-            // Actualizar nombre de usuario y fecha en el banner de bienvenida
+            // Actualizar banner de bienvenida (solo en admin.html)
             const welcomeDate = document.getElementById('welcome-date');
             if (welcomeDate) {
                 const opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
@@ -124,7 +124,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const data = await response.json();
 
-            // Rellenamos las tarjetas de stock
+            // Rellenamos las tarjetas de stock (pueden existir solo en admin o solo en empleado)
             if (totalProductosCount) totalProductosCount.textContent = data.totalProductos;
             if (productosAgotadosCount) productosAgotadosCount.textContent = data.productosAgotados;
             if (stockBajoCount) stockBajoCount.textContent = data.productosBajoStock;
@@ -352,6 +352,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
     loadTodayData();
+    loadDashboardData(); // Para métricas del mes (empleado y admin)
     loadStockData();
     loadLowStockTable();
     loadUserInfo();

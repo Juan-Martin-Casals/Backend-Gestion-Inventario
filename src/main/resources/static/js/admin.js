@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
     const sections = document.querySelectorAll('.spa-section');
     const sectionTitle = document.getElementById('section-title');
+    const subsectionTitle = document.getElementById('subsection-title');
     const logoutBtn = document.getElementById('logout-btn');
     const logoutModal = document.getElementById('logout-modal');
     const confirmLogoutBtn = document.getElementById('confirm-logout');
@@ -21,10 +22,7 @@ document.addEventListener('DOMContentLoaded', function () {
             activeSection.style.display = 'block';
         }
 
-        const activeLink = document.querySelector(`a[data-section="${sectionId}"]`);
-        if (activeLink) {
-            sectionTitle.textContent = activeLink.textContent.trim();
-        }
+        // Título se actualiza directamente desde el event listener del link
     }
 
     sidebarLinks.forEach(link => {
@@ -48,6 +46,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const subsectionId = this.getAttribute('data-subsection');
 
             showSection(sectionId);
+
+            // Actualizar AMBOS títulos basándose en el texto del link clickeado
+            // Esto funcionará tanto para secciones como para subsecciones
+            const linkText = this.textContent.trim();
+            sectionTitle.textContent = linkText;
+            if (subsectionTitle) {
+                subsectionTitle.textContent = linkText;
+            }
 
             // Manejo de Subsecciones (Productos)
             if (sectionId === 'productos' && subsectionId) {

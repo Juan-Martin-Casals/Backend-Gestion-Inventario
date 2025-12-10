@@ -72,6 +72,22 @@ document.addEventListener('DOMContentLoaded', function () {
     const productosPerPage = 10;
 
     // =================================================================
+    // FUNCIÓN HELPER PARA NORMALIZACIÓN
+    // =================================================================
+
+    /**
+     * Normaliza un string para comparación (sin acentos, minúsculas, sin espacios extra)
+     */
+    function normalizarTexto(texto) {
+        return texto
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '') // Eliminar acentos
+            .trim()
+            .replace(/\s+/g, ' '); // Espacios múltiples a uno solo
+    }
+
+    // =================================================================
     // FUNCIONES DE CARGA Y RENDERIZADO
     // =================================================================
 
@@ -214,9 +230,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const nombre = categoriaNombreInput.value.trim();
 
-        // Validación
+        // Validación: campo vacío
         if (!nombre) {
             errorCategoriaNombre.textContent = 'El nombre es obligatorio';
+            return;
+        }
+
+        // Validación: duplicados (insensible a mayúsculas/minúsuclas y acentos)
+        const nombreNormalizado = normalizarTexto(nombre);
+        const duplicado = todasLasCategorias.find(cat =>
+            normalizarTexto(cat.nombre) === nombreNormalizado
+        );
+
+        if (duplicado) {
+            errorCategoriaNombre.textContent = `Ya existe una categoría con el nombre "${duplicado.nombre}"`;
             return;
         }
 
@@ -282,9 +309,21 @@ document.addEventListener('DOMContentLoaded', function () {
         const id = editCategoriaId.value;
         const nombre = editCategoriaNombre.value.trim();
 
-        // Validación
+        // Validación: campo vacío
         if (!nombre) {
             errorEditCategoriaNombre.textContent = 'El nombre es obligatorio';
+            return;
+        }
+
+        // Validación: duplicados (excluyendo la categoría actual)
+        const nombreNormalizado = normalizarTexto(nombre);
+        const duplicado = todasLasCategorias.find(cat =>
+            cat.idCategoria != id && // Excluir la categoría actual
+            normalizarTexto(cat.nombre) === nombreNormalizado
+        );
+
+        if (duplicado) {
+            errorEditCategoriaNombre.textContent = `Ya existe una categoría con el nombre "${duplicado.nombre}"`;
             return;
         }
 
@@ -302,7 +341,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 throw new Error(errorText || `Error HTTP: ${response.status}`);
             }
 
-            editModal.style.display = 'none';
+            closeEditModal();
             cargarCategorias();
             document.dispatchEvent(new Event('categoriasActualizadas'));
 
@@ -479,8 +518,23 @@ document.addEventListener('DOMContentLoaded', function () {
     if (categoriaForm) categoriaForm.addEventListener('submit', handleCreateSubmit);
     if (editForm) editForm.addEventListener('submit', handleEditSubmit);
 
+    // Función para cerrar modal de edición y limpiar mensajes
+    function closeEditModal() {
+        // Limpiar mensajes de error
+        document.querySelectorAll('#edit-categoria-form .error-message').forEach(el => el.textContent = '');
+
+        // Limpiar mensaje general
+        if (editFormGeneralMessage) {
+            editFormGeneralMessage.textContent = '';
+            editFormGeneralMessage.className = 'form-message';
+        }
+
+        // Cerrar modal
+        if (editModal) editModal.style.display = 'none';
+    }
+
     // Modales
-    if (editModalCloseBtn) editModalCloseBtn.addEventListener('click', () => { editModal.style.display = 'none'; });
+    if (editModalCloseBtn) editModalCloseBtn.addEventListener('click', closeEditModal);
 
     // Delete modal - close button (X)
     const closeDeleteModalBtn = document.getElementById('close-delete-categoria-modal');

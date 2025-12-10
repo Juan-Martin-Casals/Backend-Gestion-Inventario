@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // =========================================
     // NAVEGACIÓN SIDEBAR (SPA)
     // =========================================
@@ -11,26 +11,53 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     links.forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const sectionId = this.getAttribute('data-section') + '-section';
-            const targetSection = document.getElementById(sectionId);
+        link.addEventListener('click', function (e) {
 
-            if (targetSection) {
+            // Lógica para Submenú Toggle
+            if (this.classList.contains('submenu-toggle')) {
+                e.preventDefault();
+                const parentLi = this.parentElement;
+                parentLi.classList.toggle('open');
+                return; // No navegar, solo abrir/cerrar
+            }
+
+            e.preventDefault();
+
+            // Remover active de todos los links (incluyendo submenús)
+            document.querySelectorAll('.sidebar-menu a').forEach(l => l.classList.remove('active'));
+            this.classList.add('active');
+
+            const sectionId = this.getAttribute('data-section');
+            const subsectionId = this.getAttribute('data-subsection');
+
+            if (sectionId) {
                 hideAllSections();
-                targetSection.style.display = 'block';
-                this.classList.add('active');
-                
+                const targetSection = document.getElementById(`${sectionId}-section`);
+                if (targetSection) {
+                    targetSection.style.display = 'block';
+                }
+
                 // Actualizar título del header
                 const sectionTitle = document.getElementById('section-title');
-                if(sectionTitle) {
-                    // Capitalizar primera letra
+                if (sectionTitle) {
                     const titleText = this.innerText.trim();
                     sectionTitle.textContent = titleText;
                 }
 
                 // Guardar sección actual
-                localStorage.setItem('lastSectionEmpleado', this.getAttribute('data-section'));
+                localStorage.setItem('lastSectionEmpleado', sectionId);
+            }
+
+            // Manejo de Subsecciones (Ventas)
+            if (sectionId === 'ventas' && subsectionId) {
+                if (typeof window.showVentasSubsection === 'function') {
+                    window.showVentasSubsection(subsectionId);
+                }
+            }
+
+            // Cargar datos si es necesario
+            if (sectionId === 'ventas' && typeof window.cargarDatosVentas === 'function') {
+                window.cargarDatosVentas();
             }
         });
     });
@@ -40,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const activeLink = document.querySelector(`.sidebar-menu a[data-section="${lastSection}"]`);
     if (activeLink) {
         activeLink.click();
-    } else if(links.length > 0) {
+    } else if (links.length > 0) {
         links[0].click(); // Default a la primera
     }
 
@@ -55,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (logoutBtn && logoutModal) {
         logoutBtn.addEventListener('click', (e) => {
             e.preventDefault();
-            logoutModal.style.display = 'flex'; // Usar flex para centrar según CSS de admin
+            logoutModal.style.display = 'flex';
         });
 
         cancelLogoutBtn.addEventListener('click', () => {
@@ -68,7 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.removeItem('lastSectionEmpleado');
             window.location.href = 'index.html';
         });
-        
+
         // Cerrar al hacer clic fuera
         window.addEventListener('click', (e) => {
             if (e.target === logoutModal) {
@@ -76,10 +103,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     // Cargar fecha actual en ventas al iniciar
     const fechaInput = document.getElementById('fecha-venta');
-    if(fechaInput) {
+    if (fechaInput) {
         fechaInput.value = new Date().toISOString().split('T')[0];
     }
 });

@@ -7,6 +7,7 @@
     <title>Gestión Inventario - Panel Empleado</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/dashboard-informes.css">
 </head>
 
 <body>
@@ -18,7 +19,15 @@
             </div>
             <ul class="sidebar-menu">
                 <li><a href="#" data-section="principal" class="active"><i class="fas fa-home"></i> Principal</a></li>
-                <li><a href="#" data-section="ventas"><i class="fas fa-shopping-cart"></i> Ventas</a></li>
+                <li class="has-submenu">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-shopping-cart"></i> Ventas <i class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="#" data-section="ventas" data-subsection="ventas-create">Registrar Venta</a></li>
+                        <li><a href="#" data-section="ventas" data-subsection="ventas-list">Ver Ventas</a></li>
+                    </ul>
+                </li>
                 <li><a href="#" data-section="stock"><i class="fas fa-warehouse"></i> Stock</a></li>
                 <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
             </ul>
@@ -42,215 +51,198 @@
             </header>
 
             <section id="principal-section" class="spa-section">
-                <div class="dashboard-stats">
-                    <div class="stat-card">
-                        <div class="stat-icon blue">
-                            <i class="fas fa-calendar"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="ventas-mes-count">0</h3>
-                            <p>Ventas del Mes</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon green">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="ventas-historicas-count">0</h3>
-                            <p>Ventas Históricas</p>
-                        </div>
-                    </div>
-                    <div class="stat-card purple">
-                        <div class="stat-icon purple"> <i class="fas fa-cube"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="productos-mes-count">0</h3>
-                            <p>Productos Vendidos (Mes)</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon red">
-                            <i class="fas fa-dollar-sign"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="recaudacion-mes-amount">$0.00</h3>
-                            <p>Recaudación del Mes</p>
-                        </div>
-                    </div>
 
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-box"></i>
+                <!-- ALERTAS CRÍTICAS -->
+                <div class="alerts-section" style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px; color: #333; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-bell" style="color: #dc3545;"></i> Alertas Críticas
+                    </h3>
+                    <div class="dashboard-stats">
+                        <div class="stat-card alert">
+                            <div class="stat-icon">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="productos-agotados-count">0</h3>
+                                <p>Productos Agotados</p>
+                            </div>
                         </div>
-                        <div class="stat-content">
-                            <h3 id="total-productos-count">0</h3>
-                            <p>Total Productos</p>
-                        </div>
-                    </div>
-                    <div class="stat-card warning">
-                        <div class="stat-icon">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="productos-agotados-count">0</h3>
-                            <p>Productos Agotados</p>
-                        </div>
-                    </div>
-                    <div class="stat-card alert">
-                        <div class="stat-icon">
-                            <i class="fas fa-lock"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="stock-bajo-count">0</h3>
-                            <p>Stock Bajo</p>
+                        <div class="stat-card warning">
+                            <div class="stat-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="stock-bajo-count">0</h3>
+                                <p>Productos Con Stock Bajo</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                
-                <div class="low-stock-section">
-                    <h3>Productos que necesitan reposición</h3>
-                    <div class="table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th data-sort-by="producto.nombre" class="sortable">Nombre <i class="sort-icon fas fa-sort"></i></th>
-                                    <th data-sort-by="producto.categoria" class="sortable">Categoría <i class="sort-icon fas fa-sort"></i></th>
-                                    <th>Descripción</th>
-                                    <th data-sort-by="stockActual" class="sortable">Stock <i class="sort-icon fas fa-sort"></i></th>
-                                    <th data-sort-by="producto.precio" class="sortable">Precio <i class="sort-icon fas fa-sort"></i></th>
-                                </tr>
-                            </thead>
-                            <tbody id="low-stock-table-body">
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="5">
-                                        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                                            <span id="low-stock-page-info" style="margin-right: 15px;">Página 1 de 1</span>
-                                            <button class="btn-outline" id="low-stock-prev-page" disabled>
-                                                <i class="fas fa-arrow-left"></i>
-                                            </button>
-                                            <button class="btn-outline" id="low-stock-next-page">
-                                                <i class="fas fa-arrow-right"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
+
+                <!-- RESUMEN DE HOY -->
+                <div class="today-summary" style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px; color: #333; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-chart-line" style="color: #28a745;"></i> Resumen de Hoy
+                    </h3>
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon green">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="ventas-hoy-amount">$0.00</h3>
+                                <p>Ventas de Hoy</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon blue">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="ventas-hoy-count">0</h3>
+                                <p>Cantidad de Ventas</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <i class="fas fa-cube"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="productos-vendidos-hoy">0</h3>
+                                <p>Productos Vendidos</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
+
             </section>
 
             <section id="ventas-section" class="spa-section" style="display:none">
-                <div class="section-header"></div>
-
-                <div class="form-section">
-                    <h4>Registrar Nueva Venta</h4>
-                    <form class="sale-form" id="venta-form">
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="fecha-venta">Fecha</label>
-                                <input type="date" id="fecha-venta">
-                                <div class="error-message" id="errorFechaVenta"></div>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="venta-cliente-search">Buscar Cliente (Nombre, Apellido o DNI)</label>
-                                <div class="search-with-add" style="display: flex; gap: 10px;">
-                                    <input type="text" id="venta-cliente-search" autocomplete="off" placeholder="Buscar cliente existente...">
-                                    <button type="button" id="btn-add-cliente" class="btn-icon btn-add-quick" style="width: auto; padding: 0 15px;" title="Crear Nuevo Cliente">
-                                        <i class="fas fa-plus"></i>
-                                    </button>
-                                </div>
-                                <input type="hidden" id="venta-cliente-id-hidden">
-                                <div class="product-results" id="venta-cliente-results"></div>
-                                <span class="error-message" id="errorVentaCliente"></span>
-                            </div>
-                        </div>
-
-                        <div class="product-selection">
-                            <h5><i class="fas fa-box"></i> Selección de Producto</h5>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="product-search">Producto</label>
-                                    <div class="product-search-container">
-                                        <input type="text" id="product-search" placeholder="Buscar producto por nombre..." class="product-search-input">
-                                        <div id="product-results" class="product-results" style="display: none;"></div>
-                                    </div>
-                                    <div class="error-message" id="errorProducto"></div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="cantidad-producto">Cantidad</label>
-                                    <input type="number" id="cantidad-producto" value="1" min="1">
-                                    <div class="error-message" id="errorCompraCantidad"></div>
-                                </div>
-                            </div>
-                            <button type="button" id="btn-agregar-producto" class="btn-secondary">
-                                <i class="fas fa-plus"></i>
-                                Agregar Producto a la Venta
-                            </button>
-                            <div class="error-message" id="errorDetalleGeneral"></div>
-
-                            <div class="table-container" style="margin-top: 20px;">
-                                <table class="data-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Producto</th>
-                                            <th>Cantidad</th>
-                                            <th>Precio Unit.</th>
-                                            <th>Subtotal</th>
-                                            <th>Quitar</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="venta-detalle-temporal">
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <div class="total-section">
-                            <h4 id="total-venta">$ Total: $0.00</h4>
-                        </div>
-
-                        <button type="submit" class="btn-primary" id="btn-registrar-venta">
-                            <i class="fas fa-plus"></i>
-                            Registrar Venta
-                        </button>
-                    </form>
-                    <p id="form-general-message-venta" class="form-message"></p>
+                <div class="section-header">
+                    <h2>Gestión de Ventas</h2>
+                    <p>Administra tus ventas.</p>
                 </div>
 
-                <div class="table-section">
-                    <h4>Ventas Registradas</h4>
-                    <p>Historial de ventas realizadas</p>
-                    <div class="table-container-venta">
-                        <table class="data-table" id="tabla-ventas">
-                            <thead>
-                                <tr>
-                                    <th data-sort-by="fecha" class="sortable">Fecha <i class="sort-icon fas fa-sort"></i></th>
-                                    <th data-sort-by="cliente.nombre" class="sortable">Cliente <i class="sort-icon fas fa-sort"></i></th>
-                                    <th>Producto</th>
-                                    <th data-sort-by="total" class="sortable">Total <i class="sort-icon fas fa-sort"></i></th>
-                                </tr>
-                            </thead>
-                            <tbody id="tabla-ventas-body">
-                            </tbody>
-                        </table>
-                        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                            <span id="ventas-page-info" style="margin-right: 15px;">Página 1 de 1</span>
-                            <button class="btn-outline" id="ventas-prev-page" disabled>
-                                <i class="fas fa-arrow-left"></i>
+                <!-- Subsección: Registrar Venta -->
+                <div id="ventas-create-container" class="subsection-container" style="display: none;">
+                    <div class="form-section">
+                        <h4>Registrar Nueva Venta</h4>
+                        <form class="sale-form" id="venta-form">
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="fecha-venta">Fecha</label>
+                                    <input type="date" id="fecha-venta">
+                                    <div class="error-message" id="errorFechaVenta"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="venta-cliente-search">Buscar Cliente (Nombre, Apellido o DNI)</label>
+                                    <div class="search-with-add" style="display: flex; gap: 10px;">
+                                        <input type="text" id="venta-cliente-search" autocomplete="off"
+                                            placeholder="Buscar cliente existente...">
+                                        <button type="button" id="btn-add-cliente" class="btn-icon btn-add-quick"
+                                            style="width: auto; padding: 0 15px;" title="Crear Nuevo Cliente">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <input type="hidden" id="venta-cliente-id-hidden">
+                                    <div class="product-results" id="venta-cliente-results"></div>
+                                    <span class="error-message" id="errorVentaCliente"></span>
+                                </div>
+                            </div>
+
+                            <div class="product-selection">
+                                <h5><i class="fas fa-box"></i> Selección de Producto</h5>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="product-search">Producto</label>
+                                        <div class="product-search-container">
+                                            <input type="text" id="product-search"
+                                                placeholder="Buscar producto por nombre..."
+                                                class="product-search-input">
+                                            <div id="product-results" class="product-results" style="display: none;">
+                                            </div>
+                                        </div>
+                                        <div class="error-message" id="errorProducto"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="cantidad-producto">Cantidad</label>
+                                        <input type="number" id="cantidad-producto" value="1" min="1">
+                                        <div class="error-message" id="errorCompraCantidad"></div>
+                                    </div>
+                                </div>
+                                <button type="button" id="btn-agregar-producto" class="btn-secondary">
+                                    <i class="fas fa-plus"></i>
+                                    Agregar Producto a la Venta
+                                </button>
+                                <div class="error-message" id="errorDetalleGeneral"></div>
+
+                                <div class="table-container" style="margin-top: 20px;">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th>Cantidad</th>
+                                                <th>Precio Unit.</th>
+                                                <th>Subtotal</th>
+                                                <th>Quitar</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="venta-detalle-temporal">
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="total-section">
+                                <h4 id="total-venta">$ Total: $0.00</h4>
+                            </div>
+
+                            <button type="submit" class="btn-primary" id="btn-registrar-venta">
+                                <i class="fas fa-plus"></i>
+                                Registrar Venta
                             </button>
-                            <button class="btn-outline" id="ventas-next-page">
-                                <i class="fas fa-arrow-right"></i>
-                            </button>
+                        </form>
+                        <p id="form-general-message-venta" class="form-message"></p>
+                    </div>
+                </div>
+
+                <!-- Subsección: Ver Ventas -->
+                <div id="ventas-list-container" class="subsection-container">
+                    <div class="table-section">
+                        <h4>Ventas Registradas</h4>
+                        <p>Historial de ventas realizadas</p>
+                        <div class="table-container-venta">
+                            <table class="data-table" id="tabla-ventas">
+                                <thead>
+                                    <tr>
+                                        <th data-sort-by="fecha" class="sortable">Fecha <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="cliente.nombre" class="sortable">Cliente <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Producto</th>
+                                        <th data-sort-by="total" class="sortable">Total <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-ventas-body">
+                                </tbody>
+                            </table>
+                            <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                <span id="ventas-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                <button class="btn-outline" id="ventas-prev-page" disabled>
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <button class="btn-outline" id="ventas-next-page">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                <!-- Modal de Creación Rápida de Clientes -->
                 <div id="modal-add-cliente-overlay" class="modal">
                     <div class="modal-content">
                         <button id="modal-add-cliente-close" class="modal-close">&times;</button>
@@ -318,14 +310,15 @@
                                     <th>Descripción</th>
                                     <th data-sort-by="precio">Precio <i class="sort-icon fas fa-sort"></i></th>
                                     <th data-sort-by="stock">Stock <i class="sort-icon fas fa-sort"></i></th>
-                                    </tr>
+                                </tr>
                             </thead>
 
                             <tbody id="stock-table-body">
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="5"> <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                    <td colspan="5">
+                                        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
                                             <span id="page-info" style="margin-right: 15px;">Página 1 de 1</span>
                                             <button class="btn-outline" id="prev-page" disabled>
                                                 <i class="fas fa-arrow-left"></i>
@@ -370,11 +363,12 @@
         </div>
     </div>
 
-    <script src="js/empleado.js"></script> 
+    <script src="js/empleado.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/principal.js"></script>
-    <script src="js/ventas.js"></script>
+    <script src="js/ventasEmpleado.js"></script>
     <script src="js/stock.js"></script>
-    
+
 </body>
+
 </html>
