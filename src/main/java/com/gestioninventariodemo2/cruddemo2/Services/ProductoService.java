@@ -208,6 +208,14 @@ public class ProductoService {
         Stock stock = producto.getStocks().get(0);
         stock.setStockActual(stock.getStockActual() + dto.getCantidadExtraStock());
 
+        // Actualizar stock mínimo y máximo si se proporcionan
+        if (dto.getStockMinimo() != null) {
+            stock.setStockMinimo(dto.getStockMinimo());
+        }
+        if (dto.getStockMaximo() != null) {
+            stock.setStockMaximo(dto.getStockMaximo());
+        }
+
         // 5. Guardar ambas entidades
         productoRepository.save(producto);
         stockRepository.save(stock);

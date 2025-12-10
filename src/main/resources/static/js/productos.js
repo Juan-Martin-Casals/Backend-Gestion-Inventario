@@ -42,6 +42,36 @@ document.addEventListener('DOMContentLoaded', function () {
     // CORRECCIÓN: Para el control de scroll y foco
     const mainContent = document.querySelector('.main-content');
 
+    // --- Selectores de Búsqueda ---
+    const productSearchInputElement = document.getElementById('product-search-input');
+    const productBtnBuscar = document.getElementById('product-btn-buscar');
+    const productBtnLimpiar = document.getElementById('product-btn-limpiar-busqueda');
+    const productSearchError = document.getElementById('product-search-error');
+
+    // --- Selectores de Modal de Edición ---
+    const editModal = document.getElementById('product-edit-modal');
+    const editForm = document.getElementById('product-edit-form');
+    const editCloseBtn = document.getElementById('product-edit-close');
+    const editCancelBtn = document.getElementById('product-edit-cancel');
+    const editSaveBtn = document.getElementById('product-edit-save');
+    const editProductId = document.getElementById('edit-product-id');
+    const editNameInput = document.getElementById('edit-product-name');
+    const editCategorySearchInput = document.getElementById('edit-product-category-search');
+    const editCategoryHiddenInput = document.getElementById('edit-product-category-id-hidden');
+    const editCategoryResultsContainer = document.getElementById('edit-product-category-results');
+    const editDescriptionInput = document.getElementById('edit-product-description');
+    const editPriceInput = document.getElementById('edit-product-price');
+    const editStockMinInput = document.getElementById('edit-product-stock-min');
+    const editStockMaxInput = document.getElementById('edit-product-stock-max');
+    const editFormMessage = document.getElementById('edit-form-message');
+
+    // --- Selectores de Modal de Eliminación (modal genérico) ---
+    const deleteModal = document.getElementById('delete-confirm-modal');
+    const deleteModalMessage = document.getElementById('delete-modal-message');
+    const deleteCancelBtn = document.getElementById('cancel-delete-btn');
+    const deleteConfirmBtn = document.getElementById('confirm-delete-btn');
+    let deleteProductId = null;  // Variable para guardar el ID del producto a eliminar
+
     // ===============================
     // URLs DE LA API Y ESTADO
     // ===============================
@@ -57,6 +87,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Estado de Categorías ---
     let todasLasCategorias = [];
+
+    // --- Estado de Búsqueda ---
+    let todosLosProductos = []; // Cache de todos los productos
+    let productosBuscados = null; // Productos filtrados por búsqueda
+    let searchTimeout = null; // Timer para búsqueda con debounce
 
 
     // ===============================
@@ -86,9 +121,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const pageData = await response.json();
             totalPages = pageData.totalPages;
+            todosLosProductos = pageData.content; // Guardar todos los productos
 
-            // 3. Renderizar y finalizar animación
-            renderProductTable(pageData.content);
+            // 3. Aplicar filtros y renderizar
+            const productosAMostrar = aplicarFiltros();
+            renderProductTable(productosAMostrar);
             updatePaginationControls();
             updateSortIndicators();
 
@@ -338,6 +375,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!categorySearchInput.contains(e.target) && !categoryResultsContainer.contains(e.target)) {
             categoryResultsContainer.style.display = 'none';
         }
+        // Para el modal de edición
+        if (editCategorySearchInput && !editCategorySearchInput.contains(e.target) &&
+            editCategoryResultsContainer && !editCategoryResultsContainer.contains(e.target)) {
+            editCategoryResultsContainer.style.display = 'none';
+        }
     });
 
     // ===========================================================
@@ -398,7 +440,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <button class="btn-action edit" title="Editar" data-id="${product.idProducto}">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="btn-action delete" title="Eliminar" data-id="${product.idProducto}">
+                            <button class="btn-action delete" title="Eliminar" data-id="${product.idProducto}" data-name="${product.nombre}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -424,21 +466,20 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
 
-        // Botones "Editar" (reutilizar lógica existente si existe)
+        // Botones "Editar"
         document.querySelectorAll('.btn-action.edit').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const productId = e.currentTarget.getAttribute('data-id');
-                // TODO: Implementar edición (puede usar modal existente)
-                console.log('Editar producto:', productId);
+                openEditModal(productId);
             });
         });
 
-        // Botones "Eliminar" (reutilizar lógica existente si existe)
+        // Botones "Eliminar"
         document.querySelectorAll('.btn-action.delete').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const productId = e.currentTarget.getAttribute('data-id');
-                // TODO: Implementar confirmación y eliminación
-                console.log('Eliminar producto:', productId);
+                const productName = e.currentTarget.getAttribute('data-name');
+                openDeleteModal(productId, productName);
             });
         });
     }
@@ -607,7 +648,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('detail-nombre').textContent = product.nombre || 'N/A';
             document.getElementById('detail-categoria').textContent = product.categoria || 'N/A';
             document.getElementById('detail-descripcion').textContent = product.descripcion || 'N/A';
-            document.getElementById('detail-precio').textContent = product.precio > 0 ? `$${product.precio.toFixed(2)}` : 'No establecido';
+            document.getElementById('detail-precio').textContent = product.precio > 0 ? `$${product.precio.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'No establecido';
 
             // Fecha formateada
             let fechaFormateada = "N/A";
@@ -667,8 +708,7 @@ document.addEventListener('DOMContentLoaded', function () {
         editBtn.addEventListener('click', () => {
             const productId = editBtn.getAttribute('data-id');
             closeDetailModal();
-            // TODO: Abrir modal de edición
-            console.log('Editar producto desde modal:', productId);
+            openEditModal(productId);
         });
     }
 
@@ -730,6 +770,201 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // ==========================================================
+    // FUNCIONALIDAD DE MODAL DE EDICIÓN
+    // ==========================================================
+
+    // Autocomplete de categoría para el modal de edición
+    if (editCategorySearchInput) {
+        editCategorySearchInput.addEventListener('input', () => {
+            const query = removeAccents(editCategorySearchInput.value.toLowerCase());
+            const categoriasFiltradas = todasLasCategorias.filter(c =>
+                removeAccents(c.nombre.toLowerCase()).includes(query)
+            );
+            renderEditCategoryResults(categoriasFiltradas);
+            if (editCategorySearchInput.value.trim() === '') {
+                editCategoryHiddenInput.value = '';
+            }
+        });
+        editCategorySearchInput.addEventListener('focus', () => {
+            const query = removeAccents(editCategorySearchInput.value.toLowerCase());
+            const categoriasFiltradas = todasLasCategorias.filter(c =>
+                removeAccents(c.nombre.toLowerCase()).includes(query)
+            );
+            renderEditCategoryResults(categoriasFiltradas);
+        });
+    }
+
+    function renderEditCategoryResults(categorias) {
+        if (!editCategoryResultsContainer) return;
+        if (categorias.length === 0) {
+            editCategoryResultsContainer.innerHTML = '<div class="product-result-item">No se encontraron categorías</div>';
+        } else {
+            editCategoryResultsContainer.innerHTML = categorias.map(c =>
+                `<div class="product-result-item" data-id="${c.id}">${c.nombre}</div>`
+            ).join('');
+        }
+        editCategoryResultsContainer.style.display = 'block';
+    }
+
+    if (editCategoryResultsContainer) {
+        editCategoryResultsContainer.addEventListener('click', (e) => {
+            const target = e.target.closest('.product-result-item');
+            if (!target || !target.dataset.id) return;
+            const categoriaId = parseInt(target.dataset.id, 10);
+            const categoria = todasLasCategorias.find(c => c.id === categoriaId);
+            if (categoria) {
+                editCategorySearchInput.value = categoria.nombre;
+                editCategoryHiddenInput.value = categoria.id;
+                editCategoryResultsContainer.style.display = 'none';
+                if (document.getElementById('edit-category-error')) {
+                    document.getElementById('edit-category-error').textContent = '';
+                }
+            }
+        });
+    }
+
+    // Función para abrir modal de edición
+    async function openEditModal(productId) {
+        try {
+            // Cargar datos del producto
+            const response = await fetch(`${API_PRODUCTOS_URL}/inventario?page=0&size=1000`);
+            if (!response.ok) throw new Error('Error al cargar datos del producto');
+
+            const pageData = await response.json();
+            const product = pageData.content.find(p => p.idProducto == productId);
+
+            if (!product) {
+                alert('Producto no encontrado');
+                return;
+            }
+
+            // Llenar formulario con datos actuales
+            editProductId.value = product.idProducto;
+            editNameInput.value = product.nombre || '';
+            editCategorySearchInput.value = product.categoria || '';
+            // Buscar ID de categoría
+            const categoriaEncontrada = todasLasCategorias.find(c => c.nombre === product.categoria);
+            editCategoryHiddenInput.value = categoriaEncontrada ? categoriaEncontrada.id : '';
+            editDescriptionInput.value = product.descripcion || '';
+            editPriceInput.value = product.precio || 0;
+            editStockMinInput.value = product.stockMinimo || 0;
+            editStockMaxInput.value = product.stockMaximo || 0;
+
+            // Limpiar mensajes de error
+            document.querySelectorAll('#product-edit-form .error-message').forEach(el => el.textContent = '');
+            if (editFormMessage) {
+                editFormMessage.textContent = '';
+                editFormMessage.className = 'form-message';
+            }
+
+            // Mostrar modal
+            editModal.style.display = 'flex';
+            editNameInput.focus();
+        } catch (error) {
+            console.error('Error al abrir modal de edición:', error);
+            alert('Error al cargar los datos del producto');
+        }
+    }
+
+    // Función para cerrar modal de edición
+    function closeEditModal() {
+        editModal.style.display = 'none';
+        if (editForm) editForm.reset();
+        document.querySelectorAll('#product-edit-form .error-message').forEach(el => el.textContent = '');
+        if (editFormMessage) {
+            editFormMessage.textContent = '';
+            editFormMessage.className = 'form-message';
+        }
+    }
+
+    // Event listeners para cerrar modal
+    if (editCloseBtn) editCloseBtn.addEventListener('click', closeEditModal);
+    if (editCancelBtn) editCancelBtn.addEventListener('click', closeEditModal);
+    if (editModal) {
+        editModal.addEventListener('click', (e) => {
+            if (e.target === editModal) closeEditModal();
+        });
+    }
+
+    // Manejar guardado de cambios
+    if (editSaveBtn) {
+        editSaveBtn.addEventListener('click', async () => {
+            // Limpiar mensajes de error
+            document.querySelectorAll('#product-edit-form .error-message').forEach(el => el.textContent = '');
+            if (editFormMessage) {
+                editFormMessage.textContent = '';
+                editFormMessage.className = 'form-message';
+            }
+
+            // Obtener valores
+            const productId = editProductId.value;
+            const nombre = editNameInput.value.trim();
+            const idCategoria = editCategoryHiddenInput.value ? parseInt(editCategoryHiddenInput.value, 10) : null;
+            const descripcion = editDescriptionInput.value.trim();
+            const precio = parseFloat(editPriceInput.value);
+            const stockMinimo = parseInt(editStockMinInput.value);
+            const stockMaximo = parseInt(editStockMaxInput.value);
+
+            // Validaciones
+            let isValid = true;
+            if (!nombre) { document.getElementById('edit-name-error').textContent = 'El nombre es obligatorio'; isValid = false; }
+            if (!idCategoria) { document.getElementById('edit-category-error').textContent = 'Debe seleccionar una categoría'; isValid = false; }
+            if (!descripcion) { document.getElementById('edit-description-error').textContent = 'La descripción es obligatoria'; isValid = false; }
+            if (isNaN(precio) || precio < 0) { document.getElementById('edit-price-error').textContent = 'El precio debe ser un número válido'; isValid = false; }
+            if (isNaN(stockMinimo) || stockMinimo < 0) { document.getElementById('edit-stock-min-error').textContent = 'El stock mínimo debe ser un número válido'; isValid = false; }
+            if (isNaN(stockMaximo) || stockMaximo < 0) { document.getElementById('edit-stock-max-error').textContent = 'El stock máximo debe ser un número válido'; isValid = false; }
+            if (!isNaN(stockMinimo) && !isNaN(stockMaximo) && stockMaximo < stockMinimo) {
+                document.getElementById('edit-stock-max-error').textContent = 'El stock máximo debe ser mayor o igual al mínimo';
+                isValid = false;
+            }
+
+            if (!isValid) {
+                editFormMessage.textContent = 'Por favor complete todos los campos correctamente';
+                editFormMessage.classList.add('error');
+                return;
+            }
+
+            // Construir DTO
+            const actualizarDTO = {
+                nombre,
+                idCategoria,
+                descripcion,
+                precio,
+                cantidadExtraStock: 0,  // No se modifica stock actual desde edición
+                stockMinimo,
+                stockMaximo
+            };
+
+            try {
+                // Enviar PUT request
+                const response = await fetch(`/api/stock/${productId}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(actualizarDTO)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.text();
+                    throw new Error(errorData || 'Error al actualizar el producto');
+                }
+
+                // Éxito
+                editFormMessage.textContent = '✓ Producto actualizado correctamente';
+                editFormMessage.classList.add('success');
+
+                closeEditModal();
+                // Recargar productos manteniendo filtros
+                loadProducts();
+
+            } catch (error) {
+                console.error('Error al actualizar producto:', error);
+                editFormMessage.textContent = `Error: ${error.message}`;
+                editFormMessage.classList.add('error');
+            }
+        });
+    }
+
     // ===============================
     // LISTENERS Y EJECUCIÓN INICIAL
     // ===============================
@@ -740,7 +975,179 @@ document.addEventListener('DOMContentLoaded', function () {
         th.addEventListener('click', handleSortClick);
     });
 
+    // ==========================================================
+    // FILTRO POR BÚSQUEDA
+    // ==========================================================
+
+    function filtrarProductosPorBusqueda() {
+        if (!productTableBody) return;
+
+        const textoBusqueda = removeAccents(productSearchInputElement.value.toLowerCase().trim());
+
+        // Agregar animación de fade out
+        productTableBody.classList.add('loading');
+
+        // Esperar un poco para la animación
+        setTimeout(() => {
+            if (textoBusqueda === '') {
+                productosBuscados = null;
+            } else {
+                productosBuscados = todosLosProductos.filter(producto => {
+                    // Buscar en nombre del producto (sin acentos)
+                    const coincideNombre = producto.nombre &&
+                        removeAccents(producto.nombre.toLowerCase()).includes(textoBusqueda);
+
+                    // Buscar en categoría (sin acentos)
+                    const coincideCategoria = producto.categoria &&
+                        removeAccents(producto.categoria.toLowerCase()).includes(textoBusqueda);
+
+                    // Buscar en descripción (sin acentos)
+                    const coincideDescripcion = producto.descripcion &&
+                        removeAccents(producto.descripcion.toLowerCase()).includes(textoBusqueda);
+
+                    return coincideNombre || coincideCategoria || coincideDescripcion;
+                });
+            }
+
+            // Renderizar tabla con filtros aplicados
+            const productosAMostrar = aplicarFiltros();
+            renderProductTable(productosAMostrar);
+
+            // Mostrar mensaje si no hay resultados
+            if (productosAMostrar.length === 0 && textoBusqueda !== '') {
+                productTableBody.innerHTML = '<tr><td colspan="5">No se encontraron productos que coincidan con la búsqueda.</td></tr>';
+            }
+
+            // Remover animación de loading (fade in)
+            requestAnimationFrame(() => {
+                productTableBody.classList.remove('loading');
+            });
+        }, 150); // Delay de 150ms para la animación
+    }
+
+    function aplicarFiltros() {
+        let productosResultado = todosLosProductos;
+
+        // Aplicar filtro de búsqueda si existe
+        if (productosBuscados !== null) {
+            productosResultado = productosBuscados;
+        }
+
+        return productosResultado;
+    }
+
+    function limpiarBusqueda() {
+        if (productSearchInputElement) {
+            productSearchInputElement.value = '';
+        }
+
+        // Agregar animación de fade out
+        productTableBody.classList.add('loading');
+
+        // Esperar un poco para la animación
+        setTimeout(() => {
+            productosBuscados = null;
+            const productosAMostrar = aplicarFiltros();
+            renderProductTable(productosAMostrar);
+
+            // Remover animación de loading (fade in)
+            requestAnimationFrame(() => {
+                productTableBody.classList.remove('loading');
+            });
+        }, 150); // Delay de 150ms para la animación
+    }
+
+    // Event listeners para búsqueda en tiempo real con debounce
+    if (productSearchInputElement) {
+        productSearchInputElement.addEventListener('input', () => {
+            // Cancelar búsqueda anterior si existe
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+
+            // Esperar 200ms después de que el usuario deja de escribir
+            searchTimeout = setTimeout(() => {
+                filtrarProductosPorBusqueda();
+            }, 100);
+        });
+    }
+
+    if (productBtnLimpiar) {
+        productBtnLimpiar.addEventListener('click', limpiarBusqueda);
+    }
+
+    // ==========================================================
+    // FUNCIONALIDAD DE MODAL DE ELIMINACIÓN
+    // ==========================================================
+
+    // Función para abrir modal de eliminación
+    function openDeleteModal(productId, productName) {
+        deleteProductId = productId;
+        deleteModalMessage.textContent = `¿Estás seguro de que deseas eliminar "${productName}"?`;
+        deleteModal.style.display = 'flex';
+    }
+
+    // Función para cerrar modal de eliminación
+    function closeDeleteModal() {
+        deleteModal.style.display = 'none';
+        deleteProductId = null;
+    }
+
+    // Event listener para cerrar modal
+    if (deleteCancelBtn) deleteCancelBtn.addEventListener('click', closeDeleteModal);
+    if (deleteModal) {
+        deleteModal.addEventListener('click', (e) => {
+            if (e.target === deleteModal) closeDeleteModal();
+        });
+    }
+
+    // Manejar confirmación de eliminación
+    if (deleteConfirmBtn) {
+        deleteConfirmBtn.addEventListener('click', async () => {
+            if (!deleteProductId) {
+                alert('¡Error! No se pudo identificar el producto a eliminar.');
+                return;
+            }
+
+            try {
+                // Deshabilitar botón para evitar clics múltiples
+                deleteConfirmBtn.disabled = true;
+                deleteConfirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Eliminando...';
+
+                // Enviar DELETE request
+                const response = await fetch(`${API_PRODUCTOS_URL}/${deleteProductId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Error al eliminar el producto');
+                }
+
+                // \u00c9xito - mostrar mensaje y cerrar
+
+                closeDeleteModal();
+                // Recargar productos manteniendo filtros
+                loadProducts();
+
+                // Restaurar botón
+                deleteConfirmBtn.disabled = false;
+                deleteConfirmBtn.textContent = 'Aceptar';
+
+            } catch (error) {
+                console.error('Error al eliminar producto:', error);
+                alert(`Error al eliminar: ${error.message}`);
+
+                // Rehabilitar botón
+                deleteConfirmBtn.disabled = false;
+                deleteConfirmBtn.textContent = 'Aceptar';
+            }
+        });
+    }
+
+    // ==========================================================
     // CARGA INICIAL
+    // ==========================================================
     loadProducts();
     loadCategoriasParaProductos();
 });

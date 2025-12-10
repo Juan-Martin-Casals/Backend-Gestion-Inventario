@@ -2011,6 +2011,12 @@ body {
     color: #dc3545;
 }
 
+/* Center Actions column header and cells */
+.data-table th:last-child,
+.data-table td:last-child {
+    text-align: center;
+}
+
 /* Product Detail Modal */
 .modal-large {
     max-width: 700px;

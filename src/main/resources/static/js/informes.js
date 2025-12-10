@@ -1,213 +1,333 @@
-document.addEventListener('DOMContentLoaded', function () {
+// informes.js - Dashboard de Informes
+document.addEventListener('DOMContentLoaded', () => {
+    const informesSection = document.getElementById('informes-section');
+    if (!informesSection) return;
 
-    // --- 1. Constantes (Sección Informes) ---
+    // Variables globales para los gráficos
+    let ventasComprasChart = null;
+    let estadoStockChart = null;
+
+    // Fechas por defecto: mes actual
+    const hoy = new Date();
+    const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
+    // Formatear fecha para inputs (YYYY-MM-DD)
+    const formatFechaInput = (fecha) => {
+        const year = fecha.getFullYear();
+        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+        const day = String(fecha.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    // Formatear fecha para mostrar (DD/MM/YYYY)
+    const formatFechaDisplay = (fechaStr) => {
+        const fecha = new Date(fechaStr + 'T00:00:00');
+        const day = String(fecha.getDate()).padStart(2, '0');
+        const month = String(fecha.getMonth() + 1).padStart(2, '0');
+        const year = fecha.getFullYear();
+        return `${day}/${month}/${year}`;
+    };
+
+    // Formatear números con separador de miles
+    const formatNumber = (num) => {
+        return new Intl.NumberFormat('es-AR', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        }).format(num);
+    };
+
+    // Elementos del DOM
     const fechaInicioInput = document.getElementById('fecha-inicio');
     const fechaFinInput = document.getElementById('fecha-fin');
-    const btnBuscarFiltros = document.getElementById('buscar-filtros');
-    const btnLimpiarFiltros = document.getElementById('limpiar-filtros');
-    const btnExportarPDF = document.getElementById('exportar-pdf');
+    const buscarBtn = document.getElementById('buscar-filtros');
+    const limpiarBtn = document.getElementById('limpiar-filtros');
+    const periodoTexto = document.getElementById('periodo-texto');
 
-    const errorFechaInicio = document.getElementById('error-fecha-inicio');
-    const errorFechaFin = document.getElementById('error-fecha-fin');
+    // Inicializar fechas por defecto
+    fechaInicioInput.value = formatFechaInput(primerDiaMes);
+    fechaFinInput.value = formatFechaInput(hoy);
 
-    // Contenedor de resultados
-    const reporteContainer = document.getElementById('reporte-informes');
+    // Cargar datos al entrar a la sección
+    const cargarDashboard = async () => {
+        const inicio = fechaInicioInput.value;
+        const fin = fechaFinInput.value;
 
-    function setFechasPorDefecto() {
-        const hoy = new Date();
-        
-        const yyyy = hoy.getFullYear();
-        const mm = String(hoy.getMonth() + 1).padStart(2, '0');
-        const dd = String(hoy.getDate()).padStart(2, '0');
-        
-        const primerDiaDelMes = `${yyyy}-${mm}-01`;
-        const diaDeHoy = `${yyyy}-${mm}-${dd}`;
-
-        fechaInicioInput.value = primerDiaDelMes;
-        fechaFinInput.value = diaDeHoy;
-    }
-
-    async function buscarInformes() {
-        errorFechaInicio.textContent = '';
-        errorFechaFin.textContent = '';
-
-        const fechaInicio = fechaInicioInput.value;
-        const fechaFin = fechaFinInput.value;
-
-        let isValid = true;
-        if (!fechaInicio) {
-            errorFechaInicio.textContent = 'Por favor, seleccione una fecha de inicio.';
-            isValid = false;
-        }
-        if (!fechaFin) {
-            errorFechaFin.textContent = 'Por favor, seleccione una fecha de fin.';
-            isValid = false;
-        }
-
-        if (!isValid) {
+        if (!inicio || !fin) {
+            alert('Por favor selecciona un rango de fechas válido');
             return;
         }
 
-        if (fechaFin < fechaInicio) {
-            // Mostramos el error en el div de "Fecha Fin"
-            errorFechaFin.textContent = 'La fecha de fin no puede ser anterior a la de inicio.';
-            return; // Detiene la ejecución
-        }
-
-        const url = `/api/informes/resumen?inicio=${fechaInicio}&fin=${fechaFin}`;
+        // Actualizar texto del período
+        periodoTexto.textContent = `Mostrando datos del ${formatFechaDisplay(inicio)} al ${formatFechaDisplay(fin)}`;
 
         try {
-            reporteContainer.style.display = 'block';
-            reporteContainer.innerHTML = '<p>Cargando informe...</p>';
+            // Cargar todos los datos en paralelo
+            await Promise.all([
+                cargarKPIs(inicio, fin),
+                cargarGraficoVentasCompras(inicio, fin),
+                cargarTopProductos(inicio, fin),
+                cargarEstadoStock()
+            ]);
+        } catch (error) {
+            console.error('Error al cargar dashboard:', error);
+            alert('Error al cargar los datos del dashboard');
+        }
+    };
 
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}`);
-            }
-            
+    // 1. Cargar KPIs
+    const cargarKPIs = async (inicio, fin) => {
+        try {
+            const response = await fetch(`/api/informes/kpis?inicio=${inicio}&fin=${fin}`);
+            if (!response.ok) throw new Error('Error al obtener KPIs');
+
             const data = await response.json();
-            renderReporte(data);
 
-        } catch (error) {
-            console.error('Error al cargar informe:', error);
-            reporteContainer.innerHTML = '<p>Error al cargar el informe.</p>';
-        }
-    }
+            // Actualizar valores en las tarjetas
+            document.getElementById('kpi-ventas').textContent = `$${formatNumber(data.totalVentas || 0)}`;
+            document.getElementById('kpi-compras').textContent = `$${formatNumber(data.totalCompras || 0)}`;
+            document.getElementById('kpi-ganancia').textContent = `$${formatNumber(data.ganancia || 0)}`;
+            document.getElementById('kpi-stock-bajo').textContent = data.productosStockBajo || 0;
 
-    function renderReporte(data) {
-        // Hacemos los cálculos para las nuevas métricas
-        const totalVentas = data.totalVentas || 0;
-        const totalImporte = data.totalImporte || 0;
-        const totalCantidad = data.totalCantidad || 0;
-
-
-
-        // Usamos las fechas tal como vienen (ej: 2025-11-03)
-        const fechaInicioRaw = data.inicio || 'N/A';
-        const fechaFinRaw = data.fin || 'N/A';
-
-        // Mostramos el contenedor
-        reporteContainer.style.display = 'block';
-        
-        // Construimos el nuevo HTML
-       reporteContainer.innerHTML = `
-            <div class="reporte-header" style="text-align: center; margin-bottom: 20px;">
-                <h3 style="font-size: 20px; font-weight: 600; color: #333;">Resumen del Periodo</h3>
-                <p style="color: #666; font-size: 14px;">${fechaInicioRaw} - ${fechaFinRaw}</p>
-            </div>
-
-            <div class="dashboard-stats" style="padding: 0; gap: 15px; margin-bottom: 15px;">
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-shopping-cart"></i></div>
-                    <div class="stat-content">
-                        <h3>${totalVentas}</h3>
-                        <p>Ventas Realizadas</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-box"></i></div>
-                    <div class="stat-content">
-                        <h3>${totalCantidad}</h3>
-                        <p>Productos Vendidos</p>
-                    </div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-icon"><i class="fas fa-dollar-sign"></i></div>
-                    <div class="stat-content">
-                        <h3>$${totalImporte.toFixed(2)}</h3>
-                        <p>Ganancias Totales</p>
-                    </div>
-                </div>
-            </div>
-
-            <div class="stat-card warning" style="margin-top: 15px; flex-direction: column; text-align: center;">
-                <div class="stat-icon" style="background: none; color: #f57c00; font-size: 24px; height: auto;">
-                    <i class="fas fa-trophy"></i>
-                </div>
-                <div class="stat-content">
-                    <h3 style="font-size: 18px; margin-bottom: 5px;">Producto Más Vendido</h3>
-                    <p style="font-size: 16px; font-weight: 600; color: #333;">${data.productoMasVendido || 'N/A'}</p>
-                </div>
-            </div>
-
-            <div style="text-align: center; margin-top: 20px;">
-                <button type="button" class="btn-outline" id="cerrar-resumen-btn">
-                    <i class="fas fa-times"></i> Cerrar Resumen
-                </button>
-            </div>
-        `;
-    }
-
-    function limpiarFiltros() {
-        console.log('Limpiando filtros...');
-        setFechasPorDefecto(); // Restablece a las fechas por defecto
-
-        errorFechaInicio.textContent = '';
-        errorFechaFin.textContent = '';
-        
-        // Limpia y oculta el reporte
-        reporteContainer.innerHTML = '';
-        reporteContainer.style.display = 'none';
-    }
-
-    async function exportarPDF() {
-        const fechaInicio = fechaInicioInput.value;
-        const fechaFin = fechaFinInput.value;
-
-        if (!fechaInicio || !fechaFin) {
-            alert("Debe seleccionar una fecha de inicio y fin para exportar.");
-            return;
-        }
-
-        const url = `/api/informes/exportar-pdf?inicio=${fechaInicio}&fin=${fechaFin}`;
-
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Error HTTP: ${response.status}`);
+            // Cambiar color de ganancia según sea positiva o negativa
+            const gananciaEl = document.getElementById('kpi-ganancia');
+            if (data.ganancia >= 0) {
+                gananciaEl.style.color = '#28a745';
+            } else {
+                gananciaEl.style.color = '#dc3545';
             }
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = downloadUrl;
-            a.download = `informe_ventas_${fechaInicio}_a_${fechaFin}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(downloadUrl);
-            a.remove();
+
         } catch (error) {
-            console.error('Error al exportar PDF:', error);
-            alert('No se pudo generar el PDF.');
+            console.error('Error al cargar KPIs:', error);
         }
-    }
+    };
 
-    if (btnBuscarFiltros) {
-        btnBuscarFiltros.addEventListener('click', buscarInformes);
-    }
+    // 2. Cargar Gráfico de Líneas (Ventas vs Compras)
+    const cargarGraficoVentasCompras = async (inicio, fin) => {
+        try {
+            const response = await fetch(`/api/informes/ventas-compras-diarias?inicio=${inicio}&fin=${fin}`);
+            if (!response.ok) throw new Error('Error al obtener datos de ventas/compras');
 
-    if (btnLimpiarFiltros) {
-        btnLimpiarFiltros.addEventListener('click', limpiarFiltros);
-    }
+            const data = await response.json();
 
-    if (btnExportarPDF) {
-        btnExportarPDF.addEventListener('click', exportarPDF);
-    }
+            // Preparar datos para el gráfico
+            const labels = data.map(item => formatFechaDisplay(item.fecha));
+            const ventasData = data.map(item => item.ventas || 0);
+            const comprasData = data.map(item => item.compras || 0);
 
-    /**
-     * Listener para el contenedor de reportes.
-     * Maneja el clic en el botón "Cerrar Resumen" (que se crea dinámicamente).
-     */
-    if (reporteContainer) {
-        reporteContainer.addEventListener('click', function(event) {
-            const cerrarBtn = event.target.closest('#cerrar-resumen-btn');
-            
-            if (cerrarBtn) {
-                reporteContainer.style.display = 'none';
+            // Destruir gráfico anterior si existe
+            if (ventasComprasChart) {
+                ventasComprasChart.destroy();
+            }
+
+            // Crear nuevo gráfico
+            const ctx = document.getElementById('ventas-compras-chart').getContext('2d');
+            ventasComprasChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Ventas',
+                            data: ventasData,
+                            borderColor: '#28a745',
+                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Compras',
+                            data: comprasData,
+                            borderColor: '#dc3545',
+                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    aspectRatio: 2.5,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function (context) {
+                                    return context.dataset.label + ': $' + formatNumber(context.parsed.y);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function (value) {
+                                    return '$' + formatNumber(value);
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+        } catch (error) {
+            console.error('Error al cargar gráfico de ventas/compras:', error);
+        }
+    };
+
+    // 3. Cargar Top 5 Productos
+    const cargarTopProductos = async (inicio, fin) => {
+        try {
+            const response = await fetch(`/api/informes/top-productos?inicio=${inicio}&fin=${fin}&limit=5`);
+            if (!response.ok) throw new Error('Error al obtener top productos');
+
+            const data = await response.json();
+            const tbody = document.getElementById('top-productos-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
+                            No hay datos para mostrar en este período
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = data.map((producto, index) => `
+                <tr>
+                    <td><strong>${index + 1}</strong></td>
+                    <td>${producto.nombreProducto}</td>
+                    <td>${producto.cantidad} uds</td>
+                    <td>$${formatNumber(producto.totalVentas)}</td>
+                </tr>
+            `).join('');
+
+        } catch (error) {
+            console.error('Error al cargar top productos:', error);
+            document.getElementById('top-productos-body').innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 20px; color: #dc3545;">
+                        Error al cargar datos
+                    </td>
+                </tr>
+            `;
+        }
+    };
+
+    // 4. Cargar Gráfico de Dona (Estado Stock)
+    const cargarEstadoStock = async () => {
+        try {
+            const response = await fetch('/api/informes/estado-stock');
+            if (!response.ok) throw new Error('Error al obtener estado de stock');
+
+            const data = await response.json();
+
+            const total = (data.optimo || 0) + (data.bajo || 0) + (data.agotado || 0);
+
+            // Destruir gráfico anterior si existe
+            if (estadoStockChart) {
+                estadoStockChart.destroy();
+            }
+
+            // Crear nuevo gráfico
+            const ctx = document.getElementById('estado-stock-chart').getContext('2d');
+            estadoStockChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Óptimo', 'Bajo', 'Agotado'],
+                    datasets: [{
+                        data: [data.optimo || 0, data.bajo || 0, data.agotado || 0],
+                        backgroundColor: [
+                            '#28a745',  // Verde para óptimo
+                            '#ffc107',  // Amarillo para bajo
+                            '#dc3545'   // Rojo para agotado
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function (context) {
+                                    const value = context.parsed;
+                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                                    return context.label + ': ' + value + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Actualizar leyenda
+            const leyenda = document.getElementById('stock-leyenda');
+            const porcentajeOptimo = total > 0 ? ((data.optimo / total) * 100).toFixed(1) : 0;
+            const porcentajeBajo = total > 0 ? ((data.bajo / total) * 100).toFixed(1) : 0;
+            const porcentajeAgotado = total > 0 ? ((data.agotado / total) * 100).toFixed(1) : 0;
+
+            leyenda.innerHTML = `
+                <div style="display: inline-block; margin: 0 15px;">
+                    <span style="display: inline-block; width: 12px; height: 12px; background: #28a745; border-radius: 50%; margin-right: 5px;"></span>
+                    <strong>Óptimo:</strong> ${data.optimo} (${porcentajeOptimo}%)
+                </div>
+                <div style="display: inline-block; margin: 0 15px;">
+                    <span style="display: inline-block; width: 12px; height: 12px; background: #ffc107; border-radius: 50%; margin-right: 5px;"></span>
+                    <strong>Bajo:</strong> ${data.bajo} (${porcentajeBajo}%)
+                </div>
+                <div style="display: inline-block; margin: 0 15px;">
+                    <span style="display: inline-block; width: 12px; height: 12px; background: #dc3545; border-radius: 50%; margin-right: 5px;"></span>
+                    <strong>Agotado:</strong> ${data.agotado} (${porcentajeAgotado}%)
+                </div>
+            `;
+
+        } catch (error) {
+            console.error('Error al cargar estado de stock:', error);
+        }
+    };
+
+    // Event Listeners
+    buscarBtn.addEventListener('click', cargarDashboard);
+
+    limpiarBtn.addEventListener('click', () => {
+        fechaInicioInput.value = formatFechaInput(primerDiaMes);
+        fechaFinInput.value = formatFechaInput(hoy);
+        cargarDashboard();
+    });
+
+    // Cargar dashboard automáticamente cuando se muestra la sección
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            if (mutation.type === 'attributes' && mutation.attributeName === 'style') {
+                const displayStyle = window.getComputedStyle(informesSection).display;
+                if (displayStyle !== 'none') {
+                    cargarDashboard();
+                }
             }
         });
+    });
+
+    observer.observe(informesSection, {
+        attributes: true,
+        attributeFilter: ['style']
+    });
+
+    // Cargar datos iniciales si la sección ya está visible
+    if (window.getComputedStyle(informesSection).display !== 'none') {
+        cargarDashboard();
     }
-
-    setFechasPorDefecto();
-
 });

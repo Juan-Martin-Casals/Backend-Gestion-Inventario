@@ -7,6 +7,9 @@
     <title>Gestión Inventario - Panel Administrador</title>
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/dashboard-informes.css">
+    <!-- Chart.js for dashboard charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </head>
 
 <body>
@@ -110,76 +113,71 @@
 
             <section id="principal-section" class="spa-section">
 
-                <div class="dashboard-stats">
-
-                    <div class="stat-card">
-                        <div class="stat-icon blue">
-                            <i class="fas fa-calendar"></i>
+                <!-- ALERTAS CRÍTICAS -->
+                <div class="alerts-section" style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px; color: #333; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-bell" style="color: #dc3545;"></i> Alertas Críticas
+                    </h3>
+                    <div class="dashboard-stats">
+                        <div class="stat-card alert">
+                            <div class="stat-icon">
+                                <i class="fas fa-times-circle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="productos-agotados-count">0</h3>
+                                <p>Productos Agotados</p>
+                            </div>
                         </div>
-                        <div class="stat-content">
-                            <h3 id="ventas-mes-count">0</h3>
-                            <p>Ventas del Mes</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon green">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="ventas-historicas-count">0</h3>
-                            <p>Ventas Históricas</p>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon purple">
-                            <i class="fas fa-cube"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="productos-mes-count">0</h3>
-                            <p>Productos Vendidos (Mes)</p>
+                        <div class="stat-card warning">
+                            <div class="stat-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="stock-bajo-count">0</h3>
+                                <p>Productos Bajo Mínimo</p>
+                            </div>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <div class="stat-icon red">
-                            <i class="fas fa-dollar-sign"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="recaudacion-mes-amount">$0.00</h3>
-                            <p>Recaudación del Mes</p>
-                        </div>
-                    </div>
-
-                    <div class="stat-card">
-                        <div class="stat-icon">
-                            <i class="fas fa-box"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="total-productos-count">0</h3>
-                            <p>Total Productos</p>
-                        </div>
-                    </div>
-                    <div class="stat-card warning">
-                        <div class="stat-icon">
-                            <i class="fas fa-exclamation-triangle"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="productos-agotados-count">0</h3>
-                            <p>Productos Agotados</p>
-                        </div>
-                    </div>
-                    <div class="stat-card alert">
-                        <div class="stat-icon">
-                            <i class="fas fa-lock"></i>
-                        </div>
-                        <div class="stat-content">
-                            <h3 id="stock-bajo-count">0</h3>
-                            <p>Stock Bajo</p>
-                        </div>
-                    </div>
-
                 </div>
+
+                <!-- RESUMEN DE HOY -->
+                <div class="today-summary" style="margin-bottom: 30px;">
+                    <h3 style="margin-bottom: 15px; color: #333; display: flex; align-items: center; gap: 10px;">
+                        <i class="fas fa-chart-line" style="color: #28a745;"></i> Resumen de Hoy
+                    </h3>
+                    <div class="dashboard-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon green">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="ventas-hoy-amount">$0.00</h3>
+                                <p>Ventas de Hoy</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon blue">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="ventas-hoy-count">0</h3>
+                                <p>Cantidad de Ventas</p>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon purple">
+                                <i class="fas fa-cube"></i>
+                            </div>
+                            <div class="stat-content">
+                                <h3 id="productos-vendidos-hoy">0</h3>
+                                <p>Productos Vendidos</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="low-stock-section">
-                    <h3>Productos que necesitan reposición</h3>
+                    <h3><i class="fas fa-warehouse" style="color: #ff9800;"></i> Productos que necesitan reposición</h3>
                     <div class="table-container">
                         <table class="data-table">
                             <thead>
@@ -290,6 +288,33 @@
                     <div class="table-section">
                         <h4>Gestión de Inventario</h4>
 
+                        <!-- Búsqueda de Productos -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <!-- Búsqueda -->
+                                <div style="flex: 1; min-width: 300px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search"
+                                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                        <input type="text" placeholder="Buscar por nombre, categoría o descripción..."
+                                            id="product-search-input"
+                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                    </div>
+                                </div>
+
+                                <!-- Botón Limpiar -->
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="button" class="btn-outline" id="product-btn-limpiar-busqueda"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                </div>
+                            </div>
+                            <!-- Mensaje de error para búsqueda -->
+                            <div id="product-search-error" class="error-message"
+                                style="margin-top: 10px; display: none;"></div>
+                        </div>
+
                         <div class="table-container-product">
                             <table class="data-table">
                                 <thead>
@@ -298,7 +323,8 @@
                                                 class="sort-icon fas fa-sort"></i></th>
                                         <th data-sort-by="categoria" class="sortable">Categoría <i
                                                 class="sort-icon fas fa-sort"></i></th>
-                                        <th>Descripción</th>
+                                        <th data-sort-by="descripcion" class="sortable">Descripción <i
+                                                class="sort-icon fas fa-sort"></i></th>
                                         <th data-sort-by="stock" class="sortable">Stock <i
                                                 class="sort-icon fas fa-sort"></i></th>
                                         <th>Acciones</th>
@@ -403,6 +429,109 @@
                         </button>
                         <button class="btn-outline" id="product-detail-close-btn">
                             Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Edición del Producto -->
+            <div id="product-edit-modal" class="modal-overlay" style="display: none;">
+                <div class="modal-content modal-large">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-edit"></i> Editar Producto</h3>
+                        <button class="modal-close" id="product-edit-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="product-edit-form" novalidate>
+                            <input type="hidden" id="edit-product-id">
+
+                            <div class="form-group">
+                                <label for="edit-product-name">Nombre del Producto *</label>
+                                <input type="text" id="edit-product-name" placeholder="Nombre del producto">
+                                <div class="error-message" id="edit-name-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-product-category-search">Categoría *</label>
+                                <input type="text" id="edit-product-category-search" placeholder="Buscar categoría..."
+                                    autocomplete="off">
+                                <input type="hidden" id="edit-product-category-id-hidden">
+                                <div id="edit-product-category-results" class="product-results" style="display: none;">
+                                </div>
+                                <div class="error-message" id="edit-category-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-product-description">Descripción *</label>
+                                <textarea id="edit-product-description" rows="3"
+                                    placeholder="Descripción del producto"></textarea>
+                                <div class="error-message" id="edit-description-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-product-price">Precio de Venta *</label>
+                                <input type="number" id="edit-product-price" placeholder="0.00" step="0.01" min="0">
+                                <div class="error-message" id="edit-price-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-product-stock-min">Stock Mínimo *</label>
+                                <input type="number" id="edit-product-stock-min" placeholder="0" min="0">
+                                <div class="error-message" id="edit-stock-min-error"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="edit-product-stock-max">Stock Máximo *</label>
+                                <input type="number" id="edit-product-stock-max" placeholder="0" min="0">
+                                <div class="error-message" id="edit-stock-max-error"></div>
+                            </div>
+
+                            <div id="edit-form-message" class="form-message"></div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-primary" id="product-edit-save">
+                            <i class="fas fa-save"></i> Guardar Cambios
+                        </button>
+                        <button type="button" class="btn-outline" id="product-edit-cancel">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Confirmación de Eliminación -->
+            <div id="product-delete-modal" class="modal-overlay" style="display: none;">
+                <div class="modal-content" style="max-width: 500px;">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i> Confirmar Eliminación
+                        </h3>
+                        <button class="modal-close" id="product-delete-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="hidden" id="delete-product-id">
+                        <p style="font-size: 16px; margin-bottom: 15px;">
+                            ¿Estás seguro de que deseas eliminar el siguiente producto?
+                        </p>
+                        <div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px;">
+                            <strong id="delete-product-name" style="font-size: 18px; color: #2c3e50;"></strong>
+                        </div>
+                        <p style="color: #e74c3c; font-weight: bold; margin-bottom: 10px;">
+                            <i class="fas fa-exclamation-circle"></i> Esta acción no se puede deshacer
+                        </p>
+                        <div id="delete-form-message" class="form-message"></div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn-primary" id="product-delete-confirm"
+                            style="background-color: #e74c3c;">
+                            <i class="fas fa-trash"></i> Sí, Eliminar
+                        </button>
+                        <button type="button" class="btn-outline" id="product-delete-cancel">
+                            Cancelar
                         </button>
                     </div>
                 </div>
@@ -1206,41 +1335,150 @@
 
 
             <section id="informes-section" class="spa-section" style="display:none">
-                <div class="section-header">
+
+
+                <!-- Título de Sección -->
+                <div class="informes-titulo">
+                    <h2><i class="fas fa-chart-bar"></i> Informe y Estadísticas</h2>
                 </div>
 
-                <div class="filters-section">
-                    <h4><i class="fas fa-search"></i> Filtros de Búsqueda</h4>
-                    <p>Filtre los reportes por rango de fechas</p>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Fecha de Inicio</label>
-                            <input type="date" id="fecha-inicio" placeholder="dd/mm/aaaa">
-                            <div class="error-message" id="error-fecha-inicio"></div>
+                <!-- BARRA DE FILTROS Y ACCIONES -->
+                <div class="informes-filtros">
+                    <div class="filtros-grupo">
+                        <div class="filtros-fecha">
+                            <div class="fecha-input-group">
+                                <label><i class="fas fa-calendar-alt"></i> Desde</label>
+                                <input type="date" id="fecha-inicio">
+                            </div>
+                            <div class="fecha-input-group">
+                                <label><i class="fas fa-calendar-alt"></i> Hasta</label>
+                                <input type="date" id="fecha-fin">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Fecha de Fin</label>
-                            <input type="date" id="fecha-fin" placeholder="dd/mm/aaaa">
-                            <div class="error-message" id="error-fecha-fin"></div>
+                        <div class="filtros-acciones">
+                            <button type="button" class="btn-primary" id="buscar-filtros">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                            <button type="button" class="btn-outline" id="limpiar-filtros">
+                                <i class="fas fa-eraser"></i> Limpiar
+                            </button>
+                            <button type="button" class="btn-secondary" id="exportar-pdf">
+                                <i class="fas fa-file-pdf"></i> Exportar PDF
+                            </button>
                         </div>
                     </div>
-                    <div class="filters-buttons">
-                        <button type="button" class="btn-outline" id="limpiar-filtros">
-                            <i class="fas fa-eraser"></i>
-                            Limpiar Filtros
-                        </button>
-                        <button type="button" class="btn-primary" id="buscar-filtros">
-                            <i class="fas fa-search"></i>
-                            Buscar
-                        </button>
-                        <button type="button" class="btn-primary" id="exportar-pdf">
-                            <i class="fas fa-file-pdf"></i>
-                            Exportar PDF
-                        </button>
+
+                    <!-- Indicador de período -->
+                    <div class="periodo-indicator">
+                        <i class="fas fa-info-circle"></i>
+                        <span id="periodo-texto">Cargando...</span>
                     </div>
                 </div>
 
-                <div id="reporte-informes" class="reports-section" style="display: none; margin-top: 20px;">
+                <!-- CONTENEDOR PRINCIPAL DEL DASHBOARD -->
+                <div id="dashboard-informes" class="informes-content">
+
+                    <!-- KPIs DESTACADOS -->
+                    <div class="informes-kpis">
+                        <div class="kpi-card kpi-ventas">
+                            <div class="kpi-icon">
+                                <i class="fas fa-dollar-sign"></i>
+                            </div>
+                            <div class="kpi-content">
+                                <h4>Ventas</h4>
+                                <p class="kpi-value" id="kpi-ventas">$0</p>
+                                <span class="kpi-label">Total del período</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card kpi-compras">
+                            <div class="kpi-icon">
+                                <i class="fas fa-shopping-cart"></i>
+                            </div>
+                            <div class="kpi-content">
+                                <h4>Compras</h4>
+                                <p class="kpi-value" id="kpi-compras">$0</p>
+                                <span class="kpi-label">Total del período</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card kpi-ganancia">
+                            <div class="kpi-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="kpi-content">
+                                <h4>Ganancia</h4>
+                                <p class="kpi-value" id="kpi-ganancia">$0</p>
+                                <span class="kpi-label">Ventas - Compras</span>
+                            </div>
+                        </div>
+
+                        <div class="kpi-card kpi-stock">
+                            <div class="kpi-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="kpi-content">
+                                <h4>Stock Bajo</h4>
+                                <p class="kpi-value" id="kpi-stock-bajo">0</p>
+                                <span class="kpi-label">Productos requieren atención</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN DE GRÁFICOS PRINCIPALES -->
+                    <div class="informes-charts-main">
+                        <!-- Gráfico Principal: Ventas vs Compras -->
+                        <div class="chart-principal">
+                            <div class="chart-header">
+                                <h3><i class="fas fa-chart-area"></i> Ventas vs Compras por Día</h3>
+                            </div>
+                            <div class="chart-body">
+                                <canvas id="ventas-compras-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico Lateral: Estado del Stock -->
+                        <div class="chart-lateral">
+                            <div class="chart-header">
+                                <h3><i class="fas fa-chart-pie"></i> Estado del Stock</h3>
+                            </div>
+                            <div class="chart-body">
+                                <canvas id="estado-stock-chart"></canvas>
+                            </div>
+                            <div id="stock-leyenda" class="chart-legend"></div>
+                        </div>
+                    </div>
+
+                    <!-- SECCIÓN DE DETALLES: TOP PRODUCTOS -->
+                    <div class="informes-details">
+                        <div class="detail-panel">
+                            <div class="panel-header">
+                                <h3><i class="fas fa-trophy"></i> Top 5 Productos Más Vendidos</h3>
+                            </div>
+                            <div class="panel-body">
+                                <div class="top-productos-container">
+                                    <table class="top-productos-table" id="top-productos-table">
+                                        <thead>
+                                            <tr>
+                                                <th>#</th>
+                                                <th>Producto</th>
+                                                <th>Cantidad</th>
+                                                <th>Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="top-productos-body">
+                                            <tr>
+                                                <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
+                                                    Cargando datos...
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
             </section>
@@ -1545,7 +1783,7 @@
         </div>
     </div>
 
-    <div class="modal" id="delete-confirm-modal" style="display: none;">
+    <div class="modal" id="delete-confirm-modal" style="display: none; padding-top: 15vh;">
         <div class="modal-content" style="max-width: 400px; text-align: center;">
 
             <h3>Confirmar Eliminación</h3>
@@ -1560,72 +1798,6 @@
                     Aceptar
                 </button>
             </div>
-
-        </div>
-    </div>
-
-    <div class="modal" id="edit-product-modal" style="display: none;">
-        <div class="modal-content" style="max-width: 600px;">
-            <div class="modal-header">
-                <h3><i class="fas fa-edit"></i> Editar Producto</h3>
-                <button class="modal-close" id="edit-modal-close-btn">&times;</button>
-            </div>
-
-            <form id="edit-product-form">
-                <input type="hidden" id="edit-product-id">
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-nombre">Nombre</label>
-                        <input type="text" id="edit-nombre">
-                        <div class="error-message" id="error-edit-nombre"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-categoria-search">Categoría</label>
-                        <div class="search-with-add">
-                            <input type="text" id="edit-categoria-search" autocomplete="off"
-                                placeholder="Buscar categoría...">
-                            <button type="button" id="btn-add-categoria-edit" class="btn-icon btn-add-quick"
-                                title="Crear Nueva Categoría">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                        </div>
-                        <input type="hidden" id="edit-categoria-id-hidden">
-                        <div class="product-results" id="edit-categoria-results"></div>
-                        <div class="error-message" id="error-edit-categoria"></div>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="edit-descripcion">Descripción</label>
-                    <textarea id="edit-descripcion"></textarea>
-                    <div class="error-message" id="error-edit-descripcion"></div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="edit-precio">Precio Venta</label>
-                        <input type="number" id="edit-precio" step="0.01" min="0">
-                        <div class="error-message" id="error-edit-precio"></div>
-                    </div>
-                    <div class="form-group">
-                        <label for="edit-stock-actual">Stock Actual (Solo Lectura)</label>
-                        <input type="text" id="edit-stock-actual" disabled>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label for="edit-cantidad-ajuste">Ajuste de Stock (Cantidad a añadir)</label>
-                    <input type="number" id="edit-cantidad-ajuste" value="0">
-                    <div class="error-message" id="error-edit-ajuste"></div>
-                </div>
-
-                <p id="edit-form-general-message" class="form-message"></p>
-
-                <div class="modal-buttons">
-                    <button type="submit" class="btn-primary">Guardar Cambios</button>
-                </div>
-            </form>
 
         </div>
     </div>

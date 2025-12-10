@@ -1,18 +1,26 @@
 package com.gestioninventariodemo2.cruddemo2.Services;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import com.gestioninventariodemo2.cruddemo2.DTO.EstadoStockDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.InformeDashboardDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.KPIsDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.TopProductoDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.VentasComprasDiariasDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.InformeResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ResumenStockDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.StockTablaDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.Stock;
+import com.gestioninventariodemo2.cruddemo2.Repository.CompraRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.StockRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.VentaRepository;
 import com.itextpdf.io.exceptions.IOException;
@@ -29,7 +37,7 @@ import lombok.RequiredArgsConstructor;
 public class InformeService {
 
         private final VentaRepository ventaRepository;
-
+        private final CompraRepository compraRepository;
         private final StockRepository stockRepository;
 
         public InformeResponseDTO generarInforme(LocalDate inicio, LocalDate fin) {
@@ -114,6 +122,105 @@ public class InformeService {
 
                 document.close();
                 return baos.toByteArray();
+        }
+
+        // ==========================================================
+        // NUEVOS MÉTODOS PARA DASHBOARD DE INFORMES
+        // ==========================================================
+
+        public KPIsDTO obtenerKPIs(LocalDate inicio, LocalDate fin) {
+                // Total de ventas en el rango
+                Double totalVentas = ventaRepository.sumTotalVentasEnRango(inicio, fin);
+                if (totalVentas == null)
+                        totalVentas = 0.0;
+
+                // Total de compras en el rango
+                Double totalCompras = compraRepository.sumTotalComprasEnRango(inicio, fin);
+                if (totalCompras == null)
+                        totalCompras = 0.0;
+
+                // Ganancia
+                Double ganancia = totalVentas - totalCompras;
+
+                // Productos con stock bajo (stock < stockMinimo)
+                Integer productosStockBajo = stockRepository.countProductosConStockBajo();
+
+                return KPIsDTO.builder()
+                                .totalVentas(totalVentas)
+                                .totalCompras(totalCompras)
+                                .ganancia(ganancia)
+                                .productosStockBajo(productosStockBajo)
+                                .build();
+        }
+
+        public List<VentasComprasDiariasDTO> obtenerVentasComprasDiarias(LocalDate inicio, LocalDate fin) {
+                // Obtener ventas agrupadas por día
+                List<Object[]> ventasPorDia = ventaRepository.sumVentasPorDia(inicio, fin);
+                Map<LocalDate, Double> ventasMap = new HashMap<>();
+                for (Object[] row : ventasPorDia) {
+                        // Convertir java.sql.Date a LocalDate
+                        LocalDate fecha = row[0] instanceof java.sql.Date
+                                        ? ((java.sql.Date) row[0]).toLocalDate()
+                                        : (LocalDate) row[0];
+                        Double total = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
+                        ventasMap.put(fecha, total);
+                }
+
+                // Obtener compras agrupadas por día
+                List<Object[]> comprasPorDia = compraRepository.sumComprasPorDia(inicio, fin);
+                Map<LocalDate, Double> comprasMap = new HashMap<>();
+                for (Object[] row : comprasPorDia) {
+                        // Convertir java.sql.Date a LocalDate
+                        LocalDate fecha = row[0] instanceof java.sql.Date
+                                        ? ((java.sql.Date) row[0]).toLocalDate()
+                                        : (LocalDate) row[0];
+                        Double total = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
+                        comprasMap.put(fecha, total);
+                }
+
+                // Combinar ambos mapas en una lista de DTOs
+                List<VentasComprasDiariasDTO> resultado = new ArrayList<>();
+                LocalDate fecha = inicio;
+                while (!fecha.isAfter(fin)) {
+                        resultado.add(VentasComprasDiariasDTO.builder()
+                                        .fecha(fecha)
+                                        .ventas(ventasMap.getOrDefault(fecha, 0.0))
+                                        .compras(comprasMap.getOrDefault(fecha, 0.0))
+                                        .build());
+                        fecha = fecha.plusDays(1);
+                }
+
+                return resultado;
+        }
+
+        public List<TopProductoDTO> obtenerTopProductos(LocalDate inicio, LocalDate fin, Integer limit) {
+                List<Object[]> topProductos = ventaRepository.findTopProductos(inicio, fin,
+                                limit != null ? limit : 5);
+
+                return topProductos.stream()
+                                .map(row -> TopProductoDTO.builder()
+                                                .nombreProducto((String) row[0])
+                                                .cantidad(((Number) row[1]).intValue())
+                                                .totalVentas(((Number) row[2]).doubleValue())
+                                                .build())
+                                .collect(Collectors.toList());
+        }
+
+        public EstadoStockDTO obtenerEstadoStock() {
+                // Productos con stock óptimo (stock >= stockMinimo)
+                Integer optimo = stockRepository.countStockOptimo();
+
+                // Productos con stock bajo (stock < stockMinimo AND stock > 0)
+                Integer bajo = stockRepository.countStockBajo();
+
+                // Productos agotados (stock = 0)
+                Integer agotado = stockRepository.countStockAgotado();
+
+                return EstadoStockDTO.builder()
+                                .optimo(optimo)
+                                .bajo(bajo)
+                                .agotado(agotado)
+                                .build();
         }
 
 }

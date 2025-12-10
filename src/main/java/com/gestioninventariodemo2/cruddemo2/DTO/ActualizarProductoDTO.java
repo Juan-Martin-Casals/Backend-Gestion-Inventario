@@ -16,5 +16,7 @@ public class ActualizarProductoDTO {
     private String descripcion;
     private double precio;
     private int cantidadExtraStock;
+    private Integer stockMinimo; // Nullable - solo actualizar si se proporciona
+    private Integer stockMaximo; // Nullable - solo actualizar si se proporciona
 
 }
