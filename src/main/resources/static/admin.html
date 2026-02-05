@@ -73,17 +73,6 @@
                         <li><a href="#" data-section="ventas" data-subsection="ventas-list">Ver Ventas</a></li>
                     </ul>
                 </li>
-                <li class="has-submenu">
-                    <a href="#" class="submenu-toggle">
-                        <i class="fas fa-tags"></i> Categorías <i class="fas fa-chevron-down arrow-icon"></i>
-                    </a>
-                    <ul class="submenu">
-                        <li><a href="#" data-section="categorias" data-subsection="categorias-create">Crear
-                                Categoría</a></li>
-                        <li><a href="#" data-section="categorias" data-subsection="categorias-list">Ver Categorías</a>
-                        </li>
-                    </ul>
-                </li>
                 <li><a href="#" data-section="informes"><i class="fas fa-chart-bar"></i> Informes</a></li>
                 <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
             </ul>
@@ -1227,24 +1216,23 @@
                                     </div>
                                 </div>
                             </div>
-
-                            <div style="text-align: right;">
-                                <button type="submit" class="btn-primary" id="btn-registrar-venta">
-                                    <i class="fas fa-plus"></i>
-                                    Registrar Venta
-                                </button>
-                                <button type="button" class="btn-outline" id="limpiar-form-venta"
-                                    style="margin-left: 10px;">
-                                    <i class="fas fa-eraser"></i>
-                                    Limpiar Formulario
-                                </button>
-                            </div>
-                        </form>
-                        <p id="form-general-message-venta" class="form-message"></p>
                     </div>
+
+                    <div style="text-align: right;">
+                        <button type="submit" class="btn-primary" id="btn-registrar-venta">
+                            <i class="fas fa-plus"></i>
+                            Registrar Venta
+                        </button>
+                        <button type="button" class="btn-outline" id="limpiar-form-venta" style="margin-left: 10px;">
+                            <i class="fas fa-eraser"></i>
+                            Limpiar Formulario
+                        </button>
+                    </div>
+                    </form>
+                    <p id="form-general-message-venta" class="form-message"></p>
                 </div>
 
-                <div id="ventas-list-container" class="subsection-container">
+                <div id="ventas-list-container" class="subsection-container" style="display: none;">
                     <div class="table-section">
                         <h4>Ventas Registradas</h4>
                         <p>Historial de ventas realizadas</p>
@@ -1621,198 +1609,8 @@
 
             </section>
 
-            <!-- Sección: Gestión de Categorías -->
-            <section id="categorias-section" class="spa-section" style="display:none">
-                <div class="section-header">
-                    <h2>Gestión de Categorías</h2>
-                    <p>Administra las categorías de productos.</p>
-                </div>
-
-                <!-- Subsección: Crear Categoría -->
-                <div id="categorias-create-container" class="subsection-container" style="display: none;">
-                    <div class="form-section">
-                        <h4>Crear Nueva Categoría</h4>
-                        <form class="product-form" id="categoria-form">
-                            <div class="form-group">
-                                <label for="categoria-nombre">Nombre de la Categoría</label>
-                                <input type="text" id="categoria-nombre"
-                                    placeholder="Ej: Electrónica, Ropa, Alimentos...">
-                                <div class="error-message" id="error-categoria-nombre"></div>
-                            </div>
-
-                            <button type="submit" class="btn-primary">
-                                <i class="fas fa-plus"></i>
-                                Crear Categoría
-                            </button>
-                        </form>
-                        <p id="form-general-message-categoria" class="form-message"></p>
-                    </div>
-                </div>
-
-                <!-- Subsección: Ver Categorías -->
-                <div id="categorias-list-container" class="subsection-container">
-
-                    <!-- Búsqueda de Categorías -->
-                    <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
-                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                            <!-- Búsqueda -->
-                            <div style="flex: 1; min-width: 300px;">
-                                <div style="position: relative;">
-                                    <i class="fas fa-search"
-                                        style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
-                                    <input type="text" placeholder="Buscar categoría por nombre..."
-                                        id="categorias-search-input"
-                                        style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
-                                </div>
-                            </div>
-
-                            <!-- Botón Limpiar -->
-                            <div style="display: flex; gap: 10px;">
-                                <button type="button" class="btn-outline" id="categorias-clear-search"
-                                    style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
-                                    <i class="fas fa-eraser"></i> Limpiar
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="table-section">
-                        <div class="table-container">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th data-sort-by="nombre">
-                                            Nombre <i class="sort-icon fas fa-sort"></i>
-                                        </th>
-                                        <th>Productos Asociados</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="categorias-table-body">
-                                </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colspan="3">
-                                            <div class="pagination-controls"
-                                                style="text-align: right; padding: 10px 0;">
-                                                <span id="categorias-page-info" style="margin-right: 15px;">Página 1 de
-                                                    1</span>
-                                                <button class="btn-outline" id="categorias-prev-page" disabled>
-                                                    <i class="fas fa-arrow-left"></i>
-                                                </button>
-                                                <button class="btn-outline" id="categorias-next-page">
-                                                    <i class="fas fa-arrow-right"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tfoot>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Modal: Editar Categoría -->
-            <div class="modal-overlay" id="edit-categoria-modal" style="display: none;">
-                <div class="modal-content modal-compact">
-                    <div class="modal-header">
-                        <h3><i class="fas fa-edit"></i> Editar Categoría</h3>
-                        <button class="modal-close" id="edit-categoria-modal-close-btn">&times;</button>
-                    </div>
-
-                    <div class="modal-body" style="padding: 30px;">
-                        <form id="edit-categoria-form">
-                            <input type="hidden" id="edit-categoria-id">
-
-                            <div class="form-group" style="margin-bottom: 25px;">
-                                <label for="edit-categoria-nombre" style="margin-bottom: 8px; display: block;">Nombre de
-                                    la Categoría</label>
-                                <input type="text" id="edit-categoria-nombre" style="padding: 12px;">
-                                <div class="error-message" id="error-edit-categoria-nombre"></div>
-                            </div>
-
-                            <p id="edit-categoria-form-general-message" class="form-message"></p>
-
-                            <div class="modal-buttons" style="margin-top: 25px;">
-                                <button type="submit" class="btn-primary">Guardar Cambios</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Modal: Confirmar Eliminación de Categoría -->
-            <div class="modal-overlay" id="delete-categoria-confirm-modal" style="display: none;">
-                <div class="modal-content" style="max-width: 500px;">
-                    <div class="modal-header">
-                        <h3><i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i> Confirmar Eliminación
-                        </h3>
-                        <button class="modal-close" id="close-delete-categoria-modal">&times;</button>
-                    </div>
-
-                    <div class="modal-body" style="padding: 25px; text-align: center;">
-                        <p id="delete-categoria-modal-message" style="font-size: 16px; color: #333; line-height: 1.6;">
-                            ¿Estás seguro de que querés eliminar esta categoría?
-                        </p>
-                    </div>
-
-                    <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
-                        <button type="button" class="btn-outline" id="cancel-delete-categoria-btn">
-                            Cancelar
-                        </button>
-                        <button type="button" class="btn-primary" id="confirm-delete-categoria-btn"
-                            style="background-color: #e74c3c;">
-                            <i class="fas fa-trash"></i> Sí, Eliminar
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-
-            <!-- Modal: Ver Productos de Categoría -->
-            <div class="modal" id="productos-categoria-modal" style="display: none;">
-                <div class="modal-content modal-large">
-                    <div class="modal-header">
-                        <h3><i class="fas fa-box"></i> Productos de <span id="categoria-nombre-modal"></span></h3>
-                        <button class="modal-close" id="productos-categoria-modal-close">&times;</button>
-                    </div>
-
-                    <div class="table-container" style="max-height: 500px; overflow-y: auto;">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Precio</th>
-                                    <th>Stock</th>
-                                </tr>
-                            </thead>
-                            <tbody id="productos-categoria-body">
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="4">
-                                        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                                            <span id="productos-page-info" style="margin-right: 15px;">Página 1 de
-                                                1</span>
-                                            <button class="btn-outline" id="productos-prev-page" disabled>
-                                                <i class="fas fa-arrow-left"></i>
-                                            </button>
-                                            <button class="btn-outline" id="productos-next-page">
-                                                <i class="fas fa-arrow-right"></i>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
+            <!-- Sección: Stock -->
             <section id="stock-section" class="spa-section" style="display:none">
-
                 <div class="section-header">
                     <h3>Gestión de Stock</h3>
                     <p>Consultá y administrá el inventario de tus productos.</p>
@@ -2135,9 +1933,9 @@
     <script src="js/ventas.js"></script>
     <script src="js/informes.js"></script>
     <script src="js/stock.js"></script>
-    <script src="js/categorias.js"></script>
-
 
 </body>
+
+</html>
 
 </html>

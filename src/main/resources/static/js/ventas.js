@@ -521,6 +521,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         renderDetalleTemporal();
 
+        // Limpiar error después de agregar exitosamente
+        errorDetalleGeneral.textContent = '';
+        errorDetalleGeneral.style.display = 'none';
+        errorDetalleGeneral.className = 'form-message';
+
         productoSeleccionado = null;
         productSearchInput.value = '';
         cantidadProductoInput.value = '1';

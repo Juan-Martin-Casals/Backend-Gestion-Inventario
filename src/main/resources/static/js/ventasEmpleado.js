@@ -457,6 +457,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         renderDetalleTemporal();
 
+        // Limpiar error después de agregar exitosamente
+        errorDetalleGeneral.textContent = '';
+        errorDetalleGeneral.style.display = 'none';
+        errorDetalleGeneral.className = 'form-message';
+
         productoSeleccionado = null;
         productSearchInput.value = '';
         cantidadProductoInput.value = '1';
@@ -920,6 +925,59 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (subsectionId === 'ventas-list') {
             loadVentas(0);
         }
+    }
+
+    // ==========================================================
+    // FUNCIÓN LIMPIAR FORMULARIO DE VENTA
+    // ==========================================================
+
+    function limpiarFormularioVenta() {
+        // Limpiar campos del formulario
+        if (ventaForm) ventaForm.reset();
+
+        // Limpiar errores
+        document.querySelectorAll('#venta-form .error-message').forEach(el => el.textContent = '');
+        if (errorDetalleGeneral) {
+            errorDetalleGeneral.textContent = '';
+            errorDetalleGeneral.style.display = 'none';
+        }
+        if (generalMessage) {
+            generalMessage.textContent = '';
+            generalMessage.className = 'form-message';
+        }
+
+        // Limpiar inputs de búsqueda y ocultos
+        clienteSearchInput.value = '';
+        clienteHiddenInput.value = '';
+        productSearchInput.value = '';
+        cantidadProductoInput.value = '1';
+
+        // Limpiar detalle de venta
+        detallesVenta = [];
+        productoSeleccionado = null;
+        renderDetalleTemporal();
+
+        // Resetear cliente anterior
+        previousClienteId = null;
+        previousClienteNombre = '';
+
+        // Resetear método de pago
+        document.querySelectorAll('input[name="metodo-pago"]').forEach(radio => {
+            radio.checked = false;
+        });
+        const camposTarjeta = document.getElementById('campos-tipo-tarjeta');
+        if (camposTarjeta) camposTarjeta.style.display = 'none';
+        const tipoTarjeta = document.getElementById('tipo-tarjeta');
+        if (tipoTarjeta) tipoTarjeta.value = '';
+
+        // Establecer fecha actual nuevamente
+        setFechaActual();
+    }
+
+    // Event listener para botón limpiar
+    const btnLimpiarFormVenta = document.getElementById('limpiar-form-venta');
+    if (btnLimpiarFormVenta) {
+        btnLimpiarFormVenta.addEventListener('click', limpiarFormularioVenta);
     }
 
     // Exponer globalmente
