@@ -1172,6 +1172,10 @@
                                     <i class="fas fa-plus"></i>
                                     Agregar Producto a la Venta
                                 </button>
+
+                                <!-- Mensaje de error para stock -->
+                                <p id="errorStockVenta" class="form-message" style="display: none;"></p>
+
                                 <div class="error-message" id="errorDetalleGeneral"></div>
 
                                 <div class="table-container" style="margin-top: 20px;">
@@ -1228,6 +1232,11 @@
                                 <button type="submit" class="btn-primary" id="btn-registrar-venta">
                                     <i class="fas fa-plus"></i>
                                     Registrar Venta
+                                </button>
+                                <button type="button" class="btn-outline" id="limpiar-form-venta"
+                                    style="margin-left: 10px;">
+                                    <i class="fas fa-eraser"></i>
+                                    Limpiar Formulario
                                 </button>
                             </div>
                         </form>

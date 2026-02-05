@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Mensajes de Error ---
     const errorFechaVenta = document.getElementById('errorFechaVenta');
     const errorProducto = document.getElementById('errorProducto');
-    const errorDetalleGeneral = document.getElementById('errorDetalleGeneral');
+    const errorDetalleGeneral = document.getElementById('errorStockVenta');
     const generalMessage = document.getElementById('form-general-message-venta');
 
     // --- Selectores Método de Pago ---
@@ -419,10 +419,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================================
 
     function buscarProductos() {
-        const query = productSearchInput.value.toLowerCase();
-        const productosFiltrados = todosLosProductos.filter(producto => {
-            return producto.nombreProducto.toLowerCase().includes(query);
-        });
+        const query = productSearchInput.value.toLowerCase().trim();
+
+        // Si el campo está vacío o solo tiene espacios, mostrar todos los productos
+        const productosFiltrados = query === ''
+            ? todosLosProductos
+            : todosLosProductos.filter(producto => {
+                return producto.nombreProducto.toLowerCase().includes(query);
+            });
         renderResultadosProductos(productosFiltrados);
     }
 
@@ -487,10 +491,26 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        // Validar stock disponible
+        const stockDisponible = productoSeleccionado.stockActual || 0;
         const productoExistente = detallesVenta.find(item => item.idProducto === productoSeleccionado.idProducto);
+        const cantidadActualEnDetalle = productoExistente ? productoExistente.cantidad : 0;
+        const cantidadTotal = cantidadActualEnDetalle + cantidad;
 
-        if (productoExistente) {
-            productoExistente.cantidad += cantidad;
+        if (cantidadTotal > stockDisponible) {
+            const mensajeError = `Stock insuficiente. Stock disponible: ${stockDisponible} unidades.`;
+
+            errorDetalleGeneral.textContent = mensajeError;
+            errorDetalleGeneral.className = 'form-message error';
+            errorDetalleGeneral.style.display = 'block';
+
+            return;
+        }
+
+        const productoExistente2 = detallesVenta.find(item => item.idProducto === productoSeleccionado.idProducto);
+
+        if (productoExistente2) {
+            productoExistente2.cantidad += cantidad;
         } else {
             detallesVenta.push({
                 idProducto: productoSeleccionado.idProducto,
@@ -1199,6 +1219,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (productSearchInput) {
         productSearchInput.addEventListener('input', buscarProductos);
         productSearchInput.addEventListener('focus', buscarProductos);
+        productSearchInput.addEventListener('click', buscarProductos);
     }
     if (productResultsContainer) {
         productResultsContainer.addEventListener('click', seleccionarProducto);
@@ -1410,6 +1431,57 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Cargar métodos al iniciar
     cargarMetodosPago();
+
+    // ==========================================================
+    // FUNCIÓN LIMPIAR FORMULARIO DE VENTA
+    // ==========================================================
+
+    function limpiarFormularioVenta() {
+        // Limpiar campos del formulario
+        if (ventaForm) ventaForm.reset();
+
+        // Limpiar errores
+        document.querySelectorAll('#venta-form .error-message').forEach(el => el.textContent = '');
+        if (errorDetalleGeneral) {
+            errorDetalleGeneral.textContent = '';
+            errorDetalleGeneral.style.display = 'none';
+        }
+        if (generalMessage) {
+            generalMessage.textContent = '';
+            generalMessage.className = 'form-message';
+        }
+
+        // Limpiar inputs de búsqueda y ocultos
+        clienteSearchInput.value = '';
+        clienteHiddenInput.value = '';
+        productSearchInput.value = '';
+        cantidadProductoInput.value = '1';
+
+        // Limpiar detalle de venta
+        detallesVenta = [];
+        productoSeleccionado = null;
+        renderDetalleTemporal();
+
+        // Resetear cliente anterior
+        previousClienteId = null;
+        previousClienteNombre = '';
+
+        // Resetear método de pago
+        document.querySelectorAll('input[name="metodo-pago"]').forEach(radio => {
+            radio.checked = false;
+        });
+        document.getElementById('campos-tipo-tarjeta').style.display = 'none';
+        document.getElementById('tipo-tarjeta').value = '';
+
+        // Establecer fecha actual nuevamente
+        establecerFechaActual();
+    }
+
+    // Event listener para botón limpiar
+    const btnLimpiarFormVenta = document.getElementById('limpiar-form-venta');
+    if (btnLimpiarFormVenta) {
+        btnLimpiarFormVenta.addEventListener('click', limpiarFormularioVenta);
+    }
 
     // Exponer globalmente
     window.showVentasSubsection = showSubsection;

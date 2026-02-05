@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Mensajes de Error ---
     const errorFechaVenta = document.getElementById('errorFechaVenta');
     const errorProducto = document.getElementById('errorProducto');
-    const errorDetalleGeneral = document.getElementById('errorDetalleGeneral');
+    const errorDetalleGeneral = document.getElementById('errorStockVenta');
     const generalMessage = document.getElementById('form-general-message-venta');
 
     // ===================================
@@ -350,10 +350,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================================
 
     function buscarProductos() {
-        const query = productSearchInput.value.toLowerCase();
-        const productosFiltrados = todosLosProductos.filter(producto => {
-            return producto.nombreProducto.toLowerCase().includes(query);
-        });
+        const query = productSearchInput.value.toLowerCase().trim();
+
+        // Si el campo está vacío o solo tiene espacios, mostrar todos los productos
+        const productosFiltrados = query === ''
+            ? todosLosProductos
+            : todosLosProductos.filter(producto => {
+                return producto.nombreProducto.toLowerCase().includes(query);
+            });
         renderResultadosProductos(productosFiltrados);
     }
 
@@ -407,9 +411,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================================
 
     function agregarProductoAlDetalle() {
+        // Limpiar errores previos
         errorDetalleGeneral.textContent = '';
+        errorDetalleGeneral.style.display = 'none';
+
         if (!productoSeleccionado) {
             errorDetalleGeneral.textContent = 'Debe seleccionar un producto de la lista.';
+            errorDetalleGeneral.className = 'form-message error';
+            errorDetalleGeneral.style.display = 'block';
             return;
         }
         const cantidad = parseInt(cantidadProductoInput.value, 10);
@@ -418,10 +427,26 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        // Validar stock disponible
+        const stockDisponible = productoSeleccionado.stockActual || 0;
         const productoExistente = detallesVenta.find(item => item.idProducto === productoSeleccionado.idProducto);
+        const cantidadActualEnDetalle = productoExistente ? productoExistente.cantidad : 0;
+        const cantidadTotal = cantidadActualEnDetalle + cantidad;
 
-        if (productoExistente) {
-            productoExistente.cantidad += cantidad;
+        if (cantidadTotal > stockDisponible) {
+            const mensajeError = `Stock insuficiente. Stock disponible: ${stockDisponible} unidades.`;
+
+            errorDetalleGeneral.textContent = mensajeError;
+            errorDetalleGeneral.className = 'form-message error';
+            errorDetalleGeneral.style.display = 'block';
+
+            return;
+        }
+
+        const productoExistente2 = detallesVenta.find(item => item.idProducto === productoSeleccionado.idProducto);
+
+        if (productoExistente2) {
+            productoExistente2.cantidad += cantidad;
         } else {
             detallesVenta.push({
                 idProducto: productoSeleccionado.idProducto,
@@ -788,6 +813,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (productSearchInput) {
         productSearchInput.addEventListener('input', buscarProductos);
         productSearchInput.addEventListener('focus', buscarProductos);
+        productSearchInput.addEventListener('click', buscarProductos);
     }
     if (productResultsContainer) {
         productResultsContainer.addEventListener('click', seleccionarProducto);
