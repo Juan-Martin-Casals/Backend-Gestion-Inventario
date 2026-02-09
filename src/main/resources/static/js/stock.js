@@ -13,8 +13,10 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // --- 2. CONSTANTES DEL DOM (PÁGINA PRINCIPAL) ---
-    const searchInput = document.getElementById('stock-search-input');
-    const tableBody = document.getElementById('stock-table-body');
+    // La subsección "Gestión Stock" dentro de Productos usa 'product-search-input'
+    // La sección independiente Stock usa 'stock-search-input'
+    const searchInput = document.getElementById('product-search-input') || document.getElementById('stock-search-input');
+    const tableBody = document.getElementById('stock-table-body') || document.getElementById('product-table-body');
 
     // Constantes para búsqueda de categorías en modal de edición
     const editCategoriaSearchInput = document.getElementById('edit-categoria-search');
@@ -115,7 +117,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function renderStockTable() {
-        if (!tableBody || !mainContent) return;
+        if (!tableBody || !mainContent) {
+            return;
+        }
 
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         tableBody.classList.add('loading');
@@ -177,12 +181,23 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function filtrarStock() {
-        if (!searchInput) {
-            currentListForPagination = todosLosProductos; // Si no hay input, mostrar todo
+        // Validar que tengamos datos cargados
+        if (todosLosProductos.length === 0) {
+            currentListForPagination = [];
+            currentPage = 1;
+            renderStockTable();
+            return;
+        }
+
+        if (!searchInput || !searchInput.value.trim()) {
+            currentListForPagination = todosLosProductos;
         } else {
-            const textoBusqueda = searchInput.value.toLowerCase();
+            const textoBusqueda = searchInput.value.toLowerCase().trim();
             currentListForPagination = todosLosProductos.filter(producto => {
-                return producto.nombre.toLowerCase().includes(textoBusqueda);
+                // Buscar en nombre, categoría y descripción
+                return producto.nombre.toLowerCase().includes(textoBusqueda) ||
+                    producto.categoria.toLowerCase().includes(textoBusqueda) ||
+                    producto.descripcion.toLowerCase().includes(textoBusqueda);
             });
         }
         clientSideSort();
@@ -390,7 +405,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- 7. LISTENERS ---
     // =================================================================
 
-    if (searchInput) searchInput.addEventListener('input', filtrarStock);
+    if (searchInput) {
+        searchInput.addEventListener('input', filtrarStock);
+    }
     tableHeaders.forEach(th => th.addEventListener('click', handleSortClick));
 
     // Listeners para búsqueda de categorías en modal de edición

@@ -108,10 +108,8 @@ document.addEventListener('DOMContentLoaded', function () {
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
-            // 2. Añadir parámetros de ordenamiento
-            const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
-            // CAMBIO: Usar endpoint de inventario en lugar de productos
-            const url = `${API_PRODUCTOS_URL}/inventario?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
+            // 2. Cargar TODOS los productos (sin paginación) para búsqueda global
+            const url = `${API_PRODUCTOS_URL}/inventario?page=0&size=1000`;
 
             const response = await fetch(url, { cache: 'no-store' });
 
@@ -120,8 +118,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             const pageData = await response.json();
-            totalPages = pageData.totalPages;
-            todosLosProductos = pageData.content; // Guardar todos los productos
+            todosLosProductos = pageData.content; // Guardar TODOS los productos
 
             // Si hay una búsqueda activa, reaplicarla con los nuevos datos
             if (productSearchInputElement && productSearchInputElement.value.trim() !== '') {
@@ -137,15 +134,26 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
 
-            // 3. Aplicar filtros y renderizar
+            // 3. Aplicar sorting y filtros en el frontend
             const productosAMostrar = aplicarFiltros();
-            renderProductTable(productosAMostrar);
+            const productosSorted = clientSideSort(productosAMostrar);
+
+            // 4. Calcular paginación en frontend
+            totalPages = Math.ceil(productosSorted.length / itemsPerPage);
+            if (currentPage >= totalPages && totalPages > 0) currentPage = totalPages - 1;
+            if (currentPage < 0) currentPage = 0;
+
+            const startIndex = currentPage * itemsPerPage;
+            const endIndex = startIndex + itemsPerPage;
+            const productosPaginados = productosSorted.slice(startIndex, endIndex);
+
+            // 5. Renderizar
+            renderProductTable(productosPaginados);
             updatePaginationControls();
-            updateSortIndicators();
+            updateSortIndicators(); // Actualizar indicadores visuales
 
             requestAnimationFrame(() => {
-                // Restaurar scroll y forzar foco para estabilidad
-                mainContent.focus();
+                // Restaurar scroll
                 window.scrollTo(0, scrollPosition);
                 // INICIAR FADE-IN
                 productTableBody.classList.remove('loading');
@@ -159,6 +167,56 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     window.loadProducts = loadProducts;
+
+    // ===============================
+    // FUNCIONES AUXILIARES PARA FILTROS Y SORTING
+    // ===============================
+
+    /**
+     * Aplica filtros de búsqueda sobre los productos
+     */
+    function aplicarFiltros() {
+        // Si hay búsqueda activa, usar productos filtrados
+        if (productosBuscados && productosBuscados.length >= 0) {
+            return productosBuscados;
+        }
+        // Si no, retornar todos
+        return todosLosProductos;
+    }
+
+    /**
+     * Ordena los productos en el frontend según sortField y sortDirection
+     */
+    function clientSideSort(productos) {
+        if (!sortField || productos.length === 0) return productos;
+
+        // Mapear nombres de campo del HTML a nombres de campo del DTO
+        const fieldMap = {
+            'stock': 'stockActual'
+        };
+
+        const actualField = fieldMap[sortField] || sortField;
+
+        const sorted = [...productos].sort((a, b) => {
+            let aVal = a[actualField];
+            let bVal = b[actualField];
+
+            // Handle null/undefined
+            if (aVal == null) aVal = '';
+            if (bVal == null) bVal = '';
+
+            // Comparación numérica vs string
+            if (typeof aVal === 'number' && typeof bVal === 'number') {
+                return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
+            }
+
+            // Comparación string
+            const comparison = String(aVal).localeCompare(String(bVal));
+            return sortDirection === 'asc' ? comparison : -comparison;
+        });
+
+        return sorted;
+    }
 
     // ===============================
     // FUNCIONES DE ORDENAMIENTO
@@ -519,17 +577,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // 3. Validaciones
             let isValid = true;
-            if (!nombre) { nameError.textContent = 'Complete este campo'; isValid = false; }
+            if (!nombre) { nameError.textContent = 'El nombre del producto es obligatorio'; isValid = false; }
             if (!idCategoria) { categoryError.textContent = 'Debe seleccionar una categoría'; isValid = false; }
-            if (!descripcion) { descriptionError.textContent = 'Complete este campo'; isValid = false; }
+            if (!descripcion) { descriptionError.textContent = 'La descripcion del producto es obligatoria'; isValid = false; }
             if (isNaN(stockMinimo) || stockMinimo < 0) { stockMinError.textContent = 'Debe ser un número positivo.'; isValid = false; }
             if (isNaN(stockMaximo) || stockMaximo <= 0) { stockMaxError.textContent = 'Debe ser un número mayor a 0.'; isValid = false; }
             // Validar relación entre stock mínimo y máximo (solo si ambos son números válidos)
             if (!isNaN(stockMinimo) && !isNaN(stockMaximo) && stockMinimo >= stockMaximo) {
-                stockMaxError.textContent = 'El máx. debe ser mayor que el mín.';
+                stockMaxError.textContent = 'El máximo debe ser mayor que el mínimo.';
                 isValid = false;
             }
-            if (!isValid) { generalMessage.textContent = "Complete los campos."; generalMessage.classList.add('error'); return; }
+            if (!isValid) { generalMessage.textContent = "Complete todos los campos."; generalMessage.classList.add('error'); return; }
 
             // 4. Construir DTO
             const productoDTO = {
@@ -1018,45 +1076,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const textoBusqueda = removeAccents(productSearchInputElement.value.toLowerCase().trim());
 
-        // Agregar animación de fade out
-        productTableBody.classList.add('loading');
-
-        // Esperar un poco para la animación
-        setTimeout(() => {
-            if (textoBusqueda === '') {
-                productosBuscados = null;
-            } else {
-                productosBuscados = todosLosProductos.filter(producto => {
-                    // Buscar en nombre del producto (sin acentos)
-                    const coincideNombre = producto.nombre &&
-                        removeAccents(producto.nombre.toLowerCase()).includes(textoBusqueda);
-
-                    // Buscar en categoría (sin acentos)
-                    const coincideCategoria = producto.categoria &&
-                        removeAccents(producto.categoria.toLowerCase()).includes(textoBusqueda);
-
-                    // Buscar en descripción (sin acentos)
-                    const coincideDescripcion = producto.descripcion &&
-                        removeAccents(producto.descripcion.toLowerCase()).includes(textoBusqueda);
-
-                    return coincideNombre || coincideCategoria || coincideDescripcion;
-                });
-            }
-
-            // Renderizar tabla con filtros aplicados
-            const productosAMostrar = aplicarFiltros();
-            renderProductTable(productosAMostrar);
-
-            // Mostrar mensaje si no hay resultados
-            if (productosAMostrar.length === 0 && textoBusqueda !== '') {
-                productTableBody.innerHTML = '<tr><td colspan="5">No se encontraron productos que coincidan con la búsqueda.</td></tr>';
-            }
-
-            // Remover animación de loading (fade in)
-            requestAnimationFrame(() => {
-                productTableBody.classList.remove('loading');
+        if (textoBusqueda === '') {
+            productosBuscados = null;
+        } else {
+            productosBuscados = todosLosProductos.filter(producto => {
+                const coincideNombre = producto.nombre &&
+                    removeAccents(producto.nombre.toLowerCase()).includes(textoBusqueda);
+                const coincideCategoria = producto.categoria &&
+                    removeAccents(producto.categoria.toLowerCase()).includes(textoBusqueda);
+                const coincideDescripcion = producto.descripcion &&
+                    removeAccents(producto.descripcion.toLowerCase()).includes(textoBusqueda);
+                return coincideNombre || coincideCategoria || coincideDescripcion;
             });
-        }, 150); // Delay de 150ms para la animación
+        }
+
+        currentPage = 0; // Resetear a primera página
+        loadProducts(); // Recargar con paginación correcta
     }
 
     function aplicarFiltros() {
@@ -1074,21 +1109,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (productSearchInputElement) {
             productSearchInputElement.value = '';
         }
-
-        // Agregar animación de fade out
-        productTableBody.classList.add('loading');
-
-        // Esperar un poco para la animación
-        setTimeout(() => {
-            productosBuscados = null;
-            const productosAMostrar = aplicarFiltros();
-            renderProductTable(productosAMostrar);
-
-            // Remover animación de loading (fade in)
-            requestAnimationFrame(() => {
-                productTableBody.classList.remove('loading');
-            });
-        }, 150); // Delay de 150ms para la animación
+        productosBuscados = null;
+        currentPage = 0; // Resetear a primera página
+        loadProducts(); // Recargar con paginación
     }
 
     // Event listeners para búsqueda en tiempo real con debounce
