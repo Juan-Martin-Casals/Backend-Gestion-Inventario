@@ -132,12 +132,22 @@ document.addEventListener('DOMContentLoaded', function () {
     // BUSCADOR PROVEEDORES
     // ==========================================================
 
+    // Función helper para capitalizar nombres (Title Case)
+    function capitalizarNombre(nombre) {
+        if (!nombre) return '';
+        return nombre
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    }
+
     function renderResultadosProveedores(proveedores) {
         if (proveedores.length === 0) {
             proveedorResultsContainer.innerHTML = '<div class="product-result-item">No se encontraron proveedores</div>';
         } else {
             proveedorResultsContainer.innerHTML = proveedores.map(p => {
-                return `<div class="product-result-item" data-id="${p.id}">${p.nombre}</div>`;
+                return `<div class="product-result-item" data-id="${p.id}">${capitalizarNombre(p.nombre)}</div>`;
             }).join('');
         }
         proveedorResultsContainer.style.display = 'block';
@@ -145,9 +155,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function filtrarProveedores() {
         const query = proveedorSearchInput.value.toLowerCase();
-        const proveedoresFiltrados = todosLosProveedores.filter(p => {
-            return p.nombre.toLowerCase().includes(query);
-        });
+        const proveedoresFiltrados = todosLosProveedores
+            .filter(p => p.nombre.toLowerCase().includes(query))
+            .sort((a, b) => a.nombre.localeCompare(b.nombre)); // Ordenar alfabéticamente
         renderResultadosProveedores(proveedoresFiltrados);
     }
 
@@ -162,7 +172,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (proveedor) {
             const newProveedorId = proveedor.id.toString();
-            const newProveedorNombre = proveedor.nombre;
+            const newProveedorNombre = capitalizarNombre(proveedor.nombre);
 
             // Verificar si hay productos en el detalle y si el proveedor es diferente
             if (detalleItems.length > 0 && previousProveedorId && newProveedorId !== previousProveedorId) {
@@ -237,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             productoResultsContainer.innerHTML = productos.map(p => {
                 return `<div class="product-result-item" data-id="${p.idProducto}">
-                    ${p.nombreProducto} <span>($${formatoMoneda.format(p.precioVenta)})</span>
+                    ${capitalizarNombre(p.nombreProducto)} <span>($${formatoMoneda.format(p.precioVenta)})</span>
                 </div>`;
             }).join('');
         }
@@ -246,9 +256,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function filtrarProductos() {
         const query = productoSearchInput.value.toLowerCase();
-        const productosFiltrados = todosLosProductos.filter(p => {
-            return p.nombreProducto.toLowerCase().includes(query);
-        });
+        const productosFiltrados = todosLosProductos
+            .filter(p => p.nombreProducto.toLowerCase().includes(query))
+            .sort((a, b) => a.nombreProducto.localeCompare(b.nombreProducto)); // Ordenar alfabéticamente
         renderResultadosProductos(productosFiltrados);
     }
 
@@ -262,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const producto = todosLosProductos.find(p => p.idProducto === productoIdNum);
 
         if (producto) {
-            productoSearchInput.value = producto.nombreProducto;
+            productoSearchInput.value = capitalizarNombre(producto.nombreProducto);
             productoHiddenInput.value = producto.idProducto;
             productoResultsContainer.style.display = 'none';
             if (productoError) productoError.textContent = '';
@@ -299,17 +309,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // CARRITO COMPRAS
     // ===============================================
 
-    // Función helper para auto-ocultar errores después de 4 segundos
-    function autoOcultarErrores() {
-        const errorElements = document.querySelectorAll('#compra-form .error-message');
-        errorElements.forEach(el => {
-            if (el.textContent.trim() !== '') {
-                setTimeout(() => {
-                    el.textContent = '';
-                }, 4000);
-            }
-        });
-    }
+    // Función para auto-ocultar errores fue removida - los errores ahora persisten
 
     function renderDetalleTemporal() {
         if (!detalleTemporalTabla || !totalDisplay) return;
@@ -471,7 +471,6 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (!isValid) {
-            autoOcultarErrores();
             return;
         }
 
@@ -511,12 +510,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (generalMessageCompra) {
                     generalMessageCompra.textContent = "Debe completar todos los campos correctamente.";
                     generalMessageCompra.classList.add('error');
-                    setTimeout(() => {
-                        generalMessageCompra.textContent = '';
-                        generalMessageCompra.className = 'form-message';
-                    }, 4000);
                 }
-                autoOcultarErrores();
                 return;
             }
 

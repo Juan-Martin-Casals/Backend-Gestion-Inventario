@@ -323,6 +323,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Función helper para capitalizar nombres (Title Case)
+    function capitalizarNombre(nombre) {
+        if (!nombre) return '';
+        return nombre
+            .toLowerCase()
+            .split(' ')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    }
+
     function setupMultiSelect(selectUI, productosPreSeleccionados = []) {
         if (!selectUI.options || !selectUI.hiddenSelect || !selectUI.tags) return;
 
@@ -332,15 +342,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const preSeleccionadosSet = new Set(productosPreSeleccionados.map(p => p.idProducto));
 
-        allProducts.forEach(producto => {
+        // Ordenar productos alfabéticamente
+        const productosOrdenados = [...allProducts].sort((a, b) =>
+            a.nombreProducto.localeCompare(b.nombreProducto)
+        );
+
+        productosOrdenados.forEach(producto => {
             const realOption = document.createElement('option');
             realOption.value = producto.idProducto;
-            realOption.textContent = producto.nombreProducto;
+            realOption.textContent = capitalizarNombre(producto.nombreProducto);
             selectUI.hiddenSelect.appendChild(realOption);
 
             const visualOption = document.createElement('div');
             visualOption.classList.add('option');
-            visualOption.textContent = producto.nombreProducto;
+            visualOption.textContent = capitalizarNombre(producto.nombreProducto);
             visualOption.dataset.value = producto.idProducto;
 
             visualOption.addEventListener('click', () => {
@@ -366,9 +381,10 @@ document.addEventListener('DOMContentLoaded', function () {
         // Lo ocultamos visualmente de la lista
         visualOption.style.display = 'none';
 
-        selectUI.options.style.display = 'none';
-        selectUI.input.value = '';
-        selectUI.input.placeholder = '';
+        // NO cerramos el dropdown para permitir selección múltiple continua
+        // selectUI.options.style.display = 'none'; // REMOVIDO
+        selectUI.input.value = ''; // Limpiar búsqueda
+        // Mantener el placeholder para indicar que puede seguir buscando
     }
 
     function crearTag(texto, valor, visualOption, realOption, selectUI) {
