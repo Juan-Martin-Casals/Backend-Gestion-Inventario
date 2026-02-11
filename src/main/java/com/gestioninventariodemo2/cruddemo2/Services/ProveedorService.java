@@ -1,8 +1,5 @@
 package com.gestioninventariodemo2.cruddemo2.Services;
 
-
-
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,18 +32,31 @@ public class ProveedorService {
     @Transactional
     // CORRECCIÓN 1: El método ahora devuelve el DTO de respuesta.
     public ProveedorResponseDTO registrarProveedor(ProveedorRequestDTO dto) {
-        // Tu lógica de validación (está bien como la tenías)
+        // VALIDACIÓN 1: Verificar nombre duplicado PRIMERO
+        if (dto.getNombre() != null && !dto.getNombre().isBlank()) {
+            if (proveedorRepository.existsByNombreIgnoreCase(dto.getNombre())) {
+                throw new IllegalArgumentException("Ya existe un proveedor registrado con ese nombre");
+            }
+        }
+
+        // VALIDACIÓN 2: Verificar email duplicado SEGUNDO
+        if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
+            if (proveedorRepository.existsByEmail(dto.getEmail())) {
+                throw new IllegalArgumentException("Ya existe un proveedor registrado con ese email");
+            }
+        }
+
+        // VALIDACIÓN 3: Campos obligatorios
         if (dto.getNombre() == null || dto.getNombre().isBlank() ||
-            dto.getTelefono() == null || dto.getTelefono().isBlank() ||
-            dto.getEmail() == null || dto.getEmail().isBlank() ||
-            dto.getDireccion() == null || dto.getDireccion().isBlank()) {
+                dto.getTelefono() == null || dto.getTelefono().isBlank() ||
+                dto.getEmail() == null || dto.getEmail().isBlank() ||
+                dto.getDireccion() == null || dto.getDireccion().isBlank()) {
             throw new IllegalArgumentException("Todos los campos son obligatorios");
         }
+
+        // VALIDACIÓN 4: Formato del email
         if (!dto.getEmail().matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
             throw new IllegalArgumentException("El email debe tener un formato válido");
-        }
-        if (proveedorRepository.existsByEmail(dto.getEmail())) {
-            throw new IllegalArgumentException("Ya existe un proveedor registrado con ese email");
         }
 
         Proveedor proveedor = Proveedor.builder()
@@ -79,100 +89,106 @@ public class ProveedorService {
         return mapToDTO(proveedorGuardado);
     }
 
-@Transactional(readOnly = true)
+    @Transactional(readOnly = true)
     public Page<ProveedorResponseDTO> listarProveedores(Pageable pageable) {
-        
+
         // 1. Obtenemos la página del repositorio
         Page<Proveedor> paginaProveedores = proveedorRepository.findAll(pageable);
-        
+
         // 2. Mapeamos la página a DTO usando el método que ya tenías
         return paginaProveedores.map(this::mapToDTO);
     }
 
-
     @Transactional(readOnly = true)
     public List<ProveedorResponseDTO> listarTodosProveedores() {
         return proveedorRepository.findAll().stream()
-            .map(this::mapToDTO)
-            .collect(Collectors.toList());
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
     }
 
     @Transactional
     public ProveedorResponseDTO actualizarProveedor(Long id, ProveedorUpdateDTO dto) {
-    Proveedor proveedor = proveedorRepository.findById(id)
-        .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado con id: " + id));
+        Proveedor proveedor = proveedorRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado con id: " + id));
 
-    // 🔹 Actualizar datos básicos
-    if (dto.getNombre() != null) proveedor.setNombre(dto.getNombre());
-    if (dto.getTelefono() != null) proveedor.setTelefono(dto.getTelefono());
-    if (dto.getEmail() != null) proveedor.setEmail(dto.getEmail());
-    if (dto.getDireccion() != null) proveedor.setDireccion(dto.getDireccion());
+        // 🔹 Actualizar datos básicos
+        if (dto.getNombre() != null)
+            proveedor.setNombre(dto.getNombre());
+        if (dto.getTelefono() != null)
+            proveedor.setTelefono(dto.getTelefono());
+        if (dto.getEmail() != null)
+            proveedor.setEmail(dto.getEmail());
+        if (dto.getDireccion() != null)
+            proveedor.setDireccion(dto.getDireccion());
 
-    // 🔹 Agregar productos
-    if (dto.getProductosAgregar() != null) {
-        for (Long productoId : dto.getProductosAgregar()) {
-            Producto producto = productoRepository.findById(productoId)
-                .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado con id: " + productoId));
+        // 🔹 Agregar productos
+        if (dto.getProductosAgregar() != null) {
+            for (Long productoId : dto.getProductosAgregar()) {
+                Producto producto = productoRepository.findById(productoId)
+                        .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado con id: " + productoId));
 
-            boolean yaAsociado = proveedor.getProductoProveedor().stream()
-                .anyMatch(pp -> pp.getProducto().getIdProducto().equals(productoId));
+                boolean yaAsociado = proveedor.getProductoProveedor().stream()
+                        .anyMatch(pp -> pp.getProducto().getIdProducto().equals(productoId));
 
-            if (!yaAsociado) {
-                ProductoProveedor pp = new ProductoProveedor();
-                pp.setProveedor(proveedor);
-                pp.setProducto(producto);
-                proveedor.getProductoProveedor().add(pp);
+                if (!yaAsociado) {
+                    ProductoProveedor pp = new ProductoProveedor();
+                    pp.setProveedor(proveedor);
+                    pp.setProducto(producto);
+                    proveedor.getProductoProveedor().add(pp);
+                }
             }
         }
-    }
 
-    // 🔹 Quitar productos
-    if (dto.getProductosQuitar() != null) {
-        proveedor.getProductoProveedor().removeIf(pp ->
-            dto.getProductosQuitar().contains(pp.getProducto().getIdProducto())
-        );
-    }
+        // 🔹 Quitar productos
+        if (dto.getProductosQuitar() != null) {
+            proveedor.getProductoProveedor()
+                    .removeIf(pp -> dto.getProductosQuitar().contains(pp.getProducto().getIdProducto()));
+        }
 
-    Proveedor actualizado = proveedorRepository.save(proveedor);
-    return mapToDTO(actualizado);
+        Proveedor actualizado = proveedorRepository.save(proveedor);
+        return mapToDTO(actualizado);
     }
-
 
     @Transactional
     public void eliminarProveedor(Long id) {
         Proveedor proveedor = proveedorRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado con id: " + id));
-            proveedorRepository.delete(proveedor);
+                .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado con id: " + id));
+        proveedorRepository.delete(proveedor);
     }
 
-
-public ProveedorResponseDTO mapToDTO(Proveedor proveedor) {
+    public ProveedorResponseDTO mapToDTO(Proveedor proveedor) {
         // Ahora mapeamos a ProductoSimpleDTO
         List<ProductoSimpleDTO> productosDTO = proveedor.getProductoProveedor().stream()
-            .map(pp -> ProductoSimpleDTO.builder()
-                .idProducto(pp.getProducto().getIdProducto())
-                .nombreProducto(pp.getProducto().getNombre())
-                .build()
-            )
-            .collect(Collectors.toList());
+                .map(pp -> ProductoSimpleDTO.builder()
+                        .idProducto(pp.getProducto().getIdProducto())
+                        .nombreProducto(pp.getProducto().getNombre())
+                        .build())
+                .collect(Collectors.toList());
 
         return ProveedorResponseDTO.builder()
-            .id(proveedor.getIdProveedor())
-            .nombre(proveedor.getNombre())
-            .telefono(proveedor.getTelefono())
-            .email(proveedor.getEmail())
-            .direccion(proveedor.getDireccion())
-            .productos(productosDTO) // <-- DTO modificado
-            .build();
+                .id(proveedor.getIdProveedor())
+                .nombre(proveedor.getNombre())
+                .telefono(proveedor.getTelefono())
+                .email(proveedor.getEmail())
+                .direccion(proveedor.getDireccion())
+                .productos(productosDTO) // <-- DTO modificado
+                .build();
     }
 
     @Transactional(readOnly = true)
     public ProveedorResponseDTO buscarPorId(Long id) {
         Proveedor proveedor = proveedorRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado con id: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado con id: " + id));
         return mapToDTO(proveedor);
     }
+
+    @Transactional(readOnly = true)
+    public boolean existeNombre(String nombre) {
+        return proveedorRepository.existsByNombreIgnoreCase(nombre);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existeEmail(String email) {
+        return proveedorRepository.existsByEmail(email);
+    }
 }
-
-
-

@@ -264,10 +264,17 @@
                                     <div class="error-message" id="stock-max-error"></div>
                                 </div>
                             </div>
-                            <button type="submit" class="btn-primary" style="margin-top: 20px;">
-                                <i class="fas fa-plus"></i>
-                                Registrar Producto
-                            </button>
+                            <div class="form-buttons"
+                                style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-plus"></i>
+                                    Registrar Producto
+                                </button>
+                                <button type="button" id="btn-limpiar-producto" class="btn-outline">
+                                    <i class="fas fa-eraser"></i>
+                                    Limpiar Formulario
+                                </button>
+                            </div>
                         </form>
                         <p id="form-general-message-producto" class="form-message"></p>
                     </div>
@@ -578,7 +585,8 @@
                                 </div>
                                 <div class="form-group">
                                     <label for="proveedorTelefono">Teléfono</label>
-                                    <input type="text" id="proveedorTelefono" name="telefono" placeholder="123456789">
+                                    <input type="text" id="proveedorTelefono" name="telefono"
+                                        placeholder="+54 11 4321 9876">
                                     <div class="error-message" id="errorTelefono"></div>
                                 </div>
                             </div>
@@ -592,7 +600,7 @@
                                 <div class="form-group">
                                     <label for="proveedorDireccion">Dirección</label>
                                     <input type="text" id="proveedorDireccion" name="direccion"
-                                        placeholder="Dirección completa">
+                                        placeholder="Argentina, Santa Fe, Santa Fe, Aristóbulo del Valle 1234">
                                     <div class="error-message" id="errorDireccion"></div>
                                 </div>
                             </div>
@@ -615,10 +623,17 @@
                                 </select>
                                 <div class="error-message" id="proveedorProductosError"></div>
                             </div>
-                            <button type="submit" class="btn-primary" style="margin-top: 20px;">
-                                <i class="fas fa-plus"></i>
-                                Registrar Proveedor
-                            </button>
+                            <div class="form-buttons"
+                                style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-plus"></i>
+                                    Registrar Proveedor
+                                </button>
+                                <button type="button" id="btn-limpiar-proveedor" class="btn-outline">
+                                    <i class="fas fa-eraser"></i>
+                                    Limpiar Formulario
+                                </button>
+                            </div>
                         </form>
                         <p id="form-general-message-proveedor" class="form-message"></p>
                     </div>
@@ -779,11 +794,12 @@
                                 </div>
 
                                 <button type="button" id="add-detalle-btn" class="btn-secondary"
-                                    style="margin-top: 10px;">
+                                    style="margin-top: 10px; float: right;">
                                     <i class="fas fa-plus"></i>
                                     Agregar Producto al Detalle
                                 </button>
                                 <div class="error-message" id="errorDetalleGeneral"></div>
+                                <div style="clear: both;"></div>
 
                                 <div class="table-container" style="margin-top: 20px;">
                                     <table class="data-table">

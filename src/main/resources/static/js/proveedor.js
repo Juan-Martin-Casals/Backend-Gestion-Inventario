@@ -35,6 +35,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const searchInput = document.getElementById('proveedor-search-input');
     const clearSearchBtn = document.getElementById('proveedor-clear-search');
     let proveedoresFiltrados = null; // Para guardar resultados filtrados
+    let searchCurrentPage = 0; // Página actual en búsqueda
+    let searchTotalPages = 1; // Total de páginas en búsqueda
 
     let currentPage = 0;
     let totalPages = 1;
@@ -123,26 +125,34 @@ document.addEventListener('DOMContentLoaded', function () {
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
+            // Primero, cargar TODOS los proveedores para búsqueda global (sin paginación)
+            const allUrl = `${API_PROVEEDORES_URL}?page=0&size=9999`;
+            const allResponse = await fetch(allUrl);
+            if (allResponse.ok) {
+                const allData = await allResponse.json();
+                todosLosProveedores = allData.content;
+            }
+
+            // Luego, cargar la página actual para mostrar
             const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
             const url = `${API_PROVEEDORES_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
 
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
 
-            const data = await response.json(); // Renamed pageData to data for consistency with the change
+            const data = await response.json();
             currentPage = data.number;
             totalPages = data.totalPages;
-            todosLosProveedores = data.content;
 
             // Reaplicar búsqueda si existe
             if (searchInput && searchInput.value.trim() !== '') {
-                filtrarProveedores(); // Assuming filtrarProveedores exists and uses todosLosProveedores
+                filtrarProveedores();
             } else {
-                renderProveedoresTabla(todosLosProveedores);
+                renderProveedoresTabla(data.content);
             }
 
             updatePaginationControls();
-            updateSortIndicators(); // Keep this line as it was in the original
+            updateSortIndicators();
 
             requestAnimationFrame(() => {
                 window.scrollTo(0, scrollPosition);
@@ -170,7 +180,15 @@ document.addEventListener('DOMContentLoaded', function () {
             let productosDisplay = 'Sin productos asignados';
 
             if (proveedor.productos && proveedor.productos.length > 0) {
-                const nombresProductos = proveedor.productos.map(p => p.nombreProducto);
+                // Función para truncar nombres largos
+                const truncarNombre = (nombre, maxLength = 50) => {
+                    if (nombre.length > maxLength) {
+                        return nombre.substring(0, maxLength) + '...';
+                    }
+                    return nombre;
+                };
+
+                const nombresProductos = proveedor.productos.map(p => truncarNombre(p.nombreProducto));
 
                 if (nombresProductos.length <= MAX_PRODUCTOS_TABLA) {
                     productosDisplay = nombresProductos.join(', ');
@@ -209,14 +227,28 @@ document.addEventListener('DOMContentLoaded', function () {
         pageInfo.textContent = `Página ${currentPage + 1} de ${totalPages || 1}`;
         prevPageBtn.disabled = (currentPage === 0);
         nextPageBtn.disabled = (currentPage + 1 >= totalPages);
+
+        // Resetear estilos que pueden haber sido aplicados durante búsqueda
+        prevPageBtn.style.opacity = '';
+        prevPageBtn.style.cursor = '';
+        nextPageBtn.style.opacity = '';
+        nextPageBtn.style.cursor = '';
     }
 
     if (prevPageBtn) {
         prevPageBtn.addEventListener('click', (event) => {
             event.preventDefault();
-            if (currentPage > 0) {
-                currentPage--;
-                loadProveedores();
+            // Si hay búsqueda activa, usar paginación de búsqueda
+            if (proveedoresFiltrados) {
+                if (searchCurrentPage > 0) {
+                    filtrarProveedores(searchCurrentPage - 1);
+                }
+            } else {
+                // Si no hay búsqueda, paginación normal
+                if (currentPage > 0) {
+                    currentPage--;
+                    loadProveedores();
+                }
             }
         });
     }
@@ -224,9 +256,17 @@ document.addEventListener('DOMContentLoaded', function () {
     if (nextPageBtn) {
         nextPageBtn.addEventListener('click', (event) => {
             event.preventDefault();
-            if (currentPage + 1 < totalPages) {
-                currentPage++;
-                loadProveedores();
+            // Si hay búsqueda activa, usar paginación de búsqueda
+            if (proveedoresFiltrados) {
+                if (searchCurrentPage < searchTotalPages - 1) {
+                    filtrarProveedores(searchCurrentPage + 1);
+                }
+            } else {
+                // Si no hay búsqueda, paginación normal
+                if (currentPage + 1 < totalPages) {
+                    currentPage++;
+                    loadProveedores();
+                }
             }
         });
     }
@@ -402,6 +442,64 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÓGICA DEL FORMULARIO DE REGISTRO
     // ==========================================================
     if (proveedorForm) {
+        // Selectores de error
+        const nombreError = document.getElementById('errorNombre');
+        const telefonoError = document.getElementById('errorTelefono');
+        const emailError = document.getElementById('errorEmail');
+        const direccionError = document.getElementById('errorDireccion');
+
+        // Validación en tiempo real para nombre duplicado
+        let nombreTimeout;
+        if (nombreInput && nombreError) {
+            nombreInput.addEventListener('blur', async function () {
+                const nombre = nombreInput.value.trim();
+                if (nombre) {
+                    clearTimeout(nombreTimeout);
+                    nombreTimeout = setTimeout(async () => {
+                        try {
+                            const response = await fetch(`${API_PROVEEDORES_URL}/existe/nombre/${encodeURIComponent(nombre)}`);
+                            const existe = await response.json();
+                            if (existe) {
+                                nombreError.textContent = 'Ya existe un proveedor con ese nombre';
+                            } else {
+                                nombreError.textContent = '';
+                            }
+                        } catch (error) {
+                            console.error('Error al verificar nombre:', error);
+                        }
+                    }, 500);
+                } else {
+                    nombreError.textContent = '';
+                }
+            });
+        }
+
+        // Validación en tiempo real para email duplicado
+        let emailTimeout;
+        if (emailInput && emailError) {
+            emailInput.addEventListener('blur', async function () {
+                const email = emailInput.value.trim();
+                if (email) {
+                    clearTimeout(emailTimeout);
+                    emailTimeout = setTimeout(async () => {
+                        try {
+                            const response = await fetch(`${API_PROVEEDORES_URL}/existe/email/${encodeURIComponent(email)}`);
+                            const existe = await response.json();
+                            if (existe) {
+                                emailError.textContent = 'Ya existe un proveedor con ese email';
+                            } else {
+                                emailError.textContent = '';
+                            }
+                        } catch (error) {
+                            console.error('Error al verificar email:', error);
+                        }
+                    }, 500);
+                } else {
+                    emailError.textContent = '';
+                }
+            });
+        }
+
         proveedorForm.addEventListener('submit', async function (event) {
             event.preventDefault();
 
@@ -416,14 +514,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const direccion = direccionInput.value.trim();
             const productosIds = Array.from(registerSelect.hiddenSelect.selectedOptions).map(option => option.value);
 
-            if (!nombre) { nombreError.textContent = 'Debe rellenar este campo'; isValid = false; }
-            if (!telefono) { telefonoError.textContent = 'Debe rellenar este campo'; isValid = false; }
-            if (!email) { emailError.textContent = 'Debe rellenar este campo'; isValid = false; }
+            if (!nombre) { nombreError.textContent = 'El nombre del proveedor es obligatorio'; isValid = false; }
+            if (!telefono) { telefonoError.textContent = 'El telefono del proveedor es obligatorio'; isValid = false; }
+            if (!email) { emailError.textContent = 'El email del proveedor es obligatorio'; isValid = false; }
             else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
                 emailError.textContent = 'El formato del email no es válido';
                 isValid = false;
             }
-            if (!direccion) { direccionError.textContent = 'Debe rellenar este campo'; isValid = false; }
+            if (!direccion) { direccionError.textContent = 'La direccion del proveedor es obligatoria'; isValid = false; }
             if (productosIds.length === 0) {
                 registerSelect.errorDiv.textContent = 'Debes seleccionar al menos un producto.';
                 isValid = false;
@@ -450,6 +548,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 generalMessage.textContent = "¡Proveedor registrado exitosamente!";
                 generalMessage.classList.add('success');
+
+                // Ocultar mensaje después de 4 segundos
+                setTimeout(() => {
+                    generalMessage.textContent = '';
+                    generalMessage.classList.remove('success');
+                }, 4000);
+
                 proveedorForm.reset();
                 setupMultiSelect(registerSelect, []);
 
@@ -458,8 +563,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 sortDirection = 'asc';
                 loadProveedores();
 
-                // Volver a la vista de lista
-                showSubsection('proveedores-list');
+                // Mantener en la subsección actual (Registrar Proveedor)
+                // showSubsection('proveedores-list'); // Comentado para no cambiar de vista
 
                 // --- AVISO CRUCIAL: Informar a Compras.js y otros ---
                 document.dispatchEvent(new Event('proveedoresActualizados'));
@@ -740,9 +845,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================================
     let searchTimeout;
 
-    async function filtrarProveedores() {
+    async function filtrarProveedores(page = 0) {
         if (!searchInput) {
-            renderProveedoresTabla(todosLosProveedores);
+            loadProveedores();
             return;
         }
 
@@ -750,38 +855,60 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (query === '') {
             proveedoresFiltrados = null;
-            renderProveedoresTabla(todosLosProveedores);
+            searchCurrentPage = 0;
+            loadProveedores();
             return;
         }
 
-        // Añadir animación de loading (como en stock.js)
+        // Añadir animación de loading
         if (proveedorTabla) {
             proveedorTabla.classList.add('loading');
             await new Promise(resolve => setTimeout(resolve, 200));
         }
 
-        proveedoresFiltrados = todosLosProveedores.filter(proveedor => {
-            // Buscar en nombre
-            if (proveedor.nombre?.toLowerCase().includes(query)) return true;
+        // Filtrar solo cuando es búsqueda nueva (page === 0)
+        if (page === 0 || !proveedoresFiltrados) {
+            proveedoresFiltrados = todosLosProveedores.filter(proveedor => {
+                if (proveedor.nombre?.toLowerCase().includes(query)) return true;
+                if (proveedor.email?.toLowerCase().includes(query)) return true;
+                if (proveedor.telefono?.toLowerCase().includes(query)) return true;
+                if (proveedor.productos && proveedor.productos.some(p =>
+                    p.nombreProducto?.toLowerCase().includes(query)
+                )) return true;
+                return false;
+            });
+        }
 
-            // Buscar en email
-            if (proveedor.email?.toLowerCase().includes(query)) return true;
+        // Calcular paginación
+        searchCurrentPage = page;
+        searchTotalPages = Math.ceil(proveedoresFiltrados.length / itemsPerPage);
 
-            // Buscar en teléfono
-            if (proveedor.telefono?.toLowerCase().includes(query)) return true;
+        // Obtener items de la página actual
+        const startIndex = searchCurrentPage * itemsPerPage;
+        const endIndex = startIndex + itemsPerPage;
+        const paginatedResults = proveedoresFiltrados.slice(startIndex, endIndex);
 
-            // Buscar en productos
-            if (proveedor.productos && proveedor.productos.some(p =>
-                p.nombreProducto?.toLowerCase().includes(query)
-            )) return true;
-
-            return false;
-        });
-
-        renderProveedoresTabla(proveedoresFiltrados);
+        renderProveedoresTabla(paginatedResults);
+        updateSearchPaginationControls();
 
         if (proveedorTabla) {
             proveedorTabla.classList.remove('loading');
+        }
+    }
+
+    function updateSearchPaginationControls() {
+        if (pageInfo) {
+            pageInfo.textContent = `Página ${searchCurrentPage + 1} de ${searchTotalPages}`;
+        }
+
+        if (prevPageBtn) {
+            prevPageBtn.disabled = searchCurrentPage === 0;
+            prevPageBtn.style.opacity = searchCurrentPage === 0 ? '0.5' : '1';
+        }
+
+        if (nextPageBtn) {
+            nextPageBtn.disabled = searchCurrentPage >= searchTotalPages - 1;
+            nextPageBtn.style.opacity = searchCurrentPage >= searchTotalPages - 1 ? '0.5' : '1';
         }
     }
 
@@ -789,7 +916,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // EVENT LISTENERS DE BÚSQUEDA
     // ==========================================================
     if (searchInput) {
-        searchInput.addEventListener('input', filtrarProveedores);
+        searchInput.addEventListener('input', function () {
+            filtrarProveedores(0); // Siempre empezar desde página 0 en nueva búsqueda
+        });
     }
 
     if (clearSearchBtn) {
@@ -801,12 +930,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             searchInput.value = '';
-            filtrarProveedores();
+            proveedoresFiltrados = null;
 
-            // Remover animación después de filtrar
-            if (proveedorTabla) {
-                proveedorTabla.classList.remove('loading');
-            }
+            // Recargar la página actual con paginación
+            loadProveedores();
         });
     }
 
@@ -854,6 +981,39 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Exponer globalmente
     window.showProveedorSubsection = showSubsection;
+
+    // ==========================================================
+    // LIMPIAR FORMULARIO DE PROVEEDOR
+    // ==========================================================
+
+    const btnLimpiarProveedor = document.getElementById('btn-limpiar-proveedor');
+
+    function limpiarFormularioProveedor() {
+        // Limpiar campos de texto
+        if (nombreInput) nombreInput.value = '';
+        if (telefonoInput) telefonoInput.value = '';
+        if (emailInput) emailInput.value = '';
+        if (direccionInput) direccionInput.value = '';
+
+        // Limpiar multi-select
+        setupMultiSelect(registerSelect, []);
+
+        // Limpiar mensajes de error
+        if (nombreError) nombreError.textContent = '';
+        if (telefonoError) telefonoError.textContent = '';
+        if (emailError) emailError.textContent = '';
+        if (direccionError) direccionError.textContent = '';
+        if (registerSelect.errorDiv) registerSelect.errorDiv.textContent = '';
+        if (generalMessage) {
+            generalMessage.textContent = '';
+            generalMessage.className = 'form-message';
+        }
+    }
+
+    // Event listener para el botón de limpiar
+    if (btnLimpiarProveedor) {
+        btnLimpiarProveedor.addEventListener('click', limpiarFormularioProveedor);
+    }
 
     // Escuchar si se agregan productos para actualizar el multi-select
     document.addEventListener('productosActualizados', async function () {

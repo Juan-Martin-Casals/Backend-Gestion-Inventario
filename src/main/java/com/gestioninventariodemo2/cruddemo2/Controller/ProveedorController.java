@@ -30,13 +30,15 @@ public class ProveedorController {
     private final ProveedorService proveedorService;
 
     @PostMapping
-public ResponseEntity<ProveedorResponseDTO> registrarProveedor(@RequestBody ProveedorRequestDTO dto) {
-    // 1. Llama al servicio y guarda el resultado directamente en una variable del tipo correcto.
-    ProveedorResponseDTO responseDTO = proveedorService.registrarProveedor(dto);
-    
-    // 2. Devuelve ese DTO en la respuesta.
-    return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
-}
+    public ResponseEntity<ProveedorResponseDTO> registrarProveedor(@RequestBody ProveedorRequestDTO dto) {
+        // 1. Llama al servicio y guarda el resultado directamente en una variable del
+        // tipo correcto.
+        ProveedorResponseDTO responseDTO = proveedorService.registrarProveedor(dto);
+
+        // 2. Devuelve ese DTO en la respuesta.
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDTO);
+    }
+
     @GetMapping
     public ResponseEntity<Page<ProveedorResponseDTO>> listarProveedores(Pageable pageable) { // Spring inyecta Pageable
         Page<ProveedorResponseDTO> proveedores = proveedorService.listarProveedores(pageable);
@@ -50,16 +52,17 @@ public ResponseEntity<ProveedorResponseDTO> registrarProveedor(@RequestBody Prov
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProveedorResponseDTO> actualizarProveedor(@PathVariable Long id,@RequestBody ProveedorUpdateDTO dto) {
+    public ResponseEntity<ProveedorResponseDTO> actualizarProveedor(@PathVariable Long id,
+            @RequestBody ProveedorUpdateDTO dto) {
 
-    ProveedorResponseDTO actualizado = proveedorService.actualizarProveedor(id, dto);
-    return ResponseEntity.ok(actualizado);
+        ProveedorResponseDTO actualizado = proveedorService.actualizarProveedor(id, dto);
+        return ResponseEntity.ok(actualizado);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> eliminarProveedor(@PathVariable Long id) {
-    proveedorService.eliminarProveedor(id);
-    return ResponseEntity.noContent().build();
+        proveedorService.eliminarProveedor(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{id}")
@@ -68,8 +71,16 @@ public ResponseEntity<ProveedorResponseDTO> registrarProveedor(@RequestBody Prov
         return ResponseEntity.ok(proveedor);
     }
 
+    @GetMapping("/existe/nombre/{nombre}")
+    public ResponseEntity<Boolean> existeNombre(@PathVariable String nombre) {
+        boolean existe = proveedorService.existeNombre(nombre);
+        return ResponseEntity.ok(existe);
+    }
 
-
-
+    @GetMapping("/existe/email/{email}")
+    public ResponseEntity<Boolean> existeEmail(@PathVariable String email) {
+        boolean existe = proveedorService.existeEmail(email);
+        return ResponseEntity.ok(existe);
+    }
 
 }

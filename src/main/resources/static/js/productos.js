@@ -48,6 +48,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const productBtnLimpiar = document.getElementById('product-btn-limpiar-busqueda');
     const productSearchError = document.getElementById('product-search-error');
 
+    // --- Botón de limpiar formulario ---
+    const btnLimpiarFormulario = document.getElementById('btn-limpiar-producto');
+
     // --- Selectores de Modal de Edición ---
     const editModal = document.getElementById('product-edit-modal');
     const editForm = document.getElementById('product-edit-form');
@@ -1199,6 +1202,41 @@ document.addEventListener('DOMContentLoaded', function () {
                 deleteConfirmBtn.textContent = 'Aceptar';
             }
         });
+    }
+
+    // ==========================================================
+    // LIMPIAR FORMULARIO DE PRODUCTO
+    // ==========================================================
+
+    function limpiarFormularioProducto() {
+        // Limpiar campos de texto
+        if (nameInput) nameInput.value = '';
+        if (categorySearchInput) categorySearchInput.value = '';
+        if (categoryHiddenInput) categoryHiddenInput.value = '';
+        if (descriptionInput) descriptionInput.value = '';
+
+        // Limpiar resultados de búsqueda de categoría
+        if (categoryResultsContainer) categoryResultsContainer.innerHTML = '';
+
+        // Resetear valores de stock a defaults
+        if (stockMinInput) stockMinInput.value = '5';
+        if (stockMaxInput) stockMaxInput.value = '100';
+
+        // Limpiar mensajes de error
+        if (nameError) nameError.textContent = '';
+        if (categoryError) categoryError.textContent = '';
+        if (descriptionError) descriptionError.textContent = '';
+        if (stockMinError) stockMinError.textContent = '';
+        if (stockMaxError) stockMaxError.textContent = '';
+        if (generalMessage) {
+            generalMessage.textContent = '';
+            generalMessage.className = 'form-message';
+        }
+    }
+
+    // Event listener para el botón de limpiar
+    if (btnLimpiarFormulario) {
+        btnLimpiarFormulario.addEventListener('click', limpiarFormularioProducto);
     }
 
     // ==========================================================
