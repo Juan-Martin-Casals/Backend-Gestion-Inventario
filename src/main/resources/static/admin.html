@@ -901,8 +901,10 @@
                                                 class="sort-icon fas fa-sort"></i></th>
                                         <th data-sort-by="proveedor.nombre" class="sortable">Proveedor <i
                                                 class="sort-icon fas fa-sort"></i></th>
-                                        <th>Productos</th>
-                                        <th>Costo Unit.</th>
+                                        <th data-sort-by="productos" class="sortable">Productos <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="costoUnitario" class="sortable">Costo Unit. <i
+                                                class="sort-icon fas fa-sort"></i></th>
                                         <th data-sort-by="total" class="sortable">Total <i
                                                 class="sort-icon fas fa-sort"></i></th>
                                         <th>Acciones</th>
@@ -910,24 +912,17 @@
                                 </thead>
                                 <tbody id="compras-historial-tabla-body">
                                 </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colspan="6">
-                                            <div class="pagination-controls"
-                                                style="text-align: right; padding: 10px 0;">
-                                                <span id="compras-page-info" style="margin-right: 15px;">Página 1 de
-                                                    1</span>
-                                                <button class="btn-outline" id="compras-prev-page" disabled>
-                                                    <i class="fas fa-arrow-left"></i>
-                                                </button>
-                                                <button class="btn-outline" id="compras-next-page">
-                                                    <i class="fas fa-arrow-right"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tfoot>
                             </table>
+                            <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                <span id="compras-page-info" style="margin-right: 15px;">Página 1 de
+                                    1</span>
+                                <button class="btn-outline" id="compras-prev-page" disabled>
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <button class="btn-outline" id="compras-next-page">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
