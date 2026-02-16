@@ -528,14 +528,18 @@ document.addEventListener('DOMContentLoaded', function () {
                         throw new Error(errorData.message || `Error del servidor: ${response.status}`);
                     }
 
-                    // Mostrar banner de éxito grande y destacado
-                    const successBanner = document.getElementById('success-banner');
-                    if (successBanner) {
-                        successBanner.classList.add('show');
-                        // Auto-ocultar después de 5 segundos
+
+
+                    // Mostrar mensaje de éxito estándar
+                    if (generalMessageCompra) {
+                        generalMessageCompra.textContent = '¡Compra registrada exitosamente!';
+                        generalMessageCompra.classList.remove('error');
+                        generalMessageCompra.classList.add('success');
+                        // Auto-ocultar después de 4 segundos
                         setTimeout(() => {
-                            successBanner.classList.remove('show');
-                        }, 5000);
+                            generalMessageCompra.textContent = '';
+                            generalMessageCompra.className = 'form-message';
+                        }, 4000);
                     }
 
                     compraForm.reset();

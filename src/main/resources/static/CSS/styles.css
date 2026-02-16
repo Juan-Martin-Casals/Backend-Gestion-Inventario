@@ -1504,6 +1504,14 @@ body {
     padding: 15px 30px;
     /* Reducido a 15px verticalmente para hacerlo más corto */
     height: 250px;
+    margin: 15% auto;
+    /* Centrado vertical mejorado */
+}
+
+/* Añadir espacio entre el texto y la X de cerrar */
+.modal .modal-content.modal-compact h3 {
+    padding-right: 40px;
+    /* Espacio con el botón cerrar */
 }
 
 /* Ajustar los botones dentro de este modal compacto para centrar */
