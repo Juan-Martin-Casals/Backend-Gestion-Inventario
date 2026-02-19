@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -47,9 +47,23 @@ public class CompraController {
     }
 
     @GetMapping
-    // ¡MÉTODO MODIFICADO! Acepta Pageable y devuelve Page
-    public ResponseEntity<Page<CompraResponseDTO>> listarTodasLasCompras(Pageable pageable) {
-        Page<CompraResponseDTO> compras = compraService.listarTodasLasCompras(pageable);
+    public ResponseEntity<Page<CompraResponseDTO>> listarTodasLasCompras(
+            Pageable pageable,
+            @RequestParam(required = false) String sort) {
+
+        // Detectar campos de ordenamiento custom (productos, costoUnitario)
+        String customSort = null;
+        String customDirection = "asc";
+
+        if (sort != null && (sort.startsWith("productos") || sort.startsWith("costoUnitario"))) {
+            String[] parts = sort.split(",");
+            customSort = parts[0];
+            if (parts.length > 1) {
+                customDirection = parts[1];
+            }
+        }
+
+        Page<CompraResponseDTO> compras = compraService.listarTodasLasCompras(pageable, customSort, customDirection);
         return ResponseEntity.ok(compras);
     }
 

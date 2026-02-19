@@ -28,31 +28,30 @@ public class UsuarioService {
 
     @Transactional
     public UsuarioResponseDTO crearUsuario(UsuarioRequestDTO dto) {
-    // Validar campos obligatorios
-    if (dto.getNombre() == null || dto.getNombre().isBlank() ||
-        dto.getApellido() == null || dto.getApellido().isBlank() ||
-        dto.getEmail() == null || dto.getEmail().isBlank() ||
-        dto.getContrasena() == null || dto.getContrasena().isBlank() ||
-        dto.getConfirmacionContrasena() == null || dto.getConfirmacionContrasena().isBlank() ||
-        dto.getIdRol() == null) {
-        throw new IllegalArgumentException("Todos los campos son obligatorios");
-    }
+        // Validar campos obligatorios
+        if (dto.getNombre() == null || dto.getNombre().isBlank() ||
+                dto.getApellido() == null || dto.getApellido().isBlank() ||
+                dto.getEmail() == null || dto.getEmail().isBlank() ||
+                dto.getContrasena() == null || dto.getContrasena().isBlank() ||
+                dto.getConfirmacionContrasena() == null || dto.getConfirmacionContrasena().isBlank() ||
+                dto.getIdRol() == null) {
+            throw new IllegalArgumentException("Todos los campos son obligatorios");
+        }
 
-    // Validar formato de email
-    if (!dto.getEmail().matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
-        throw new IllegalArgumentException("Correo electrónico incorrecto");
-    }
+        // Validar formato de email
+        if (!dto.getEmail().matches("^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$")) {
+            throw new IllegalArgumentException("Correo electrónico incorrecto");
+        }
 
-    // Validar coincidencia de contraseñas
-    if (!dto.getContrasena().equals(dto.getConfirmacionContrasena())) {
-        throw new IllegalArgumentException("Las contraseñas no coinciden");
-    }
+        // Validar coincidencia de contraseñas
+        if (!dto.getContrasena().equals(dto.getConfirmacionContrasena())) {
+            throw new IllegalArgumentException("Las contraseñas no coinciden");
+        }
 
-    // Validar email único
-    if (usuarioRepository.existsByEmail(dto.getEmail())) {
-        throw new IllegalArgumentException("Ya existe un usuario con este correo");
-    }
-
+        // Validar email único
+        if (usuarioRepository.existsByEmail(dto.getEmail())) {
+            throw new IllegalArgumentException("Ya existe un usuario con este correo");
+        }
 
         Rol rol = rolRepository.findById(dto.getIdRol())
                 .orElseThrow(() -> new EntityNotFoundException("Rol no encontrado"));
@@ -70,27 +69,29 @@ public class UsuarioService {
         return toResponseDTO(usuario);
     }
 
+    // LISTAR A LOS USARIOS AL FRONT OCULTANDO SU ID Y CONTRASEÑA
+    @Transactional(readOnly = true)
+    public Page<UsuarioResponseDTO> obtenerTodosLosUsuarios(Pageable pageable, String search) {
 
-    //LISTAR A LOS USARIOS AL FRONT OCULTANDO SU ID Y CONTRASEÑA
-@Transactional(readOnly = true)
-    public Page<UsuarioResponseDTO> obtenerTodosLosUsuarios(Pageable pageable) { // <-- Acepta Pageable
-        
-        // Asumimos que la lista solo debe traer usuarios activos.
-        // Si no tienes este método en tu Repositorio, usa findAll(pageable) en su lugar.
-        Page<Usuario> paginaUsuarios = usuarioRepository.findAllByEstado("ACTIVO", pageable); 
+        Page<Usuario> paginaUsuarios;
 
-        return paginaUsuarios.map(this::toResponseDTO); // <-- Devuelve Page<DTO>
+        if (search != null && !search.trim().isEmpty()) {
+            paginaUsuarios = usuarioRepository.buscarUsuariosActivos("ACTIVO", search.trim(), pageable);
+        } else {
+            paginaUsuarios = usuarioRepository.findAllByEstado("ACTIVO", pageable);
+        }
+
+        return paginaUsuarios.map(this::toResponseDTO);
     }
 
+    // ACTUALIZAR USUARIO
 
-    //ACTUALIZAR USUARIO
-
-// --- 3. NUEVO MÉTODO: OBTENER POR ID (Para el Modal) ---
-// AÑADE ESTE MÉTODO (GET /{id})
+    // --- 3. NUEVO MÉTODO: OBTENER POR ID (Para el Modal) ---
+    // AÑADE ESTE MÉTODO (GET /{id})
     @Transactional(readOnly = true)
     public UsuarioResponseDTO obtenerUsuarioPorId(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
         return toResponseDTO(usuario);
     }
 
@@ -112,33 +113,29 @@ public class UsuarioService {
         usuario.setApellido(dto.getApellido());
         usuario.setEmail(dto.getEmail());
         usuario.setRol(rol);
-        
 
         usuarioRepository.save(usuario);
         return toResponseDTO(usuario);
     }
-    
 
-
-    //BORRRAR USUARIO
- @Transactional
+    // BORRRAR USUARIO
+    @Transactional
     public void borrarUsuario(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-            .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
-            
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado"));
+
         // CAMBIO: Soft Delete
         usuario.setEstado("INACTIVO");
         usuarioRepository.save(usuario);
     }
-    
-        private void validarEmailUnico(String email) {
+
+    private void validarEmailUnico(String email) {
         if (usuarioRepository.findByEmail(email).isPresent()) {
             throw new IllegalArgumentException("El email ya está en uso");
         }
     }
 
-
-// MÉTODO toResponseDTO CORREGIDO:
+    // MÉTODO toResponseDTO CORREGIDO:
     private UsuarioResponseDTO toResponseDTO(Usuario usuario) {
         return UsuarioResponseDTO.builder()
                 .id(usuario.getIdUsuario()) // <--- Ahora incluimos el ID
@@ -150,6 +147,3 @@ public class UsuarioService {
                 .build();
     }
 }
-    
-
-

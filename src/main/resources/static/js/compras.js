@@ -579,31 +579,6 @@ document.addEventListener('DOMContentLoaded', function () {
     let comprasFiltradas = null; // Compras filtradas por fecha
     let comprasBuscadas = null; // Compras filtradas por búsqueda
 
-    // Campos que se ordenan del lado del cliente (datos anidados)
-    const camposOrdenamientoLocal = ['productos', 'costoUnitario'];
-
-    function ordenarComprasLocalmente(compras) {
-        if (!historialSortField || !camposOrdenamientoLocal.includes(historialSortField)) return compras;
-
-        const sorted = [...compras].sort((a, b) => {
-            let valA, valB;
-
-            if (historialSortField === 'productos') {
-                // Ordenar por nombre del primer producto
-                valA = (a.productosComprados && a.productosComprados.length > 0) ? a.productosComprados[0].nombreProducto.toLowerCase() : '';
-                valB = (b.productosComprados && b.productosComprados.length > 0) ? b.productosComprados[0].nombreProducto.toLowerCase() : '';
-                return historialSortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA);
-            } else if (historialSortField === 'costoUnitario') {
-                // Ordenar por costo unitario del primer producto
-                valA = (a.productosComprados && a.productosComprados.length > 0) ? (a.productosComprados[0].precioUnitario || 0) : 0;
-                valB = (b.productosComprados && b.productosComprados.length > 0) ? (b.productosComprados[0].precioUnitario || 0) : 0;
-                return historialSortDirection === 'asc' ? valA - valB : valB - valA;
-            }
-            return 0;
-        });
-        return sorted;
-    }
-
     async function loadComprasHistorial() {
         if (!historialTabla || !mainContent) return;
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
@@ -611,20 +586,13 @@ document.addEventListener('DOMContentLoaded', function () {
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
-            // Solo enviar sort al backend si NO es un campo local
-            const esOrdenamientoLocal = camposOrdenamientoLocal.includes(historialSortField);
-            const sortParam = (historialSortField && !esOrdenamientoLocal) ? `&sort=${historialSortField},${historialSortDirection}` : '';
+            const sortParam = historialSortField ? `&sort=${historialSortField},${historialSortDirection}` : '';
             const url = `${API_COMPRAS_URL}?page=${historialCurrentPage}&size=${historialItemsPerPage}${sortParam}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
             const pageData = await response.json();
             historialTotalPages = pageData.totalPages;
             todasLasCompras = pageData.content; // Guardar todas las compras
-
-            // Si es ordenamiento local, aplicarlo a los datos
-            if (esOrdenamientoLocal) {
-                todasLasCompras = ordenarComprasLocalmente(todasLasCompras);
-            }
 
             // Aplicar filtros (búsqueda y fechas)
             const comprasAMostrar = aplicarFiltros();

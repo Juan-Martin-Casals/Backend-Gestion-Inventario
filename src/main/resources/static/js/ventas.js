@@ -80,6 +80,21 @@ document.addEventListener('DOMContentLoaded', function () {
     setFechaActual();
 
     // ===============================
+    // HELPERS DE FORMATO
+    // ===============================
+    function capitalizarNombre(str) {
+        if (!str) return '';
+        return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
+    function formatearDNI(dni) {
+        if (!dni) return '';
+        // Remover puntos existentes y formatear
+        const soloNumeros = dni.replace(/\./g, '');
+        return soloNumeros.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
+    // ===============================
     // SELECTORES TABLA HISTORIAL
     // ===============================
     const ventaTableBody = document.querySelector('#tabla-ventas tbody');
@@ -324,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const nuevoCliente = await response.json();
             closeAddClienteModal();
 
-            const nombreCompleto = `${nuevoCliente.nombre} ${nuevoCliente.apellido || ''} (${nuevoCliente.dni})`;
+            const nombreCompleto = `${capitalizarNombre(nuevoCliente.nombre)} ${capitalizarNombre(nuevoCliente.apellido)} (${formatearDNI(nuevoCliente.dni)})`;
             clienteSearchInput.value = nombreCompleto.trim();
             clienteHiddenInput.value = nuevoCliente.idCliente;
             if (clienteError) clienteError.textContent = '';
@@ -348,8 +363,18 @@ document.addEventListener('DOMContentLoaded', function () {
         if (clientes.length === 0) {
             clienteResultsContainer.innerHTML = '<div class="product-result-item">No se encontraron clientes</div>';
         } else {
-            clienteResultsContainer.innerHTML = clientes.map(c => {
-                const nombreCompleto = `${c.nombre} ${c.apellido || ''} (${c.dni})`;
+            // Ordenar alfabéticamente por nombre + apellido
+            const clientesOrdenados = [...clientes].sort((a, b) => {
+                const nombreA = `${a.nombre} ${a.apellido || ''}`.toLowerCase();
+                const nombreB = `${b.nombre} ${b.apellido || ''}`.toLowerCase();
+                return nombreA.localeCompare(nombreB);
+            });
+
+            clienteResultsContainer.innerHTML = clientesOrdenados.map(c => {
+                const nombre = capitalizarNombre(c.nombre);
+                const apellido = capitalizarNombre(c.apellido);
+                const dniFormateado = formatearDNI(c.dni);
+                const nombreCompleto = `${nombre} ${apellido} (${dniFormateado})`;
                 return `<div class="product-result-item" data-id="${c.id}">${nombreCompleto.trim()}</div>`;
             }).join('');
         }
@@ -377,7 +402,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (cliente) {
             const newClienteId = cliente.id.toString();
-            const nombreCompleto = `${cliente.nombre} ${cliente.apellido || ''} (${cliente.dni})`;
+            const nombreCompleto = `${capitalizarNombre(cliente.nombre)} ${capitalizarNombre(cliente.apellido)} (${formatearDNI(cliente.dni)})`;
 
             // Verificar si hay productos en el detalle y si el cliente es diferente
             if (detallesVenta.length > 0 && previousClienteId && newClienteId !== previousClienteId) {
@@ -485,9 +510,12 @@ document.addEventListener('DOMContentLoaded', function () {
             errorDetalleGeneral.textContent = 'Debe seleccionar un producto de la lista.';
             return;
         }
-        const cantidad = parseInt(cantidadProductoInput.value, 10);
-        if (isNaN(cantidad) || cantidad <= 0) {
-            errorDetalleGeneral.textContent = 'La cantidad debe ser un número mayor a 0.';
+        const cantidadRaw = cantidadProductoInput.value;
+        const cantidad = parseInt(cantidadRaw, 10);
+        if (isNaN(cantidad) || cantidad < 1 || cantidadRaw.includes('.') || cantidadRaw.includes(',')) {
+            errorDetalleGeneral.textContent = 'La cantidad debe ser un número entero mayor o igual a 1.';
+            errorDetalleGeneral.className = 'form-message error';
+            errorDetalleGeneral.style.display = 'block';
             return;
         }
 
@@ -735,22 +763,36 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 generalMessage.textContent = '¡Venta registrada con éxito!';
                 generalMessage.classList.add('success');
+                setTimeout(() => {
+                    generalMessage.textContent = '';
+                    generalMessage.className = 'form-message';
+                }, 4000);
 
                 ventaForm.reset();
                 detallesVenta = [];
                 editIndexVenta = -1; // Reset edit mode
                 renderDetalleTemporal();
                 clienteHiddenInput.value = '';
+                clienteSearchInput.value = '';
+                productSearchInput.value = '';
+                cantidadProductoInput.value = '1';
                 // Resetear cliente anterior
                 previousClienteId = null;
                 previousClienteNombre = '';
 
+                // Resetear método de pago y ocultar tipo tarjeta
+                if (metodoPagoSelect) metodoPagoSelect.value = '';
+                const camposTipoTarjeta = document.getElementById('campos-tipo-tarjeta');
+                if (camposTipoTarjeta) camposTipoTarjeta.style.display = 'none';
+                if (tipoTarjetaSelect) tipoTarjetaSelect.value = '';
+
+                // Restaurar fecha actual
+                setFechaActual();
                 await new Promise(resolve => setTimeout(resolve, 250));
                 currentPageVentas = 0;
                 ventasSortField = 'fecha';
                 ventasSortDirection = 'desc';
                 loadVentas(currentPageVentas);
-                showSubsection('ventas-list'); // Redirigir a la lista
 
             } catch (error) {
                 console.error('Error al registrar la venta:', error);
@@ -974,10 +1016,9 @@ document.addEventListener('DOMContentLoaded', function () {
             ventasSortField = newSortField;
             ventasSortDirection = 'asc';
         }
-
-        // Ordenar las ventas filtradas localmente en lugar de recargar del servidor
-        ordenarVentasFiltradas();
-        renderVentasFiltradas();
+        // Ordenar globalmente desde el backend con paginación
+        currentPageVentas = 0;
+        loadVentas(0);
     }
 
     function ordenarVentasFiltradas() {
@@ -1120,8 +1161,8 @@ document.addEventListener('DOMContentLoaded', function () {
         if (ventasFechaFin) ventasFechaFin.value = '';
         ocultarErrorFiltroVentas();
 
-        ventasFiltradas = [...todasLasVentas];
-        renderVentasFiltradas();
+        currentPageVentas = 0;
+        loadVentas(0);
     }
 
     function renderVentasFiltradas() {
@@ -1373,7 +1414,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const metodos = await response.json();
 
             // Limpiar y poblar select
-            metodoPagoSelect.innerHTML = '<option value="">-- Seleccione un método --</option>';
+            metodoPagoSelect.innerHTML = '<option value="">Seleccione un método</option>';
             metodos.forEach(metodo => {
                 const option = document.createElement('option');
                 option.value = metodo.idMetodoPago;
@@ -1479,7 +1520,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('tipo-tarjeta').value = '';
 
         // Establecer fecha actual nuevamente
-        establecerFechaActual();
+        setFechaActual();
     }
 
     // Event listener para botón limpiar

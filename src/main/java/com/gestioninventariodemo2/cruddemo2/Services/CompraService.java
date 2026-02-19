@@ -122,13 +122,39 @@ public class CompraService {
 
     /**
      * Lista todas las compras registradas con un formato simplificado.
+     * Maneja campos de ordenamiento custom (productos, costoUnitario)
+     * que requieren queries con JOIN.
      */
-    public Page<CompraResponseDTO> listarTodasLasCompras(Pageable pageable) {
+    public Page<CompraResponseDTO> listarTodasLasCompras(Pageable pageable, String customSort, String customDirection) {
 
-        // 1. Obtenemos la página del repositorio
-        Page<Compra> paginaCompras = compraRepository.findAll(pageable); // findAll(Pageable) existe en JpaRepository
+        Page<Compra> paginaCompras;
 
-        // 2. Mapeamos la página a DTO usando el mapper que ya tenías
+        if (customSort != null) {
+            boolean asc = "asc".equalsIgnoreCase(customDirection);
+
+            // Crear pageable SIN sort (el ORDER BY está en la query)
+            Pageable pageableWithoutSort = org.springframework.data.domain.PageRequest.of(
+                    pageable.getPageNumber(), pageable.getPageSize());
+
+            switch (customSort) {
+                case "productos":
+                    paginaCompras = asc
+                            ? compraRepository.findAllOrderByProductoNombreAsc(pageableWithoutSort)
+                            : compraRepository.findAllOrderByProductoNombreDesc(pageableWithoutSort);
+                    break;
+                case "costoUnitario":
+                    paginaCompras = asc
+                            ? compraRepository.findAllOrderByPrecioUnitarioAsc(pageableWithoutSort)
+                            : compraRepository.findAllOrderByPrecioUnitarioDesc(pageableWithoutSort);
+                    break;
+                default:
+                    paginaCompras = compraRepository.findAll(pageable);
+                    break;
+            }
+        } else {
+            paginaCompras = compraRepository.findAll(pageable);
+        }
+
         return paginaCompras.map(this::mapToCompraDTO);
     }
 

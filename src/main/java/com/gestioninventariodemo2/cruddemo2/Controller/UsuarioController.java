@@ -1,7 +1,5 @@
 package com.gestioninventariodemo2.cruddemo2.Controller;
 
-import java.util.List;
-
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -15,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import org.springframework.web.bind.annotation.RequestParam;
+
 import com.gestioninventariodemo2.cruddemo2.DTO.UsuarioRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.UsuarioResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.Services.UsuarioService;
@@ -27,25 +27,24 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UsuarioController {
 
-
     private final UsuarioService usuarioService;
 
-
-    //CREAR USUARIO
+    // CREAR USUARIO
     @PostMapping
-    public ResponseEntity<UsuarioResponseDTO> crearUsuario(@RequestBody UsuarioRequestDTO dto){
+    public ResponseEntity<UsuarioResponseDTO> crearUsuario(@RequestBody UsuarioRequestDTO dto) {
         UsuarioResponseDTO nuevoUsuario = usuarioService.crearUsuario(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoUsuario);
     }
 
-
-@GetMapping
-    public ResponseEntity<Page<UsuarioResponseDTO>> obtenerTodos(Pageable pageable) {
-        Page<UsuarioResponseDTO> usuarios = usuarioService.obtenerTodosLosUsuarios(pageable);
+    @GetMapping
+    public ResponseEntity<Page<UsuarioResponseDTO>> obtenerTodos(
+            Pageable pageable,
+            @RequestParam(required = false) String search) {
+        Page<UsuarioResponseDTO> usuarios = usuarioService.obtenerTodosLosUsuarios(pageable, search);
         return ResponseEntity.ok(usuarios);
     }
 
-// ACTUALIZAR USUARIO
+    // ACTUALIZAR USUARIO
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponseDTO> actualizarUsuario(
             @PathVariable Long id,
@@ -58,15 +57,14 @@ public class UsuarioController {
         }
     }
 
-    
-    //ELIMINAR USUARIO
+    // ELIMINAR USUARIO
     @DeleteMapping("/{id}")
     public ResponseEntity<String> borrarUsuario(@PathVariable Long id) {
-    usuarioService.borrarUsuario(id);
-    return ResponseEntity.ok("Usuario eliminado correctamente");
+        usuarioService.borrarUsuario(id);
+        return ResponseEntity.ok("Usuario eliminado correctamente");
     }
 
-// --- NUEVO ENDPOINT: OBTENER POR ID (Para el Modal) ---
+    // --- NUEVO ENDPOINT: OBTENER POR ID (Para el Modal) ---
     @GetMapping("/{id}")
     public ResponseEntity<UsuarioResponseDTO> obtenerUsuarioPorId(@PathVariable Long id) {
         try {
@@ -76,6 +74,5 @@ public class UsuarioController {
             return ResponseEntity.notFound().build();
         }
     }
-    
-}
 
+}

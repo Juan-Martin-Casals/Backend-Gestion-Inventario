@@ -2254,3 +2254,16 @@ body {
         transform: translateY(0);
     }
 }
+
+/* Espaciado del formulario de ventas */
+#ventas-create-container .form-section {
+    margin: 25px 30px;
+}
+
+#payment-row {
+    grid-template-columns: 1fr 1fr;
+}
+
+#metodo-pago {
+    max-width: 100%;
+}

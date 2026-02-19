@@ -967,23 +967,43 @@
                                 </div>
                             </div>
 
-                            <class="form-row">
+                            <div class="form-row">
                                 <div class="form-group">
                                     <label for="user-password">Contraseña</label>
-                                    <input type="password" id="user-password" placeholder="Ingrese la contraseña">
+                                    <div class="password-field-container">
+                                        <input type="password" id="user-password" placeholder="Ingrese la contraseña">
+                                        <button type="button" class="password-toggle-btn" data-target="user-password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
                                     <div class="error-message" id="error-user-password"></div>
                                 </div>
 
                                 <div class="form-group">
                                     <label for="user-confirm-password">Confirmar Contraseña</label>
-                                    <input type="password" id="user-confirm-password"
-                                        placeholder="Confirme la contraseña">
+                                    <div class="password-field-container">
+                                        <input type="password" id="user-confirm-password"
+                                            placeholder="Confirme la contraseña">
+                                        <button type="button" class="password-toggle-btn"
+                                            data-target="user-confirm-password">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                    </div>
                                     <div class="error-message" id="error-user-confirm-password"></div>
                                 </div>
-                                <button type="submit" class="btn-primary" style="margin-top: 20px;">
+                            </div>
+
+                            <div style="text-align: right;">
+                                <button type="submit" class="btn-primary" style="margin-top: 10px;">
                                     <i class="fas fa-plus"></i>
                                     Registrar Usuario
                                 </button>
+                                <button type="button" class="btn-outline" id="limpiar-form-usuario"
+                                    style="margin-top: 10px; margin-left: 10px;">
+                                    <i class="fas fa-eraser"></i>
+                                    Limpiar Formulario
+                                </button>
+                            </div>
 
                         </form>
                         <p id="form-general-message-usuario" class="form-message"></p>
@@ -1069,25 +1089,25 @@
                             <input type="hidden" id="editUsuarioId">
 
                             <div class="form-group">
-                                <label for="editUsuarioNombre">Nombre *</label>
+                                <label for="editUsuarioNombre">Nombre</label>
                                 <input type="text" id="editUsuarioNombre" placeholder="Nombre del usuario">
                                 <div class="error-message" id="errorEditUsuarioNombre"></div>
                             </div>
 
                             <div class="form-group">
-                                <label for="editUsuarioApellido">Apellido *</label>
+                                <label for="editUsuarioApellido">Apellido</label>
                                 <input type="text" id="editUsuarioApellido" placeholder="Apellido del usuario">
                                 <div class="error-message" id="errorEditUsuarioApellido"></div>
                             </div>
 
                             <div class="form-group">
-                                <label for="editUsuarioEmail">Email *</label>
+                                <label for="editUsuarioEmail">Email</label>
                                 <input type="email" id="editUsuarioEmail" placeholder="correo@ejemplo.com">
                                 <div class="error-message" id="errorEditUsuarioEmail"></div>
                             </div>
 
                             <div class="form-group">
-                                <label for="editUsuarioRol">Rol *</label>
+                                <label for="editUsuarioRol">Rol</label>
                                 <select id="editUsuarioRol">
                                     <!-- Se llena dinámicamente -->
                                 </select>
@@ -1110,10 +1130,6 @@
 
 
             <section id="ventas-section" class="spa-section" style="display:none">
-                <div class="section-header">
-                    <h2>Gestión de Ventas</h2>
-                    <p>Administra las ventas del sistema.</p>
-                </div>
 
                 <!-- Subsección: Registrar Venta -->
                 <div id="ventas-create-container" class="subsection-container" style="display: none;">
@@ -1198,27 +1214,21 @@
                                 <h4 id="total-venta">$ Total: $0.00</h4>
                             </div>
 
-                            <!-- Sección: Método de Pago -->
-                            <div class="payment-section"
-                                style="margin: 20px 0; padding: 20px; background: #f8f9fa; border-radius: 8px; border-left: 4px solid #667eea;">
-                                <h5 style="margin-bottom: 15px; color: #333;">
-                                    <i class="fas fa-credit-card"></i> Método de Pago
-                                </h5>
-
+                            <div class="form-row" id="payment-row">
                                 <div class="form-group">
-                                    <label for="metodo-pago">Seleccionar Método *</label>
+                                    <label for="metodo-pago">Método de Pago</label>
                                     <select id="metodo-pago" class="form-control">
-                                        <option value="">-- Seleccione un método --</option>
+                                        <option value="">Seleccionar método de pago</option>
                                     </select>
                                     <div class="error-message" id="errorMetodoPago"></div>
                                 </div>
 
                                 <!-- Campo para Tipo de Tarjeta (solo visible si selecciona Tarjeta) -->
-                                <div id="campos-tipo-tarjeta" style="display: none; margin-top: 15px;">
+                                <div id="campos-tipo-tarjeta" style="display: none;">
                                     <div class="form-group">
-                                        <label for="tipo-tarjeta">Tipo de Tarjeta *</label>
+                                        <label for="tipo-tarjeta">Tipo de Tarjeta</label>
                                         <select id="tipo-tarjeta" class="form-control">
-                                            <option value="">-- Seleccione --</option>
+                                            <option value="">Seleccionar tipo de tarjeta</option>
                                             <option value="Débito">Débito</option>
                                             <option value="Crédito">Crédito</option>
                                         </select>
@@ -1226,20 +1236,22 @@
                                     </div>
                                 </div>
                             </div>
-                    </div>
 
-                    <div style="text-align: right;">
-                        <button type="submit" class="btn-primary" id="btn-registrar-venta">
-                            <i class="fas fa-plus"></i>
-                            Registrar Venta
-                        </button>
-                        <button type="button" class="btn-outline" id="limpiar-form-venta" style="margin-left: 10px;">
-                            <i class="fas fa-eraser"></i>
-                            Limpiar Formulario
-                        </button>
+                            <div style="text-align: right; margin-top: 20px;">
+                                <button type="submit" class="btn-primary" id="btn-registrar-venta">
+                                    <i class="fas fa-plus"></i>
+                                    Registrar Venta
+                                </button>
+                                <button type="button" class="btn-outline" id="limpiar-form-venta"
+                                    style="margin-left: 10px;">
+                                    <i class="fas fa-eraser"></i>
+                                    Limpiar Formulario
+                                </button>
+                            </div>
+
+                        </form>
+                        <p id="form-general-message-venta" class="form-message"></p>
                     </div>
-                    </form>
-                    <p id="form-general-message-venta" class="form-message"></p>
                 </div>
 
                 <div id="ventas-list-container" class="subsection-container" style="display: none;">

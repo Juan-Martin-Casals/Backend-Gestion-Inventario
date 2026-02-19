@@ -177,14 +177,6 @@ public class VentaService {
         // Obtener el método de pago
         var metodoPago = metodoPagoService.obtenerPorId(ventaRequestDTO.getIdMetodoPago());
 
-        // Validar si el método requiere datos extra
-        if (metodoPago.getRequiereDatosExtra()) {
-            if (ventaRequestDTO.getNroTransaccion() == null || ventaRequestDTO.getNroTransaccion().isBlank()) {
-                throw new IllegalArgumentException(
-                        "El método de pago " + metodoPago.getNombre() + " requiere número de transacción");
-            }
-        }
-
         // Registrar el pago
         pagoService.registrarPago(
                 venta,

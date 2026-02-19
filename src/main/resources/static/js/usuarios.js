@@ -101,14 +101,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (rolSelect) {
                 rolSelect.innerHTML = '<option value="">Selecciona rol</option>';
-                allRoles.forEach(rol => {
+
+                // Ordenar alfabéticamente y capitalizar
+                const rolesOrdenados = [...allRoles].sort((a, b) =>
+                    a.descripcion.localeCompare(b.descripcion)
+                );
+
+                rolesOrdenados.forEach(rol => {
                     const option = document.createElement('option');
-
-                    // --- ¡ESTA ES LA CORRECCIÓN! ---
-                    // Usar los nombres exactos del RolSelectDTO
                     option.value = rol.idRol;
-                    option.textContent = rol.descripcion; // <-- Debe ser 'descripcion'
-
+                    // Capitalizar primera letra
+                    const desc = rol.descripcion.toLowerCase();
+                    option.textContent = desc.charAt(0).toUpperCase() + desc.slice(1);
                     rolSelect.appendChild(option);
                 });
             }
@@ -132,9 +136,10 @@ document.addEventListener('DOMContentLoaded', function () {
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
-            // 2. Construir URL con paginación y ordenamiento
+            // 2. Construir URL con paginación, ordenamiento y búsqueda
             const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
-            const url = `${API_USUARIOS_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
+            const searchParam = searchInput && searchInput.value.trim() ? `&search=${encodeURIComponent(searchInput.value.trim())}` : '';
+            const url = `${API_USUARIOS_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}${searchParam}`;
 
             const response = await fetch(url);
             if (!response.ok) {
@@ -149,12 +154,8 @@ document.addEventListener('DOMContentLoaded', function () {
             totalPages = pageData.totalPages;
             todosLosUsuarios = pageData.content;
 
-            // 3. Reaplicar búsqueda si existe
-            if (searchInput && searchInput.value.trim() !== '') {
-                filtrarUsuarios();
-            } else {
-                renderUserTable(todosLosUsuarios);
-            }
+            // 3. Renderizar resultados (la búsqueda ya se hizo en el backend)
+            renderUserTable(todosLosUsuarios);
 
             updatePaginationControls();
             updateSortIndicators(); // ¡NUEVO!
@@ -183,12 +184,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         usuarios.forEach(user => {
+            const rolText = user.descripcionRol
+                ? user.descripcionRol.charAt(0).toUpperCase() + user.descripcionRol.slice(1).toLowerCase()
+                : 'Sin Rol';
             const row = `
                 <tr>
                     <td>${user.nombre || 'N/A'}</td>
                     <td>${user.apellido || 'N/A'}</td>
                     <td>${user.email || 'N/A'}</td>
-                    <td>${user.descripcionRol || 'Sin Rol'}</td>
+                    <td>${rolText}</td>
                     <td>
                         <button class="btn-icon btn-edit-usuario" data-id="${user.id}" title="Editar">
                             <i class="fas fa-edit"></i>
@@ -392,6 +396,35 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // --- Botón Limpiar Formulario ---
+    const btnLimpiarFormUsuario = document.getElementById('limpiar-form-usuario');
+    if (btnLimpiarFormUsuario) {
+        btnLimpiarFormUsuario.addEventListener('click', function () {
+            if (userForm) userForm.reset();
+            // Limpiar mensajes de error
+            document.querySelectorAll('#user-form .error-message').forEach(el => el.textContent = '');
+            if (generalMessage) {
+                generalMessage.textContent = '';
+                generalMessage.className = 'form-message';
+            }
+        });
+    }
+
+    // --- Mostrar/Ocultar Contraseña ---
+    document.querySelectorAll('#user-form .password-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const targetId = this.getAttribute('data-target');
+            const input = document.getElementById(targetId);
+            if (!input) return;
+
+            const type = input.type === 'password' ? 'text' : 'password';
+            input.type = type;
+            this.innerHTML = type === 'password'
+                ? '<i class="fas fa-eye"></i>'
+                : '<i class="fas fa-eye-slash"></i>';
+        });
+    });
+
     // ==========================================================
     // LÓGICA DEL MODAL DE EDICIÓN
     // ==========================================================
@@ -408,12 +441,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Seleccionar el rol correcto
         editRolSelect.innerHTML = '';
-        allRoles.forEach(rol => {
+        const rolesOrdenadosEdit = [...allRoles].sort((a, b) =>
+            a.descripcion.localeCompare(b.descripcion)
+        );
+        rolesOrdenadosEdit.forEach(rol => {
             const option = document.createElement('option');
-
-            // --- ¡CORRECCIÓN DOBLE! ---
             option.value = rol.idRol;
-            option.textContent = rol.descripcion;
+            const desc = rol.descripcion.toLowerCase();
+            option.textContent = desc.charAt(0).toUpperCase() + desc.slice(1);
 
             if (rol.idRol == user.idRol) {
                 option.selected = true;
@@ -638,73 +673,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================================
-    // FUNCIÓN DE BÚSQUEDA/FILTRADO
+    // BÚSQUEDA GLOBAL (BACKEND) CON DEBOUNCE
     // ==========================================================
-    async function filtrarUsuarios() {
-        if (!searchInput) {
-            renderUserTable(todosLosUsuarios);
-            return;
-        }
+    let searchTimeout = null;
 
-        const query = searchInput.value.trim().toLowerCase();
-
-        if (query === '') {
-            usuariosFiltrados = null;
-            renderUserTable(todosLosUsuarios);
-            return;
-        }
-
-        // Añadir animación de loading
-        if (userTableBody) {
-            userTableBody.classList.add('loading');
-            await new Promise(resolve => setTimeout(resolve, 200));
-        }
-
-        usuariosFiltrados = todosLosUsuarios.filter(usuario => {
-            // Buscar en nombre
-            if (usuario.nombre?.toLowerCase().includes(query)) return true;
-
-            // Buscar en apellido
-            if (usuario.apellido?.toLowerCase().includes(query)) return true;
-
-            // Buscar en email
-            if (usuario.email?.toLowerCase().includes(query)) return true;
-
-            // Buscar en rol
-            if (usuario.descripcionRol?.toLowerCase().includes(query)) return true;
-
-            return false;
-        });
-
-        renderUserTable(usuariosFiltrados);
-
-        if (userTableBody) {
-            userTableBody.classList.remove('loading');
-        }
-    }
-
-    // ==========================================================
-    // EVENT LISTENERS DE BÚSQUEDA
-    // ==========================================================
     if (searchInput) {
-        searchInput.addEventListener('input', filtrarUsuarios);
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                currentPage = 0; // Volver a la primera página al buscar
+                loadUsuarios();
+            }, 300); // Debounce de 300ms
+        });
     }
 
     if (clearSearchBtn) {
-        clearSearchBtn.addEventListener('click', async () => {
-            // Añadir animación de loading
-            if (userTableBody) {
-                userTableBody.classList.add('loading');
-                await new Promise(resolve => setTimeout(resolve, 200));
-            }
-
-            searchInput.value = '';
-            filtrarUsuarios();
-
-            // Remover animación después de filtrar
-            if (userTableBody) {
-                userTableBody.classList.remove('loading');
-            }
+        clearSearchBtn.addEventListener('click', () => {
+            if (searchInput) searchInput.value = '';
+            currentPage = 0;
+            loadUsuarios();
         });
     }
 
