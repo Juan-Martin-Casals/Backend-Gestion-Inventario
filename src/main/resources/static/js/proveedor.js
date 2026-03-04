@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let currentPage = 0;
     let totalPages = 1;
-    const itemsPerPage = 10;
+    const itemsPerPage = 7;
 
     // ===============================
     // ESTADO DE ORDENAMIENTO
@@ -104,17 +104,28 @@ document.addEventListener('DOMContentLoaded', function () {
     const detailCloseBtnFooter = document.getElementById('modal-detail-proveedor-close-btn');
 
     // ===============================
-    // SELECTORES - MODAL DE BORRADO
+    // RESTRICCIÓN DE CAMPO TELÉFONO
+    // Solo permite dígitos y el signo +
     // ===============================
-    const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-    const deleteModalMessage = document.getElementById('delete-modal-message');
+    function restrictTelefonoInput(input) {
+        if (!input) return;
+        input.addEventListener('input', function () {
+            this.value = this.value.replace(/[^0-9+ ]/g, '');
+        });
+        input.addEventListener('keydown', function (e) {
+            const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End', ' '];
+            if (allowed.includes(e.key)) return;
+            if (!/^[0-9+]$/.test(e.key)) e.preventDefault();
+        });
+    }
 
+    restrictTelefonoInput(telefonoInput);
+    restrictTelefonoInput(editTelefonoInput);
 
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS (TABLA Y PAGINACIÓN)
     // ==========================================================
+
 
     async function loadProveedores() {
         if (!proveedorTabla || !mainContent) return;
@@ -491,11 +502,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Validación en tiempo real para email duplicado
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         let emailTimeout;
         if (emailInput && emailError) {
             emailInput.addEventListener('blur', async function () {
                 const email = emailInput.value.trim();
                 if (email) {
+                    // Si el formato es inválido, no consultar el backend
+                    if (!emailRegex.test(email)) return;
                     clearTimeout(emailTimeout);
                     emailTimeout = setTimeout(async () => {
                         try {
@@ -504,7 +518,10 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (existe) {
                                 emailError.textContent = 'Ya existe un proveedor con ese email';
                             } else {
-                                emailError.textContent = '';
+                                // Solo limpiar si no hay ya un error de formato visible
+                                if (!emailError.textContent.includes('formato')) {
+                                    emailError.textContent = '';
+                                }
                             }
                         } catch (error) {
                             console.error('Error al verificar email:', error);
@@ -551,45 +568,44 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const proveedorDTO = { nombre, telefono, email, direccion, productosIds };
 
-            try {
-                const response = await fetch(API_PROVEEDORES_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(proveedorDTO)
-                });
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || `Error: ${response.status}`);
+            showConfirmationModal("¿Estás seguro de que deseas registrar este proveedor?", async () => {
+                try {
+                    const response = await fetch(API_PROVEEDORES_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(proveedorDTO)
+                    });
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(errorText || `Error: ${response.status}`);
+                    }
+
+                    generalMessage.textContent = "¡Proveedor registrado exitosamente!";
+                    generalMessage.classList.add('success');
+
+                    // Ocultar mensaje después de 4 segundos
+                    setTimeout(() => {
+                        generalMessage.textContent = '';
+                        generalMessage.classList.remove('success');
+                    }, 4000);
+
+                    proveedorForm.reset();
+                    setupMultiSelect(registerSelect, []);
+
+                    currentPage = 0;
+                    sortField = 'nombre';
+                    sortDirection = 'asc';
+                    loadProveedores();
+
+                    // --- AVISO CRUCIAL: Informar a Compras.js y otros ---
+                    document.dispatchEvent(new Event('proveedoresActualizados'));
+
+                } catch (error) {
+                    console.error('Error al registrar el proveedor:', error);
+                    generalMessage.textContent = `Error: ${error.message}`;
+                    generalMessage.classList.add('error');
                 }
-
-                generalMessage.textContent = "¡Proveedor registrado exitosamente!";
-                generalMessage.classList.add('success');
-
-                // Ocultar mensaje después de 4 segundos
-                setTimeout(() => {
-                    generalMessage.textContent = '';
-                    generalMessage.classList.remove('success');
-                }, 4000);
-
-                proveedorForm.reset();
-                setupMultiSelect(registerSelect, []);
-
-                currentPage = 0;
-                sortField = 'nombre';
-                sortDirection = 'asc';
-                loadProveedores();
-
-                // Mantener en la subsección actual (Registrar Proveedor)
-                // showSubsection('proveedores-list'); // Comentado para no cambiar de vista
-
-                // --- AVISO CRUCIAL: Informar a Compras.js y otros ---
-                document.dispatchEvent(new Event('proveedoresActualizados'));
-
-            } catch (error) {
-                console.error('Error al registrar el proveedor:', error);
-                generalMessage.textContent = `Error: ${error.message}`;
-                generalMessage.classList.add('error');
-            }
+            });
         });
     }
 
@@ -725,7 +741,45 @@ document.addEventListener('DOMContentLoaded', function () {
             if (deleteButton) {
                 const id = deleteButton.dataset.id;
                 const nombre = deleteButton.closest('tr').cells[0].textContent;
-                openDeleteModal(id, nombre);
+
+                // Usar el mismo modal estilizado que productos
+                const deleteModal = document.getElementById('delete-confirm-modal');
+                const deleteModalMessage = document.getElementById('delete-modal-message');
+                const cancelBtn = document.getElementById('cancel-delete-btn');
+                const confirmBtn = document.getElementById('confirm-delete-btn');
+
+                deleteModalMessage.textContent = `¿Estás seguro de que quieres eliminar al proveedor "${nombre}"?`;
+                deleteModal.style.display = 'flex';
+
+                // ESC para cerrar
+                const escHandler = (e) => { if (e.key === 'Escape') closeProveedorDeleteModal(); };
+                document.addEventListener('keydown', escHandler);
+
+                function closeProveedorDeleteModal() {
+                    deleteModal.style.display = 'none';
+                    cancelBtn.onclick = null;
+                    confirmBtn.onclick = null;
+                    document.removeEventListener('keydown', escHandler);
+                }
+
+                cancelBtn.onclick = closeProveedorDeleteModal;
+
+                confirmBtn.onclick = async () => {
+                    closeProveedorDeleteModal();
+                    try {
+                        const response = await fetch(`${API_PROVEEDORES_URL}/${id}`, {
+                            method: 'DELETE'
+                        });
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(errorText || 'No se pudo eliminar el proveedor');
+                        }
+                        loadProveedores();
+                        document.dispatchEvent(new Event('proveedoresActualizados'));
+                    } catch (error) {
+                        alert('Error al eliminar: ' + error.message);
+                    }
+                };
             }
         });
     }
@@ -779,7 +833,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (!isValid) {
-                editGeneralMessage.textContent = 'Por favor, completa todos los campos correctamente';
+                editGeneralMessage.textContent = 'Por favor complete todos los campos correctamente';
                 editGeneralMessage.classList.add('error');
                 return;
             }
@@ -831,30 +885,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (modalCloseBtn) modalCloseBtn.addEventListener('click', closeEditModal);
     if (modalOverlay) modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeEditModal(); });
-    if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', closeDeleteModal);
-    if (deleteConfirmModal) deleteConfirmModal.addEventListener('click', (e) => { if (e.target === deleteConfirmModal) closeDeleteModal(); });
 
-    if (confirmDeleteBtn) {
-        confirmDeleteBtn.addEventListener('click', async () => {
-            if (!currentDeleteProviderId) return;
-            try {
-                const response = await fetch(`${API_PROVEEDORES_URL}/${currentDeleteProviderId}`, {
-                    method: 'DELETE'
-                });
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || 'No se pudo eliminar el proveedor');
-                }
-                loadProveedores();
-                // También avisamos al eliminar
-                document.dispatchEvent(new Event('proveedoresActualizados'));
-            } catch (error) {
-                alert('Error al eliminar: ' + error.message);
-            } finally {
-                closeDeleteModal();
-            }
-        });
-    }
+
 
     // ==========================================================
     // FUNCIÓN DE BÚSQUEDA/FILTRADO

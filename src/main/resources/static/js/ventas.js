@@ -127,6 +127,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Variables para búsqueda y filtrado ---
     let todasLasVentas = [];
     let ventasFiltradas = [];
+    let modoFiltradoLocal = false;
     const ventasSearchInput = document.getElementById('ventas-search-input');
     const ventasFechaInicio = document.getElementById('ventas-fecha-inicio');
     const ventasFechaFin = document.getElementById('ventas-fecha-fin');
@@ -160,12 +161,19 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadVentas(page = 0) {
         if (!ventaTableBody || !mainContent) return;
 
+        modoFiltradoLocal = false;
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         ventaTableBody.classList.add('loading');
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
-            const sortParam = `${ventasSortField},${ventasSortDirection}`;
+            // Mapear campos del frontend a campos reales de la entidad JPA
+            const sortFieldMap = {
+                'vendedor.nombre': 'usuario.nombre',
+                'cliente.nombre': 'cliente.nombre'
+            };
+            const sortFieldBackend = sortFieldMap[ventasSortField] || ventasSortField;
+            const sortParam = `${sortFieldBackend},${ventasSortDirection}`;
             const url = `${API_VENTAS_URL}?page=${page}&size=${pageSizeVentas}&sort=${sortParam}`;
 
             const response = await fetch(url);
@@ -462,15 +470,26 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        productResultsContainer.innerHTML = productos.map(producto => {
+        // Ordenar alfabéticamente por nombre
+        const productosOrdenados = [...productos].sort((a, b) =>
+            a.nombreProducto.localeCompare(b.nombreProducto, 'es', { sensitivity: 'base' })
+        );
+
+        // Capitalizar cada palabra
+        function capitalizarPalabras(texto) {
+            return texto.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        }
+
+        productResultsContainer.innerHTML = productosOrdenados.map(producto => {
             const stockActual = producto.stockActual || 0;
             const stockColor = stockActual > 10 ? '#28a745' : stockActual > 0 ? '#ffc107' : '#dc3545';
             const stockText = stockActual > 0 ? `Stock: ${stockActual}` : 'Sin stock';
+            const nombreCapitalizado = capitalizarPalabras(producto.nombreProducto);
 
             return `
                 <div class="product-result-item" data-id="${producto.idProducto}">
                     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                        <span style="font-weight: 500;">${producto.nombreProducto}</span>
+                        <span style="font-weight: 500;">${nombreCapitalizado}</span>
                         <div style="display: flex; gap: 15px; align-items: center;">
                             <span style="color: ${stockColor}; font-weight: 600; font-size: 12px;">
                                 <i class="fas fa-box"></i> ${stockText}
@@ -505,9 +524,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================================
 
     function agregarProductoAlDetalle() {
+        // Limpiar errores previos
         errorDetalleGeneral.textContent = '';
+        errorDetalleGeneral.style.display = 'none';
+
         if (!productoSeleccionado) {
             errorDetalleGeneral.textContent = 'Debe seleccionar un producto de la lista.';
+            errorDetalleGeneral.className = 'form-message error';
+            errorDetalleGeneral.style.display = 'block';
             return;
         }
         const cantidadRaw = cantidadProductoInput.value;
@@ -584,10 +608,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td><input type="text" class="inline-edit-input" id="inline-precio-venta-${index}" value="${formatoMoneda.format(item.precioVenta)}"></td>
                         <td>$${formatoMoneda.format(subtotal)}</td>
                         <td>
-                            <button type="button" class="btn-icon btn-success btn-guardar-venta-inline" data-index="${index}" title="Guardar">
+                            <button type="button" class="btn-icon btn-save-detalle btn-guardar-venta-inline" data-index="${index}" title="Guardar">
                                 <i class="fas fa-check"></i>
                             </button>
-                            <button type="button" class="btn-icon btn-secondary" onclick="cancelarEdicionVentaInline()" title="Cancelar">
+                            <button type="button" class="btn-icon btn-cancel-detalle" onclick="cancelarEdicionVentaInline()" title="Cancelar">
                                 <i class="fas fa-times"></i>
                             </button>
                         </td>
@@ -602,10 +626,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td>$${formatoMoneda.format(item.precioVenta)}</td>
                         <td>$${formatoMoneda.format(subtotal)}</td>
                         <td>
-                            <button type="button" class="btn-icon btn-warning btn-editar-venta-item" data-index="${index}" title="Editar">
+                            <button type="button" class="btn-icon btn-edit-detalle btn-editar-venta-item" data-index="${index}" title="Editar">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button type="button" class="btn-icon btn-danger btn-delete-detalle" data-id="${item.idProducto}" title="Quitar">
+                            <button type="button" class="btn-icon btn-delete-detalle" data-id="${item.idProducto}" title="Quitar">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>
@@ -793,6 +817,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 ventasSortField = 'fecha';
                 ventasSortDirection = 'desc';
                 loadVentas(currentPageVentas);
+                // Notificar al dashboard para que actualice los datos de hoy
+                document.dispatchEvent(new Event('ventaRegistrada'));
 
             } catch (error) {
                 console.error('Error al registrar la venta:', error);
@@ -821,7 +847,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>$${formatoMoneda.format(venta.total)}</td>
                 <td>${nombreVendedorTexto}</td>
                 <td>
-                    <button class="btn-icon btn-info" onclick="mostrarDetalleVenta(${venta.idVenta})" title="Ver detalle">
+                    <button class="btn-icon btn-view-venta" onclick="mostrarDetalleVenta(${venta.idVenta})" title="Ver detalle">
                         <i class="fas fa-eye"></i>
                     </button>
                 </td>
@@ -1016,9 +1042,15 @@ document.addEventListener('DOMContentLoaded', function () {
             ventasSortField = newSortField;
             ventasSortDirection = 'asc';
         }
-        // Ordenar globalmente desde el backend con paginación
-        currentPageVentas = 0;
-        loadVentas(0);
+
+        if (modoFiltradoLocal) {
+            currentPageVentas = 0;
+            ordenarVentasFiltradas();
+            renderVentasFiltradas();
+        } else {
+            currentPageVentas = 0;
+            loadVentas(0);
+        }
     }
 
     function ordenarVentasFiltradas() {
@@ -1056,19 +1088,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function handleVentasPrevPage() {
         if (currentPageVentas > 0) {
-            loadVentas(currentPageVentas - 1);
+            if (modoFiltradoLocal) {
+                currentPageVentas--;
+                renderVentasFiltradas();
+            } else {
+                loadVentas(currentPageVentas - 1);
+            }
         }
     }
 
     function handleVentasNextPage() {
         if (currentPageVentas < totalPagesVentas - 1) {
-            loadVentas(currentPageVentas + 1);
+            if (modoFiltradoLocal) {
+                currentPageVentas++;
+                renderVentasFiltradas();
+            } else {
+                loadVentas(currentPageVentas + 1);
+            }
         }
     }
 
     // ==========================================================
     // BÚSQUEDA Y FILTRADO DE VENTAS
     // ==========================================================
+
+    // Helper para normalizar texto: quita acentos/tildes y pasa a minúsculas
+    function normalizarTexto(texto) {
+        return (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+    }
 
     async function cargarTodasLasVentas() {
         try {
@@ -1084,16 +1131,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function aplicarFiltrosVentas() {
-        const textoBusqueda = ventasSearchInput ? ventasSearchInput.value.toLowerCase() : '';
+        modoFiltradoLocal = true;
+        const textoBusqueda = normalizarTexto(ventasSearchInput ? ventasSearchInput.value : '');
 
         ventasFiltradas = todasLasVentas.filter(venta => {
             // Filtro por búsqueda (cliente, producto o vendedor)
             if (textoBusqueda) {
-                const cliente = (venta.nombreCliente || '').toLowerCase();
-                const vendedor = (venta.nombreVendedor || '').toLowerCase();
+                const cliente = normalizarTexto(venta.nombreCliente);
+                const vendedor = normalizarTexto(venta.nombreVendedor);
                 const productos = venta.productos || [];
                 const tieneProducto = productos.some(p =>
-                    p.nombreProducto.toLowerCase().includes(textoBusqueda)
+                    normalizarTexto(p.nombreProducto).includes(textoBusqueda)
                 );
 
                 if (!cliente.includes(textoBusqueda) &&
@@ -1106,6 +1154,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return true;
         });
 
+        currentPageVentas = 0;
+        ordenarVentasFiltradas();
         renderVentasFiltradas();
     }
 
@@ -1127,8 +1177,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         ocultarErrorFiltroVentas();
+        modoFiltradoLocal = true;
 
-        const textoBusqueda = ventasSearchInput ? ventasSearchInput.value.toLowerCase() : '';
+        const textoBusqueda = normalizarTexto(ventasSearchInput ? ventasSearchInput.value : '');
 
         ventasFiltradas = todasLasVentas.filter(venta => {
             if (!venta.fecha) return false;
@@ -1140,10 +1191,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Aplicar búsqueda si existe
             if (textoBusqueda) {
-                const cliente = (venta.nombreCliente || '').toLowerCase();
+                const cliente = normalizarTexto(venta.nombreCliente);
                 const productos = venta.productos || [];
                 const tieneProducto = productos.some(p =>
-                    p.nombreProducto.toLowerCase().includes(textoBusqueda)
+                    normalizarTexto(p.nombreProducto).includes(textoBusqueda)
                 );
 
                 return cliente.includes(textoBusqueda) || tieneProducto;
@@ -1152,6 +1203,8 @@ document.addEventListener('DOMContentLoaded', function () {
             return true;
         });
 
+        currentPageVentas = 0;
+        ordenarVentasFiltradas();
         renderVentasFiltradas();
     }
 
@@ -1161,6 +1214,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (ventasFechaFin) ventasFechaFin.value = '';
         ocultarErrorFiltroVentas();
 
+        modoFiltradoLocal = false;
         currentPageVentas = 0;
         loadVentas(0);
     }
@@ -1171,7 +1225,18 @@ document.addEventListener('DOMContentLoaded', function () {
         ventaTableBody.classList.add('loading');
 
         setTimeout(() => {
-            renderVentasTable(ventasFiltradas);
+            // Paginar resultados filtrados localmente
+            totalPagesVentas = Math.ceil(ventasFiltradas.length / pageSizeVentas);
+            if (totalPagesVentas === 0) totalPagesVentas = 1;
+            if (currentPageVentas >= totalPagesVentas) currentPageVentas = totalPagesVentas - 1;
+
+            const startIndex = currentPageVentas * pageSizeVentas;
+            const endIndex = startIndex + pageSizeVentas;
+            const ventasPagina = ventasFiltradas.slice(startIndex, endIndex);
+
+            renderVentasTable(ventasPagina);
+            updateVentasPaginationControls();
+            updateVentasSortIndicators();
             ventaTableBody.classList.remove('loading');
         }, 100);
     }
@@ -1340,7 +1405,18 @@ document.addEventListener('DOMContentLoaded', function () {
         ventasBtnLimpiar.addEventListener('click', limpiarFiltrosVentas);
     }
     if (ventasSearchInput) {
-        ventasSearchInput.addEventListener('input', aplicarFiltrosVentas);
+        ventasSearchInput.addEventListener('input', function () {
+            const texto = ventasSearchInput.value.trim();
+            const hayFiltroFecha = (ventasFechaInicio && ventasFechaInicio.value) || (ventasFechaFin && ventasFechaFin.value);
+
+            if (!texto && !hayFiltroFecha) {
+                // Sin texto ni fechas: volver a la vista paginada del backend
+                currentPageVentas = 0;
+                loadVentas(0);
+            } else {
+                aplicarFiltrosVentas();
+            }
+        });
     }
     // Ocultar error cuando el usuario modifica las fechas
     if (ventasFechaInicio) {
@@ -1414,7 +1490,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const metodos = await response.json();
 
             // Limpiar y poblar select
-            metodoPagoSelect.innerHTML = '<option value="">Seleccione un método</option>';
+            metodoPagoSelect.innerHTML = '<option value="">Seleccionar método</option>';
             metodos.forEach(metodo => {
                 const option = document.createElement('option');
                 option.value = metodo.idMetodoPago;

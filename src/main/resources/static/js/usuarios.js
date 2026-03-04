@@ -78,13 +78,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const editRolSelect = document.getElementById('editUsuarioRol');
     const editGeneralMessage = document.getElementById('form-general-message-edit-usuario');
 
-    // ===============================
-    // SELECTORES - MODAL DE BORRADO (REUTILIZADO)
-    // ===============================
-    const deleteConfirmModal = document.getElementById('delete-confirm-modal');
-    const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-    const cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-    const deleteModalMessage = document.getElementById('delete-modal-message');
 
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS (TABLA Y ROLES)
@@ -338,9 +331,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!password) {
                 document.getElementById('error-user-password').textContent = 'La contraseña es obligatoria';
                 isValid = false;
-            } else if (password.length < 6) {
-                document.getElementById('error-user-password').textContent = 'La contraseña debe tener al menos 6 caracteres';
-                isValid = false;
+            } else {
+                const hasNumber = /\d/.test(password);
+                const isCorrectLength = password.length >= 8;
+
+                // La checklist ya muestra los requisitos en tiempo real,
+                // solo bloqueamos el envío si no se cumplen.
+                if (!isCorrectLength || !hasNumber) {
+                    isValid = false;
+                }
             }
 
             // Validación de confirmación de contraseña
@@ -367,32 +366,39 @@ document.addEventListener('DOMContentLoaded', function () {
                 confirmacionContrasena: confirmPassword, // Agregamos este campo que espera el DTO
                 idRol: parseInt(idRol)
             };
-            // 5. Enviar
-            try {
-                const response = await fetch(API_USUARIOS_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(usuarioDTO)
-                });
+            // 5. Confirmar y Enviar
+            showConfirmationModal("¿Estás seguro de que deseas registrar este usuario?", async () => {
+                try {
+                    const response = await fetch(API_USUARIOS_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(usuarioDTO)
+                    });
 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || `Error: ${response.status}`);
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(errorText || `Error: ${response.status}`);
+                    }
+
+                    generalMessage.textContent = "¡Usuario registrado con éxito!";
+                    generalMessage.classList.add('success');
+                    userForm.reset();
+
+                    // Auto-ocultar mensaje de éxito después de 4 segundos
+                    setTimeout(() => {
+                        generalMessage.textContent = '';
+                        generalMessage.className = 'form-message';
+                    }, 4000);
+
+                    currentPage = 0;
+                    loadUsuarios();
+
+                } catch (error) {
+                    console.error('Error al registrar el usuario:', error);
+                    generalMessage.textContent = `${error.message}`;
+                    generalMessage.classList.add('error');
                 }
-
-                generalMessage.textContent = "¡Usuario registrado con éxito!";
-                generalMessage.classList.add('success');
-                userForm.reset();
-
-                currentPage = 0;
-                loadUsuarios();
-                showSubsection('usuarios-list'); // Redirigir a la lista
-
-            } catch (error) {
-                console.error('Error al registrar el usuario:', error);
-                generalMessage.textContent = `${error.message}`;
-                generalMessage.classList.add('error');
-            }
+            });
         });
     }
 
@@ -406,6 +412,68 @@ document.addEventListener('DOMContentLoaded', function () {
             if (generalMessage) {
                 generalMessage.textContent = '';
                 generalMessage.className = 'form-message';
+            }
+            // Resetear checklist de contraseña
+            ['check-length', 'check-number'].forEach(id => {
+                const li = document.getElementById(id);
+                if (li) {
+                    li.classList.remove('valid');
+                    li.querySelector('i').className = 'fas fa-circle';
+                }
+            });
+        });
+    }
+
+    // --- Validación de email duplicado en tiempo real ---
+    if (emailInput) {
+        emailInput.addEventListener('blur', async function () {
+            const email = emailInput.value.trim();
+            const errorEl = document.getElementById('error-user-email');
+            if (!errorEl) return;
+
+            // Solo validar si el email tiene formato válido
+            if (!email || !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) return;
+
+            try {
+                const response = await fetch(`${API_USUARIOS_URL}/check-email?email=${encodeURIComponent(email)}`);
+                if (response.ok) {
+                    const existe = await response.json();
+                    if (existe) {
+                        errorEl.textContent = 'Ya existe un usuario con este correo';
+                    } else {
+                        errorEl.textContent = '';
+                    }
+                }
+            } catch (error) {
+                console.error('Error al verificar email:', error);
+            }
+        });
+    }
+
+    // --- Checklist de contraseña en tiempo real ---
+    if (passwordInput) {
+        const checkLength = document.getElementById('check-length');
+        const checkNumber = document.getElementById('check-number');
+
+        passwordInput.addEventListener('input', function () {
+            const val = this.value;
+
+            // Longitud mínima
+            if (val.length >= 8) {
+                checkLength.classList.add('valid');
+                checkLength.querySelector('i').className = 'fas fa-check-circle';
+            } else {
+                checkLength.classList.remove('valid');
+                checkLength.querySelector('i').className = 'fas fa-circle';
+            }
+
+            // Al menos un número
+            if (/\d/.test(val)) {
+                checkNumber.classList.add('valid');
+                checkNumber.querySelector('i').className = 'fas fa-check-circle';
+            } else {
+                checkNumber.classList.remove('valid');
+                checkNumber.querySelector('i').className = 'fas fa-circle';
             }
         });
     }
@@ -554,7 +622,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             } catch (error) {
                 console.error('Error al actualizar usuario:', error);
-                editGeneralMessage.textContent = `Error: ${error.message}`;
+                editGeneralMessage.textContent = error.message;
                 editGeneralMessage.classList.add('error');
             }
         });
@@ -562,28 +630,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-    // ==========================================================
-    // LÓGICA DE BORRADO (MODAL REUTILIZADO)
-    // ==========================================================
-
-    function openDeleteModal(id, nombre) {
-        currentDeleteUserId = id;
-        deleteModalMessage.textContent = `¿Estás seguro de que quieres eliminar al usuario "${nombre}"?`;
-        if (deleteConfirmModal) {
-            deleteConfirmModal.style.display = 'block';
-            // 2. ¡NUEVO! Agregamos el evento al abrir
-            window.addEventListener('keydown', handleDeleteEsc);
-        }
-    }
-
-    function closeDeleteModal() {
-        currentDeleteUserId = null;
-        if (deleteConfirmModal) {
-            deleteConfirmModal.style.display = 'none';
-            // 3. ¡NUEVO! Quitamos el evento al cerrar para evitar errores
-            window.removeEventListener('keydown', handleDeleteEsc);
-        }
-    }
 
     // ===============================================
     // LISTENERS DE EVENTOS DE TABLA Y MODALES
@@ -615,47 +661,48 @@ document.addEventListener('DOMContentLoaded', function () {
             if (deleteButton) {
                 const id = deleteButton.dataset.id;
                 const nombre = deleteButton.dataset.nombre;
-                openDeleteModal(id, nombre);
-            }
-        });
-    }
 
-    // --- Clic en el botón de confirmación de BORRADO ---
-    if (confirmDeleteBtn) {
-        confirmDeleteBtn.addEventListener('click', async () => {
-            // Verificamos si estamos borrando un usuario (podría ser un producto u otro)
-            if (currentDeleteUserId) {
-                try {
-                    const response = await fetch(`${API_USUARIOS_URL}/${currentDeleteUserId}`, {
-                        method: 'DELETE'
-                    });
+                // Usar el mismo modal estilizado que productos y proveedores
+                const deleteModal = document.getElementById('delete-confirm-modal');
+                const deleteModalMessage = document.getElementById('delete-modal-message');
+                const cancelBtn = document.getElementById('cancel-delete-btn');
+                const confirmBtn = document.getElementById('confirm-delete-btn');
 
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(errorText || 'No se pudo eliminar el usuario');
-                    }
+                deleteModalMessage.textContent = `¿Estás seguro de que quieres eliminar al usuario "${nombre}"?`;
+                deleteModal.style.display = 'flex';
 
-                    loadUsuarios(); // Recarga la tabla
+                const escHandler = (e) => { if (e.key === 'Escape') closeUsuarioDeleteModal(); };
+                document.addEventListener('keydown', escHandler);
 
-                } catch (error) {
-                    alert('Error al eliminar: ' + error.message);
-                } finally {
-                    closeDeleteModal();
-                    currentDeleteUserId = null; // Limpiamos el ID
+                function closeUsuarioDeleteModal() {
+                    deleteModal.style.display = 'none';
+                    cancelBtn.onclick = null;
+                    confirmBtn.onclick = null;
+                    document.removeEventListener('keydown', escHandler);
                 }
+
+                cancelBtn.onclick = closeUsuarioDeleteModal;
+
+                confirmBtn.onclick = async () => {
+                    closeUsuarioDeleteModal();
+                    try {
+                        const response = await fetch(`${API_USUARIOS_URL}/${id}`, {
+                            method: 'DELETE'
+                        });
+                        if (!response.ok) {
+                            const errorText = await response.text();
+                            throw new Error(errorText || 'No se pudo eliminar el usuario');
+                        }
+                        loadUsuarios();
+                    } catch (error) {
+                        alert('Error al eliminar: ' + error.message);
+                    }
+                };
             }
         });
     }
 
-    // --- Eventos para cerrar modales ---
-    if (cancelDeleteBtn) {
-        cancelDeleteBtn.addEventListener('click', closeDeleteModal);
-    }
-    if (deleteConfirmModal) {
-        deleteConfirmModal.addEventListener('click', (e) => {
-            if (e.target === deleteConfirmModal) closeDeleteModal();
-        });
-    }
+
     if (modalEditCloseBtn) {
         modalEditCloseBtn.addEventListener('click', closeEditModal);
     }

@@ -17,7 +17,7 @@ public class InformeDashboardDTO {
     private Long productoMes;
     private Long productoHistoricos;
 
-    private double recaudacionMes;
+    private Double recaudacionMes;
 
     private String productoMasVendidoMes;
     private String productoMenosVendidoMes;

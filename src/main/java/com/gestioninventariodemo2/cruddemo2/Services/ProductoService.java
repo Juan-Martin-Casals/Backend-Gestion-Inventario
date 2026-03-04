@@ -122,9 +122,11 @@ public class ProductoService {
                 .stream()
                 .map(p -> {
                     int stockActual = 0;
+                    int stockMinimo = 0;
                     // Si la lista existe y tiene al menos un elemento
                     if (p.getStocks() != null && !p.getStocks().isEmpty()) {
                         stockActual = p.getStocks().get(0).getStockActual();
+                        stockMinimo = p.getStocks().get(0).getStockMinimo();
                     }
                     return StockTablaDTO.builder()
                             .id(p.getIdProducto())
@@ -133,6 +135,7 @@ public class ProductoService {
                             .descripcion(p.getDescripcion())
                             .precio(p.getPrecio())
                             .stock(stockActual)
+                            .stockMinimo(stockMinimo)
                             .build();
                 })
                 .toList();

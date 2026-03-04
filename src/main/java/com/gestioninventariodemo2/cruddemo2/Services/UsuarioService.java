@@ -135,6 +135,12 @@ public class UsuarioService {
         }
     }
 
+    // Verificar si un email ya está registrado (para validación en tiempo real)
+    @Transactional(readOnly = true)
+    public boolean existeEmail(String email) {
+        return usuarioRepository.existsByEmail(email);
+    }
+
     // MÉTODO toResponseDTO CORREGIDO:
     private UsuarioResponseDTO toResponseDTO(Usuario usuario) {
         return UsuarioResponseDTO.builder()

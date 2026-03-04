@@ -25,18 +25,28 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
 
     // ==========================================================
     // NUEVAS QUERIES PARA DASHBOARD DE INFORMES
+    // Solo cuentan productos con estado ACTIVO para consistencia
     // ==========================================================
 
-    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual < s.stockMinimo AND s.stockActual > 0")
+    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual < s.stockMinimo AND s.stockActual > 0 AND s.producto.estado = 'ACTIVO'")
     Integer countProductosConStockBajo();
 
-    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual >= s.stockMinimo")
+    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual >= s.stockMinimo AND s.producto.estado = 'ACTIVO'")
     Integer countStockOptimo();
 
-    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual < s.stockMinimo AND s.stockActual > 0")
+    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual < s.stockMinimo AND s.stockActual > 0 AND s.producto.estado = 'ACTIVO'")
     Integer countStockBajo();
 
-    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual = 0")
+    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual = 0 AND s.producto.estado = 'ACTIVO'")
     Integer countStockAgotado();
+
+    // Query usada por obtenerResumenStock() del KPI principal
+    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual = 0 AND s.producto.estado = 'ACTIVO'")
+    Long countAgotadosActivos();
+
+    // Query para tabla de reposición: productos con stock < stockMinimo (incluye
+    // agotados)
+    @Query("SELECT s FROM Stock s WHERE s.stockActual < s.stockMinimo AND s.producto.estado = :estado")
+    Page<Stock> findProductosQueNecesitanReposicion(String estado, Pageable pageable);
 
 }

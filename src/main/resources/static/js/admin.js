@@ -5,11 +5,29 @@ document.addEventListener('DOMContentLoaded', function () {
     const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
     const sections = document.querySelectorAll('.spa-section');
     const sectionTitle = document.getElementById('section-title');
+    const sectionIcon = document.getElementById('section-icon');
     const subsectionTitle = document.getElementById('subsection-title');
     const logoutBtn = document.getElementById('logout-btn');
     const logoutModal = document.getElementById('logout-modal');
     const confirmLogoutBtn = document.getElementById('confirm-logout');
     const cancelLogoutBtn = document.getElementById('cancel-logout');
+
+    // Mapa de sección → clase de ícono FontAwesome
+    const sectionIcons = {
+        'principal': 'fas fa-home',
+        'productos': 'fas fa-box',
+        'proveedores': 'fas fa-user',
+        'compras': 'fas fa-shopping-bag',
+        'usuarios': 'fas fa-users',
+        'ventas': 'fas fa-shopping-cart',
+        'informes': 'fas fa-chart-bar'
+    };
+
+    function updateHeaderIcon(sectionId) {
+        if (sectionIcon && sectionIcons[sectionId]) {
+            sectionIcon.className = sectionIcons[sectionId];
+        }
+    }
 
     // Función para mostrar una sección y ocultar las demás
     function showSection(sectionId) {
@@ -36,6 +54,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 return; // No navegar, solo abrir/cerrar
             }
 
+            // Si es el botón de logout, no hacer nada aquí (tiene su propio handler)
+            if (this.id === 'logout-btn') {
+                return;
+            }
+
             e.preventDefault();
 
             // Remover active de todos los links (incluyendo submenús)
@@ -48,12 +71,14 @@ document.addEventListener('DOMContentLoaded', function () {
             showSection(sectionId);
 
             // Actualizar AMBOS títulos basándose en el texto del link clickeado
-            // Esto funcionará tanto para secciones como para subsecciones
             const linkText = this.textContent.trim();
             sectionTitle.textContent = linkText;
             if (subsectionTitle) {
                 subsectionTitle.textContent = linkText;
             }
+
+            // Actualizar ícono del header con el de la sección
+            updateHeaderIcon(sectionId);
 
             // Manejo de Subsecciones (Productos)
             if (sectionId === 'productos' && subsectionId) {
@@ -128,6 +153,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         confirmLogoutBtn.addEventListener('click', () => {
+            // Borrar cookie de sesión (token JWT)
+            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             window.location.href = 'index.html';
         });
 

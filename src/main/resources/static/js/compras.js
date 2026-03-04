@@ -331,10 +331,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td><input type="text" class="inline-edit-input" id="inline-venta-${index}" value="${formatoMoneda.format(item.nuevoPrecioVenta)}"></td>
                     <td>$${formatoMoneda.format(subtotal)}</td>
                     <td>
-                        <button type="button" class="btn-icon btn-success btn-guardar-inline" data-index="${index}" title="Guardar">
+                        <button type="button" class="btn-icon btn-save-detalle btn-guardar-inline" data-index="${index}" title="Guardar">
                             <i class="fas fa-check"></i>
                         </button>
-                        <button type="button" class="btn-icon btn-secondary" onclick="cancelarEdicionInline()" title="Cancelar">
+                        <button type="button" class="btn-icon btn-cancel-detalle" onclick="cancelarEdicionInline()" title="Cancelar">
                             <i class="fas fa-times"></i>
                         </button>
                     </td>
@@ -347,10 +347,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>$${formatoMoneda.format(item.nuevoPrecioVenta)}</td>
                     <td>$${formatoMoneda.format(subtotal)}</td>
                     <td>
-                        <button type="button" class="btn-icon btn-warning btn-editar-item" data-index="${index}" title="Editar">
+                        <button type="button" class="btn-icon btn-edit-detalle btn-editar-item" data-index="${index}" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button type="button" class="btn-icon btn-danger btn-quitar-item" data-index="${index}" title="Quitar">
+                        <button type="button" class="btn-icon btn-delete-detalle btn-quitar-item" data-index="${index}" title="Quitar">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -574,11 +574,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // HISTORIAL
     // ===============================================
 
-    // Variables para filtro de fechas y búsqueda
-    let todasLasCompras = []; // Almacena todas las compras sin filtrar
-    let comprasFiltradas = null; // Compras filtradas por fecha
-    let comprasBuscadas = null; // Compras filtradas por búsqueda
-
     async function loadComprasHistorial() {
         if (!historialTabla || !mainContent) return;
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
@@ -587,16 +582,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             const sortParam = historialSortField ? `&sort=${historialSortField},${historialSortDirection}` : '';
-            const url = `${API_COMPRAS_URL}?page=${historialCurrentPage}&size=${historialItemsPerPage}${sortParam}`;
+
+            // Incluir búsqueda si hay texto
+            const searchText = comprasSearchInput ? comprasSearchInput.value.trim() : '';
+            const searchParam = searchText ? `&search=${encodeURIComponent(searchText)}` : '';
+
+            // Incluir filtro de fechas si están seleccionadas
+            const fechaInicioEl = document.getElementById('compras-fecha-inicio');
+            const fechaFinEl = document.getElementById('compras-fecha-fin');
+            const inicioVal = fechaInicioEl ? fechaInicioEl.value : '';
+            const finVal = fechaFinEl ? fechaFinEl.value : '';
+            const fechaParam = (inicioVal && finVal) ? `&inicio=${inicioVal}&fin=${finVal}` : '';
+
+            const url = `${API_COMPRAS_URL}?page=${historialCurrentPage}&size=${historialItemsPerPage}${sortParam}${searchParam}${fechaParam}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
             const pageData = await response.json();
             historialTotalPages = pageData.totalPages;
-            todasLasCompras = pageData.content; // Guardar todas las compras
 
-            // Aplicar filtros (búsqueda y fechas)
-            const comprasAMostrar = aplicarFiltros();
-            renderComprasTabla(comprasAMostrar);
+            renderComprasTabla(pageData.content);
             updateHistorialPaginationControls();
             updateHistorialSortIndicators();
             requestAnimationFrame(() => { window.scrollTo(0, scrollPosition); historialTabla.classList.remove('loading'); });
@@ -649,7 +653,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>${costosTexto}</td> 
                     <td>${totalFormateado}</td>
                     <td>
-                        <button type="button" class="btn-icon btn-primary" onclick="mostrarDetalleCompra(${compra.id})" title="Ver Detalle">
+                        <button type="button" class="btn-icon btn-view-compra" onclick="mostrarDetalleCompra(${compra.id})" title="Ver Detalle">
                             <i class="fas fa-eye"></i>
                         </button>
                     </td>
@@ -834,79 +838,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================================
-    // FILTRO POR BÚSQUEDA
+    // FILTRO POR BÚSQUEDA (BACKEND)
     // ==========================================================
 
-    async function filtrarComprasPorBusqueda() {
-        if (!comprasSearchInput) return;
-
-        const textoBusqueda = comprasSearchInput.value.toLowerCase().trim();
-
-        // Agregar animación de carga
-        historialTabla.classList.add('loading');
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-        if (textoBusqueda === '') {
-            comprasBuscadas = null;
-        } else {
-            comprasBuscadas = todasLasCompras.filter(compra => {
-                // Buscar en nombre del proveedor
-                const coincideProveedor = compra.nombreProveedor &&
-                    compra.nombreProveedor.toLowerCase().includes(textoBusqueda);
-
-                // Buscar en nombres de productos
-                const coincideProducto = compra.productosComprados &&
-                    compra.productosComprados.some(p =>
-                        p.nombreProducto && p.nombreProducto.toLowerCase().includes(textoBusqueda)
-                    );
-
-                return coincideProveedor || coincideProducto;
-            });
-        }
-
-        // Renderizar tabla con filtros aplicados
-        const comprasAMostrar = aplicarFiltros();
-        renderComprasTabla(comprasAMostrar);
-
-        // Remover animación de carga
-        requestAnimationFrame(() => historialTabla.classList.remove('loading'));
-    }
-
-    function aplicarFiltros() {
-        let comprasResultado = todasLasCompras;
-
-        // Aplicar filtro de búsqueda
-        if (comprasBuscadas !== null) {
-            comprasResultado = comprasBuscadas;
-        }
-
-        // Aplicar filtro de fechas sobre el resultado anterior
-        if (comprasFiltradas !== null) {
-            // Si hay búsqueda activa, filtrar las compras buscadas por fecha
-            if (comprasBuscadas !== null) {
-                const inicio = fechaInicio.value;
-                const fin = fechaFin.value;
-                const fechaInicioDate = new Date(inicio);
-                const fechaFinDate = new Date(fin);
-
-                comprasResultado = comprasBuscadas.filter(compra => {
-                    if (!compra.fecha) return false;
-                    let fechaCompra;
-                    if (Array.isArray(compra.fecha)) {
-                        fechaCompra = new Date(compra.fecha[0], compra.fecha[1] - 1, compra.fecha[2]);
-                    } else if (typeof compra.fecha === 'string') {
-                        fechaCompra = new Date(compra.fecha.split('T')[0]);
-                    } else {
-                        return false;
-                    }
-                    return fechaCompra >= fechaInicioDate && fechaCompra <= fechaFinDate;
-                });
-            } else {
-                comprasResultado = comprasFiltradas;
-            }
-        }
-
-        return comprasResultado;
+    function filtrarComprasPorBusqueda() {
+        historialCurrentPage = 0; // Volver a la primera página al buscar
+        loadComprasHistorial();
     }
 
     async function filtrarComprasPorFecha() {
@@ -929,55 +866,25 @@ document.addEventListener('DOMContentLoaded', function () {
         // Ocultar error si todo está bien
         ocultarErrorFiltro();
 
-        // Agregar animación de carga
-        historialTabla.classList.add('loading');
-        await new Promise(resolve => setTimeout(resolve, 200));
-
-        // Filtrar compras por fecha
-        comprasFiltradas = todasLasCompras.filter(compra => {
-            if (!compra.fecha) return false;
-
-            // Parsear fecha de la compra
-            let fechaCompra;
-            if (Array.isArray(compra.fecha)) {
-                // Si viene como array [año, mes, día]
-                fechaCompra = new Date(compra.fecha[0], compra.fecha[1] - 1, compra.fecha[2]);
-            } else if (typeof compra.fecha === 'string') {
-                fechaCompra = new Date(compra.fecha.split('T')[0]);
-            } else {
-                return false;
-            }
-
-            return fechaCompra >= fechaInicioDate && fechaCompra <= fechaFinDate;
-        });
-
-        // Aplicar todos los filtros
-        const comprasAMostrar = aplicarFiltros();
-        renderComprasTabla(comprasAMostrar);
-
-        if (comprasAMostrar.length === 0) {
-            historialTabla.innerHTML = '<tr><td colspan="6">No se encontraron compras en el rango de fechas seleccionado.</td></tr>';
-        }
-
-        // Remover animación de carga
-        requestAnimationFrame(() => historialTabla.classList.remove('loading'));
+        // Volver a la primera página y recargar con filtros
+        historialCurrentPage = 0;
+        loadComprasHistorial();
     }
 
-    async function limpiarFiltroFechas() {
-        // Agregar animación de carga
-        historialTabla.classList.add('loading');
-        await new Promise(resolve => setTimeout(resolve, 200));
-
+    function limpiarFiltroFechas() {
+        // Limpiar fechas
         fechaInicio.value = '';
         fechaFin.value = '';
-        comprasFiltradas = null;
 
-        // Aplicar filtros restantes
-        const comprasAMostrar = aplicarFiltros();
-        renderComprasTabla(comprasAMostrar);
+        // Limpiar búsqueda
+        if (comprasSearchInput) comprasSearchInput.value = '';
 
-        // Remover animación de carga
-        requestAnimationFrame(() => historialTabla.classList.remove('loading'));
+        // Limpiar errores de filtro
+        ocultarErrorFiltro();
+
+        // Volver a la primera página y recargar sin filtros
+        historialCurrentPage = 0;
+        loadComprasHistorial();
     }
 
     async function exportarPdfCompras() {

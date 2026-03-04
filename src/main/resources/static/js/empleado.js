@@ -5,6 +5,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const links = document.querySelectorAll('.sidebar-menu a[data-section]');
     const sections = document.querySelectorAll('.spa-section');
 
+    // Handler separado para los toggles de submenú
+    document.querySelectorAll('.sidebar-menu .submenu-toggle').forEach(toggle => {
+        toggle.addEventListener('click', function (e) {
+            e.preventDefault();
+            this.parentElement.classList.toggle('open');
+        });
+    });
+
     function hideAllSections() {
         sections.forEach(section => section.style.display = 'none');
         links.forEach(link => link.classList.remove('active'));
@@ -39,9 +47,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Actualizar título del header
                 const sectionTitle = document.getElementById('section-title');
+                const sectionIcon = document.getElementById('section-icon');
+
+                const sectionIcons = {
+                    'principal': 'fas fa-home',
+                    'ventas': 'fas fa-shopping-cart',
+                    'stock': 'fas fa-box'
+                };
+
                 if (sectionTitle) {
                     const titleText = this.innerText.trim();
                     sectionTitle.textContent = titleText;
+                }
+                if (sectionIcon && sectionIcons[sectionId]) {
+                    sectionIcon.className = sectionIcons[sectionId];
                 }
 
                 // Guardar sección actual
@@ -49,9 +68,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Manejo de Subsecciones (Ventas)
-            if (sectionId === 'ventas' && subsectionId) {
+            if (sectionId === 'ventas') {
+                const targetSubsection = subsectionId || localStorage.getItem('lastSubsectionEmpleado') || 'ventas-create';
                 if (typeof window.showVentasSubsection === 'function') {
-                    window.showVentasSubsection(subsectionId);
+                    window.showVentasSubsection(targetSubsection);
+                }
+                if (subsectionId) {
+                    localStorage.setItem('lastSubsectionEmpleado', subsectionId);
                 }
             }
 
@@ -62,9 +85,8 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
-    // Recuperar última sección visitada
-    const lastSection = localStorage.getItem('lastSectionEmpleado') || 'principal';
-    const activeLink = document.querySelector(`.sidebar-menu a[data-section="${lastSection}"]`);
+    // Siempre iniciar en la sección principal al recargar
+    const activeLink = document.querySelector(`.sidebar-menu a[data-section="principal"]`);
     if (activeLink) {
         activeLink.click();
     } else if (links.length > 0) {
@@ -91,7 +113,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         confirmLogoutBtn.addEventListener('click', () => {
             // Limpiar sesión
-            document.cookie = "jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+            document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             localStorage.removeItem('lastSectionEmpleado');
             window.location.href = 'index.html';
         });

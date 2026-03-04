@@ -13,46 +13,170 @@ import com.gestioninventariodemo2.cruddemo2.Model.Compra;
 
 public interface CompraRepository extends JpaRepository<Compra, Long> {
 
-    // ==========================================================
-    // QUERIES PARA DASHBOARD DE INFORMES
-    // ==========================================================
+        // ==========================================================
+        // QUERIES PARA DASHBOARD DE INFORMES
+        // ==========================================================
 
-    @Query("SELECT SUM(c.total) FROM Compra c WHERE c.fecha BETWEEN :inicio AND :fin")
-    Double sumTotalComprasEnRango(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+        @Query("SELECT SUM(c.total) FROM Compra c WHERE c.fecha BETWEEN :inicio AND :fin")
+        Double sumTotalComprasEnRango(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
 
-    @Query(value = """
-            SELECT DATE(c.fecha) as fecha, COALESCE(SUM(c.total), 0) as total
-            FROM compras c
-            WHERE c.fecha BETWEEN CAST(:inicio AS DATE) AND CAST(:fin AS DATE)
-            GROUP BY DATE(c.fecha)
-            ORDER BY DATE(c.fecha)
-            """, nativeQuery = true)
-    List<Object[]> sumComprasPorDia(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+        @Query(value = """
+                        SELECT DATE(c.fecha) as fecha, COALESCE(SUM(c.total), 0) as total
+                        FROM compras c
+                        WHERE c.fecha BETWEEN CAST(:inicio AS DATE) AND CAST(:fin AS DATE)
+                        GROUP BY DATE(c.fecha)
+                        ORDER BY DATE(c.fecha)
+                        """, nativeQuery = true)
+        List<Object[]> sumComprasPorDia(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
 
-    // Query para obtener compras completas en un rango
-    List<Compra> findByFechaBetween(LocalDate inicio, LocalDate fin);
+        // Query para obtener compras completas en un rango
+        List<Compra> findByFechaBetween(LocalDate inicio, LocalDate fin);
 
-    // ==========================================================
-    // QUERIES PARA ORDENAMIENTO POR PRODUCTO Y COSTO UNITARIO
-    // ==========================================================
+        // ==========================================================
+        // QUERIES PARA ORDENAMIENTO POR PRODUCTO Y COSTO UNITARIO
+        // ==========================================================
 
-    // Ordenar por nombre de producto (ASC)
-    @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
-            "GROUP BY c ORDER BY MIN(p.nombre) ASC")
-    Page<Compra> findAllOrderByProductoNombreAsc(Pageable pageable);
+        // Ordenar por nombre de producto (ASC)
+        @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "GROUP BY c ORDER BY MIN(p.nombre) ASC")
+        Page<Compra> findAllOrderByProductoNombreAsc(Pageable pageable);
 
-    // Ordenar por nombre de producto (DESC)
-    @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
-            "GROUP BY c ORDER BY MIN(p.nombre) DESC")
-    Page<Compra> findAllOrderByProductoNombreDesc(Pageable pageable);
+        // Ordenar por nombre de producto (DESC)
+        @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "GROUP BY c ORDER BY MIN(p.nombre) DESC")
+        Page<Compra> findAllOrderByProductoNombreDesc(Pageable pageable);
 
-    // Ordenar por costo unitario (ASC)
-    @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc " +
-            "GROUP BY c ORDER BY MIN(dc.precioUnitario) ASC")
-    Page<Compra> findAllOrderByPrecioUnitarioAsc(Pageable pageable);
+        // Ordenar por costo unitario (ASC)
+        @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc " +
+                        "GROUP BY c ORDER BY MIN(dc.precioUnitario) ASC")
+        Page<Compra> findAllOrderByPrecioUnitarioAsc(Pageable pageable);
 
-    // Ordenar por costo unitario (DESC)
-    @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc " +
-            "GROUP BY c ORDER BY MIN(dc.precioUnitario) DESC")
-    Page<Compra> findAllOrderByPrecioUnitarioDesc(Pageable pageable);
+        // Ordenar por costo unitario (DESC)
+        @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc " +
+                        "GROUP BY c ORDER BY MIN(dc.precioUnitario) DESC")
+        Page<Compra> findAllOrderByPrecioUnitarioDesc(Pageable pageable);
+
+        // ==========================================================
+        // QUERIES PARA BÚSQUEDA GLOBAL (por proveedor o producto)
+        // ==========================================================
+
+        @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "WHERE LOWER(c.proveedor.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :search, '%'))")
+        Page<Compra> searchCompras(@Param("search") String search, Pageable pageable);
+
+        // Búsqueda + filtro de fechas
+        @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "WHERE (LOWER(c.proveedor.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                        "AND c.fecha BETWEEN :inicio AND :fin")
+        Page<Compra> searchComprasConFechas(@Param("search") String search,
+                        @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin, Pageable pageable);
+
+        // Solo filtro de fechas (paginado)
+        Page<Compra> findByFechaBetween(LocalDate inicio, LocalDate fin, Pageable pageable);
+
+        // ==========================================================
+        // QUERIES CON BÚSQUEDA + ORDENAMIENTO CUSTOM
+        // ==========================================================
+
+        // Búsqueda + orden por producto nombre ASC
+        @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "WHERE LOWER(c.proveedor.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "GROUP BY c ORDER BY MIN(p.nombre) ASC")
+        Page<Compra> searchComprasOrderByProductoNombreAsc(@Param("search") String search, Pageable pageable);
+
+        // Búsqueda + orden por producto nombre DESC
+        @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "WHERE LOWER(c.proveedor.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "GROUP BY c ORDER BY MIN(p.nombre) DESC")
+        Page<Compra> searchComprasOrderByProductoNombreDesc(@Param("search") String search, Pageable pageable);
+
+        // Búsqueda + orden por costo unitario ASC
+        @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "WHERE LOWER(c.proveedor.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "GROUP BY c ORDER BY MIN(dc.precioUnitario) ASC")
+        Page<Compra> searchComprasOrderByPrecioUnitarioAsc(@Param("search") String search, Pageable pageable);
+
+        // Búsqueda + orden por costo unitario DESC
+        @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "WHERE LOWER(c.proveedor.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "GROUP BY c ORDER BY MIN(dc.precioUnitario) DESC")
+        Page<Compra> searchComprasOrderByPrecioUnitarioDesc(@Param("search") String search, Pageable pageable);
+
+        // ==========================================================
+        // QUERIES CON FECHAS + ORDENAMIENTO CUSTOM
+        // ==========================================================
+
+        // Fechas + orden por producto nombre ASC
+        @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "WHERE c.fecha BETWEEN :inicio AND :fin " +
+                        "GROUP BY c ORDER BY MIN(p.nombre) ASC")
+        Page<Compra> findByFechaBetweenOrderByProductoNombreAsc(@Param("inicio") LocalDate inicio,
+                        @Param("fin") LocalDate fin, Pageable pageable);
+
+        // Fechas + orden por producto nombre DESC
+        @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "WHERE c.fecha BETWEEN :inicio AND :fin " +
+                        "GROUP BY c ORDER BY MIN(p.nombre) DESC")
+        Page<Compra> findByFechaBetweenOrderByProductoNombreDesc(@Param("inicio") LocalDate inicio,
+                        @Param("fin") LocalDate fin, Pageable pageable);
+
+        // Fechas + orden por costo unitario ASC
+        @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc " +
+                        "WHERE c.fecha BETWEEN :inicio AND :fin " +
+                        "GROUP BY c ORDER BY MIN(dc.precioUnitario) ASC")
+        Page<Compra> findByFechaBetweenOrderByPrecioUnitarioAsc(@Param("inicio") LocalDate inicio,
+                        @Param("fin") LocalDate fin, Pageable pageable);
+
+        // Fechas + orden por costo unitario DESC
+        @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc " +
+                        "WHERE c.fecha BETWEEN :inicio AND :fin " +
+                        "GROUP BY c ORDER BY MIN(dc.precioUnitario) DESC")
+        Page<Compra> findByFechaBetweenOrderByPrecioUnitarioDesc(@Param("inicio") LocalDate inicio,
+                        @Param("fin") LocalDate fin, Pageable pageable);
+
+        // ==========================================================
+        // QUERIES CON BÚSQUEDA + FECHAS + ORDENAMIENTO CUSTOM
+        // ==========================================================
+
+        // Búsqueda + fechas + orden por producto nombre ASC
+        @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "WHERE (LOWER(c.proveedor.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                        "AND c.fecha BETWEEN :inicio AND :fin " +
+                        "GROUP BY c ORDER BY MIN(p.nombre) ASC")
+        Page<Compra> searchComprasConFechasOrderByProductoNombreAsc(@Param("search") String search,
+                        @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin, Pageable pageable);
+
+        // Búsqueda + fechas + orden por producto nombre DESC
+        @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "WHERE (LOWER(c.proveedor.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                        "AND c.fecha BETWEEN :inicio AND :fin " +
+                        "GROUP BY c ORDER BY MIN(p.nombre) DESC")
+        Page<Compra> searchComprasConFechasOrderByProductoNombreDesc(@Param("search") String search,
+                        @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin, Pageable pageable);
+
+        // Búsqueda + fechas + orden por costo unitario ASC
+        @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "WHERE (LOWER(c.proveedor.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                        "AND c.fecha BETWEEN :inicio AND :fin " +
+                        "GROUP BY c ORDER BY MIN(dc.precioUnitario) ASC")
+        Page<Compra> searchComprasConFechasOrderByPrecioUnitarioAsc(@Param("search") String search,
+                        @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin, Pageable pageable);
+
+        // Búsqueda + fechas + orden por costo unitario DESC
+        @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
+                        "WHERE (LOWER(c.proveedor.nombre) LIKE LOWER(CONCAT('%', :search, '%')) " +
+                        "OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+                        "AND c.fecha BETWEEN :inicio AND :fin " +
+                        "GROUP BY c ORDER BY MIN(dc.precioUnitario) DESC")
+        Page<Compra> searchComprasConFechasOrderByPrecioUnitarioDesc(@Param("search") String search,
+                        @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin, Pageable pageable);
 }

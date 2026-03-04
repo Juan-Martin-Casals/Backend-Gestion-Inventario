@@ -34,18 +34,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- 3. DETECCIÓN DE MODO (EMPLEADO VS ADMIN) ---
     const editModal = document.getElementById('edit-product-modal');
-    const deleteModal = document.getElementById('delete-confirm-modal');
     const isReadOnly = !editModal;
 
     // --- 4. CONSTANTES DEL DOM (ACCIONES) ---
-    let confirmDeleteBtn, cancelDeleteBtn;
     let editModalCloseBtn, editProductForm, editProductId, editNombre, editDescripcion, editPrecio, editStockActual, editCantidadAjuste, editFormGeneralMessage;
     let errorEditNombre, errorEditCategoria, errorEditPrecio, errorEditAjuste;
 
     if (!isReadOnly) {
-        confirmDeleteBtn = document.getElementById('confirm-delete-btn');
-        cancelDeleteBtn = document.getElementById('cancel-delete-btn');
-
         editModalCloseBtn = document.getElementById('edit-modal-close-btn');
         editProductForm = document.getElementById('edit-product-form');
         editProductId = document.getElementById('edit-product-id');
@@ -69,7 +64,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- 5. VARIABLES DE ESTADO ---
     let todosLosProductos = [];
-    let idParaBorrar = null;
     let currentPage = 1;
     const itemsPerPage = 7;
     let currentListForPagination = [];
@@ -109,7 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const total = productos.length;
         const agotados = productos.filter(p => p.stock <= 0).length;
-        const bajoStock = productos.filter(p => p.stock > 0 && p.stock <= 5).length;
+        const bajoStock = productos.filter(p => p.stock > 0 && p.stockMinimo && p.stock < p.stockMinimo).length;
 
         if (countTotalProductos) countTotalProductos.textContent = total;
         if (countProductosAgotados) countProductosAgotados.textContent = agotados;
@@ -135,13 +129,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const paginatedItems = currentListForPagination.slice(startIndex, endIndex);
 
         if (paginatedItems.length === 0) {
-            const colSpan = isReadOnly ? 5 : 6;
-            tableBody.innerHTML = `<tr><td colspan="${colSpan}">No se encontraron productos.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="5">No se encontraron productos.</td></tr>`;
         } else {
             paginatedItems.forEach(producto => {
                 let stockClass = 'good';
                 if (producto.stock <= 0) stockClass = 'empty';
-                else if (producto.stock <= 5) stockClass = 'low';
+                else if (producto.stockMinimo && producto.stock < producto.stockMinimo) stockClass = 'low';
 
                 let accionesHtml = '';
                 if (!isReadOnly) {
@@ -150,6 +143,15 @@ document.addEventListener('DOMContentLoaded', function () {
                             <button class="btn-icon btn-edit-producto" data-id="${producto.id}"><i class="fas fa-edit"></i></button>
                             <button class="btn-icon btn-delete-producto" data-id="${producto.id}"><i class="fas fa-trash"></i></button>
                         </td>`;
+                } else {
+                    accionesHtml = `
+                        <td>
+                            <div class="action-buttons">
+                                <button class="btn-action view" title="Ver detalles" data-id="${producto.id}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>`;
                 }
 
                 const row = `
@@ -157,9 +159,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td>${producto.nombre}</td>
                         <td>${producto.categoria}</td>
                         <td>${producto.descripcion}</td>
-                        <td>$${formatoMoneda.format(producto.precio)}</td>
                         <td><span class="stock-badge ${stockClass}">${producto.stock}</span></td>
-                        ${accionesHtml} 
+                        ${accionesHtml}
                     </tr>
                 `;
                 tableBody.innerHTML += row;
@@ -180,6 +181,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    function removeAccents(str) {
+        return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    }
+
     function filtrarStock() {
         // Validar que tengamos datos cargados
         if (todosLosProductos.length === 0) {
@@ -192,12 +197,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!searchInput || !searchInput.value.trim()) {
             currentListForPagination = todosLosProductos;
         } else {
-            const textoBusqueda = searchInput.value.toLowerCase().trim();
+            const textoBusqueda = removeAccents(searchInput.value.toLowerCase().trim());
             currentListForPagination = todosLosProductos.filter(producto => {
-                // Buscar en nombre, categoría y descripción
-                return producto.nombre.toLowerCase().includes(textoBusqueda) ||
-                    producto.categoria.toLowerCase().includes(textoBusqueda) ||
-                    producto.descripcion.toLowerCase().includes(textoBusqueda);
+                // Buscar en nombre, categoría y descripción (insensible a acentos)
+                return removeAccents(producto.nombre.toLowerCase()).includes(textoBusqueda) ||
+                    removeAccents(producto.categoria.toLowerCase()).includes(textoBusqueda) ||
+                    removeAccents(producto.descripcion.toLowerCase()).includes(textoBusqueda);
             });
         }
         clientSideSort();
@@ -305,6 +310,88 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // =================================================================
+    // --- FUNCIONES DE DETALLE (read-only - empleado) ---
+    // =================================================================
+
+    const detailModal = document.getElementById('product-detail-modal');
+    const detailCloseBtn = document.getElementById('product-detail-close');
+    const detailCloseBtnFooter = document.getElementById('product-detail-close-btn');
+    const API_PRODUCTOS_INVENTARIO_URL = '/api/productos/inventario';
+
+    async function openDetailModal(productId) {
+        try {
+            const response = await fetch(`${API_PRODUCTOS_INVENTARIO_URL}?page=0&size=1000`, { cache: 'no-store' });
+            if (!response.ok) throw new Error('Error al cargar datos del producto');
+
+            const pageData = await response.json();
+            const product = pageData.content.find(p => p.idProducto == productId);
+
+            if (!product) {
+                alert('Producto no encontrado');
+                return;
+            }
+
+            document.getElementById('detail-nombre').textContent = product.nombre || 'N/A';
+            document.getElementById('detail-categoria').textContent = product.categoria || 'N/A';
+            document.getElementById('detail-descripcion').textContent = product.descripcion || 'N/A';
+            document.getElementById('detail-precio').textContent = product.precio > 0
+                ? `$${product.precio.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                : 'No establecido';
+
+            let fechaFormateada = 'N/A';
+            if (product.fechaCreacion) {
+                const parts = product.fechaCreacion.split('-');
+                fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            }
+            document.getElementById('detail-fecha').textContent = fechaFormateada;
+
+            document.getElementById('detail-stock-actual').textContent = product.stockActual;
+            document.getElementById('detail-stock-min').textContent = product.stockMinimo;
+            document.getElementById('detail-stock-max').textContent = product.stockMaximo;
+
+            let estadoTexto = 'N/A';
+            let estadoClase = '';
+            if (product.estadoStock === 'AGOTADO' || product.stockActual === 0) {
+                estadoTexto = 'Agotado';
+                estadoClase = 'empty';
+            } else if (product.estadoStock === 'BAJO' || product.stockActual < product.stockMinimo) {
+                estadoTexto = 'Bajo';
+                estadoClase = 'low';
+            } else {
+                estadoTexto = 'Óptimo';
+                estadoClase = 'good';
+            }
+            const estadoBadge = `<span class="stock-badge ${estadoClase}" style="padding-left: 6px; padding-right: 8px;">${estadoTexto}</span>`;
+            document.getElementById('detail-stock-estado').innerHTML = estadoBadge;
+
+            detailModal.style.display = 'flex';
+
+            const handleEscKey = (e) => { if (e.key === 'Escape') closeDetailModal(); };
+            document.addEventListener('keydown', handleEscKey);
+            detailModal._escHandler = handleEscKey;
+
+        } catch (error) {
+            console.error('Error al abrir modal de detalles:', error);
+            alert('Error al cargar los detalles del producto');
+        }
+    }
+
+    function closeDetailModal() {
+        if (!detailModal) return;
+        detailModal.style.display = 'none';
+        if (detailModal._escHandler) {
+            document.removeEventListener('keydown', detailModal._escHandler);
+            detailModal._escHandler = null;
+        }
+    }
+
+    if (detailCloseBtn) detailCloseBtn.addEventListener('click', closeDetailModal);
+    if (detailCloseBtnFooter) detailCloseBtnFooter.addEventListener('click', closeDetailModal);
+    if (detailModal) {
+        detailModal.addEventListener('click', (e) => { if (e.target === detailModal) closeDetailModal(); });
+    }
+
+    // =================================================================
     // --- FUNCIONES DE EDICIÓN/BORRADO ---
     // =================================================================
 
@@ -408,6 +495,16 @@ document.addEventListener('DOMContentLoaded', function () {
     if (searchInput) {
         searchInput.addEventListener('input', filtrarStock);
     }
+
+    // Botón limpiar búsqueda
+    const btnLimpiarBusqueda = document.getElementById('stock-btn-limpiar-busqueda');
+    if (btnLimpiarBusqueda) {
+        btnLimpiarBusqueda.addEventListener('click', function () {
+            if (searchInput) searchInput.value = '';
+            filtrarStock();
+        });
+    }
+
     tableHeaders.forEach(th => th.addEventListener('click', handleSortClick));
 
     // Listeners para búsqueda de categorías en modal de edición
@@ -443,14 +540,43 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (tableBody) {
         tableBody.addEventListener('click', (event) => {
+            const target = event.target;
+
+            // Botón ver detalle (solo empleado - read-only)
+            const viewButton = target.closest('.btn-action.view');
+            if (viewButton) {
+                openDetailModal(viewButton.dataset.id);
+                return;
+            }
+
             if (isReadOnly) return;
 
-            const target = event.target;
             // Usamos .closest para atrapar clicks en el ícono <i> o en el botón
             const deleteButton = target.closest('.btn-delete-producto');
-            if (deleteButton && deleteModal) {
-                idParaBorrar = deleteButton.dataset.id;
-                deleteModal.style.display = 'block';
+            if (deleteButton && !isReadOnly) {
+                const idParaBorrar = deleteButton.dataset.id;
+                showConfirmationModal(
+                    '¿Estás seguro de que quieres eliminar este producto?',
+                    async () => {
+                        try {
+                            const response = await fetch(API_PRODUCTOS_DELETE_URL + idParaBorrar, { method: 'DELETE' });
+                            if (response.ok) {
+                                removerFilaDelDOM(idParaBorrar);
+                                document.dispatchEvent(new Event('productosActualizados'));
+                            } else {
+                                const errorTexto = await response.text();
+                                if (response.status === 400 && errorTexto.includes('INACTIVO')) {
+                                    removerFilaDelDOM(idParaBorrar);
+                                } else {
+                                    throw new Error(errorTexto || `Error HTTP: ${response.status}`);
+                                }
+                            }
+                        } catch (error) {
+                            console.error('Error al eliminar:', error.message);
+                            if (!error.message.includes('INACTIVO')) alert(`Error: ${error.message}`);
+                        }
+                    }
+                );
             }
             const editButton = target.closest('.btn-edit-producto');
             if (editButton && editModal) {
@@ -461,40 +587,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (!isReadOnly) {
         const handleEditEsc = (e) => { if (e.key === 'Escape' && editModal.style.display === 'block') editModal.style.display = 'none'; };
-        const handleDeleteEsc = (e) => { if (e.key === 'Escape' && deleteModal.style.display === 'block') { deleteModal.style.display = 'none'; idParaBorrar = null; } };
         window.addEventListener('keydown', handleEditEsc);
-        window.addEventListener('keydown', handleDeleteEsc);
 
-        if (cancelDeleteBtn) cancelDeleteBtn.addEventListener('click', () => { deleteModal.style.display = 'none'; idParaBorrar = null; });
         if (editModalCloseBtn) editModalCloseBtn.addEventListener('click', () => { editModal.style.display = 'none'; });
         if (editProductForm) editProductForm.addEventListener('submit', handleEditSubmit);
-
-        if (confirmDeleteBtn) {
-            confirmDeleteBtn.addEventListener('click', async () => {
-                if (!idParaBorrar) return;
-                try {
-                    const response = await fetch(API_PRODUCTOS_DELETE_URL + idParaBorrar, { method: 'DELETE' });
-                    if (response.ok) {
-                        removerFilaDelDOM(idParaBorrar);
-                        document.dispatchEvent(new Event('productosActualizados'));
-                    } else {
-                        const errorTexto = await response.text();
-                        // Manejo especial para "Soft Delete" si el backend responde 400 pero lo desactiva
-                        if (response.status === 400 && errorTexto.includes("INACTIVO")) {
-                            removerFilaDelDOM(idParaBorrar);
-                        } else {
-                            throw new Error(errorTexto || `Error HTTP: ${response.status}`);
-                        }
-                    }
-                } catch (error) {
-                    console.error('Error al eliminar:', error.message);
-                    if (!error.message.includes("INACTIVO")) alert(`Error: ${error.message}`);
-                } finally {
-                    deleteModal.style.display = 'none';
-                    idParaBorrar = null;
-                }
-            });
-        }
     }
 
     if (prevPageBtn) prevPageBtn.addEventListener('click', async () => { if (currentPage > 1) { currentPage--; await renderStockTable(); } });
@@ -519,6 +615,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // ESCUCHA DE EVENTOS: Para recargar si se crea/edita producto en otra pestaña
     document.addEventListener('productosActualizados', function () {
         console.log('Stock.js: Detectado cambio en inventario. Recargando...');
+        todosLosProductos = [];
+        loadStock();
+    });
+
+    // ESCUCHA DE EVENTOS: Para recargar si se registra una venta
+    document.addEventListener('ventaRegistrada', function () {
+        console.log('Stock.js: Venta registrada. Recargando stock...');
         todosLosProductos = [];
         loadStock();
     });

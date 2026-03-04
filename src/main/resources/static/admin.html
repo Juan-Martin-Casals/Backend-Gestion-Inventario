@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión Inventario - Panel Administrador</title>
+    <link rel="icon" type="image/png" href="images/Gemini_Generated_Image_a0ub2a0ub2a0ub2a.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/dashboard-informes.css">
@@ -17,6 +19,7 @@
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="sidebar-header">
+                <img src="images/Gemini_Generated_Image_a0ub2a0ub2a0ub2a.png" alt="Logo" class="sidebar-logo">
                 <h3>Gestión Inventario</h3>
                 <p>Navegación</p>
             </div>
@@ -88,7 +91,7 @@
             <header class="main-header">
                 <div class="header-left">
                     <div class="header-title">
-                        <i class="fas fa-file-alt"></i>
+                        <i id="section-icon" class="fas fa-home"></i>
                         <h2 id="section-title">Principal</h2>
                     </div>
                 </div>
@@ -142,7 +145,7 @@
                             </div>
                             <div class="stat-content">
                                 <h3 id="ventas-hoy-amount">$0.00</h3>
-                                <p>Ventas de Hoy</p>
+                                <p>Ganancia del día</p>
                             </div>
                         </div>
                         <div class="stat-card">
@@ -210,10 +213,7 @@
             </section>
 
             <section id="productos-section" class="spa-section" style="display:none">
-                <div class="section-header">
-                    <h2>Gestión de Productos</h2>
-                    <p>Gestiona tus productos.</p>
-                </div>
+
 
 
 
@@ -283,6 +283,7 @@
                 <!-- Subsección: Ver Productos (ahora Gestión de Inventario) -->
                 <div id="productos-list-container" class="subsection-container">
                     <div class="table-section">
+                        <h4>Productos registrados</h4>
 
 
                         <!-- Búsqueda de Productos -->
@@ -566,10 +567,6 @@
             </div>
 
             <section id="proveedores-section" class="spa-section" style="display:none">
-                <div class="section-header">
-                    <h2>Gestión de Proveedores</h2>
-                    <p>Administra tus proveedores.</p>
-                </div>
 
                 <!-- Subsección: Crear Proveedor -->
                 <div id="proveedores-create-container" class="subsection-container" style="display: none;">
@@ -718,10 +715,6 @@
             </section>
 
             <section id="compras-section" class="spa-section" style="display:none">
-                <div class="section-header">
-                    <h2>Gestión de Compras</h2>
-                    <p>Administra tus compras.</p>
-                </div>
 
                 <!-- Subsección: Registrar Compra -->
                 <div id="compras-create-container" class="subsection-container" style="display: none;">
@@ -862,7 +855,7 @@
 
                                 <!-- Filtros de Fecha -->
                                 <div style="display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-calendar" style="color: #666;"></i>
+                                    <i class="fas fa-calendar-alt" style="color: #667eea;"></i>
                                     <input type="date" id="compras-fecha-inicio"
                                         style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
                                     <span style="color: #666;">→</span>
@@ -929,10 +922,6 @@
             </section>
 
             <section id="usuarios-section" class="spa-section" style="display:none">
-                <div class="section-header">
-                    <h2>Gestión de Usuarios</h2>
-                    <p>Administra los usuarios del sistema.</p>
-                </div>
 
                 <!-- Subsección: Registrar Usuario -->
                 <div id="usuarios-create-container" class="subsection-container" style="display: none;">
@@ -977,6 +966,10 @@
                                         </button>
                                     </div>
                                     <div class="error-message" id="error-user-password"></div>
+                                    <ul class="password-checklist" id="password-checklist">
+                                        <li id="check-length"><i class="fas fa-circle"></i> Mínimo 8 caracteres</li>
+                                        <li id="check-number"><i class="fas fa-circle"></i> Al menos un número</li>
+                                    </ul>
                                 </div>
 
                                 <div class="form-group">
@@ -1179,7 +1172,7 @@
                                     </div>
                                     <div class="form-group">
                                         <label for="cantidad-producto">Cantidad</label>
-                                        <input type="number" id="cantidad-producto" value="1" min="1">
+                                        <input type="number" id="cantidad-producto" value="1">
                                         <div class="error-message" id="errorCompraCantidad"></div>
                                     </div>
                                 </div>
@@ -1218,7 +1211,7 @@
                                 <div class="form-group">
                                     <label for="metodo-pago">Método de Pago</label>
                                     <select id="metodo-pago" class="form-control">
-                                        <option value="">Seleccionar método de pago</option>
+                                        <option value="">Seleccionar método</option>
                                     </select>
                                     <div class="error-message" id="errorMetodoPago"></div>
                                 </div>
@@ -1278,7 +1271,7 @@
 
                                 <!-- Filtros de Fecha -->
                                 <div style="display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-calendar" style="color: #666;"></i>
+                                    <i class="fas fa-calendar-alt" style="color: #667eea;"></i>
                                     <input type="date" id="ventas-fecha-inicio"
                                         style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
                                     <span style="color: #666;">→</span>
@@ -1454,7 +1447,8 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="addClienteDireccion">Dirección</label>
-                                    <input type="text" id="addClienteDireccion" placeholder="Calle, número, ciudad">
+                                    <input type="text" id="addClienteDireccion"
+                                        placeholder="Argentina, Santa Fe, Santa Fe, Aristóbulo del Valle 1234">
                                     <span class="error-message" id="errorAddClienteDireccion"></span>
                                 </div>
 
@@ -1480,9 +1474,6 @@
 
 
                 <!-- Título de Sección -->
-                <div class="informes-titulo">
-                    <h2><i class="fas fa-chart-bar"></i> Informe y Estadísticas</h2>
-                </div>
 
                 <!-- BARRA DE FILTROS Y ACCIONES -->
                 <div class="informes-filtros">
@@ -1511,10 +1502,8 @@
                     </div>
 
                     <!-- Mensaje de error para validación de fechas -->
-                    <div id="fecha-error-message"
-                        style="color: #dc3545; font-weight: 500; margin-top: 10px; display: none; padding: 10px; background: #f8d7da; border-radius: 6px; border-left: 4px solid #dc3545;">
-                        <i class="fas fa-exclamation-circle"></i> <span id="fecha-error-text"></span>
-                    </div>
+                    <div id="fecha-error-message" class="error-message" style="margin-top: 10px; display: none;"><span
+                            id="fecha-error-text"></span></div>
 
                     <!-- Indicador de período -->
                     <div class="periodo-indicator">

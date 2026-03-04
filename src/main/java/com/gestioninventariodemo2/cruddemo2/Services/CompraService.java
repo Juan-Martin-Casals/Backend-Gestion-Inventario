@@ -124,35 +124,86 @@ public class CompraService {
      * Lista todas las compras registradas con un formato simplificado.
      * Maneja campos de ordenamiento custom (productos, costoUnitario)
      * que requieren queries con JOIN.
+     * Soporta búsqueda global y filtro por rango de fechas.
      */
-    public Page<CompraResponseDTO> listarTodasLasCompras(Pageable pageable, String customSort, String customDirection) {
+    public Page<CompraResponseDTO> listarTodasLasCompras(Pageable pageable, String customSort,
+            String customDirection, String search, LocalDate fechaInicio, LocalDate fechaFin) {
 
         Page<Compra> paginaCompras;
+        boolean asc = "asc".equalsIgnoreCase(customDirection);
+        boolean hasSearch = search != null && !search.trim().isEmpty();
+        boolean hasDates = fechaInicio != null && fechaFin != null;
+
+        // Crear pageable SIN sort (para queries con ORDER BY en la query)
+        Pageable pageableWithoutSort = org.springframework.data.domain.PageRequest.of(
+                pageable.getPageNumber(), pageable.getPageSize());
 
         if (customSort != null) {
-            boolean asc = "asc".equalsIgnoreCase(customDirection);
-
-            // Crear pageable SIN sort (el ORDER BY está en la query)
-            Pageable pageableWithoutSort = org.springframework.data.domain.PageRequest.of(
-                    pageable.getPageNumber(), pageable.getPageSize());
-
-            switch (customSort) {
-                case "productos":
-                    paginaCompras = asc
+            // Custom sort fields que requieren JOINs
+            if (hasSearch && hasDates) {
+                // Búsqueda + fechas + sort custom
+                paginaCompras = switch (customSort) {
+                    case "productos" -> asc
+                            ? compraRepository.searchComprasConFechasOrderByProductoNombreAsc(search, fechaInicio,
+                                    fechaFin, pageableWithoutSort)
+                            : compraRepository.searchComprasConFechasOrderByProductoNombreDesc(search, fechaInicio,
+                                    fechaFin, pageableWithoutSort);
+                    case "costoUnitario" -> asc
+                            ? compraRepository.searchComprasConFechasOrderByPrecioUnitarioAsc(search, fechaInicio,
+                                    fechaFin, pageableWithoutSort)
+                            : compraRepository.searchComprasConFechasOrderByPrecioUnitarioDesc(search, fechaInicio,
+                                    fechaFin, pageableWithoutSort);
+                    default -> compraRepository.searchComprasConFechas(search, fechaInicio, fechaFin, pageable);
+                };
+            } else if (hasSearch) {
+                // Solo búsqueda + sort custom
+                paginaCompras = switch (customSort) {
+                    case "productos" -> asc
+                            ? compraRepository.searchComprasOrderByProductoNombreAsc(search, pageableWithoutSort)
+                            : compraRepository.searchComprasOrderByProductoNombreDesc(search, pageableWithoutSort);
+                    case "costoUnitario" -> asc
+                            ? compraRepository.searchComprasOrderByPrecioUnitarioAsc(search, pageableWithoutSort)
+                            : compraRepository.searchComprasOrderByPrecioUnitarioDesc(search, pageableWithoutSort);
+                    default -> compraRepository.searchCompras(search, pageable);
+                };
+            } else if (hasDates) {
+                // Solo fechas + sort custom
+                paginaCompras = switch (customSort) {
+                    case "productos" -> asc
+                            ? compraRepository.findByFechaBetweenOrderByProductoNombreAsc(fechaInicio, fechaFin,
+                                    pageableWithoutSort)
+                            : compraRepository.findByFechaBetweenOrderByProductoNombreDesc(fechaInicio, fechaFin,
+                                    pageableWithoutSort);
+                    case "costoUnitario" -> asc
+                            ? compraRepository.findByFechaBetweenOrderByPrecioUnitarioAsc(fechaInicio, fechaFin,
+                                    pageableWithoutSort)
+                            : compraRepository.findByFechaBetweenOrderByPrecioUnitarioDesc(fechaInicio, fechaFin,
+                                    pageableWithoutSort);
+                    default -> compraRepository.findByFechaBetween(fechaInicio, fechaFin, pageable);
+                };
+            } else {
+                // Solo sort custom (comportamiento original)
+                paginaCompras = switch (customSort) {
+                    case "productos" -> asc
                             ? compraRepository.findAllOrderByProductoNombreAsc(pageableWithoutSort)
                             : compraRepository.findAllOrderByProductoNombreDesc(pageableWithoutSort);
-                    break;
-                case "costoUnitario":
-                    paginaCompras = asc
+                    case "costoUnitario" -> asc
                             ? compraRepository.findAllOrderByPrecioUnitarioAsc(pageableWithoutSort)
                             : compraRepository.findAllOrderByPrecioUnitarioDesc(pageableWithoutSort);
-                    break;
-                default:
-                    paginaCompras = compraRepository.findAll(pageable);
-                    break;
+                    default -> compraRepository.findAll(pageable);
+                };
             }
         } else {
-            paginaCompras = compraRepository.findAll(pageable);
+            // Sin sort custom - usar sort del Pageable
+            if (hasSearch && hasDates) {
+                paginaCompras = compraRepository.searchComprasConFechas(search, fechaInicio, fechaFin, pageable);
+            } else if (hasSearch) {
+                paginaCompras = compraRepository.searchCompras(search, pageable);
+            } else if (hasDates) {
+                paginaCompras = compraRepository.findByFechaBetween(fechaInicio, fechaFin, pageable);
+            } else {
+                paginaCompras = compraRepository.findAll(pageable);
+            }
         }
 
         return paginaCompras.map(this::mapToCompraDTO);

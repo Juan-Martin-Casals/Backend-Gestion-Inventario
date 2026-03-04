@@ -17,5 +17,6 @@ public class StockTablaDTO {
     private String descripcion;
     private Double precio;
     private int stock;
+    private int stockMinimo;
 
 }

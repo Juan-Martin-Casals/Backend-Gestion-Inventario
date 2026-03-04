@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const API_PRODUCTOS_URL = '/api/productos/select';
     const API_CLIENTES_URL = '/api/clientes/select';
     const API_CLIENTES_BASE_URL = '/api/clientes';
+    const API_METODOS_PAGO_URL = '/api/metodos-pago/activos';
 
     // =================================================================
     // --- CONFIGURACIÓN DE FORMATO ---
@@ -44,6 +45,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const errorProducto = document.getElementById('errorProducto');
     const errorDetalleGeneral = document.getElementById('errorStockVenta');
     const generalMessage = document.getElementById('form-general-message-venta');
+
+    // --- Selectores Método de Pago ---
+    const metodoPagoSelect = document.getElementById('metodo-pago');
+    const tipoTarjetaSelect = document.getElementById('tipo-tarjeta');
+    const errorMetodoPago = document.getElementById('errorMetodoPago');
 
     // ===================================
     // SELECTORES - MODAL NUEVO CLIENTE
@@ -102,6 +108,32 @@ document.addEventListener('DOMContentLoaded', function () {
     let previousClienteId = null;
     let previousClienteNombre = '';
 
+    // --- Variables para búsqueda y filtrado ---
+    let todasLasVentas = [];
+    let ventasFiltradas = [];
+    let modoFiltradoLocal = false;
+    const ventasSearchInput = document.getElementById('ventas-search-input');
+    const ventasFechaInicio = document.getElementById('ventas-fecha-inicio');
+    const ventasFechaFin = document.getElementById('ventas-fecha-fin');
+    const ventasBtnFiltrar = document.getElementById('ventas-btn-filtrar');
+    const ventasBtnLimpiar = document.getElementById('ventas-btn-limpiar-filtro');
+    const ventasFiltroError = document.getElementById('ventas-filtro-error');
+
+    function mostrarErrorFiltroVentas(mensaje) {
+        if (ventasFiltroError) {
+            ventasFiltroError.textContent = mensaje;
+            ventasFiltroError.style.display = 'block';
+            setTimeout(() => { ventasFiltroError.style.display = 'none'; }, 4000);
+        }
+    }
+
+    function ocultarErrorFiltroVentas() {
+        if (ventasFiltroError) {
+            ventasFiltroError.style.display = 'none';
+            ventasFiltroError.textContent = '';
+        }
+    }
+
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS
     // ==========================================================
@@ -114,17 +146,62 @@ document.addEventListener('DOMContentLoaded', function () {
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
-            const sortParam = `${ventasSortField},${ventasSortDirection}`;
-            const url = `${API_VENTAS_URL}?page=${page}&size=${pageSizeVentas}&sort=${sortParam}`;
+            const textoBusqueda = ventasSearchInput ? ventasSearchInput.value.trim().toLowerCase() : '';
+            const fechaInicio = ventasFechaInicio ? ventasFechaInicio.value : '';
+            const fechaFin = ventasFechaFin ? ventasFechaFin.value : '';
+            // Mapear campos del frontend a campos reales de la entidad JPA
+            const sortFieldMap = {
+                'vendedor.nombre': 'usuario.nombre',
+                'cliente.nombre': 'cliente.nombre'
+            };
+            const sortFieldBackend = sortFieldMap[ventasSortField] || ventasSortField;
+            const sortParam = `${sortFieldBackend},${ventasSortDirection}`;
 
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
 
-            const pageData = await response.json();
-            currentPageVentas = pageData.number;
-            totalPagesVentas = pageData.totalPages;
+            if (textoBusqueda) {
+                // Modo local: cargar todas y filtrar en el frontend
+                const url = `${API_VENTAS_URL}?page=0&size=1000&sort=${sortParam}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+                const pageData = await response.json();
 
-            renderVentasTable(pageData.content);
+                let ventas = pageData.content;
+
+                // Filtrar por fechas si aplica
+                if (fechaInicio) ventas = ventas.filter(v => v.fecha >= fechaInicio);
+                if (fechaFin) ventas = ventas.filter(v => v.fecha <= fechaFin);
+
+                // Filtrar por texto (cliente, producto, vendedor)
+                ventas = ventas.filter(v => {
+                    const cliente = (v.nombreCliente || '').toLowerCase();
+                    const vendedor = (v.nombreVendedor || '').toLowerCase();
+                    const productos = (v.productos || []).map(p => (p.nombreProducto || '').toLowerCase()).join(' ');
+                    return cliente.includes(textoBusqueda) ||
+                        vendedor.includes(textoBusqueda) ||
+                        productos.includes(textoBusqueda);
+                });
+
+                // Paginar localmente
+                const totalLocal = ventas.length;
+                totalPagesVentas = Math.ceil(totalLocal / pageSizeVentas) || 1;
+                currentPageVentas = Math.min(page, totalPagesVentas - 1);
+                const start = currentPageVentas * pageSizeVentas;
+                renderVentasTable(ventas.slice(start, start + pageSizeVentas));
+
+            } else {
+                // Modo normal: paginación del backend
+                let url = `${API_VENTAS_URL}?page=${page}&size=${pageSizeVentas}&sort=${sortParam}`;
+                if (fechaInicio) url += `&fechaInicio=${fechaInicio}`;
+                if (fechaFin) url += `&fechaFin=${fechaFin}`;
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
+                const pageData = await response.json();
+                currentPageVentas = pageData.number;
+                totalPagesVentas = pageData.totalPages;
+                renderVentasTable(pageData.content);
+            }
+
             updateVentasPaginationControls();
             updateVentasSortIndicators();
 
@@ -142,6 +219,27 @@ document.addEventListener('DOMContentLoaded', function () {
             totalPagesVentas = 0;
             updateVentasPaginationControls();
             ventaTableBody.classList.remove('loading');
+        }
+    }
+
+    async function loadMetodosPago() {
+        if (!metodoPagoSelect) return;
+        try {
+            const response = await fetch(API_METODOS_PAGO_URL);
+            if (!response.ok) throw new Error('Error al cargar métodos de pago');
+            const metodos = await response.json();
+            const currentValue = metodoPagoSelect.value;
+            metodoPagoSelect.innerHTML = '<option value="">Seleccionar método</option>';
+            metodos.forEach(m => {
+                const option = document.createElement('option');
+                option.value = m.idMetodoPago;
+                option.textContent = m.nombre;
+                option.dataset.nombre = m.nombre;
+                metodoPagoSelect.appendChild(option);
+            });
+            if (currentValue) metodoPagoSelect.value = currentValue;
+        } catch (error) {
+            console.error('Error al cargar métodos de pago:', error);
         }
     }
 
@@ -206,7 +304,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Limpiar errores previos
         document.getElementById('errorAddClienteNombre').textContent = '';
+        document.getElementById('errorAddClienteApellido').textContent = '';
         document.getElementById('errorAddClienteDNI').textContent = '';
+        document.getElementById('errorAddClienteTelefono').textContent = '';
+        document.getElementById('errorAddClienteDireccion').textContent = '';
+        document.getElementById('errorAddClienteEmail').textContent = '';
         if (addClienteMessage) {
             addClienteMessage.textContent = '';
             addClienteMessage.classList.remove('error', 'success');
@@ -219,6 +321,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const apellido = document.getElementById('addClienteApellido').value.trim();
         const dni = document.getElementById('addClienteDNI').value.trim();
         const telefono = document.getElementById('addClienteTelefono').value.trim();
+        const direccion = document.getElementById('addClienteDireccion').value.trim();
+        const email = document.getElementById('addClienteEmail').value.trim();
 
         // Validación: campos obligatorios
         if (!nombre) {
@@ -226,8 +330,28 @@ document.addEventListener('DOMContentLoaded', function () {
             isValid = false;
         }
 
+        if (!apellido) {
+            document.getElementById('errorAddClienteApellido').textContent = 'El apellido es obligatorio.';
+            isValid = false;
+        }
+
         if (!dni) {
             document.getElementById('errorAddClienteDNI').textContent = 'El DNI es obligatorio.';
+            isValid = false;
+        }
+
+        if (!telefono) {
+            document.getElementById('errorAddClienteTelefono').textContent = 'El teléfono es obligatorio.';
+            isValid = false;
+        }
+
+        if (!direccion) {
+            document.getElementById('errorAddClienteDireccion').textContent = 'La dirección es obligatoria.';
+            isValid = false;
+        }
+
+        if (!email) {
+            document.getElementById('errorAddClienteEmail').textContent = 'El email es obligatorio.';
             isValid = false;
         }
 
@@ -237,7 +361,9 @@ document.addEventListener('DOMContentLoaded', function () {
             nombre: nombre,
             apellido: apellido || null,
             dni: dni,
-            telefono: telefono || null
+            telefono: telefono || null,
+            direccion: direccion || null,
+            email: email || null
         };
 
         try {
@@ -275,12 +401,33 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÓGICA DEL BUSCADOR DE CLIENTES
     // ==========================================================
 
+    function capitalizarNombre(texto) {
+        if (!texto) return '';
+        return texto.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
+
+    function formatearDNI(dni) {
+        if (!dni) return '';
+        const soloNumeros = dni.toString().replace(/\D/g, '');
+        return soloNumeros.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    }
+
     function renderResultadosClientes(clientes) {
         if (clientes.length === 0) {
             clienteResultsContainer.innerHTML = '<div class="product-result-item">No se encontraron clientes</div>';
         } else {
-            clienteResultsContainer.innerHTML = clientes.map(c => {
-                const nombreCompleto = `${c.nombre} ${c.apellido || ''} (${c.dni})`;
+            // Ordenar alfabéticamente por nombre + apellido
+            const clientesOrdenados = [...clientes].sort((a, b) => {
+                const nombreA = `${a.nombre} ${a.apellido || ''}`.toLowerCase();
+                const nombreB = `${b.nombre} ${b.apellido || ''}`.toLowerCase();
+                return nombreA.localeCompare(nombreB, 'es');
+            });
+
+            clienteResultsContainer.innerHTML = clientesOrdenados.map(c => {
+                const nombre = capitalizarNombre(c.nombre);
+                const apellido = capitalizarNombre(c.apellido);
+                const dniFormateado = formatearDNI(c.dni);
+                const nombreCompleto = `${nombre} ${apellido} (${dniFormateado})`;
                 return `<div class="product-result-item" data-id="${c.id}">${nombreCompleto.trim()}</div>`;
             }).join('');
         }
@@ -603,6 +750,26 @@ document.addEventListener('DOMContentLoaded', function () {
             isValid = false;
         }
 
+        // Validar método de pago
+        const idMetodoPago = metodoPagoSelect ? metodoPagoSelect.value : '';
+        if (!idMetodoPago) {
+            if (errorMetodoPago) errorMetodoPago.textContent = 'Debe seleccionar un método de pago.';
+            isValid = false;
+        }
+
+        // Validar tipo de tarjeta si es necesario
+        if (metodoPagoSelect && tipoTarjetaSelect) {
+            const selectedOption = metodoPagoSelect.options[metodoPagoSelect.selectedIndex];
+            if (selectedOption && selectedOption.dataset.nombre === 'Tarjeta') {
+                const tipoTarjeta = tipoTarjetaSelect.value;
+                if (!tipoTarjeta) {
+                    const errorTipoTarjeta = document.getElementById('errorTipoTarjeta');
+                    if (errorTipoTarjeta) errorTipoTarjeta.textContent = 'Debe seleccionar el tipo de tarjeta.';
+                    isValid = false;
+                }
+            }
+        }
+
         if (!isValid) {
             generalMessage.textContent = 'Por favor, complete todos los campos obligatorios.';
             generalMessage.classList.add('error');
@@ -623,9 +790,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     fecha: fechaVenta,
                     idCliente: parseInt(idCliente),
                     detalles: detallesParaBackend,
-                    // Empleado no necesita método de pago - se asigna el por defecto en backend
-                    idMetodoPago: 1, // Efectivo por defecto
-                    tipoTarjeta: null
+                    idMetodoPago: parseInt(idMetodoPago),
+                    tipoTarjeta: tipoTarjetaSelect ? (tipoTarjetaSelect.value || null) : null
                 };
 
                 const response = await fetch(API_VENTAS_URL, {
@@ -655,15 +821,34 @@ document.addEventListener('DOMContentLoaded', function () {
                 editIndexVenta = -1;
                 renderDetalleTemporal();
                 clienteHiddenInput.value = '';
+                clienteSearchInput.value = '';
+                productSearchInput.value = '';
+                cantidadProductoInput.value = '1';
                 previousClienteId = null;
                 previousClienteNombre = '';
 
-                await new Promise(resolve => setTimeout(resolve, 250));
+                // Resetear método de pago y ocultar tipo tarjeta
+                if (metodoPagoSelect) metodoPagoSelect.value = '';
+                const camposTipoTarjeta = document.getElementById('campos-tipo-tarjeta');
+                if (camposTipoTarjeta) camposTipoTarjeta.style.display = 'none';
+                if (tipoTarjetaSelect) tipoTarjetaSelect.value = '';
+
+                setFechaActual();
+
+                // Notificar al dashboard para actualizar KPIs en tiempo real
+                document.dispatchEvent(new CustomEvent('ventaRegistrada'));
+
+                // Recargar ventas en background sin cambiar de sección
                 currentPageVentas = 0;
                 ventasSortField = 'fecha';
                 ventasSortDirection = 'desc';
                 loadVentas(currentPageVentas);
-                showSubsection('ventas-list');
+
+                // Ocultar mensaje de éxito después de 3 segundos
+                setTimeout(() => {
+                    generalMessage.textContent = '';
+                    generalMessage.className = 'form-message';
+                }, 3000);
 
             } catch (error) {
                 console.error('Error al registrar la venta:', error);
@@ -682,6 +867,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const productosTexto = formatProductosList(venta.productos);
         const nombreClienteTexto = venta.nombreCliente || 'Cliente N/A';
+        const nombreVendedorTexto = venta.nombreVendedor || '-';
 
         return `
             <tr>
@@ -689,6 +875,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${nombreClienteTexto}</td> 
                 <td>${productosTexto}</td> 
                 <td>$${formatoMoneda.format(venta.total)}</td>
+                <td>${nombreVendedorTexto}</td>
+                <td>
+                    <button class="btn-icon btn-view-venta" onclick="mostrarDetalleVenta(${venta.idVenta})" title="Ver detalle">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
             </tr>
         `;
     }
@@ -698,7 +890,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ventaTableBody.innerHTML = '';
 
         if (!Array.isArray(ventas) || ventas.length === 0) {
-            ventaTableBody.innerHTML = '<tr><td colspan="4">No hay ventas registradas.</td></tr>';
+            ventaTableBody.innerHTML = '<tr><td colspan="6">No hay ventas registradas.</td></tr>';
             return;
         }
 
@@ -809,6 +1001,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (clienteSearchInput) {
         clienteSearchInput.addEventListener('input', filtrarClientes);
+        clienteSearchInput.addEventListener('focus', filtrarClientes);
+        clienteSearchInput.addEventListener('click', filtrarClientes);
     }
 
     if (clienteResultsContainer) {
@@ -825,6 +1019,56 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     if (btnAgregarProducto) {
         btnAgregarProducto.addEventListener('click', agregarProductoAlDetalle);
+    }
+
+    // Toggle tipo de tarjeta cuando se selecciona un método de pago
+    if (metodoPagoSelect) {
+        metodoPagoSelect.addEventListener('change', function () {
+            const selectedOption = this.options[this.selectedIndex];
+            const esTarjeta = selectedOption && selectedOption.dataset.nombre === 'Tarjeta';
+            const camposTipoTarjeta = document.getElementById('campos-tipo-tarjeta');
+            if (camposTipoTarjeta) {
+                camposTipoTarjeta.style.display = esTarjeta ? 'block' : 'none';
+            }
+            if (!esTarjeta && tipoTarjetaSelect) tipoTarjetaSelect.value = '';
+        });
+    }
+
+    // Búsqueda en tiempo real
+    if (ventasSearchInput) {
+        let searchDebounce = null;
+        ventasSearchInput.addEventListener('input', function () {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(() => {
+                currentPageVentas = 0;
+                loadVentas(0);
+            }, 250);
+        });
+    }
+
+    if (ventasBtnFiltrar) {
+        ventasBtnFiltrar.addEventListener('click', function () {
+            ocultarErrorFiltroVentas();
+            const fechaInicio = ventasFechaInicio ? ventasFechaInicio.value : '';
+            const fechaFin = ventasFechaFin ? ventasFechaFin.value : '';
+            if (fechaInicio && fechaFin && fechaInicio > fechaFin) {
+                mostrarErrorFiltroVentas('La fecha de inicio no puede ser mayor a la fecha de fin.');
+                return;
+            }
+            currentPageVentas = 0;
+            loadVentas(0);
+        });
+    }
+
+    if (ventasBtnLimpiar) {
+        ventasBtnLimpiar.addEventListener('click', function () {
+            ocultarErrorFiltroVentas();
+            if (ventasSearchInput) ventasSearchInput.value = '';
+            if (ventasFechaInicio) ventasFechaInicio.value = '';
+            if (ventasFechaFin) ventasFechaFin.value = '';
+            currentPageVentas = 0;
+            loadVentas(0);
+        });
     }
 
     if (ventaDetalleTemporalBody) {
@@ -884,6 +1128,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     loadProductosParaSelect();
     loadClientesParaVenta();
+    loadMetodosPago();
     loadVentas();
     renderDetalleTemporal();
 
@@ -921,6 +1166,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (subsectionId === 'ventas-create') {
             loadProductosParaSelect();
             loadClientesParaVenta();
+            loadMetodosPago();
             setFechaActual();
         } else if (subsectionId === 'ventas-list') {
             loadVentas(0);
@@ -962,13 +1208,10 @@ document.addEventListener('DOMContentLoaded', function () {
         previousClienteNombre = '';
 
         // Resetear método de pago
-        document.querySelectorAll('input[name="metodo-pago"]').forEach(radio => {
-            radio.checked = false;
-        });
+        if (metodoPagoSelect) metodoPagoSelect.value = '';
         const camposTarjeta = document.getElementById('campos-tipo-tarjeta');
         if (camposTarjeta) camposTarjeta.style.display = 'none';
-        const tipoTarjeta = document.getElementById('tipo-tarjeta');
-        if (tipoTarjeta) tipoTarjeta.value = '';
+        if (tipoTarjetaSelect) tipoTarjetaSelect.value = '';
 
         // Establecer fecha actual nuevamente
         setFechaActual();
@@ -980,7 +1223,123 @@ document.addEventListener('DOMContentLoaded', function () {
         btnLimpiarFormVenta.addEventListener('click', limpiarFormularioVenta);
     }
 
+    // ==========================================================
+    // MODAL DE DETALLE DE VENTA
+    // ==========================================================
+
+    let modalVentaProductos = [];
+    let modalVentaCurrentPage = 0;
+    const modalVentaItemsPerPage = 5;
+
+    async function mostrarDetalleVenta(ventaId) {
+        try {
+            const response = await fetch(`/api/ventas/${ventaId}`);
+            if (!response.ok) throw new Error('Error al obtener detalle de venta');
+
+            const venta = await response.json();
+
+            document.getElementById('modal-venta-id').textContent = `#${venta.idVenta}`;
+
+            const parts = venta.fecha.split('-');
+            const fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            document.getElementById('modal-venta-fecha').textContent = fechaFormateada;
+            document.getElementById('modal-venta-cliente').textContent = venta.nombreCliente || 'N/A';
+            document.getElementById('modal-venta-vendedor').textContent = venta.nombreVendedor || 'N/A';
+            document.getElementById('modal-venta-total').textContent = `$${formatoMoneda.format(venta.total)}`;
+
+            modalVentaProductos = venta.productos || [];
+            modalVentaCurrentPage = 0;
+            renderModalVentaProductos();
+
+            document.getElementById('venta-detail-modal').style.display = 'block';
+
+        } catch (error) {
+            console.error('Error:', error);
+            alert('No se pudo cargar el detalle de la venta');
+        }
+    }
+
+    function cerrarModalDetalleVenta() {
+        const modal = document.getElementById('venta-detail-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    function renderModalVentaProductos() {
+        const tbody = document.getElementById('modal-venta-productos');
+        const pageInfo = document.getElementById('modal-venta-page-info');
+        const prevBtn = document.getElementById('modal-venta-prev-page');
+        const nextBtn = document.getElementById('modal-venta-next-page');
+
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (modalVentaProductos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4">No hay productos en esta venta.</td></tr>';
+            if (pageInfo) pageInfo.textContent = 'Página 0 de 0';
+            if (prevBtn) prevBtn.disabled = true;
+            if (nextBtn) nextBtn.disabled = true;
+            return;
+        }
+
+        const totalPages = Math.ceil(modalVentaProductos.length / modalVentaItemsPerPage);
+        const startIndex = modalVentaCurrentPage * modalVentaItemsPerPage;
+        const endIndex = Math.min(startIndex + modalVentaItemsPerPage, modalVentaProductos.length);
+        const productosEnPagina = modalVentaProductos.slice(startIndex, endIndex);
+
+        const totalVentaStr = document.getElementById('modal-venta-total').textContent;
+        const totalVenta = parseFloat(totalVentaStr.replace('$', '').replace(/\./g, '').replace(',', '.'));
+        const cantidadTotal = modalVentaProductos.reduce((sum, p) => sum + p.cantidad, 0);
+
+        productosEnPagina.forEach(producto => {
+            const precioUnitario = cantidadTotal > 0 ? totalVenta / cantidadTotal : 0;
+            const subtotal = precioUnitario * producto.cantidad;
+
+            tbody.innerHTML += `
+                <tr>
+                    <td>${producto.nombreProducto || 'N/A'}</td>
+                    <td>${producto.cantidad || 0}</td>
+                    <td>$${formatoMoneda.format(precioUnitario)}</td>
+                    <td>$${formatoMoneda.format(subtotal)}</td>
+                </tr>
+            `;
+        });
+
+        if (pageInfo) pageInfo.textContent = `Página ${modalVentaCurrentPage + 1} de ${totalPages}`;
+        if (prevBtn) prevBtn.disabled = (modalVentaCurrentPage === 0);
+        if (nextBtn) nextBtn.disabled = (modalVentaCurrentPage + 1 >= totalPages);
+    }
+
+    function modalVentaPrevPage() {
+        if (modalVentaCurrentPage > 0) {
+            modalVentaCurrentPage--;
+            renderModalVentaProductos();
+        }
+    }
+
+    function modalVentaNextPage() {
+        const totalPages = Math.ceil(modalVentaProductos.length / modalVentaItemsPerPage);
+        if (modalVentaCurrentPage + 1 < totalPages) {
+            modalVentaCurrentPage++;
+            renderModalVentaProductos();
+        }
+    }
+
+    // Cerrar modal de detalle al hacer clic fuera del contenido
+    const ventaDetailModal = document.getElementById('venta-detail-modal');
+    if (ventaDetailModal) {
+        ventaDetailModal.addEventListener('click', function (e) {
+            if (e.target === ventaDetailModal) cerrarModalDetalleVenta();
+        });
+    }
+
+
+
+
     // Exponer globalmente
     window.showVentasSubsection = showSubsection;
+    window.mostrarDetalleVenta = mostrarDetalleVenta;
+    window.cerrarModalDetalleVenta = cerrarModalDetalleVenta;
+    window.modalVentaPrevPage = modalVentaPrevPage;
+    window.modalVentaNextPage = modalVentaNextPage;
 
 });

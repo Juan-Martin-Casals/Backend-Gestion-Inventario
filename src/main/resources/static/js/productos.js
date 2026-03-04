@@ -301,8 +301,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (categorias.length === 0) {
             categoryResultsContainer.innerHTML = '<div class="product-result-item">No se encontraron categorías</div>';
         } else {
-            categoryResultsContainer.innerHTML = categorias.map(c =>
-                `<div class="product-result-item" data-id="${c.id}">${c.nombre}</div>`
+            // Ordenar alfabéticamente y capitalizar cada palabra
+            const categoriasOrdenadas = [...categorias].sort((a, b) =>
+                a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+            );
+            const capitalizarPalabras = (texto) =>
+                texto.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+
+            categoryResultsContainer.innerHTML = categoriasOrdenadas.map(c =>
+                `<div class="product-result-item" data-id="${c.id}">${capitalizarPalabras(c.nombre)}</div>`
             ).join('');
         }
         categoryResultsContainer.style.display = 'block';
@@ -601,42 +608,43 @@ document.addEventListener('DOMContentLoaded', function () {
                 stockMaximo: stockMaximo
             };
 
-            // 5. Enviar
-            try {
-                const response = await fetch(API_PRODUCTOS_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(productoDTO)
-                });
+            // 5. Confirmar y Enviar
+            showConfirmationModal("¿Estás seguro de que deseas registrar este producto?", async () => {
+                try {
+                    const response = await fetch(API_PRODUCTOS_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(productoDTO)
+                    });
 
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    throw new Error(errorText || `Error: ${response.status}`);
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(errorText || `Error: ${response.status}`);
+                    }
+
+                    generalMessage.textContent = "¡Producto registrado con éxito!";
+                    generalMessage.classList.add('success');
+                    productForm.reset();
+                    categoryHiddenInput.value = '';
+
+                    // Reseteamos a la página 0 y recargamos la tabla
+                    currentPage = 0;
+                    loadProducts();
+
+                    // El mensaje desaparece automáticamente después de 4 segundos
+                    setTimeout(() => {
+                        generalMessage.textContent = '';
+                        generalMessage.classList.remove('success');
+                    }, 4000);
+
+                    document.dispatchEvent(new Event('productosActualizados'));
+
+                } catch (error) {
+                    console.error('Error al registrar el producto:', error);
+                    generalMessage.textContent = `${error.message}`;
+                    generalMessage.classList.add('error');
                 }
-
-                generalMessage.textContent = "¡Producto registrado con éxito!";
-                generalMessage.classList.add('success');
-                productForm.reset();
-                categoryHiddenInput.value = '';
-
-                // Reseteamos a la página 0 y recargamos la tabla
-                currentPage = 0;
-                loadProducts();
-
-                // El usuario se queda en el formulario para seguir creando productos
-                // El mensaje desaparece automáticamente después de 4 segundos
-                setTimeout(() => {
-                    generalMessage.textContent = '';
-                    generalMessage.classList.remove('success');
-                }, 4000);
-
-                document.dispatchEvent(new Event('productosActualizados'));
-
-            } catch (error) {
-                console.error('Error al registrar el producto:', error);
-                generalMessage.textContent = `${error.message}`;
-                generalMessage.classList.add('error');
-            }
+            });
         });
     }
 
@@ -956,6 +964,11 @@ document.addEventListener('DOMContentLoaded', function () {
             // Mostrar modal
             editModal.style.display = 'flex';
             editNameInput.focus();
+
+            // Cerrar con ESC
+            const escHandler = (e) => { if (e.key === 'Escape') closeEditModal(); };
+            document.addEventListener('keydown', escHandler);
+            editModal._escHandler = escHandler;
         } catch (error) {
             console.error('Error al abrir modal de edición:', error);
             alert('Error al cargar los datos del producto');
@@ -970,6 +983,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (editFormMessage) {
             editFormMessage.textContent = '';
             editFormMessage.className = 'form-message';
+        }
+        if (editModal._escHandler) {
+            document.removeEventListener('keydown', editModal._escHandler);
+            editModal._escHandler = null;
         }
     }
 
@@ -1045,12 +1062,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 // Éxito
-                editFormMessage.textContent = '✓ Producto actualizado correctamente';
+                editFormMessage.textContent = 'Producto actualizado correctamente';
                 editFormMessage.classList.add('success');
 
-                closeEditModal();
-                // Recargar productos manteniendo filtros
-                loadProducts();
+                setTimeout(() => {
+                    closeEditModal();
+                    // Recargar productos manteniendo filtros
+                    loadProducts();
+                }, 1500);
 
             } catch (error) {
                 console.error('Error al actualizar producto:', error);
@@ -1145,12 +1164,21 @@ document.addEventListener('DOMContentLoaded', function () {
         deleteProductId = productId;
         deleteModalMessage.textContent = `¿Estás seguro de que deseas eliminar "${productName}"?`;
         deleteModal.style.display = 'flex';
+
+        // Cerrar con ESC
+        const escHandler = (e) => { if (e.key === 'Escape') closeDeleteModal(); };
+        document.addEventListener('keydown', escHandler);
+        deleteModal._escHandler = escHandler;
     }
 
     // Función para cerrar modal de eliminación
     function closeDeleteModal() {
         deleteModal.style.display = 'none';
         deleteProductId = null;
+        if (deleteModal._escHandler) {
+            document.removeEventListener('keydown', deleteModal._escHandler);
+            deleteModal._escHandler = null;
+        }
     }
 
     // Event listener para cerrar modal
@@ -1165,8 +1193,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (deleteConfirmBtn) {
         deleteConfirmBtn.addEventListener('click', async () => {
             if (!deleteProductId) {
-                alert('¡Error! No se pudo identificar el producto a eliminar.');
-                return;
+                return; // El modal está siendo usado por otro módulo (ej: proveedor)
             }
 
             try {

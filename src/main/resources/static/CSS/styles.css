@@ -207,6 +207,15 @@ body {
     letter-spacing: 1px;
 }
 
+.sidebar-logo {
+    display: block;
+    width: 80px;
+    height: auto;
+    margin: 0 0 10px 0;
+    border-radius: 8px;
+    object-fit: contain;
+}
+
 .sidebar-menu {
     list-style: none;
 }
@@ -226,10 +235,16 @@ body {
     border-left: 3px solid transparent;
 }
 
-.sidebar-menu a:hover,
-.sidebar-menu a.active {
+.sidebar-menu a:hover {
     background: #f8f9fa;
     color: #333;
+    border-left-color: #007bff;
+}
+
+.sidebar-menu a.active {
+    background: #e8f0fe;
+    color: #007bff;
+    font-weight: 600;
     border-left-color: #007bff;
 }
 
@@ -267,7 +282,7 @@ body {
 }
 
 .header-title i {
-    color: #666;
+    color: #007bff;
     font-size: 16px;
 }
 
@@ -372,6 +387,7 @@ body {
 .form-section {
     background: #fff;
     margin: 0 30px 20px;
+    margin-top: 25px;
     border-radius: 12px;
     padding: 25px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -616,6 +632,7 @@ body {
 .table-section {
     background: #fff;
     margin: 0 30px 20px;
+    margin-top: 25px;
     border-radius: 12px;
     padding: 25px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -1815,10 +1832,6 @@ body {
     margin-top: 20px;
 }
 
-/* Sidebar Submenu */
-.sidebar-menu .has-submenu>.submenu-toggle {
-    /* justify-content: space-between; REMOVED to fix alignment */
-}
 
 .sidebar-menu .submenu {
     list-style: none;
@@ -2266,4 +2279,125 @@ body {
 
 #metodo-pago {
     max-width: 100%;
+}
+
+/* ========================================
+   HOVER DE COLORES PARA BOTONES DE ACCIÓN
+   Se aplica a .btn-action (empleado/stock)
+   y a .btn-icon (admin: proveedores, usuarios, stock)
+   ======================================== */
+
+/* Base compartida para btn-icon */
+.btn-icon {
+    background: none;
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s;
+    color: #666;
+    font-size: 16px;
+}
+
+.btn-icon:hover {
+    background: #f8f9fa;
+}
+
+/* Botones de VER DETALLES → azul */
+.btn-view-proveedor:hover,
+.btn-view-usuario:hover,
+.btn-view-venta:hover,
+.btn-view-compra:hover {
+    color: #007bff;
+}
+
+/* Botones de EDITAR → verde */
+.btn-edit-proveedor:hover,
+.btn-edit-usuario:hover,
+.btn-edit-producto:hover {
+    color: #28a745;
+}
+
+/* Botones de ELIMINAR → rojo */
+.btn-delete-proveedor:hover,
+.btn-delete-usuario:hover,
+.btn-delete-producto:hover {
+    color: #dc3545;
+}
+
+/* Excepción: btn-add-quick siempre azul aunque tenga btn-icon */
+.btn-icon.btn-add-quick {
+    background-color: #0d6efd;
+    color: white;
+}
+
+.btn-icon.btn-add-quick:hover {
+    background-color: #0b5ed7;
+    color: white;
+}
+
+/* Columna Dirección de la tabla de Proveedores – acortada para no romper botones */
+#proveedor-tabla td:nth-child(4) {
+    max-width: 160px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ========================================
+   HOVER BOTONES DETALLE TEMPORAL
+   (compras y ventas - agregar producto)
+   ======================================== */
+
+/* Guardar → verde */
+.btn-save-detalle:hover {
+    color: #28a745;
+}
+
+/* Cancelar → rojo */
+.btn-cancel-detalle:hover {
+    color: #dc3545;
+}
+
+/* Editar → verde */
+.btn-edit-detalle:hover {
+    color: #28a745;
+}
+
+/* Quitar/Eliminar → rojo */
+.btn-delete-detalle:hover {
+    color: #dc3545;
+}
+
+/* =============================================
+   Checklist de requisitos de contraseña
+   ============================================= */
+.password-checklist {
+    list-style: none;
+    padding: 8px 0 0 0;
+    margin: 0;
+}
+
+.password-checklist li {
+    font-size: 12px;
+    color: #999;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    transition: color 0.25s ease;
+}
+
+.password-checklist li i {
+    font-size: 8px;
+    transition: color 0.25s ease;
+}
+
+/* Estado: cumplido */
+.password-checklist li.valid {
+    color: #28a745;
+}
+
+.password-checklist li.valid i {
+    font-size: 11px;
 }

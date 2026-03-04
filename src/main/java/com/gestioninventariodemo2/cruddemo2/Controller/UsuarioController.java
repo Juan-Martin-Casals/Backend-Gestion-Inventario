@@ -75,4 +75,11 @@ public class UsuarioController {
         }
     }
 
+    // --- ENDPOINT: VERIFICAR EMAIL DUPLICADO ---
+    @GetMapping("/check-email")
+    public ResponseEntity<Boolean> verificarEmailExistente(@RequestParam String email) {
+        boolean existe = usuarioService.existeEmail(email);
+        return ResponseEntity.ok(existe);
+    }
+
 }

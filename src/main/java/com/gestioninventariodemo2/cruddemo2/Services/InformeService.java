@@ -48,12 +48,12 @@ public class InformeService {
         }
 
         public ResumenStockDTO obtenerResumenStock() {
-                int stockBajoNivel = 5; // El mismo límite que usás en el frontend
-
                 long totalProductos = stockRepository.count();
-                long productosAgotados = stockRepository.countByStockActualEquals(0);
-                long productosBajoStock = stockRepository.countByStockActualGreaterThanAndStockActualLessThanEqual(0,
-                                stockBajoNivel);
+                Long agotadosActivos = stockRepository.countAgotadosActivos();
+                long productosAgotados = agotadosActivos != null ? agotadosActivos : 0;
+                // Usar query que compara contra el stockMinimo individual de cada producto
+                Integer productosBajoStockCount = stockRepository.countProductosConStockBajo();
+                long productosBajoStock = productosBajoStockCount != null ? productosBajoStockCount : 0;
 
                 return ResumenStockDTO.builder()
                                 .totalProductos(totalProductos)
@@ -63,15 +63,10 @@ public class InformeService {
         }
 
         public Page<StockTablaDTO> obtenerProductosConStockBajo(Pageable pageable) {
-                int stockBajoNivel = 5;
                 String estadoActivo = "ACTIVO";
 
-                // 1. Busca en la BD usando paginación y ordenamiento
-                // ¡CAMBIO CLAVE AQUÍ!
-                // Cambiamos el método a uno que NO tiene el sufijo "OrderByStockActualAsc".
-                // Esto permite que el ordenamiento sea tomado de la variable 'pageable'.
-                Page<Stock> stocksBajos = stockRepository.findByStockActualLessThanEqualAndProductoEstado(
-                                stockBajoNivel,
+                // Buscar productos donde stockActual < stockMinimo (incluye agotados)
+                Page<Stock> stocksBajos = stockRepository.findProductosQueNecesitanReposicion(
                                 estadoActivo,
                                 pageable);
 
@@ -85,6 +80,7 @@ public class InformeService {
                                 .descripcion(stock.getProducto().getDescripcion())
                                 .precio(stock.getProducto().getPrecio())
                                 .stock(stock.getStockActual())
+                                .stockMinimo(stock.getStockMinimo())
                                 .build());
         }
 
@@ -145,11 +141,23 @@ public class InformeService {
                 // Productos con stock bajo (stock < stockMinimo)
                 Integer productosStockBajo = stockRepository.countProductosConStockBajo();
 
+                // Cantidad de ventas en el rango
+                Long cantidadVentas = ventaRepository.countVentasEnRango(inicio, fin);
+                if (cantidadVentas == null)
+                        cantidadVentas = 0L;
+
+                // Productos vendidos en el rango
+                Long productosVendidos = ventaRepository.sumProductosEnRango(inicio, fin);
+                if (productosVendidos == null)
+                        productosVendidos = 0L;
+
                 return KPIsDTO.builder()
                                 .totalVentas(totalVentas)
                                 .totalCompras(totalCompras)
                                 .ganancia(ganancia)
                                 .productosStockBajo(productosStockBajo)
+                                .cantidadVentas(cantidadVentas)
+                                .productosVendidos(productosVendidos)
                                 .build();
         }
 

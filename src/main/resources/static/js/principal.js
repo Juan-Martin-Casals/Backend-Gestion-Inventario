@@ -98,9 +98,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 ventasHoyAmount.textContent = `$${data.totalVentas ? data.totalVentas.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}`;
             }
 
-            // Cantidad de ventas y productos vendidos (necesitaría endpoints adicionales)
-            if (ventasHoyCount) ventasHoyCount.textContent = '-';
-            if (productosVendidosHoy) productosVendidosHoy.textContent = '-';
+            // Cantidad de ventas y productos vendidos
+            if (ventasHoyCount) ventasHoyCount.textContent = data.cantidadVentas || 0;
+            if (productosVendidosHoy) productosVendidosHoy.textContent = data.productosVendidos || 0;
 
             // Actualizar banner de bienvenida (solo en admin.html)
             const welcomeDate = document.getElementById('welcome-date');
@@ -250,7 +250,7 @@ document.addEventListener('DOMContentLoaded', function () {
             let stockClass = 'good';
             if (producto.stock <= 0) {
                 stockClass = 'empty';
-            } else if (producto.stock <= 5) {
+            } else if (producto.stockMinimo && producto.stock < producto.stockMinimo) {
                 stockClass = 'low';
             }
 
@@ -332,23 +332,25 @@ document.addEventListener('DOMContentLoaded', function () {
         th.addEventListener('click', handleSortClick);
     });
 
-    lowStockPrevPageBtn.addEventListener('click', (event) => { // <-- 1. Añadir (event)
-        event.preventDefault(); // <-- 2. Añadir esta línea
+    if (lowStockPrevPageBtn) {
+        lowStockPrevPageBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (lowStockCurrentPage > 0) {
+                lowStockCurrentPage--;
+                loadLowStockTable();
+            }
+        });
+    }
 
-        if (lowStockCurrentPage > 0) {
-            lowStockCurrentPage--;
-            loadLowStockTable();
-        }
-    });
-
-    lowStockNextPageBtn.addEventListener('click', (event) => { // <-- 1. Añadir (event)
-        event.preventDefault(); // <-- 2. Añadir esta línea
-
-        if (lowStockCurrentPage + 1 < lowStockTotalPages) {
-            lowStockCurrentPage++;
-            loadLowStockTable();
-        }
-    });
+    if (lowStockNextPageBtn) {
+        lowStockNextPageBtn.addEventListener('click', (event) => {
+            event.preventDefault();
+            if (lowStockCurrentPage + 1 < lowStockTotalPages) {
+                lowStockCurrentPage++;
+                loadLowStockTable();
+            }
+        });
+    }
 
 
     loadTodayData();
@@ -356,5 +358,14 @@ document.addEventListener('DOMContentLoaded', function () {
     loadStockData();
     loadLowStockTable();
     loadUserInfo();
+
+    // Escuchar evento de venta registrada para actualizar el dashboard en tiempo real
+    document.addEventListener('ventaRegistrada', function () {
+        console.log('Principal: Venta registrada, actualizando dashboard...');
+        loadTodayData();
+        loadDashboardData();
+        loadStockData();
+        loadLowStockTable();
+    });
 
 });
