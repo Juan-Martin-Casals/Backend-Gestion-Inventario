@@ -179,4 +179,20 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
                         "GROUP BY c ORDER BY MIN(dc.precioUnitario) DESC")
         Page<Compra> searchComprasConFechasOrderByPrecioUnitarioDesc(@Param("search") String search,
                         @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin, Pageable pageable);
+
+        // Top N productos más comprados en un rango (por cantidad total comprada)
+        @Query(value = """
+                        SELECT p.nombre, SUM(dc.cantidad) as cantidad, SUM(dc.precio_unitario * dc.cantidad) as total_costo
+                        FROM detalle_compra dc
+                        JOIN productos p ON dc.id_producto = p.id_producto
+                        JOIN compras c ON dc.id_compra = c.id_compra
+                        WHERE c.fecha BETWEEN :inicio AND :fin
+                        GROUP BY p.id_producto, p.nombre
+                        ORDER BY cantidad DESC
+                        LIMIT :limit
+                        """, nativeQuery = true)
+        List<Object[]> findTopProductosComprados(
+                        @Param("inicio") LocalDate inicio,
+                        @Param("fin") LocalDate fin,
+                        @Param("limit") Integer limit);
 }

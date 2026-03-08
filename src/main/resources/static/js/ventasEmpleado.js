@@ -96,6 +96,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let productoSeleccionado = null;
     let detallesVenta = [];
     let editIndexVenta = -1;
+    let productosStockDesactualizado = false; // flag: recarga stock antes de la próxima búsqueda
 
     // --- Estado de Paginación ---
     let currentPageVentas = 0;
@@ -496,7 +497,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÓGICA DEL BUSCADOR DE PRODUCTOS
     // ==========================================================
 
-    function buscarProductos() {
+    async function buscarProductos() {
+        // Si hubo una venta reciente, recargar el stock antes de filtrar
+        if (productosStockDesactualizado) {
+            productosStockDesactualizado = false;
+            await loadProductosParaSelect();
+        }
+
         const query = productSearchInput.value.toLowerCase().trim();
 
         // Si el campo está vacío o solo tiene espacios, mostrar todos los productos
@@ -837,6 +844,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Notificar al dashboard para actualizar KPIs en tiempo real
                 document.dispatchEvent(new CustomEvent('ventaRegistrada'));
+
+                // Marcar que el stock necesita actualizarse en la próxima búsqueda
+                productosStockDesactualizado = true;
 
                 // Recargar ventas en background sin cambiar de sección
                 currentPageVentas = 0;

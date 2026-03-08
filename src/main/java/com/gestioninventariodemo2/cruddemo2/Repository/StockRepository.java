@@ -41,12 +41,18 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     Integer countStockAgotado();
 
     // Query usada por obtenerResumenStock() del KPI principal
-    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual = 0 AND s.producto.estado = 'ACTIVO'")
+    // Solo cuenta como "agotado" a productos que tienen stockMinimo > 0
+    // (omite productos que tienen stockMinimo = 0, ya que técnicamente no necesitan
+    // reposición)
+    @Query("SELECT COUNT(s) FROM Stock s WHERE s.stockActual = 0 AND s.stockMinimo > 0 AND s.producto.estado = 'ACTIVO'")
     Long countAgotadosActivos();
 
-    // Query para tabla de reposición: productos con stock < stockMinimo (incluye
-    // agotados)
-    @Query("SELECT s FROM Stock s WHERE s.stockActual < s.stockMinimo AND s.producto.estado = :estado")
+    // Query para tabla de reposición: mismo criterio que las tarjetas del dashboard
+    // Muestra agotados (stockActual=0 Y stockMinimo>0) + bajo stock (0 < stockActual < stockMinimo)
+    @Query("SELECT s FROM Stock s WHERE s.producto.estado = :estado AND (" +
+           "(s.stockActual = 0 AND s.stockMinimo > 0) OR " +
+           "(s.stockActual > 0 AND s.stockActual < s.stockMinimo)" +
+           ") ORDER BY s.stockActual ASC")
     Page<Stock> findProductosQueNecesitanReposicion(String estado, Pageable pageable);
 
 }

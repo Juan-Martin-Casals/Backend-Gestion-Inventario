@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gestión Inventario - Panel Empleado</title>
-    <link rel="icon" type="image/png" href="images/Gemini_Generated_Image_a0ub2a0ub2a0ub2a.png">
+    <link rel="icon" type="image/jpeg" href="images/LOGO%20SISTEMA.jpg">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -16,7 +16,7 @@
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="sidebar-header">
-                <img src="images/Gemini_Generated_Image_a0ub2a0ub2a0ub2a.png" alt="Logo" class="sidebar-logo">
+                <img src="images/LOGO%20SISTEMA.jpg" alt="Logo" class="sidebar-logo">
                 <h3>Gestión Inventario</h3>
                 <p>Navegación</p>
             </div>
@@ -137,7 +137,7 @@
                                 </div>
 
                                 <div class="form-group">
-                                    <label for="venta-cliente-search">Buscar Cliente (Nombre, Apellido o DNI)</label>
+                                    <label for="venta-cliente-search">Cliente (Nombre, Apellido o DNI)</label>
                                     <div class="search-with-add" style="display: flex; gap: 10px;">
                                         <input type="text" id="venta-cliente-search" autocomplete="off"
                                             placeholder="Buscar cliente existente...">
@@ -615,26 +615,50 @@
     </div>
 
     <div id="logout-modal" class="modal">
-        <div class="modal-content modal-compact">
-            <h3>Confirmar Salida</h3>
-            <p>¿Estás seguro de que deseas cerrar sesión?</p>
-            <div class="modal-buttons" style="justify-content: center;">
-                <button id="confirm-logout" class="btn-danger">Sí, Salir</button>
+        <div class="modal-content" style="max-width: 450px; padding: 0;">
+            <div class="modal-header" style="padding: 20px 25px;">
+                <h3 style="margin: 0; font-size: 18px;">
+                    <i class="fas fa-sign-out-alt" style="color: #e74c3c;"></i> Confirmar Salida
+                </h3>
+            </div>
+
+            <div class="modal-body" style="padding: 20px 25px;">
+                <p style="font-size: 15px; margin: 0; text-align: center; line-height: 1.5;">
+                    ¿Estás seguro de que deseas cerrar sesión?
+                </p>
+            </div>
+
+            <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
+                <button id="confirm-logout" class="btn-primary" style="background-color: #e74c3c;">
+                    <i class="fas fa-sign-out-alt"></i> Sí, Salir
+                </button>
                 <button id="cancel-logout" class="btn-outline">Cancelar</button>
             </div>
         </div>
     </div>
 
     <div id="confirmation-modal" class="modal">
-        <div class="modal-content modal-compact">
-            <span class="close-modal">&times;</span>
-            <h3 id="confirmation-message" style="margin-top: 10px; margin-bottom: 20px; font-size: 18px;">
-                ¿Estás seguro?
-            </h3>
+        <div class="modal-content" style="max-width: 450px; padding: 0;">
+            <div class="modal-header" style="padding: 20px 25px;">
+                <h3 style="margin: 0; font-size: 18px;">
+                    <i class="fas fa-question-circle" style="color: #2563eb;"></i> Confirmar Acción
+                </h3>
+                <button class="modal-close" id="btn-confirm-close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
 
-            <div class="modal-buttons">
-                <button id="btn-confirm-cancel" class="btn-secondary">Cancelar</button>
-                <button id="btn-confirm-yes" class="btn-primary">Confirmar</button>
+            <div class="modal-body" style="padding: 20px 25px;">
+                <p id="confirmation-message" style="font-size: 15px; margin: 0; text-align: center; line-height: 1.5;">
+                    ¿Estás seguro?
+                </p>
+            </div>
+
+            <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
+                <button id="btn-confirm-yes" class="btn-primary" style="background-color: #2563eb;">
+                    <i class="fas fa-check"></i> Confirmar
+                </button>
+                <button id="btn-confirm-cancel" class="btn-outline">Cancelar</button>
             </div>
         </div>
     </div>

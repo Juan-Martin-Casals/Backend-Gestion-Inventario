@@ -88,18 +88,27 @@ public class InformeService {
                 LocalDate primerDiaMes = LocalDate.now().withDayOfMonth(1);
                 LocalDate hoy = LocalDate.now();
 
+                Long ventasMes = ventaRepository.countVentasEnRango(primerDiaMes, hoy);
+                Long ventasHistoricas = ventaRepository.countVentasHistoricas();
+                Long productoMes = ventaRepository.sumProductosEnRango(primerDiaMes, hoy);
+                Long productoHistoricos = ventaRepository.sumProductosHistoricos();
+                Double recaudacionMes = ventaRepository.sumRecaudacionEnRango(primerDiaMes, hoy);
+
+                List<String> masVendidoList = ventaRepository.obtenerProductoMasVendidoEnRango(primerDiaMes, hoy);
+                List<String> menosVendidoList = ventaRepository.obtenerProductoMenosVendidoEnRango(primerDiaMes, hoy);
+
                 return InformeDashboardDTO.builder()
-                                .ventasMes(ventaRepository.countVentasEnRango(primerDiaMes, hoy))
-                                .ventasHistoricas(ventaRepository.countVentasHistoricas())
-                                .productoMes(ventaRepository.sumProductosEnRango(primerDiaMes, hoy))
-                                .productoHistoricos(ventaRepository.sumProductosHistoricos())
-                                .recaudacionMes(ventaRepository.sumRecaudacionEnRango(primerDiaMes, hoy))
-                                .productoMasVendidoMes(
-                                                ventaRepository.obtenerProductoMasVendidoEnRango(primerDiaMes, hoy)
-                                                                .stream().findFirst().orElse(null))
-                                .productoMenosVendidoMes(
-                                                ventaRepository.obtenerProductoMenosVendidoEnRango(primerDiaMes, hoy)
-                                                                .stream().findFirst().orElse(null))
+                                .ventasMes(ventasMes != null ? ventasMes : 0L)
+                                .ventasHistoricas(ventasHistoricas != null ? ventasHistoricas : 0L)
+                                .productoMes(productoMes != null ? productoMes : 0L)
+                                .productoHistoricos(productoHistoricos != null ? productoHistoricos : 0L)
+                                .recaudacionMes(recaudacionMes != null ? recaudacionMes : 0.0)
+                                .productoMasVendidoMes(masVendidoList != null && !masVendidoList.isEmpty()
+                                                ? masVendidoList.get(0)
+                                                : null)
+                                .productoMenosVendidoMes(menosVendidoList != null && !menosVendidoList.isEmpty()
+                                                ? menosVendidoList.get(0)
+                                                : null)
                                 .build();
         }
 
@@ -206,6 +215,19 @@ public class InformeService {
                                 limit != null ? limit : 5);
 
                 return topProductos.stream()
+                                .map(row -> TopProductoDTO.builder()
+                                                .nombreProducto((String) row[0])
+                                                .cantidad(((Number) row[1]).intValue())
+                                                .totalVentas(((Number) row[2]).doubleValue())
+                                                .build())
+                                .collect(Collectors.toList());
+        }
+
+        public List<TopProductoDTO> obtenerTopProductosComprados(LocalDate inicio, LocalDate fin, Integer limit) {
+                List<Object[]> top = compraRepository.findTopProductosComprados(inicio, fin,
+                                limit != null ? limit : 5);
+
+                return top.stream()
                                 .map(row -> TopProductoDTO.builder()
                                                 .nombreProducto((String) row[0])
                                                 .cantidad(((Number) row[1]).intValue())

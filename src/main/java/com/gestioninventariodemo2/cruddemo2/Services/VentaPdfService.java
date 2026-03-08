@@ -10,6 +10,8 @@ import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.element.AreaBreak;
+import com.itextpdf.layout.properties.AreaBreakType;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import org.springframework.stereotype.Service;
@@ -47,8 +49,8 @@ public class VentaPdfService {
                         PdfDocument pdf = new PdfDocument(writer);
                         Document document = new Document(pdf);
 
-                        // ========== ENCABEZADO ==========
-                        agregarEncabezado(document, inicio, fin);
+                        // ========== PORTADA ==========
+                        agregarPortada(document, inicio, fin);
 
                         // ========== RESUMEN ==========
                         if (!ventas.isEmpty()) {
@@ -71,41 +73,53 @@ public class VentaPdfService {
                 }
         }
 
-        private void agregarEncabezado(Document document, LocalDate inicio, LocalDate fin) {
-                // Título
+        private void agregarPortada(Document document, LocalDate inicio, LocalDate fin) {
+                // Título Principal
                 Paragraph titulo = new Paragraph("REPORTE DE VENTAS")
-                                .setFontSize(20)
-                                .setBold()
+                                .setFontSize(28).setBold()
                                 .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(5);
+                                .setMarginTop(100).setMarginBottom(20);
                 document.add(titulo);
+
+                // Subtítulo
+                Paragraph subtitulo = new Paragraph("Reporte de Ventas")
+                                .setFontSize(16)
+                                .setTextAlignment(TextAlignment.CENTER)
+                                .setMarginBottom(40);
+                document.add(subtitulo);
 
                 // Nombre del negocio
                 Paragraph negocio = new Paragraph("Gestión Inventario")
-                                .setFontSize(14)
+                                .setFontSize(20).setBold()
                                 .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(5);
+                                .setMarginBottom(60);
                 document.add(negocio);
+
+                // Período
+                Paragraph periodoLabel = new Paragraph("Período del Informe")
+                                .setFontSize(14).setBold()
+                                .setTextAlignment(TextAlignment.CENTER)
+                                .setMarginBottom(10);
+                document.add(periodoLabel);
+
+                String periodoTexto = (inicio != null && fin != null)
+                                ? inicio.format(DATE_FORMATTER) + " - " + fin.format(DATE_FORMATTER)
+                                : "Todas las fechas";
+                Paragraph fechas = new Paragraph(periodoTexto)
+                                .setFontSize(16)
+                                .setTextAlignment(TextAlignment.CENTER)
+                                .setMarginBottom(60);
+                document.add(fechas);
 
                 // Fecha de generación
                 Paragraph fechaGeneracion = new Paragraph("Generado: " + LocalDate.now().format(DATE_FORMATTER))
-                                .setFontSize(10)
+                                .setFontSize(12)
                                 .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(5);
+                                .setMarginBottom(20);
                 document.add(fechaGeneracion);
 
-                // Rango de fechas (si se especificó)
-                if (inicio != null && fin != null) {
-                        Paragraph rangoFechas = new Paragraph(
-                                        "Período: " + inicio.format(DATE_FORMATTER) + " - "
-                                                        + fin.format(DATE_FORMATTER))
-                                        .setFontSize(10)
-                                        .setTextAlignment(TextAlignment.CENTER)
-                                        .setMarginBottom(20);
-                        document.add(rangoFechas);
-                } else {
-                        document.add(new Paragraph(" ").setMarginBottom(15));
-                }
+                // Salto de página — portada sola
+                document.add(new AreaBreak(AreaBreakType.NEXT_PAGE));
         }
 
         private void agregarResumen(Document document, List<VentaResponseDTO> ventas) {
@@ -166,9 +180,7 @@ public class VentaPdfService {
         private void agregarTopProductos(Document document, List<VentaResponseDTO> ventas) {
                 // Título de la sección
                 Paragraph titulo = new Paragraph("Top 5 Productos Más Vendidos")
-                                .setFontSize(14)
-                                .setBold()
-                                .setMarginBottom(10);
+                                .setFontSize(14).setBold().setMarginBottom(10).setKeepWithNext(true);
                 document.add(titulo);
 
                 // Contar cantidades vendidas por producto
@@ -229,9 +241,7 @@ public class VentaPdfService {
         private void agregarDesglosePorVendedor(Document document, List<VentaResponseDTO> ventas) {
                 // Título de la sección
                 Paragraph titulo = new Paragraph("Desglose por Vendedor")
-                                .setFontSize(14)
-                                .setBold()
-                                .setMarginBottom(10);
+                                .setFontSize(14).setBold().setMarginBottom(10).setKeepWithNext(true);
                 document.add(titulo);
 
                 // Agrupar ventas por vendedor
@@ -308,9 +318,7 @@ public class VentaPdfService {
         private void agregarTablaVentas(Document document, List<VentaResponseDTO> ventas) {
                 // Título de la sección
                 Paragraph tituloTabla = new Paragraph("Detalle de Ventas")
-                                .setFontSize(14)
-                                .setBold()
-                                .setMarginBottom(10);
+                                .setFontSize(14).setBold().setMarginBottom(10).setKeepWithNext(true);
                 document.add(tituloTabla);
 
                 // Ordenar ventas por fecha descendente (más reciente primero)

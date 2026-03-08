@@ -1446,10 +1446,16 @@ body {
     top: 0;
     width: 100%;
     height: 100%;
-    overflow: auto;
-    /* Permite scroll */
     background-color: rgba(0, 0, 0, 0.6);
     /* Fondo oscuro */
+    /* Flexbox para centrar el contenido vertical y horizontalmente */
+    justify-content: center;
+    align-items: center;
+}
+
+/* Cuando se muestra (JS setea display:flex) el contenido queda centrado */
+.modal[style*="flex"] {
+    display: flex !important;
 }
 
 /* * La caja blanca (contenido).
@@ -1458,8 +1464,7 @@ body {
 */
 .modal .modal-content {
     background-color: #fefefe;
-    margin: 5% auto;
-    /* 5% desde arriba y centrado */
+    margin: 0;
     padding: 25px;
     border-radius: 8px;
     width: 90%;
@@ -1468,7 +1473,8 @@ body {
     position: relative;
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
     animation: fadeIn 0.3s;
-    height: 250px;
+    max-height: 90vh;
+    overflow-y: auto;
 }
 
 /* * El botón de cerrar (X).

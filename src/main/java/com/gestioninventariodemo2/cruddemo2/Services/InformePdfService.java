@@ -59,11 +59,16 @@ public class InformePdfService {
 
                         // ========== KPIs ==========
                         KPIsDTO kpis = informeService.obtenerKPIs(inicio, fin);
-                        agregarSeccionKPIs(document, kpis);
+                        ResumenStockDTO resumenStock = informeService.obtenerResumenStock();
+                        agregarSeccionKPIs(document, kpis, resumenStock);
 
-                        // =========== TOP 5 PRODUCTOS ==========
-                        List<TopProductoDTO> topProductos = informeService.obtenerTopProductos(inicio, fin, 5);
-                        agregarSeccionTopProductos(document, topProductos);
+                        // ========== TOP 5 PRODUCTOS MÁS VENDIDOS ==========
+                        List<TopProductoDTO> topVendidos = informeService.obtenerTopProductos(inicio, fin, 5);
+                        agregarSeccionTopVendidos(document, topVendidos);
+
+                        // ========== TOP 5 PRODUCTOS MÁS COMPRADOS ==========
+                        List<TopProductoDTO> topComprados = informeService.obtenerTopProductosComprados(inicio, fin, 5);
+                        agregarSeccionTopComprados(document, topComprados);
 
                         // ========== TABLA DE VENTAS CON PRODUCTOS ==========
                         List<Venta> ventas = ventaRepository.findByFechaBetween(inicio, fin);
@@ -136,19 +141,20 @@ public class InformePdfService {
                 document.add(new AreaBreak(AreaBreakType.NEXT_PAGE));
         }
 
-        private void agregarSeccionKPIs(Document document, KPIsDTO kpis) {
+        private void agregarSeccionKPIs(Document document, KPIsDTO kpis, ResumenStockDTO stock) {
                 // Título de sección
                 Paragraph tituloKPIs = new Paragraph("Resumen Ejecutivo - KPIs")
                                 .setFontSize(18)
                                 .setBold()
                                 .setMarginBottom(15)
-                                .setMarginTop(20);
+                                .setMarginTop(20)
+                                .setKeepWithNext(true);
                 document.add(tituloKPIs);
 
-                // Crear tabla de KPIs (2x2)
+                // Crear tabla de KPIs (2 columnas)
                 Table kpisTable = new Table(UnitValue.createPercentArray(new float[] { 1, 1 }))
                                 .setWidth(UnitValue.createPercentValue(100))
-                                .setMarginBottom(30);
+                                .setMarginBottom(20);
 
                 DeviceRgb colorFondo = new DeviceRgb(240, 248, 255);
 
@@ -156,35 +162,26 @@ public class InformePdfService {
                 Cell cellVentas = new Cell()
                                 .add(new Paragraph("Total Ventas\n$" + formatCurrency(
                                                 kpis.getTotalVentas() != null ? kpis.getTotalVentas() : 0))
-                                                .setFontSize(14)
-                                                .setBold()
-                                                .setTextAlignment(TextAlignment.CENTER))
-                                .setBackgroundColor(colorFondo)
-                                .setPadding(15);
+                                                .setFontSize(14).setBold().setTextAlignment(TextAlignment.CENTER))
+                                .setBackgroundColor(colorFondo).setPadding(15);
                 kpisTable.addCell(cellVentas);
 
                 // Total de Compras
                 Cell cellCompras = new Cell()
                                 .add(new Paragraph("Total Compras\n$" + formatCurrency(
                                                 kpis.getTotalCompras() != null ? kpis.getTotalCompras() : 0))
-                                                .setFontSize(14)
-                                                .setBold()
-                                                .setTextAlignment(TextAlignment.CENTER))
-                                .setBackgroundColor(colorFondo)
-                                .setPadding(15);
+                                                .setFontSize(14).setBold().setTextAlignment(TextAlignment.CENTER))
+                                .setBackgroundColor(colorFondo).setPadding(15);
                 kpisTable.addCell(cellCompras);
 
                 // Ganancia
                 double ganancia = kpis.getGanancia() != null ? kpis.getGanancia() : 0;
                 Cell cellGanancia = new Cell()
                                 .add(new Paragraph("Ganancia Neta\n$" + formatCurrency(ganancia))
-                                                .setFontSize(14)
-                                                .setBold()
-                                                .setTextAlignment(TextAlignment.CENTER)
+                                                .setFontSize(14).setBold().setTextAlignment(TextAlignment.CENTER)
                                                 .setFontColor(ganancia >= 0 ? new DeviceRgb(40, 167, 69)
                                                                 : new DeviceRgb(220, 53, 69)))
-                                .setBackgroundColor(colorFondo)
-                                .setPadding(15);
+                                .setBackgroundColor(colorFondo).setPadding(15);
                 kpisTable.addCell(cellGanancia);
 
                 // Productos con Stock Bajo
@@ -192,52 +189,92 @@ public class InformePdfService {
                                 .add(new Paragraph("Productos Stock Bajo\n"
                                                 + (kpis.getProductosStockBajo() != null ? kpis.getProductosStockBajo()
                                                                 : 0))
-                                                .setFontSize(14)
-                                                .setBold()
-                                                .setTextAlignment(TextAlignment.CENTER))
-                                .setBackgroundColor(colorFondo)
-                                .setPadding(15);
+                                                .setFontSize(14).setBold().setTextAlignment(TextAlignment.CENTER))
+                                .setBackgroundColor(new DeviceRgb(255, 243, 205)).setPadding(15);
                 kpisTable.addCell(cellStockBajo);
+
+                // Productos Agotados
+                long agotados = stock != null ? stock.getProductosAgotados() : 0;
+                Cell cellAgotados = new Cell()
+                                .add(new Paragraph("Productos Agotados\n" + agotados)
+                                                .setFontSize(14).setBold().setTextAlignment(TextAlignment.CENTER)
+                                                .setFontColor(agotados > 0 ? new DeviceRgb(220, 53, 69)
+                                                                : new DeviceRgb(40, 167, 69)))
+                                .setBackgroundColor(new DeviceRgb(255, 230, 230)).setPadding(15);
+                kpisTable.addCell(cellAgotados);
 
                 document.add(kpisTable);
         }
 
-        private void agregarSeccionTopProductos(Document document, List<TopProductoDTO> topProductos) {
-                // Título de sección
-                Paragraph tituloTop = new Paragraph("Top 5 Productos Más Vendidos")
-                                .setFontSize(18)
-                                .setBold()
-                                .setMarginBottom(15)
-                                .setMarginTop(20);
-                document.add(tituloTop);
+        private void agregarSeccionTopVendidos(Document document, List<TopProductoDTO> topVendidos) {
+                Paragraph titulo = new Paragraph("Top 5 Productos Más Vendidos")
+                                .setFontSize(18).setBold().setMarginBottom(15).setMarginTop(20).setKeepWithNext(true);
+                document.add(titulo);
 
-                // Crear tabla
                 Table table = new Table(UnitValue.createPercentArray(new float[] { 1, 4, 2, 2 }))
                                 .setWidth(UnitValue.createPercentValue(100));
 
-                // Encabezados
-                DeviceRgb colorHeader = new DeviceRgb(102, 126, 234);
-                String[] headers = { "#", "Producto", "Cantidad", "Total Ventas" };
-
-                for (String header : headers) {
-                        Cell cell = new Cell()
+                DeviceRgb colorHeader = new DeviceRgb(40, 167, 69); // Verde para ventas
+                for (String header : new String[] { "#", "Producto", "Cantidad", "Total Ventas" }) {
+                        table.addHeaderCell(new Cell()
                                         .add(new Paragraph(header).setBold().setFontColor(ColorConstants.WHITE))
-                                        .setBackgroundColor(colorHeader)
-                                        .setTextAlignment(TextAlignment.CENTER)
-                                        .setPadding(8);
-                        table.addHeaderCell(cell);
+                                        .setBackgroundColor(colorHeader).setTextAlignment(TextAlignment.CENTER)
+                                        .setPadding(8));
                 }
 
-                // Datos
-                if (topProductos.isEmpty()) {
-                        Cell emptyCell = new Cell(1, 4)
+                if (topVendidos.isEmpty()) {
+                        table.addCell(new Cell(1, 4)
                                         .add(new Paragraph("No hay datos de ventas en este período")
                                                         .setTextAlignment(TextAlignment.CENTER))
-                                        .setPadding(15);
-                        table.addCell(emptyCell);
+                                        .setPadding(15));
                 } else {
                         int posicion = 1;
-                        for (TopProductoDTO producto : topProductos) {
+                        for (TopProductoDTO producto : topVendidos) {
+                                table.addCell(new Cell()
+                                                .add(new Paragraph(String.valueOf(posicion++)).setFontSize(11)
+                                                                .setBold())
+                                                .setTextAlignment(TextAlignment.CENTER).setPadding(8));
+                                table.addCell(new Cell()
+                                                .add(new Paragraph(producto.getNombreProducto()).setFontSize(11))
+                                                .setPadding(8));
+                                table.addCell(new Cell()
+                                                .add(new Paragraph(producto.getCantidad() + " uds").setFontSize(11))
+                                                .setTextAlignment(TextAlignment.CENTER).setPadding(8));
+                                table.addCell(new Cell()
+                                                .add(new Paragraph("$" + formatCurrency(producto.getTotalVentas()))
+                                                                .setFontSize(11))
+                                                .setTextAlignment(TextAlignment.RIGHT).setPadding(8));
+                        }
+                }
+
+                document.add(table);
+                document.add(new Paragraph("\n"));
+        }
+
+        private void agregarSeccionTopComprados(Document document, List<TopProductoDTO> topComprados) {
+                Paragraph titulo = new Paragraph("Top 5 Productos Más Comprados")
+                                .setFontSize(18).setBold().setMarginBottom(15).setMarginTop(20).setKeepWithNext(true);
+                document.add(titulo);
+
+                Table table = new Table(UnitValue.createPercentArray(new float[] { 1, 4, 2, 2 }))
+                                .setWidth(UnitValue.createPercentValue(100));
+
+                DeviceRgb colorHeader = new DeviceRgb(220, 53, 69); // Rojo para compras
+                for (String header : new String[] { "#", "Producto", "Cantidad", "Costo Total" }) {
+                        table.addHeaderCell(new Cell()
+                                        .add(new Paragraph(header).setBold().setFontColor(ColorConstants.WHITE))
+                                        .setBackgroundColor(colorHeader).setTextAlignment(TextAlignment.CENTER)
+                                        .setPadding(8));
+                }
+
+                if (topComprados.isEmpty()) {
+                        table.addCell(new Cell(1, 4)
+                                        .add(new Paragraph("No hay datos de compras en este período")
+                                                        .setTextAlignment(TextAlignment.CENTER))
+                                        .setPadding(15));
+                } else {
+                        int posicion = 1;
+                        for (TopProductoDTO producto : topComprados) {
                                 table.addCell(new Cell()
                                                 .add(new Paragraph(String.valueOf(posicion++)).setFontSize(11)
                                                                 .setBold())
@@ -268,13 +305,15 @@ public class InformePdfService {
                                 .setFontSize(18)
                                 .setBold()
                                 .setMarginBottom(10)
-                                .setMarginTop(20);
+                                .setMarginTop(20)
+                                .setKeepWithNext(true);
                 document.add(tituloVentas);
 
                 Paragraph periodoVentas = new Paragraph(
                                 "Período: " + inicio.format(DATE_FORMATTER) + " - " + fin.format(DATE_FORMATTER))
                                 .setFontSize(11)
-                                .setMarginBottom(15);
+                                .setMarginBottom(15)
+                                .setKeepWithNext(true);
                 document.add(periodoVentas);
 
                 // Crear tabla con columna adicional para productos
@@ -373,13 +412,15 @@ public class InformePdfService {
                                 .setFontSize(18)
                                 .setBold()
                                 .setMarginBottom(10)
-                                .setMarginTop(20);
+                                .setMarginTop(20)
+                                .setKeepWithNext(true);
                 document.add(tituloCompras);
 
                 Paragraph periodoCompras = new Paragraph(
                                 "Período: " + inicio.format(DATE_FORMATTER) + " - " + fin.format(DATE_FORMATTER))
                                 .setFontSize(11)
-                                .setMarginBottom(15);
+                                .setMarginBottom(15)
+                                .setKeepWithNext(true);
                 document.add(periodoCompras);
 
                 // Crear tabla con columna adicional para productos

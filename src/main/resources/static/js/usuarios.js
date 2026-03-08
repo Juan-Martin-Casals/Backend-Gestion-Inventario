@@ -384,6 +384,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     generalMessage.classList.add('success');
                     userForm.reset();
 
+                    // Resetear checklist de contraseña
+                    ['check-length', 'check-number'].forEach(id => {
+                        const li = document.getElementById(id);
+                        if (li) li.classList.remove('valid');
+                    });
+
                     // Auto-ocultar mensaje de éxito después de 4 segundos
                     setTimeout(() => {
                         generalMessage.textContent = '';

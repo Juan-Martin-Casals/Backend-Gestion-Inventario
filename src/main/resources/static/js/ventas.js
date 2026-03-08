@@ -123,6 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Variables para rastrear el cliente anterior ---
     let previousClienteId = null;
     let previousClienteNombre = '';
+    let productosStockDesactualizado = false; // flag: recarga stock antes de la próxima búsqueda
 
     // --- Variables para búsqueda y filtrado ---
     let todasLasVentas = [];
@@ -451,7 +452,13 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÓGICA DEL BUSCADOR DE PRODUCTOS
     // ==========================================================
 
-    function buscarProductos() {
+    async function buscarProductos() {
+        // Si hubo una venta reciente, recargar el stock antes de filtrar
+        if (productosStockDesactualizado) {
+            productosStockDesactualizado = false;
+            await loadProductosParaSelect();
+        }
+
         const query = productSearchInput.value.toLowerCase().trim();
 
         // Si el campo está vacío o solo tiene espacios, mostrar todos los productos
@@ -817,6 +824,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 ventasSortField = 'fecha';
                 ventasSortDirection = 'desc';
                 loadVentas(currentPageVentas);
+                // Recargar productos para reflejar el stock actualizado
+                productosStockDesactualizado = true;
                 // Notificar al dashboard para que actualice los datos de hoy
                 document.dispatchEvent(new Event('ventaRegistrada'));
 

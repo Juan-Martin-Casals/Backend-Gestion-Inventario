@@ -1,97 +1,73 @@
 document.addEventListener('DOMContentLoaded', function () {
-    // =========================================
-    // NAVEGACIÓN SIDEBAR (SPA)
-    // =========================================
-    const links = document.querySelectorAll('.sidebar-menu a[data-section]');
+
+    // Selectores
+    const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
     const sections = document.querySelectorAll('.spa-section');
+    const sectionTitle = document.getElementById('section-title');
+    const sectionIcon = document.getElementById('section-icon');
 
-    // Handler separado para los toggles de submenú
-    document.querySelectorAll('.sidebar-menu .submenu-toggle').forEach(toggle => {
-        toggle.addEventListener('click', function (e) {
-            e.preventDefault();
-            this.parentElement.classList.toggle('open');
-        });
-    });
+    // Mapa de sección → ícono
+    const sectionIcons = {
+        'principal': 'fas fa-home',
+        'ventas': 'fas fa-shopping-cart',
+        'stock': 'fas fa-box'
+    };
 
-    function hideAllSections() {
-        sections.forEach(section => section.style.display = 'none');
-        links.forEach(link => link.classList.remove('active'));
+    // Mostrar sección y ocultar las demás
+    function showSection(sectionId) {
+        sections.forEach(s => s.style.display = 'none');
+        const activeSection = document.getElementById(`${sectionId}-section`);
+        if (activeSection) activeSection.style.display = 'block';
+        if (sectionIcon && sectionIcons[sectionId]) {
+            sectionIcon.className = sectionIcons[sectionId];
+        }
     }
 
-    links.forEach(link => {
+    sidebarLinks.forEach(link => {
         link.addEventListener('click', function (e) {
 
-            // Lógica para Submenú Toggle
+            // Submenú Toggle: solo abre/cierra, no navega
             if (this.classList.contains('submenu-toggle')) {
                 e.preventDefault();
-                const parentLi = this.parentElement;
-                parentLi.classList.toggle('open');
-                return; // No navegar, solo abrir/cerrar
+                this.parentElement.classList.toggle('open');
+                return;
             }
+
+            // Logout tiene su propio handler
+            if (this.id === 'logout-btn') return;
 
             e.preventDefault();
 
-            // Remover active de todos los links (incluyendo submenús)
-            document.querySelectorAll('.sidebar-menu a').forEach(l => l.classList.remove('active'));
+            // Marcar activo: quitar de todos y poner en el clickeado
+            sidebarLinks.forEach(l => l.classList.remove('active'));
             this.classList.add('active');
 
             const sectionId = this.getAttribute('data-section');
             const subsectionId = this.getAttribute('data-subsection');
 
-            if (sectionId) {
-                hideAllSections();
-                const targetSection = document.getElementById(`${sectionId}-section`);
-                if (targetSection) {
-                    targetSection.style.display = 'block';
-                }
+            showSection(sectionId);
 
-                // Actualizar título del header
-                const sectionTitle = document.getElementById('section-title');
-                const sectionIcon = document.getElementById('section-icon');
+            // Actualizar título del header con el texto del link
+            if (sectionTitle) sectionTitle.textContent = this.textContent.trim();
 
-                const sectionIcons = {
-                    'principal': 'fas fa-home',
-                    'ventas': 'fas fa-shopping-cart',
-                    'stock': 'fas fa-box'
-                };
-
-                if (sectionTitle) {
-                    const titleText = this.innerText.trim();
-                    sectionTitle.textContent = titleText;
-                }
-                if (sectionIcon && sectionIcons[sectionId]) {
-                    sectionIcon.className = sectionIcons[sectionId];
-                }
-
-                // Guardar sección actual
-                localStorage.setItem('lastSectionEmpleado', sectionId);
-            }
-
-            // Manejo de Subsecciones (Ventas)
+            // Subsecciones de Ventas
             if (sectionId === 'ventas') {
                 const targetSubsection = subsectionId || localStorage.getItem('lastSubsectionEmpleado') || 'ventas-create';
                 if (typeof window.showVentasSubsection === 'function') {
                     window.showVentasSubsection(targetSubsection);
                 }
-                if (subsectionId) {
-                    localStorage.setItem('lastSubsectionEmpleado', subsectionId);
-                }
+                if (subsectionId) localStorage.setItem('lastSubsectionEmpleado', subsectionId);
+                if (typeof window.cargarDatosVentas === 'function') window.cargarDatosVentas();
             }
 
-            // Cargar datos si es necesario
-            if (sectionId === 'ventas' && typeof window.cargarDatosVentas === 'function') {
-                window.cargarDatosVentas();
-            }
+            localStorage.setItem('lastSectionEmpleado', sectionId);
         });
     });
 
-    // Siempre iniciar en la sección principal al recargar
-    const activeLink = document.querySelector(`.sidebar-menu a[data-section="principal"]`);
-    if (activeLink) {
-        activeLink.click();
-    } else if (links.length > 0) {
-        links[0].click(); // Default a la primera
-    }
+    // Inicialización: mostrar principal y marcar su link como activo
+    showSection('principal');
+    const principalLink = document.querySelector('.sidebar-menu a[data-section="principal"]');
+    if (principalLink) principalLink.classList.add('active');
 
     // =========================================
     // LOGOUT
@@ -130,5 +106,62 @@ document.addEventListener('DOMContentLoaded', function () {
     const fechaInput = document.getElementById('fecha-venta');
     if (fechaInput) {
         fechaInput.value = new Date().toISOString().split('T')[0];
+    }
+
+    // =========================================
+    // MODAL DE CONFIRMACIÓN
+    // =========================================
+    const confirmationModal = document.getElementById('confirmation-modal');
+    const confirmationMessage = document.getElementById('confirmation-message');
+    const btnConfirmYes = document.getElementById('btn-confirm-yes');
+    const btnConfirmCancel = document.getElementById('btn-confirm-cancel');
+    const closeConfirmModal = document.getElementById('btn-confirm-close');
+
+    let pendingConfirmAction = null;
+    let pendingCancelAction = null;
+
+    window.showConfirmationModal = function (message, onConfirm, onCancel) {
+        if (!confirmationModal) return;
+        if (confirmationMessage) confirmationMessage.textContent = message;
+        pendingConfirmAction = onConfirm || null;
+        pendingCancelAction = onCancel || null;
+        confirmationModal.style.display = 'flex';
+    };
+
+    function closeConfirmationModal() {
+        if (confirmationModal) confirmationModal.style.display = 'none';
+        pendingConfirmAction = null;
+        pendingCancelAction = null;
+    }
+
+    if (btnConfirmYes) {
+        btnConfirmYes.addEventListener('click', () => {
+            if (typeof pendingConfirmAction === 'function') pendingConfirmAction();
+            closeConfirmationModal();
+        });
+    }
+
+    if (btnConfirmCancel) {
+        btnConfirmCancel.addEventListener('click', () => {
+            if (typeof pendingCancelAction === 'function') pendingCancelAction();
+            closeConfirmationModal();
+        });
+    }
+
+    if (closeConfirmModal) {
+        closeConfirmModal.addEventListener('click', () => {
+            if (typeof pendingCancelAction === 'function') pendingCancelAction();
+            closeConfirmationModal();
+        });
+    }
+
+    // Cerrar al hacer clic fuera del modal
+    if (confirmationModal) {
+        confirmationModal.addEventListener('click', (e) => {
+            if (e.target === confirmationModal) {
+                if (typeof pendingCancelAction === 'function') pendingCancelAction();
+                closeConfirmationModal();
+            }
+        });
     }
 });
