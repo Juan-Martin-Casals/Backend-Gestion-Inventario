@@ -61,6 +61,53 @@ document.addEventListener('DOMContentLoaded', function () {
     const addClienteMessage = document.getElementById('form-general-message-add-cliente');
 
     // ===============================
+    // RESTRICCIÓN DE CAMPO TELÉFONO CLIENTE
+    // Solo permite dígitos, + y espacios. Soporta copiar/pegar.
+    // ===============================
+    function restrictTelefonoInput(input) {
+        if (!input) return;
+        input.addEventListener('input', function () {
+            this.value = this.value.replace(/[^0-9+ ]/g, '');
+        });
+        input.addEventListener('keydown', function (e) {
+            if (e.ctrlKey || e.metaKey) return;
+            const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End', ' '];
+            if (allowed.includes(e.key)) return;
+            if (!/^[0-9+]$/.test(e.key)) e.preventDefault();
+        });
+        input.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData).getData('text');
+            const sanitized = pasted.replace(/[^0-9+ ]/g, '');
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            this.value = this.value.slice(0, start) + sanitized + this.value.slice(end);
+            this.selectionStart = this.selectionEnd = start + sanitized.length;
+        });
+    }
+
+    restrictTelefonoInput(document.getElementById('addClienteTelefono'));
+
+    // ===============================
+    // VALIDACIÓN DNI DUPLICADO (en tiempo real al salir del campo)
+    // ===============================
+    const addClienteDNIInput = document.getElementById('addClienteDNI');
+    const errorAddClienteDNIEl = document.getElementById('errorAddClienteDNI');
+    if (addClienteDNIInput && errorAddClienteDNIEl) {
+        addClienteDNIInput.addEventListener('blur', async function () {
+            const dni = this.value.trim();
+            if (!dni) { errorAddClienteDNIEl.textContent = ''; return; }
+            try {
+                const response = await fetch(`/api/clientes/existe/dni/${encodeURIComponent(dni)}`);
+                const existe = await response.json();
+                errorAddClienteDNIEl.textContent = existe ? 'Ya existe un cliente con ese DNI.' : '';
+            } catch (err) {
+                console.error('Error al verificar DNI:', err);
+            }
+        });
+    }
+
+    // ===============================
     // ESTABLECER FECHA ACTUAL
     // ===============================
     function setFechaActual() {
@@ -320,7 +367,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Obtener valores
         const nombre = document.getElementById('addClienteNombre').value.trim();
         const apellido = document.getElementById('addClienteApellido').value.trim();
-        const dni = document.getElementById('addClienteDNI').value.trim();
+        const dni = document.getElementById('addClienteDNI').value.trim().replace(/[^0-9]/g, '');
         const telefono = document.getElementById('addClienteTelefono').value.trim();
         const direccion = document.getElementById('addClienteDireccion').value.trim();
         const email = document.getElementById('addClienteEmail').value.trim();
@@ -339,6 +386,17 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!dni) {
             document.getElementById('errorAddClienteDNI').textContent = 'El DNI es obligatorio.';
             isValid = false;
+        } else {
+            try {
+                const dniCheckResponse = await fetch(`/api/clientes/existe/dni/${encodeURIComponent(dni)}`);
+                const dniExiste = await dniCheckResponse.json();
+                if (dniExiste) {
+                    document.getElementById('errorAddClienteDNI').textContent = 'Ya existe un cliente con ese DNI.';
+                    isValid = false;
+                }
+            } catch (err) {
+                console.error('Error al verificar DNI:', err);
+            }
         }
 
         if (!telefono) {
@@ -375,8 +433,10 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || `Error ${response.status}`);
+                const errorText = await response.text();
+                let errorMsg = `Error ${response.status}`;
+                try { errorMsg = JSON.parse(errorText).message || errorText; } catch { errorMsg = errorText; }
+                throw new Error(errorMsg);
             }
 
             const nuevoCliente = await response.json();

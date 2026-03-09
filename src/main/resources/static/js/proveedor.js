@@ -113,9 +113,20 @@ document.addEventListener('DOMContentLoaded', function () {
             this.value = this.value.replace(/[^0-9+ ]/g, '');
         });
         input.addEventListener('keydown', function (e) {
+            // Permitir combinaciones con Ctrl/Cmd (copiar, pegar, seleccionar todo, etc.)
+            if (e.ctrlKey || e.metaKey) return;
             const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End', ' '];
             if (allowed.includes(e.key)) return;
             if (!/^[0-9+]$/.test(e.key)) e.preventDefault();
+        });
+        input.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData).getData('text');
+            const sanitized = pasted.replace(/[^0-9+ ]/g, '');
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            this.value = this.value.slice(0, start) + sanitized + this.value.slice(end);
+            this.selectionStart = this.selectionEnd = start + sanitized.length;
         });
     }
 
@@ -369,7 +380,8 @@ document.addEventListener('DOMContentLoaded', function () {
             visualOption.textContent = capitalizarNombre(producto.nombreProducto);
             visualOption.dataset.value = producto.idProducto;
 
-            visualOption.addEventListener('click', () => {
+            visualOption.addEventListener('click', (e) => {
+                e.stopPropagation();
                 seleccionarProducto(visualOption, realOption, selectUI);
             });
 
@@ -438,14 +450,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         if (selectUI.input) {
             selectUI.input.addEventListener('input', () => {
-                const filtro = selectUI.input.value.toLowerCase();
+                const normalizarTexto = (str) =>
+                    str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const filtro = normalizarTexto(selectUI.input.value);
 
                 selectUI.options.querySelectorAll('.option').forEach(opcion => {
-                    const textoOpcion = opcion.textContent.toLowerCase();
+                    const textoOpcion = normalizarTexto(opcion.textContent);
                     const isSelected = opcion.classList.contains('selected-option');
 
-                    // LÓGICA CORREGIDA:
-                    // Mostrar SI: (coincide con filtro) Y (NO está seleccionado ya)
+                    // Mostrar SI: (coincide con filtro ignorando acentos/mayúsculas) Y (NO está seleccionado)
                     if (textoOpcion.includes(filtro) && !isSelected) {
                         opcion.style.display = 'block';
                     } else {

@@ -19,6 +19,15 @@ public class ClienteService {
     private final ClienteRepository clienteRepository;
 
     /**
+     * Normaliza un DNI eliminando todo carácter que no sea dígito.
+     * Así "36.222.999", "36-222-999" y "36222999" se tratan como iguales.
+     */
+    private String normalizeDni(String dni) {
+        if (dni == null) return null;
+        return dni.replaceAll("[^0-9]", "");
+    }
+
+    /**
      * Crea un nuevo cliente. Usado por el nuevo modal.
      */
     @Transactional
@@ -27,18 +36,18 @@ public class ClienteService {
             dto.getDni() == null || dto.getDni().isBlank()) {
             throw new IllegalArgumentException("El nombre y el DNI son obligatorios.");
         }
-        
-        // (Este método 'existsByDni' AÚN DEBE SER AÑADIDO AL REPOSITORIO)
-        if (clienteRepository.existsByDni(dto.getDni().trim())) {
+
+        String dniNormalizado = normalizeDni(dto.getDni());
+
+        if (clienteRepository.existsByDni(dniNormalizado)) {
             throw new IllegalArgumentException("Ya existe un cliente con el DNI: " + dto.getDni());
         }
 
         Cliente cliente = Cliente.builder()
                 .nombre(dto.getNombre())
                 .apellido(dto.getApellido())
-                .dni(dto.getDni().trim())
+                .dni(dniNormalizado)
                 .telefono(dto.getTelefono())
-                // .estado("ACTIVO") <-- LÍNEA ELIMINADA
                 .build();
         
         return clienteRepository.save(cliente); 
@@ -46,11 +55,9 @@ public class ClienteService {
 
     /**
      * Lista clientes para el buscador de 'Ventas'.
-     * (MODIFICADO para usar findAll())
      */
     @Transactional(readOnly = true)
     public List<ClienteSelectDTO> listarClientesSelect() {
-        // Llama a findAll() ya que no hay 'estado'
         return clienteRepository.findAll() 
                 .stream()
                 .map(c -> new ClienteSelectDTO(
@@ -60,6 +67,11 @@ public class ClienteService {
                         c.getDni()
                 ))
                 .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public boolean existeDni(String dni) {
+        return clienteRepository.existsByDni(normalizeDni(dni));
     }
 
 }
