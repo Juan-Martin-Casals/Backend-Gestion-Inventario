@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentPage = 1;
     const itemsPerPage = 7;
     let currentListForPagination = [];
-    let sortField = 'stock';
+    let sortField = 'nombre'; // Ordenamiento predeterminado: A → Z
     let sortDirection = 'asc';
 
     // Estado de categorías para el modal de edición

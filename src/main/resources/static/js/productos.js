@@ -85,8 +85,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentPage = 0;
     let totalPages = 1;
     const itemsPerPage = 10;
-    let sortField = 'fechaCreacion'; // Campo de ordenamiento inicial
-    let sortDirection = 'desc'; // Dirección inicial (más nuevo primero)
+    let sortField = 'nombre'; // Campo de ordenamiento inicial
+    let sortDirection = 'asc'; // Dirección inicial (A → Z)
 
     // --- Estado de Categorías ---
     let todasLasCategorias = [];
