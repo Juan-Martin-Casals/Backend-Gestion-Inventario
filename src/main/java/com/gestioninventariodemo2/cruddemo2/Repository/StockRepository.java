@@ -59,4 +59,8 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     @Query("SELECT s FROM Stock s WHERE s.producto.estado = :estado AND s.stockActual = 0 AND s.stockMinimo > 0 ORDER BY s.producto.nombre ASC")
     Page<Stock> findAgotadosActivos(String estado, Pageable pageable);
 
+    // Solo stock bajo REAL: 0 < stockActual < stockMinimo (NO incluye agotados)
+    @Query("SELECT s FROM Stock s WHERE s.producto.estado = :estado AND s.stockActual > 0 AND s.stockActual < s.stockMinimo ORDER BY s.stockActual ASC")
+    Page<Stock> findSoloStockBajo(String estado, Pageable pageable);
+
 }

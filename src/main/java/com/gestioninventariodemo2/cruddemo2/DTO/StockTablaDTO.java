@@ -18,5 +18,9 @@ public class StockTablaDTO {
     private Double precio;
     private int stock;
     private int stockMinimo;
-
+    // Nuevos campos para el modal Stock Bajo
+    private String proveedor;
+    private String email;
+    private String telefono;
+    private Double precioCosto;
 }

@@ -13,6 +13,9 @@
 
     <!-- Chart.js for dashboard charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <!-- jsPDF para exportar PDFs desde el frontend -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 
 <body>
@@ -153,7 +156,7 @@
                                         <p style="font-size: 13px;">Productos Agotados</p>
                                     </div>
                                 </div>
-                                <div class="stat-card warning" style="padding: 15px; margin-bottom: 0;">
+                                <div class="stat-card warning clickable-card" id="card-stock-bajo" style="padding: 15px; margin-bottom: 0;">
                                     <div class="stat-icon" style="width: 40px; height: 40px; font-size: 16px;">
                                         <i class="fas fa-exclamation-triangle"></i>
                                     </div>
@@ -244,14 +247,19 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th data-sort-by="producto.nombre" class="sortable">Nombre <i
+                                    <th data-sort-by="nombre" class="sortable">Nombre <i
                                             class="sort-icon fas fa-sort"></i></th>
-                                    <th data-sort-by="producto.categoria" class="sortable">Categoría <i
+                                    <th data-sort-by="descripcion" class="sortable">Descripción <i
                                             class="sort-icon fas fa-sort"></i></th>
-                                    <th>Descripción</th>
-                                    <th data-sort-by="stockActual" class="sortable col-num">Stock <i
+                                    <th data-sort-by="proveedor" class="sortable">Proveedor <i
                                             class="sort-icon fas fa-sort"></i></th>
-                                    <th data-sort-by="producto.precio" class="sortable col-num">Precio <i
+                                    <th data-sort-by="email" class="sortable">Email <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th data-sort-by="telefono" class="sortable">Teléfono <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th data-sort-by="stock" class="sortable col-num">Stock Actual <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th data-sort-by="precioCosto" class="sortable col-num">Precio de Costo <i
                                             class="sort-icon fas fa-sort"></i></th>
                                 </tr>
                             </thead>
@@ -259,7 +267,7 @@
                             </tbody>
                             <tfoot>
                                 <tr>
-                                    <td colspan="5">
+                                    <td colspan="7">
                                         <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
                                             <span id="low-stock-page-info" style="margin-right: 15px;">Página 1 de
                                                 1</span>
@@ -643,15 +651,39 @@
                         </button>
                     </div>
                     <div class="modal-body table-container">
+                        <!-- Barra de búsqueda -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 300px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search"
+                                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                        <input type="text" placeholder="Buscar por nombre, proveedor, email o teléfono..."
+                                            id="agotados-search-input"
+                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="button" class="btn-outline" id="agotados-btn-limpiar-busqueda"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                    <button type="button" class="btn-primary" id="agotados-btn-exportar-pdf"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th>Nombre</th>
-                                    <th>Descripción</th>
-                                    <th>Proveedor</th>
-                                    <th>Email</th>
+                                    <th class="sortable" data-sort-by="nombre">Nombre <i class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="descripcion">Descripción <i class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="proveedor">Proveedor <i class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="email">Email <i class="sort-icon fas fa-sort"></i></th>
                                     <th>Teléfono</th>
-                                    <th class="col-num">Precio Costo</th>
+                                    <th class="sortable col-num" data-sort-by="precioCosto">Precio Costo <i class="sort-icon fas fa-sort"></i></th>
                                 </tr>
                             </thead>
                             <tbody id="agotados-table-body">
@@ -676,6 +708,81 @@
                     </div>
                     <div class="modal-footer">
                         <button class="btn-outline" id="modal-agotados-close-btn">
+                            Cerrar
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Stock Bajo -->
+            <div id="modal-stock-bajo" class="modal-overlay" style="display: none;">
+                <div class="modal-content" style="max-width: 1600px !important; width: 98%;">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i> Productos con Stock Bajo</h3>
+                        <button class="modal-close" id="modal-stock-bajo-close">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="modal-body table-container">
+                        <!-- Barra de búsqueda -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 300px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search"
+                                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                        <input type="text" placeholder="Buscar por nombre, descripción, proveedor, email o teléfono..."
+                                            id="stock-bajo-search-input"
+                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="button" class="btn-outline" id="stock-bajo-btn-limpiar"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                    <button type="button" class="btn-primary" id="stock-bajo-btn-exportar-pdf"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th class="sortable sort-asc" data-sort-by="nombre">Nombre <i class="sort-icon fas fa-sort-up"></i></th>
+                                    <th class="sortable" data-sort-by="descripcion">Descripción <i class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="proveedor">Proveedor <i class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="email">Email <i class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="telefono">Teléfono <i class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable col-num" data-sort-by="stock">Stock Actual <i class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable col-num" data-sort-by="stockMinimo">Stock Mínimo <i class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable col-num" data-sort-by="precioCosto">Precio de Costo <i class="sort-icon fas fa-sort"></i></th>
+                                </tr>
+                            </thead>
+                            <tbody id="stock-bajo-table-body">
+                                <tr><td colspan="8" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="8">
+                                        <div class="pagination-controls" style="display: flex; justify-content: flex-end; align-items: center; padding: 10px 0;">
+                                            <span id="stock-bajo-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                            <button class="btn-outline" id="stock-bajo-prev-page" disabled>
+                                                <i class="fas fa-arrow-left"></i>
+                                            </button>
+                                            <button class="btn-outline" id="stock-bajo-next-page" style="margin-left: 5px;">
+                                                <i class="fas fa-arrow-right"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-outline" id="modal-stock-bajo-close-btn">
                             Cerrar
                         </button>
                     </div>

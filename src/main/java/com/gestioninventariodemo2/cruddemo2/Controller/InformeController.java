@@ -54,14 +54,15 @@ public class InformeController {
     }
 
     @GetMapping("/low-stock")
-    public ResponseEntity<Page<StockTablaDTO>> getProductosConStockBajo(
-            // Spring automáticamente construirá el objeto Pageable a partir de los
-            // parámetros page, size y sort
-            Pageable pageable) {
-
-        // Ya no necesitamos PageRequest.of(), le pasamos el Pageable directo al
-        // servicio.
+    public ResponseEntity<Page<StockTablaDTO>> getProductosConStockBajo(Pageable pageable) {
         Page<StockTablaDTO> productos = informeService.obtenerProductosConStockBajo(pageable);
+        return ResponseEntity.ok(productos);
+    }
+
+    // Endpoint exclusivo para el modal: solo stock bajo real (excluye agotados)
+    @GetMapping("/solo-stock-bajo")
+    public ResponseEntity<Page<StockTablaDTO>> getSoloStockBajo(Pageable pageable) {
+        Page<StockTablaDTO> productos = informeService.obtenerSoloStockBajo(pageable);
         return ResponseEntity.ok(productos);
     }
 

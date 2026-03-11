@@ -65,23 +65,120 @@ public class InformeService {
         public Page<StockTablaDTO> obtenerProductosConStockBajo(Pageable pageable) {
                 String estadoActivo = "ACTIVO";
 
-                // Buscar productos donde stockActual < stockMinimo (incluye agotados)
+                // Incluye agotados + bajo stock (para la tabla del dashboard)
                 Page<Stock> stocksBajos = stockRepository.findProductosQueNecesitanReposicion(
                                 estadoActivo,
                                 pageable);
 
-                // 2. Convierte esa 'Page' de Stock a una 'Page' de StockTablaDTO
-                return stocksBajos.map(stock -> StockTablaDTO.builder()
-                                .id(stock.getProducto().getIdProducto())
-                                .nombre(stock.getProducto().getNombre())
-                                .categoria(stock.getProducto().getCategoria() != null
-                                                ? stock.getProducto().getCategoria().getNombre()
-                                                : "Sin categoría")
-                                .descripcion(stock.getProducto().getDescripcion())
-                                .precio(stock.getProducto().getPrecio())
+                return stocksBajos.map(stock -> {
+                        com.gestioninventariodemo2.cruddemo2.Model.Producto prod = stock.getProducto();
+
+                        String proveedorNom = "Sin Proveedor";
+                        String emailNom = "-";
+                        String telNom = "-";
+                        if (prod.getProductoProveedores() != null && !prod.getProductoProveedores().isEmpty()) {
+                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor prov =
+                                        prod.getProductoProveedores().get(0).getProveedor();
+                                if (prov != null) {
+                                        proveedorNom = prov.getNombre();
+                                        emailNom = prov.getEmail() != null ? prov.getEmail() : "-";
+                                        telNom = prov.getTelefono() != null ? prov.getTelefono() : "-";
+                                }
+                        }
+
+                        Double precioCosto = 0.0;
+                        if (prod.getDetalleCompras() != null && !prod.getDetalleCompras().isEmpty()) {
+                                com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra ultimoDetalle =
+                                        prod.getDetalleCompras().stream()
+                                                .max(java.util.Comparator.comparing(
+                                                        com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra::getIdDetalleCompra))
+                                                .orElse(null);
+                                if (ultimoDetalle != null) {
+                                        precioCosto = ultimoDetalle.getPrecioUnitario();
+                                        if (proveedorNom.equals("Sin Proveedor") &&
+                                                ultimoDetalle.getCompra() != null &&
+                                                ultimoDetalle.getCompra().getProveedor() != null) {
+                                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor provCompra =
+                                                        ultimoDetalle.getCompra().getProveedor();
+                                                proveedorNom = provCompra.getNombre();
+                                                emailNom = provCompra.getEmail() != null ? provCompra.getEmail() : "-";
+                                                telNom = provCompra.getTelefono() != null ? provCompra.getTelefono() : "-";
+                                        }
+                                }
+                        }
+
+                        return StockTablaDTO.builder()
+                                .id(prod.getIdProducto())
+                                .nombre(prod.getNombre())
+                                .categoria(prod.getCategoria() != null ? prod.getCategoria().getNombre() : "Sin categoría")
+                                .descripcion(prod.getDescripcion())
+                                .precio(prod.getPrecio())
                                 .stock(stock.getStockActual())
                                 .stockMinimo(stock.getStockMinimo())
-                                .build());
+                                .proveedor(proveedorNom)
+                                .email(emailNom)
+                                .telefono(telNom)
+                                .precioCosto(precioCosto)
+                                .build();
+                });
+        }
+
+        // Solo stock bajo real (0 < stockActual < stockMinimo), para el modal del dashboard
+        public Page<StockTablaDTO> obtenerSoloStockBajo(Pageable pageable) {
+                String estadoActivo = "ACTIVO";
+                Page<Stock> stocksBajos = stockRepository.findSoloStockBajo(estadoActivo, pageable);
+                return stocksBajos.map(stock -> {
+                        com.gestioninventariodemo2.cruddemo2.Model.Producto prod = stock.getProducto();
+
+                        // Resolver proveedor (igual que en obtenerProductosAgotados)
+                        String proveedorNom = "Sin Proveedor";
+                        String emailNom = "-";
+                        String telNom = "-";
+                        if (prod.getProductoProveedores() != null && !prod.getProductoProveedores().isEmpty()) {
+                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor prov =
+                                        prod.getProductoProveedores().get(0).getProveedor();
+                                if (prov != null) {
+                                        proveedorNom = prov.getNombre();
+                                        emailNom = prov.getEmail() != null ? prov.getEmail() : "-";
+                                        telNom = prov.getTelefono() != null ? prov.getTelefono() : "-";
+                                }
+                        }
+
+                        // Resolves precio de costo desde el último DetalleCompra
+                        Double precioCosto = 0.0;
+                        if (prod.getDetalleCompras() != null && !prod.getDetalleCompras().isEmpty()) {
+                                com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra ultimoDetalle =
+                                        prod.getDetalleCompras().stream()
+                                                .max(java.util.Comparator.comparing(
+                                                        com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra::getIdDetalleCompra))
+                                                .orElse(null);
+                                if (ultimoDetalle != null) {
+                                        precioCosto = ultimoDetalle.getPrecioUnitario();
+                                        // Fallback: proveedor desde la compra si no hay relación directa
+                                        if (proveedorNom.equals("Sin Proveedor") &&
+                                                ultimoDetalle.getCompra() != null &&
+                                                ultimoDetalle.getCompra().getProveedor() != null) {
+                                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor provCompra =
+                                                        ultimoDetalle.getCompra().getProveedor();
+                                                proveedorNom = provCompra.getNombre();
+                                                emailNom = provCompra.getEmail() != null ? provCompra.getEmail() : "-";
+                                                telNom = provCompra.getTelefono() != null ? provCompra.getTelefono() : "-";
+                                        }
+                                }
+                        }
+
+                        return StockTablaDTO.builder()
+                                .id(prod.getIdProducto())
+                                .nombre(prod.getNombre())
+                                .descripcion(prod.getDescripcion())
+                                .stock(stock.getStockActual())
+                                .stockMinimo(stock.getStockMinimo())
+                                .proveedor(proveedorNom)
+                                .email(emailNom)
+                                .telefono(telNom)
+                                .precioCosto(precioCosto)
+                                .build();
+                });
         }
 
         public InformeDashboardDTO obtenerDashboard() {
