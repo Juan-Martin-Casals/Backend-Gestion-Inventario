@@ -253,4 +253,52 @@ public class InformeService {
                                 .build();
         }
 
+    public org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO> obtenerProductosAgotados(org.springframework.data.domain.Pageable pageable) {
+        String estadoActivo = "ACTIVO";
+        org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.Model.Stock> agotados = stockRepository.findAgotadosActivos(estadoActivo, pageable);
+
+        return agotados.map(stock -> {
+            com.gestioninventariodemo2.cruddemo2.Model.Producto prod = stock.getProducto();
+            
+            String proveedorNom = "Sin Proveedor";
+            String emailNom = "-";
+            String telNom = "-";
+            if (prod.getProductoProveedores() != null && !prod.getProductoProveedores().isEmpty()) {
+                com.gestioninventariodemo2.cruddemo2.Model.Proveedor prov = prod.getProductoProveedores().get(0).getProveedor();
+                if (prov != null) {
+                    proveedorNom = prov.getNombre();
+                    emailNom = prov.getEmail() != null ? prov.getEmail() : "-";
+                    telNom = prov.getTelefono() != null ? prov.getTelefono() : "-";
+                }
+            }
+
+            Double precioCosto = 0.0;
+            if (prod.getDetalleCompras() != null && !prod.getDetalleCompras().isEmpty()) {
+                com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra ultimoDetalle = prod.getDetalleCompras().stream()
+                        .max(java.util.Comparator.comparing(com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra::getIdDetalleCompra))
+                        .orElse(null);
+                
+                if (ultimoDetalle != null) {
+                    precioCosto = ultimoDetalle.getPrecioUnitario();
+                    
+                    if (proveedorNom.equals("Sin Proveedor") && ultimoDetalle.getCompra() != null && ultimoDetalle.getCompra().getProveedor() != null) {
+                        com.gestioninventariodemo2.cruddemo2.Model.Proveedor provCompra = ultimoDetalle.getCompra().getProveedor();
+                        proveedorNom = provCompra.getNombre();
+                        emailNom = provCompra.getEmail() != null ? provCompra.getEmail() : "-";
+                        telNom = provCompra.getTelefono() != null ? provCompra.getTelefono() : "-";
+                    }
+                }
+            }
+
+            return com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO.builder()
+                .nombre(prod.getNombre())
+                .descripcion(prod.getDescripcion())
+                .proveedor(proveedorNom)
+                .email(emailNom)
+                .telefono(telNom)
+                .precioCosto(precioCosto)
+                .build();
+        });
+    }
+
 }

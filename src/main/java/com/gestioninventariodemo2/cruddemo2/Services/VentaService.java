@@ -162,6 +162,17 @@ public class VentaService {
         }
         // --- FIN DE LA LÓGICA SEGURA ---
 
+        // Obtener el método de pago
+        String metodoPago = "Desconocido";
+        try {
+            var pago = pagoService.obtenerPagoPorVenta(venta.getIdVenta());
+            if (pago != null && pago.getMetodoPago() != null) {
+                metodoPago = pago.getMetodoPago();
+            }
+        } catch (Exception e) {
+            // Ignorar el error si no se encuentra el pago
+        }
+
         return VentaResponseDTO.builder()
                 .idVenta(venta.getIdVenta())
                 .fecha(venta.getFecha())
@@ -169,6 +180,7 @@ public class VentaService {
                 .nombreVendedor(nombreVendedor) // <-- Usamos la variable segura
                 .total(venta.getTotal())
                 .productos(productosDTO)
+                .metodoPago(metodoPago)
                 .build();
     }
 

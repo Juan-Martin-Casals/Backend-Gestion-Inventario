@@ -9,6 +9,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const API_STOCK_RESUMEN_URL = '/api/informes/resumen-stock';
     // Endpoint para la tabla de productos agotados (Nuevo)
     const API_LOW_STOCK_URL = '/api/informes/low-stock'; // (Asumimos este endpoint)
+    // Endpoints para Actividad Reciente
+    const API_RECENTS_VENTAS_URL = '/api/ventas';
+    const API_RECENTS_COMPRAS_URL = '/api/compras';
 
     const mainContent = document.querySelector('.main-content');
     // --- 2. CONSTANTES DEL DOM (Tarjetas del Mes) ---
@@ -316,6 +319,132 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    /**
+     * Carga y renderiza la actividad reciente (últimas ventas y compras)
+     */
+    async function loadRecentActivity() {
+        const recentActivityList = document.getElementById('recent-activity-list');
+        if (!recentActivityList) return; // Solo ejecutar si el panel existe (ej. admin.html)
+
+        try {
+            recentActivityList.innerHTML = `
+                <li style="text-align: center; color: #999; padding: 20px;">
+                    <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i> Cargando actividad...
+                </li>
+            `;
+
+            // Obtener últimas 5 ventas y 5 compras
+            const [ventasRes, comprasRes] = await Promise.all([
+                fetch(`${API_RECENTS_VENTAS_URL}?page=0&size=5&sort=fecha,desc`),
+                fetch(`${API_RECENTS_COMPRAS_URL}?page=0&size=5&sort=fecha,desc`)
+            ]);
+
+            let ventas = [];
+            let compras = [];
+
+            if (ventasRes.ok) {
+                const ventasData = await ventasRes.json();
+                ventas = ventasData.content || [];
+            } else {
+                console.warn('No se pudieron cargar ventas recientes');
+            }
+
+            if (comprasRes.ok) {
+                const comprasData = await comprasRes.json();
+                compras = comprasData.content || [];
+            } else {
+                console.warn('No se pudieron cargar compras recientes');
+            }
+
+            // Mapear ventas a un formato unificado
+            const formatCurrency = (val) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
+
+            const unifiedActivity = [
+                ...ventas.map(v => ({
+                    type: 'venta',
+                    date: new Date(v.fecha), // Asegurate de que v.fecha string sea un formato de fecha válido
+                    title: `Venta registrada: ${formatCurrency(v.total)}`,
+                    subtitle: `Cliente: ${v.nombreCliente || 'General'} | Vendió: ${v.nombreVendedor || 'Desconocido'} | Pago: ${v.metodoPago || 'Efectivo'}`,
+                    icon: 'fa-shopping-cart',
+                    color: '#28a745'
+                })),
+                ...compras.map(c => ({
+                    type: 'compra',
+                    date: new Date(c.fecha),
+                    title: `Compra registrada: ${formatCurrency(c.total)}`,
+                    subtitle: `Proveedor: ${c.nombreProveedor || 'Desconocido'}`,
+                    icon: 'fa-truck-loading',
+                    color: '#e74c3c'
+                }))
+            ];
+
+            // Ordenar por fecha descendente (más recientes primero)
+            unifiedActivity.sort((a, b) => b.date - a.date);
+
+            // Tomar solo los primeros 6 elementos para no saturar el panel
+            const topActivity = unifiedActivity.slice(0, 6);
+
+            recentActivityList.innerHTML = '';
+
+            if (topActivity.length === 0) {
+                recentActivityList.innerHTML = `
+                    <li style="text-align: center; color: #999; padding: 20px;">
+                        No hay actividad reciente.
+                    </li>
+                `;
+                return;
+            }
+
+            topActivity.forEach(item => {
+                const timeString = item.date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+                const dateString = item.date.toLocaleDateString('es-AR');
+                
+                // Formatear si es "Hoy" o poner fecha
+                const hoy = new Date();
+                const esHoy = item.date.toDateString() === hoy.toDateString();
+                const displayDate = esHoy ? `Hoy, ${timeString} hs` : `${dateString}, ${timeString} hs`;
+
+                // Determinar el prefijo +, - o nada
+                const prefix = item.type === 'venta' ? '+' : '-';
+
+                const listItem = document.createElement('li');
+                listItem.style.cssText = 'padding: 12px 0; border-bottom: 1px solid #eee; display: flex; gap: 15px;';
+                listItem.innerHTML = `
+                    <div style="min-width: 40px; display: flex; flex-direction: column; align-items: center; padding-top: 5px;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; background-color: ${item.color}20; color: ${item.color}; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+                            <i class="fas ${item.icon}"></i>
+                        </div>
+                        <div style="width: 2px; height: 100%; background: #f0f0f0; margin-top: 5px;"></div>
+                    </div>
+                    <div style="flex: 1; padding-bottom: 5px;">
+                        <span style="color: #888; font-size: 12px; display: block; margin-bottom: 3px;">
+                            ${displayDate}
+                        </span>
+                        <div style="font-weight: 600; color: ${item.color}; font-size: 14px; margin-bottom: 2px;">
+                            ${prefix} ${item.title}
+                        </div>
+                        <div style="font-size: 13px; color: #666;">
+                            ${item.subtitle}
+                        </div>
+                    </div>
+                `;
+                recentActivityList.appendChild(listItem);
+            });
+            
+            // Ocultar linea conectora del último elemento
+            const lastItemDivider = recentActivityList.querySelector('li:last-child > div > div:last-child');
+            if (lastItemDivider) lastItemDivider.style.display = 'none';
+
+        } catch (error) {
+            console.error('Error al cargar la actividad reciente:', error);
+            recentActivityList.innerHTML = `
+                <li style="text-align: center; color: #e74c3c; padding: 20px;">
+                    <i class="fas fa-exclamation-triangle"></i> Error al cargar actividad.
+                </li>
+            `;
+        }
+    }
+
 
     // =================================================================
     // --- 6. EJECUCIÓN INICIAL ---
@@ -358,6 +487,21 @@ document.addEventListener('DOMContentLoaded', function () {
     loadStockData();
     loadLowStockTable();
     loadUserInfo();
+    loadRecentActivity();
+
+    // Event listener para el botón de refrescar del panel de actividad
+    const btnRefreshActivity = document.getElementById('btn-refresh-activity');
+    if (btnRefreshActivity) {
+        btnRefreshActivity.addEventListener('click', () => {
+             // Animar el ícono
+             const icon = btnRefreshActivity.querySelector('i');
+             icon.classList.add('fa-spin');
+             
+             loadRecentActivity().finally(() => {
+                 setTimeout(() => icon.classList.remove('fa-spin'), 500);
+             });
+        });
+    }
 
     // Escuchar evento de venta registrada para actualizar el dashboard en tiempo real
     document.addEventListener('ventaRegistrada', function () {
@@ -366,6 +510,170 @@ document.addEventListener('DOMContentLoaded', function () {
         loadDashboardData();
         loadStockData();
         loadLowStockTable();
+        loadRecentActivity();
     });
+
+    // Escuchar evento de compra registrada para actualizar el dashboard
+    document.addEventListener('compraRegistrada', function () {
+        console.log('Principal: Compra registrada, actualizando dashboard...');
+        loadTodayData();
+        loadDashboardData();
+        loadStockData();
+        loadLowStockTable();
+        loadRecentActivity();
+    });
+
+    // --- LÓGICA DEL SIDEBAR COLAPSABLE ---
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+
+    // Restaurar el estado del sidebar desde localStorage
+    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        sidebar.classList.add('collapsed');
+    }
+
+    if (sidebarToggleBtn && sidebar) {
+        sidebarToggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            
+            // Guardar el estado en localStorage
+            if (sidebar.classList.contains('collapsed')) {
+                localStorage.setItem('sidebarCollapsed', 'true');
+            } else {
+                localStorage.setItem('sidebarCollapsed', 'false');
+            }
+        });
+    }
+
+    // --- AUTO-EXPANDIR AL HACER CLIC EN UN SUBMENÚ ---
+    const submenuToggles = document.querySelectorAll('.submenu-toggle');
+    submenuToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            // Si el sidebar está colapsado, lo expandimos automáticamente
+            if (sidebar && sidebar.classList.contains('collapsed')) {
+                sidebar.classList.remove('collapsed');
+                localStorage.setItem('sidebarCollapsed', 'false');
+                
+                // Opcional: Evitar que el menú se abra de inmediato para dar tiempo a la animación,
+                // pero si tus submenús ya manejan su propia lógica de apertura/cierre en otro archivo,
+                // simplemente con quitarle el 'collapsed' al padre, la UX será buena.
+            }
+        });
+    });
+
+    // --- 7. LÓGICA MODAL PRODUCTOS AGOTADOS ---
+    const API_AGOTADOS_URL = '/api/informes/agotados';
+    const cardAgotados = document.getElementById('card-productos-agotados');
+    const modalAgotados = document.getElementById('modal-agotados');
+    const modalAgotadosClose = document.getElementById('modal-agotados-close');
+    const modalAgotadosCloseBtn = document.getElementById('modal-agotados-close-btn');
+    const agotadosTableBody = document.getElementById('agotados-table-body');
+
+    if (cardAgotados && modalAgotados) {
+        
+        let agotadosCurrentPage = 0;
+        let agotadosTotalPages = 1;
+        const agotadosItemsPerPage = 7; // Mismo tamaño de página que stock bajo
+
+        const agotadosPrevPageBtn = document.getElementById('agotados-prev-page');
+        const agotadosNextPageBtn = document.getElementById('agotados-next-page');
+        const agotadosPageInfo = document.getElementById('agotados-page-info');
+
+        async function loadAgotadosTable() {
+            agotadosTableBody.classList.add('loading');
+            
+            // Simular un pequeño retardo para que la animación sea visible, al igual que en las otras tablas
+            await new Promise(resolve => setTimeout(resolve, 200));
+
+            try {
+                // Fetch de la página actual con tamaño itemsPerPage
+                const url = `${API_AGOTADOS_URL}?page=${agotadosCurrentPage}&size=${agotadosItemsPerPage}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+                
+                const pageData = await response.json();
+                agotadosTotalPages = pageData.totalPages || 1;
+                const content = pageData.content || [];
+                
+                agotadosTableBody.innerHTML = '';
+                if (content.length === 0) {
+                    agotadosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay productos agotados que estén activos.</td></tr>';
+                } else {
+                    content.forEach(prod => {
+                        const row = `
+                            <tr>
+                                <td>${prod.nombre}</td>
+                                <td>${prod.descripcion != null ? prod.descripcion : '-'}</td>
+                                <td>${prod.proveedor}</td>
+                                <td>${prod.email}</td>
+                                <td>${prod.telefono}</td>
+                                <td class="col-num">$${prod.precioCosto != null ? prod.precioCosto.toFixed(2) : '0.00'}</td>
+                            </tr>
+                        `;
+                        agotadosTableBody.innerHTML += row;
+                    });
+                }
+
+                // Actualizar info y botones de paginación
+                if (agotadosPageInfo) {
+                    agotadosPageInfo.textContent = `Página ${agotadosCurrentPage + 1} de ${agotadosTotalPages || 1}`;
+                }
+                if (agotadosPrevPageBtn) {
+                    agotadosPrevPageBtn.disabled = (agotadosCurrentPage === 0);
+                }
+                if (agotadosNextPageBtn) {
+                    agotadosNextPageBtn.disabled = (agotadosCurrentPage + 1 >= agotadosTotalPages);
+                }
+
+                requestAnimationFrame(() => {
+                    agotadosTableBody.classList.remove('loading');
+                });
+
+            } catch (error) {
+                console.error("Error cargando productos agotados", error);
+                agotadosTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color: red;">Error al cargar datos.</td></tr>';
+            }
+        }
+
+        // Listener para abrir el modal
+        cardAgotados.addEventListener('click', () => {
+            modalAgotados.style.display = 'flex'; 
+            agotadosCurrentPage = 0; // Reiniciar a la primera página al abrir
+            loadAgotadosTable();
+        });
+
+        // Listeners para los botones de paginación
+        if (agotadosPrevPageBtn) {
+            agotadosPrevPageBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (agotadosCurrentPage > 0) {
+                    agotadosCurrentPage--;
+                    loadAgotadosTable();
+                }
+            });
+        }
+
+        if (agotadosNextPageBtn) {
+            agotadosNextPageBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                if (agotadosCurrentPage + 1 < agotadosTotalPages) {
+                    agotadosCurrentPage++;
+                    loadAgotadosTable();
+                }
+            });
+        }
+
+        const closeAgotadosModal = () => {
+            modalAgotados.style.display = 'none';
+        };
+
+        if (modalAgotadosClose) modalAgotadosClose.addEventListener('click', closeAgotadosModal);
+        if (modalAgotadosCloseBtn) modalAgotadosCloseBtn.addEventListener('click', closeAgotadosModal);
+        
+        // Cerrar al clickear fuera del contenido
+        modalAgotados.addEventListener('click', (e) => {
+            if (e.target === modalAgotados) closeAgotadosModal();
+        });
+    }
 
 });

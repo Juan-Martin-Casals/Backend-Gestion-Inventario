@@ -25,6 +25,7 @@ import com.gestioninventariodemo2.cruddemo2.DTO.ResumenStockDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.StockTablaDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.TopProductoDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.VentasComprasDiariasDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO;
 import com.gestioninventariodemo2.cruddemo2.Services.InformeService;
 import com.gestioninventariodemo2.cruddemo2.Services.InformePdfService;
 
@@ -124,6 +125,12 @@ public class InformeController {
     public ResponseEntity<EstadoStockDTO> getEstadoStock() {
         EstadoStockDTO estadoStock = informeService.obtenerEstadoStock();
         return ResponseEntity.ok(estadoStock);
+    }
+
+    @GetMapping("/agotados")
+    public ResponseEntity<org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO>> getProductosAgotados(org.springframework.data.domain.Pageable pageable) {
+        org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO> agotados = informeService.obtenerProductosAgotados(pageable);
+        return ResponseEntity.ok(agotados);
     }
 
 }

@@ -48,11 +48,15 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     Long countAgotadosActivos();
 
     // Query para tabla de reposición: mismo criterio que las tarjetas del dashboard
-    // Muestra agotados (stockActual=0 Y stockMinimo>0) + bajo stock (0 < stockActual < stockMinimo)
+    // Muestra agotados (stockActual=0 Y stockMinimo>0) + bajo stock (0 <
+    // stockActual < stockMinimo)
     @Query("SELECT s FROM Stock s WHERE s.producto.estado = :estado AND (" +
-           "(s.stockActual = 0 AND s.stockMinimo > 0) OR " +
-           "(s.stockActual > 0 AND s.stockActual < s.stockMinimo)" +
-           ") ORDER BY s.stockActual ASC")
+            "(s.stockActual = 0 AND s.stockMinimo > 0) OR " +
+            "(s.stockActual > 0 AND s.stockActual < s.stockMinimo)" +
+            ") ORDER BY s.stockActual ASC")
     Page<Stock> findProductosQueNecesitanReposicion(String estado, Pageable pageable);
+
+    @Query("SELECT s FROM Stock s WHERE s.producto.estado = :estado AND s.stockActual = 0 AND s.stockMinimo > 0 ORDER BY s.producto.nombre ASC")
+    Page<Stock> findAgotadosActivos(String estado, Pageable pageable);
 
 }

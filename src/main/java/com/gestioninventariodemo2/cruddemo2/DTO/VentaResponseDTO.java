@@ -21,5 +21,6 @@ public class VentaResponseDTO {
     private double total;
     private List<ProductoVentaDTO> productos;
     private String nombreVendedor;
+    private String metodoPago;
 
 }
