@@ -702,9 +702,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 row = `
                     <tr>
                         <td>${item.nombreProducto}</td>
-                        <td><input type="number" class="inline-edit-input" id="inline-cantidad-venta-${index}" value="${item.cantidad}" min="1"></td>
-                        <td><input type="text" class="inline-edit-input" id="inline-precio-venta-${index}" value="${formatoMoneda.format(item.precioVenta)}"></td>
-                        <td>$${formatoMoneda.format(subtotal)}</td>
+                        <td class="col-num"><input type="number" class="inline-edit-input" id="inline-cantidad-venta-${index}" value="${item.cantidad}" min="1"></td>
+                        <td class="col-num">$${formatoMoneda.format(item.precioVenta)}</td>
+                        <td class="col-num">$${formatoMoneda.format(subtotal)}</td>
                         <td>
                             <button type="button" class="btn-icon btn-success btn-guardar-venta-inline" data-index="${index}" title="Guardar">
                                 <i class="fas fa-check"></i>
@@ -720,9 +720,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 row = `
                     <tr>
                         <td>${item.nombreProducto}</td>
-                        <td>${item.cantidad}</td>
-                        <td>$${formatoMoneda.format(item.precioVenta)}</td>
-                        <td>$${formatoMoneda.format(subtotal)}</td>
+                        <td class="col-num">${item.cantidad}</td>
+                        <td class="col-num">$${formatoMoneda.format(item.precioVenta)}</td>
+                        <td class="col-num">$${formatoMoneda.format(subtotal)}</td>
                         <td>
                             <button type="button" class="btn-icon btn-warning btn-editar-venta-item" data-index="${index}" title="Editar">
                                 <i class="fas fa-edit"></i>
@@ -751,26 +751,38 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function guardarVentaEdicionInline(index) {
         const cantidadInput = document.getElementById(`inline-cantidad-venta-${index}`);
-        const precioInput = document.getElementById(`inline-precio-venta-${index}`);
 
-        if (!cantidadInput || !precioInput) return;
+        if (!cantidadInput) return;
 
         const nuevaCantidad = parseInt(cantidadInput.value);
-        const precioTexto = precioInput.value.replace(/\$/g, '').replace(/\./g, '').replace(',', '.');
-        const nuevoPrecio = parseFloat(precioTexto);
 
         if (isNaN(nuevaCantidad) || nuevaCantidad <= 0) {
-            alert('La cantidad debe ser un número mayor a 0');
+            errorDetalleGeneral.textContent = 'La cantidad debe ser un n\u00famero entero mayor a 0.';
+            errorDetalleGeneral.className = 'form-message error';
+            errorDetalleGeneral.style.display = 'block';
             return;
         }
 
-        if (isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
-            alert('El precio debe ser un número válido mayor a 0');
-            return;
+        // Validar stock disponible
+        const item = detallesVenta[index];
+        const productoEnLista = todosLosProductos.find(p => p.idProducto === item.idProducto);
+        if (productoEnLista) {
+            const stockDisponible = productoEnLista.stockActual || 0;
+            if (nuevaCantidad > stockDisponible) {
+                errorDetalleGeneral.textContent = `Stock insuficiente. Stock disponible: ${stockDisponible} unidades.`;
+                errorDetalleGeneral.className = 'form-message error';
+                errorDetalleGeneral.style.display = 'block';
+                return;
+            }
         }
 
+        // Limpiar error previo si la validaci\u00f3n pas\u00f3
+        errorDetalleGeneral.textContent = '';
+        errorDetalleGeneral.style.display = 'none';
+        errorDetalleGeneral.className = 'form-message';
+
+        // Solo se actualiza la cantidad; el precio no es editable por el empleado
         detallesVenta[index].cantidad = nuevaCantidad;
-        detallesVenta[index].precioVenta = nuevoPrecio;
 
         editIndexVenta = -1;
         renderDetalleTemporal();
@@ -944,7 +956,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${fechaFormateada}</td>
                 <td>${nombreClienteTexto}</td> 
                 <td>${productosTexto}</td> 
-                <td>$${formatoMoneda.format(venta.total)}</td>
+                <td class="col-num">$${formatoMoneda.format(venta.total)}</td>
                 <td>${nombreVendedorTexto}</td>
                 <td>
                     <button class="btn-icon btn-view-venta" onclick="mostrarDetalleVenta(${venta.idVenta})" title="Ver detalle">

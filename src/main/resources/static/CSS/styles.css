@@ -689,6 +689,12 @@ body {
     background: #f8f9fa;
 }
 
+/* Alineacion derecha para columnas numericas (precios, cantidades, totales, stock) */
+.data-table th.col-num,
+.data-table td.col-num {
+    text-align: right;
+}
+
 /* Status Badges */
 .status-badge {
     padding: 4px 12px;

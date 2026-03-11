@@ -13,9 +13,6 @@ public class DetalleVentaRequestDTO{
 
     private Long productoId;
     private int cantidad;
-    
-
-
-    
+    private Double precioUnitario; // Si es null o 0, se usa el precio actual del producto
 
 }

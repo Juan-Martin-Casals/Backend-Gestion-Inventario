@@ -326,10 +326,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (editIndex === index) {
                 row.innerHTML = `
                     <td>${item.nombreProducto}</td>
-                    <td><input type="number" class="inline-edit-input" id="inline-cantidad-${index}" value="${item.cantidad}" min="1"></td>
-                    <td><input type="text" class="inline-edit-input" id="inline-costo-${index}" value="${formatoMoneda.format(item.precioUnitario)}"></td>
-                    <td><input type="text" class="inline-edit-input" id="inline-venta-${index}" value="${formatoMoneda.format(item.nuevoPrecioVenta)}"></td>
-                    <td>$${formatoMoneda.format(subtotal)}</td>
+                    <td class="col-num"><input type="number" class="inline-edit-input" id="inline-cantidad-${index}" value="${item.cantidad}" min="1"></td>
+                    <td class="col-num"><input type="text" class="inline-edit-input" id="inline-costo-${index}" value="${formatoMoneda.format(item.precioUnitario)}"></td>
+                    <td class="col-num"><input type="text" class="inline-edit-input" id="inline-venta-${index}" value="${formatoMoneda.format(item.nuevoPrecioVenta)}"></td>
+                    <td class="col-num">$${formatoMoneda.format(subtotal)}</td>
                     <td>
                         <button type="button" class="btn-icon btn-save-detalle btn-guardar-inline" data-index="${index}" title="Guardar">
                             <i class="fas fa-check"></i>
@@ -342,10 +342,10 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 row.innerHTML = `
                     <td>${item.nombreProducto}</td>
-                    <td>${item.cantidad}</td>
-                    <td>$${formatoMoneda.format(item.precioUnitario)}</td>
-                    <td>$${formatoMoneda.format(item.nuevoPrecioVenta)}</td>
-                    <td>$${formatoMoneda.format(subtotal)}</td>
+                    <td class="col-num">${item.cantidad}</td>
+                    <td class="col-num">$${formatoMoneda.format(item.precioUnitario)}</td>
+                    <td class="col-num">$${formatoMoneda.format(item.nuevoPrecioVenta)}</td>
+                    <td class="col-num">$${formatoMoneda.format(subtotal)}</td>
                     <td>
                         <button type="button" class="btn-icon btn-edit-detalle btn-editar-item" data-index="${index}" title="Editar">
                             <i class="fas fa-edit"></i>
@@ -650,8 +650,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>${fechaFormateada}</td>
                     <td>${compra.nombreProveedor || 'N/A'}</td>
                     <td>${productosTexto}</td>
-                    <td>${costosTexto}</td> 
-                    <td>${totalFormateado}</td>
+                    <td class="col-num">${costosTexto}</td> 
+                    <td class="col-num">${totalFormateado}</td>
                     <td>
                         <button type="button" class="btn-icon btn-view-compra" onclick="mostrarDetalleCompra(${compra.id})" title="Ver Detalle">
                             <i class="fas fa-eye"></i>

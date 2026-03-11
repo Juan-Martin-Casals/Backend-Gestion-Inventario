@@ -671,9 +671,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 row = `
                     <tr>
                         <td>${item.nombreProducto}</td>
-                        <td><input type="number" class="inline-edit-input" id="inline-cantidad-venta-${index}" value="${item.cantidad}" min="1"></td>
-                        <td><input type="text" class="inline-edit-input" id="inline-precio-venta-${index}" value="${formatoMoneda.format(item.precioVenta)}"></td>
-                        <td>$${formatoMoneda.format(subtotal)}</td>
+                        <td class="col-num"><input type="number" class="inline-edit-input" id="inline-cantidad-venta-${index}" value="${item.cantidad}" min="1"></td>
+                        <td class="col-num"><input type="text" class="inline-edit-input" id="inline-precio-venta-${index}" value="${formatoMoneda.format(item.precioVenta)}"></td>
+                        <td class="col-num">$${formatoMoneda.format(subtotal)}</td>
                         <td>
                             <button type="button" class="btn-icon btn-save-detalle btn-guardar-venta-inline" data-index="${index}" title="Guardar">
                                 <i class="fas fa-check"></i>
@@ -689,9 +689,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 row = `
                     <tr>
                         <td>${item.nombreProducto}</td>
-                        <td>${item.cantidad}</td>
-                        <td>$${formatoMoneda.format(item.precioVenta)}</td>
-                        <td>$${formatoMoneda.format(subtotal)}</td>
+                        <td class="col-num">${item.cantidad}</td>
+                        <td class="col-num">$${formatoMoneda.format(item.precioVenta)}</td>
+                        <td class="col-num">$${formatoMoneda.format(subtotal)}</td>
                         <td>
                             <button type="button" class="btn-icon btn-edit-detalle btn-editar-venta-item" data-index="${index}" title="Editar">
                                 <i class="fas fa-edit"></i>
@@ -731,14 +731,36 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Validaciones
         if (isNaN(nuevaCantidad) || nuevaCantidad <= 0) {
-            alert('La cantidad debe ser un número mayor a 0');
+            errorDetalleGeneral.textContent = 'La cantidad debe ser un número entero mayor a 0.';
+            errorDetalleGeneral.className = 'form-message error';
+            errorDetalleGeneral.style.display = 'block';
             return;
         }
 
         if (isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
-            alert('El precio debe ser un número válido mayor a 0');
+            errorDetalleGeneral.textContent = 'El precio debe ser un número válido mayor a 0.';
+            errorDetalleGeneral.className = 'form-message error';
+            errorDetalleGeneral.style.display = 'block';
             return;
         }
+
+        // Validar stock disponible
+        const item = detallesVenta[index];
+        const productoEnLista = todosLosProductos.find(p => p.idProducto === item.idProducto);
+        if (productoEnLista) {
+            const stockDisponible = productoEnLista.stockActual || 0;
+            if (nuevaCantidad > stockDisponible) {
+                errorDetalleGeneral.textContent = `Stock insuficiente. Stock disponible: ${stockDisponible} unidades.`;
+                errorDetalleGeneral.className = 'form-message error';
+                errorDetalleGeneral.style.display = 'block';
+                return;
+            }
+        }
+
+        // Limpiar error previo si la validación pasó
+        errorDetalleGeneral.textContent = '';
+        errorDetalleGeneral.style.display = 'none';
+        errorDetalleGeneral.className = 'form-message';
 
         // Actualizar el item
         detallesVenta[index].cantidad = nuevaCantidad;
@@ -820,7 +842,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const detallesParaBackend = detallesVenta.map(item => {
                     return {
                         productoId: item.idProducto,
-                        cantidad: item.cantidad
+                        cantidad: item.cantidad,
+                        precioUnitario: item.precioVenta
                     };
                 });
 
@@ -886,6 +909,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 loadVentas(currentPageVentas);
                 // Recargar productos para reflejar el stock actualizado
                 productosStockDesactualizado = true;
+                // Recargar todas las ventas para mantener la búsqueda actualizada
+                cargarTodasLasVentas();
                 // Notificar al dashboard para que actualice los datos de hoy
                 document.dispatchEvent(new Event('ventaRegistrada'));
 
@@ -913,7 +938,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${fechaFormateada}</td>
                 <td>${nombreClienteTexto}</td> 
                 <td>${productosTexto}</td> 
-                <td>$${formatoMoneda.format(venta.total)}</td>
+                <td class="col-num">$${formatoMoneda.format(venta.total)}</td>
                 <td>${nombreVendedorTexto}</td>
                 <td>
                     <button class="btn-icon btn-view-venta" onclick="mostrarDetalleVenta(${venta.idVenta})" title="Ver detalle">
@@ -1474,7 +1499,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ventasBtnLimpiar.addEventListener('click', limpiarFiltrosVentas);
     }
     if (ventasSearchInput) {
-        ventasSearchInput.addEventListener('input', function () {
+        ventasSearchInput.addEventListener('input', async function () {
             const texto = ventasSearchInput.value.trim();
             const hayFiltroFecha = (ventasFechaInicio && ventasFechaInicio.value) || (ventasFechaFin && ventasFechaFin.value);
 
@@ -1483,6 +1508,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 currentPageVentas = 0;
                 loadVentas(0);
             } else {
+                // Si todasLasVentas está vacía, recargar antes de filtrar
+                if (todasLasVentas.length === 0) {
+                    await cargarTodasLasVentas();
+                }
                 aplicarFiltrosVentas();
             }
         });

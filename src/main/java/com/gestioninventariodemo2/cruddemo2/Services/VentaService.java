@@ -90,11 +90,18 @@ public class VentaService {
             DetalleVenta detalleVenta = new DetalleVenta();
             detalleVenta.setProducto(producto);
             detalleVenta.setCantidad(detalleDTO.getCantidad());
-            detalleVenta.setPrecioUnitario(producto.getPrecio());
+
+            // Usar el precio enviado desde el frontend (admin puede editarlo),
+            // si no viene (null o 0), usar el precio actual del producto
+            double precioUsado = (detalleDTO.getPrecioUnitario() != null && detalleDTO.getPrecioUnitario() > 0)
+                    ? detalleDTO.getPrecioUnitario()
+                    : producto.getPrecio();
+
+            detalleVenta.setPrecioUnitario(precioUsado);
             detalleVenta.setVenta(venta);
 
             detalles.add(detalleVenta);
-            totalVenta += (producto.getPrecio() * detalleDTO.getCantidad());
+            totalVenta += (precioUsado * detalleDTO.getCantidad());
 
             // Descontar stock
             Stock stock = stockRepository.findByProducto(producto)

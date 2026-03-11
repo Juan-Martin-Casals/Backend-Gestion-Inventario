@@ -159,7 +159,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <td>${producto.nombre}</td>
                         <td>${producto.categoria}</td>
                         <td>${producto.descripcion}</td>
-                        <td><span class="stock-badge ${stockClass}">${producto.stock}</span></td>
+                        <td class="col-num"><span class="stock-badge ${stockClass}">${producto.stock}</span></td>
                         ${accionesHtml}
                     </tr>
                 `;
