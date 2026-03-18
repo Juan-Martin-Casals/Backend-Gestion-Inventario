@@ -36,11 +36,11 @@ public class CompraController {
     private final CompraPdfService compraPdfService;
 
     @PostMapping
-    public ResponseEntity<Compra> registrarCompra(@RequestBody CompraRequestDTO dto) {
+    public ResponseEntity<Compra> registrarCompra(@RequestBody CompraRequestDTO dto, @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
 
         // Llama al servicio. Si algo falla, lanzará una excepción
         // que será capturada por el manejador global.
-        Compra compraGuardada = compraService.registrarCompra(dto);
+        Compra compraGuardada = compraService.registrarCompra(dto, userDetails);
 
         // Si todo sale bien, devuelve 201 CREATED
         return ResponseEntity.status(HttpStatus.CREATED).body(compraGuardada);

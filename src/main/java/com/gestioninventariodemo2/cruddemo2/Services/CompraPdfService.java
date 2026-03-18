@@ -20,6 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,6 +30,7 @@ import java.util.Locale;
 public class CompraPdfService {
 
         private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         private static final DecimalFormat NUMBER_FORMATTER;
 
         static {
@@ -366,11 +368,11 @@ public class CompraPdfService {
                 document.add(piePagina);
         }
 
-        private String formatFecha(LocalDate fecha) {
+        private String formatFecha(LocalDateTime fecha) {
                 if (fecha == null) {
                         return "N/A";
                 }
-                return fecha.format(DATE_FORMATTER);
+                return fecha.format(DATE_TIME_FORMATTER);
         }
 
         private String formatNumber(int number) {

@@ -23,6 +23,69 @@ document.addEventListener('DOMContentLoaded', function () {
         return parseFloat(limpio);
     }
 
+    // Función para manejar fechas consistentemente
+    function formatearFechaHora(fechaString) {
+        if (!fechaString) return 'N/A';
+        try {
+            // Manejar formato "YYYY-MM-DDTHH:mm:ss" o "YYYY-MM-DD HH:mm:ss.S"
+            let fechaParsed;
+            
+            // Si es un array [year, month, day, hour, minute] generado por backend (sucede a veces con Jackson)
+            if (Array.isArray(fechaString)) {
+                const year = fechaString[0];
+                const month = String(fechaString[1]).padStart(2, '0');
+                const day = String(fechaString[2]).padStart(2, '0');
+                const hour = fechaString.length > 3 ? String(fechaString[3]).padStart(2, '0') : '00';
+                const minute = fechaString.length > 4 ? String(fechaString[4]).padStart(2, '0') : '00';
+                return `${day}/${month}/${year} ${hour}:${minute}`;
+            }
+
+            // Si es string normal
+            let normalizedStr = fechaString.toString();
+            // Evitar problemas de timezone cortando todo después de los segundos o antes del offset
+            if (normalizedStr.includes('T')) {
+                // Eliminar posibles milisegundos y Z para que JS lo tome como local en lugar de UTC
+                normalizedStr = normalizedStr.split('.')[0].replace('Z', '');
+            } else if (normalizedStr.includes(' ')) {
+                normalizedStr = normalizedStr.replace(' ', 'T'); // Forzar formato ISO compatible
+            }
+
+            // Para parseo manual seguro (100% libre de timezones):
+            const partesT = normalizedStr.split('T');
+            if (partesT.length === 2) {
+                const [fecha, hora] = partesT;
+                const [yyyy, mm, dd] = fecha.split('-');
+                let hm = '00:00';
+                if (hora) {
+                    const horaPartes = hora.split(':');
+                    if (horaPartes.length >= 2) {
+                        hm = `${horaPartes[0].padStart(2, '0')}:${horaPartes[1].padStart(2, '0')}`;
+                    }
+                }
+                return `${dd}/${mm}/${yyyy} ${hm}`;
+            }
+
+            // Fallback al objeto Date si el parseo manual falla
+            fechaParsed = new Date(normalizedStr);
+            if (isNaN(fechaParsed.getTime())) {
+                console.warn("Fecha inválida en ventas:", fechaString);
+                return fechaString; // Devolver original si es inválido
+            }
+            
+            return fechaParsed.toLocaleString('es-AR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+            });
+        } catch (e) {
+            console.error("Error parseando fecha:", fechaString, e);
+            return fechaString;
+        }
+    }
+
     // ===============================
     // ESTADO GLOBAL
     // ===============================
@@ -640,11 +703,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
             const totalFormateado = `$${formatoMoneda.format(compra.total || 0)}`;
-            let fechaFormateada = compra.fecha || 'N/A';
-            if (typeof fechaFormateada === 'string' && fechaFormateada.includes('-')) {
-                const partes = fechaFormateada.split('T')[0].split('-');
-                fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
-            }
+            let fechaFormateada = formatearFechaHora(compra.fecha);
+            
             const row = `
                 <tr>
                     <td>${fechaFormateada}</td>

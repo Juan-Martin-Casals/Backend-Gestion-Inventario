@@ -5,14 +5,12 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Builder
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Data
-public class UsuarioPerfilDTO {
-
-    private Long idUsuario;
-    private String nombreCompleto;
-    private String rol;
-
+@Builder
+public class DesglosePagoDTO {
+    private String metodoPago;
+    private Long cantidadOperaciones;
+    private Double totalIngresado;
 }

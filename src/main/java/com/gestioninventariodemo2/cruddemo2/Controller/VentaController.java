@@ -74,7 +74,7 @@ public class VentaController {
         // Si se especificaron fechas, filtrar
         if (inicio != null && fin != null) {
             ventas = ventas.stream()
-                    .filter(v -> !v.getFecha().isBefore(inicio) && !v.getFecha().isAfter(fin))
+                    .filter(v -> !v.getFecha().toLocalDate().isBefore(inicio) && !v.getFecha().toLocalDate().isAfter(fin))
                     .toList();
         }
 

@@ -3,6 +3,7 @@ package com.gestioninventariodemo2.cruddemo2.Services;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.LocalTime;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -41,6 +42,7 @@ public class VentaService {
     private final UsuarioRepository usuarioRepository;
     private final MetodoPagoService metodoPagoService;
     private final PagoService pagoService;
+    private final CajaService cajaService;
 
     @Transactional
     public VentaResponseDTO registrarVenta(VentaRequestDTO ventaRequestDTO, UserDetails userDetails) {
@@ -49,6 +51,11 @@ public class VentaService {
         String userEmail = userDetails.getUsername();
         Usuario usuario = usuarioRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Vendedor no encontrado: " + userEmail));
+
+        // 1.5 Validar que el Vendedor tiene la Caja abierta
+        if (!cajaService.verificarCajaActiva(usuario.getIdUsuario())) {
+            throw new RuntimeException("Debe abrir la caja antes de registrar movimientos.");
+        }
 
         // 2. Validar que el ID del cliente fue enviado
         if (ventaRequestDTO.getIdCliente() == null) {
@@ -62,7 +69,7 @@ public class VentaService {
 
         // 4. Crear la Venta y asignar los participantes
         Venta venta = new Venta();
-        venta.setFecha(ventaRequestDTO.getFecha());
+        venta.setFecha(ventaRequestDTO.getFecha() != null ? ventaRequestDTO.getFecha().atTime(LocalTime.now()) : java.time.LocalDateTime.now());
         venta.setCliente(cliente);
         venta.setUsuario(usuario); // <-- ¡Guardamos al vendedor!
 

@@ -18,6 +18,8 @@ import com.gestioninventariodemo2.cruddemo2.Repository.CompraRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.ProveedorRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.ProductoRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.StockRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.UsuarioRepository;
+import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
 
 // Importaciones de Spring y Java
 import lombok.RequiredArgsConstructor;
@@ -28,6 +30,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -43,11 +47,22 @@ public class CompraService {
     private final ProveedorRepository proveedorRepository;
     private final ProductoRepository productoRepository;
     private final StockRepository stockRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final CajaService cajaService;
 
     /**
      * Registra una nueva compra, sus detalles, y actualiza el stock y precios.
      */
-    public Compra registrarCompra(CompraRequestDTO dto) {
+    public Compra registrarCompra(CompraRequestDTO dto, org.springframework.security.core.userdetails.UserDetails userDetails) {
+        
+        // 0. Autenticación y Validación de Caja Abierta
+        String userEmail = userDetails.getUsername();
+        Usuario usuario = usuarioRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + userEmail));
+
+        if (!cajaService.verificarCajaActiva(usuario.getIdUsuario())) {
+            throw new RuntimeException("Debe abrir la caja antes de registrar movimientos.");
+        }
 
         // 1. Crear la entidad Compra
         Compra compra = new Compra();
@@ -58,7 +73,7 @@ public class CompraService {
         compra.setProveedor(proveedor);
 
         // 3. Asignar fecha (con la lógica de @JsonFormat o LocalDate.now())
-        compra.setFecha(dto.getFecha() != null ? dto.getFecha() : LocalDate.now());
+        compra.setFecha(dto.getFecha() != null ? dto.getFecha().atTime(LocalTime.now()) : LocalDateTime.now());
 
         // 4. Mapear DTOs de Detalle a Entidades de Detalle
         List<DetalleCompra> detallesEntidad = new ArrayList<>();
@@ -134,6 +149,10 @@ public class CompraService {
         boolean hasSearch = search != null && !search.trim().isEmpty();
         boolean hasDates = fechaInicio != null && fechaFin != null;
 
+        // Convertimos a LocalDateTime
+        LocalDateTime start = hasDates ? fechaInicio.atStartOfDay() : null;
+        LocalDateTime end = hasDates ? fechaFin.atTime(LocalTime.MAX) : null;
+
         // Crear pageable SIN sort (para queries con ORDER BY en la query)
         Pageable pageableWithoutSort = org.springframework.data.domain.PageRequest.of(
                 pageable.getPageNumber(), pageable.getPageSize());
@@ -144,16 +163,16 @@ public class CompraService {
                 // Búsqueda + fechas + sort custom
                 paginaCompras = switch (customSort) {
                     case "productos" -> asc
-                            ? compraRepository.searchComprasConFechasOrderByProductoNombreAsc(search, fechaInicio,
-                                    fechaFin, pageableWithoutSort)
-                            : compraRepository.searchComprasConFechasOrderByProductoNombreDesc(search, fechaInicio,
-                                    fechaFin, pageableWithoutSort);
+                            ? compraRepository.searchComprasConFechasOrderByProductoNombreAsc(search, start,
+                                    end, pageableWithoutSort)
+                            : compraRepository.searchComprasConFechasOrderByProductoNombreDesc(search, start,
+                                    end, pageableWithoutSort);
                     case "costoUnitario" -> asc
-                            ? compraRepository.searchComprasConFechasOrderByPrecioUnitarioAsc(search, fechaInicio,
-                                    fechaFin, pageableWithoutSort)
-                            : compraRepository.searchComprasConFechasOrderByPrecioUnitarioDesc(search, fechaInicio,
-                                    fechaFin, pageableWithoutSort);
-                    default -> compraRepository.searchComprasConFechas(search, fechaInicio, fechaFin, pageable);
+                            ? compraRepository.searchComprasConFechasOrderByPrecioUnitarioAsc(search, start,
+                                    end, pageableWithoutSort)
+                            : compraRepository.searchComprasConFechasOrderByPrecioUnitarioDesc(search, start,
+                                    end, pageableWithoutSort);
+                    default -> compraRepository.searchComprasConFechas(search, start, end, pageable);
                 };
             } else if (hasSearch) {
                 // Solo búsqueda + sort custom
@@ -170,16 +189,16 @@ public class CompraService {
                 // Solo fechas + sort custom
                 paginaCompras = switch (customSort) {
                     case "productos" -> asc
-                            ? compraRepository.findByFechaBetweenOrderByProductoNombreAsc(fechaInicio, fechaFin,
+                            ? compraRepository.findByFechaBetweenOrderByProductoNombreAsc(start, end,
                                     pageableWithoutSort)
-                            : compraRepository.findByFechaBetweenOrderByProductoNombreDesc(fechaInicio, fechaFin,
+                            : compraRepository.findByFechaBetweenOrderByProductoNombreDesc(start, end,
                                     pageableWithoutSort);
                     case "costoUnitario" -> asc
-                            ? compraRepository.findByFechaBetweenOrderByPrecioUnitarioAsc(fechaInicio, fechaFin,
+                            ? compraRepository.findByFechaBetweenOrderByPrecioUnitarioAsc(start, end,
                                     pageableWithoutSort)
-                            : compraRepository.findByFechaBetweenOrderByPrecioUnitarioDesc(fechaInicio, fechaFin,
+                            : compraRepository.findByFechaBetweenOrderByPrecioUnitarioDesc(start, end,
                                     pageableWithoutSort);
-                    default -> compraRepository.findByFechaBetween(fechaInicio, fechaFin, pageable);
+                    default -> compraRepository.findByFechaBetween(start, end, pageable);
                 };
             } else {
                 // Solo sort custom (comportamiento original)
@@ -196,11 +215,11 @@ public class CompraService {
         } else {
             // Sin sort custom - usar sort del Pageable
             if (hasSearch && hasDates) {
-                paginaCompras = compraRepository.searchComprasConFechas(search, fechaInicio, fechaFin, pageable);
+                paginaCompras = compraRepository.searchComprasConFechas(search, start, end, pageable);
             } else if (hasSearch) {
                 paginaCompras = compraRepository.searchCompras(search, pageable);
             } else if (hasDates) {
-                paginaCompras = compraRepository.findByFechaBetween(fechaInicio, fechaFin, pageable);
+                paginaCompras = compraRepository.findByFechaBetween(start, end, pageable);
             } else {
                 paginaCompras = compraRepository.findAll(pageable);
             }
@@ -253,7 +272,7 @@ public class CompraService {
 
         if (inicio != null && fin != null) {
             compras = compraRepository.findAll().stream()
-                    .filter(c -> !c.getFecha().isBefore(inicio) && !c.getFecha().isAfter(fin))
+                    .filter(c -> !c.getFecha().toLocalDate().isBefore(inicio) && !c.getFecha().toLocalDate().isAfter(fin))
                     .collect(Collectors.toList());
         } else {
             compras = compraRepository.findAll();

@@ -1,6 +1,8 @@
 package com.gestioninventariodemo2.cruddemo2.Services;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -41,9 +43,13 @@ public class InformeService {
         private final StockRepository stockRepository;
 
         public InformeResponseDTO generarInforme(LocalDate inicio, LocalDate fin) {
-                InformeResponseDTO resumen = ventaRepository.obtenerResumenVentas(inicio, fin);
-                String top = ventaRepository.obtenerProductoMasVendido(inicio, fin);
+                LocalDateTime start = inicio.atStartOfDay();
+                LocalDateTime end = fin.atTime(LocalTime.MAX);
+                InformeResponseDTO resumen = ventaRepository.obtenerResumenVentas(start, end);
+                String top = ventaRepository.obtenerProductoMasVendido(start, end);
                 resumen.setProductoMasVendido(top);
+                resumen.setInicio(inicio);
+                resumen.setFin(fin);
                 return resumen;
         }
 
@@ -184,15 +190,17 @@ public class InformeService {
         public InformeDashboardDTO obtenerDashboard() {
                 LocalDate primerDiaMes = LocalDate.now().withDayOfMonth(1);
                 LocalDate hoy = LocalDate.now();
+                LocalDateTime start = primerDiaMes.atStartOfDay();
+                LocalDateTime end = hoy.atTime(LocalTime.MAX);
 
-                Long ventasMes = ventaRepository.countVentasEnRango(primerDiaMes, hoy);
+                Long ventasMes = ventaRepository.countVentasEnRango(start, end);
                 Long ventasHistoricas = ventaRepository.countVentasHistoricas();
-                Long productoMes = ventaRepository.sumProductosEnRango(primerDiaMes, hoy);
+                Long productoMes = ventaRepository.sumProductosEnRango(start, end);
                 Long productoHistoricos = ventaRepository.sumProductosHistoricos();
-                Double recaudacionMes = ventaRepository.sumRecaudacionEnRango(primerDiaMes, hoy);
+                Double recaudacionMes = ventaRepository.sumRecaudacionEnRango(start, end);
 
-                List<String> masVendidoList = ventaRepository.obtenerProductoMasVendidoEnRango(primerDiaMes, hoy);
-                List<String> menosVendidoList = ventaRepository.obtenerProductoMenosVendidoEnRango(primerDiaMes, hoy);
+                List<String> masVendidoList = ventaRepository.obtenerProductoMasVendidoEnRango(start, end);
+                List<String> menosVendidoList = ventaRepository.obtenerProductoMenosVendidoEnRango(start, end);
 
                 return InformeDashboardDTO.builder()
                                 .ventasMes(ventasMes != null ? ventasMes : 0L)
@@ -231,13 +239,16 @@ public class InformeService {
         // ==========================================================
 
         public KPIsDTO obtenerKPIs(LocalDate inicio, LocalDate fin) {
+                LocalDateTime start = inicio.atStartOfDay();
+                LocalDateTime end = fin.atTime(LocalTime.MAX);
+
                 // Total de ventas en el rango
-                Double totalVentas = ventaRepository.sumTotalVentasEnRango(inicio, fin);
+                Double totalVentas = ventaRepository.sumTotalVentasEnRango(start, end);
                 if (totalVentas == null)
                         totalVentas = 0.0;
 
                 // Total de compras en el rango
-                Double totalCompras = compraRepository.sumTotalComprasEnRango(inicio, fin);
+                Double totalCompras = compraRepository.sumTotalComprasEnRango(start, end);
                 if (totalCompras == null)
                         totalCompras = 0.0;
 
@@ -248,12 +259,12 @@ public class InformeService {
                 Integer productosStockBajo = stockRepository.countProductosConStockBajo();
 
                 // Cantidad de ventas en el rango
-                Long cantidadVentas = ventaRepository.countVentasEnRango(inicio, fin);
+                Long cantidadVentas = ventaRepository.countVentasEnRango(start, end);
                 if (cantidadVentas == null)
                         cantidadVentas = 0L;
 
                 // Productos vendidos en el rango
-                Long productosVendidos = ventaRepository.sumProductosEnRango(inicio, fin);
+                Long productosVendidos = ventaRepository.sumProductosEnRango(start, end);
                 if (productosVendidos == null)
                         productosVendidos = 0L;
 
@@ -268,8 +279,11 @@ public class InformeService {
         }
 
         public List<VentasComprasDiariasDTO> obtenerVentasComprasDiarias(LocalDate inicio, LocalDate fin) {
+                LocalDateTime start = inicio.atStartOfDay();
+                LocalDateTime end = fin.atTime(LocalTime.MAX);
+                
                 // Obtener ventas agrupadas por día
-                List<Object[]> ventasPorDia = ventaRepository.sumVentasPorDia(inicio, fin);
+                List<Object[]> ventasPorDia = ventaRepository.sumVentasPorDia(start, end);
                 Map<LocalDate, Double> ventasMap = new HashMap<>();
                 for (Object[] row : ventasPorDia) {
                         // Convertir java.sql.Date a LocalDate
@@ -281,7 +295,7 @@ public class InformeService {
                 }
 
                 // Obtener compras agrupadas por día
-                List<Object[]> comprasPorDia = compraRepository.sumComprasPorDia(inicio, fin);
+                List<Object[]> comprasPorDia = compraRepository.sumComprasPorDia(start, end);
                 Map<LocalDate, Double> comprasMap = new HashMap<>();
                 for (Object[] row : comprasPorDia) {
                         // Convertir java.sql.Date a LocalDate
@@ -308,7 +322,9 @@ public class InformeService {
         }
 
         public List<TopProductoDTO> obtenerTopProductos(LocalDate inicio, LocalDate fin, Integer limit) {
-                List<Object[]> topProductos = ventaRepository.findTopProductos(inicio, fin,
+                LocalDateTime start = inicio.atStartOfDay();
+                LocalDateTime end = fin.atTime(LocalTime.MAX);
+                List<Object[]> topProductos = ventaRepository.findTopProductos(start, end,
                                 limit != null ? limit : 5);
 
                 return topProductos.stream()
@@ -321,7 +337,9 @@ public class InformeService {
         }
 
         public List<TopProductoDTO> obtenerTopProductosComprados(LocalDate inicio, LocalDate fin, Integer limit) {
-                List<Object[]> top = compraRepository.findTopProductosComprados(inicio, fin,
+                LocalDateTime start = inicio.atStartOfDay();
+                LocalDateTime end = fin.atTime(LocalTime.MAX);
+                List<Object[]> top = compraRepository.findTopProductosComprados(start, end,
                                 limit != null ? limit : 5);
 
                 return top.stream()

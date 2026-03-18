@@ -7,7 +7,7 @@
    ======================================== */
 
 /* Títulos de Secciones */
-#principal-section h3 {
+#principal-section h3, #caja-section h3 {
     margin: 0 0 20px 0;
     font-size: 20px;
     font-weight: 700;
@@ -19,7 +19,7 @@
     border-bottom: 2px solid #e9ecef;
 }
 
-#principal-section h3 i {
+#principal-section h3 i, #caja-section h3 i {
     font-size: 22px;
 }
 
@@ -64,7 +64,6 @@
     border-bottom: 2px solid #e9ecef;
 }
 
-/* Grid de Stats personalizado para Principal */
 #principal-section .dashboard-stats {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -73,8 +72,17 @@
     margin-top: 20px;
 }
 
+#caja-section .dashboard-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Más anchura mínima */
+    gap: 15px;
+    padding: 0;
+    margin-top: 15px;
+    margin-bottom: 35px; /* Mayor separación con las tablas */
+}
+
 /* Tarjetas KPI Mejoradas */
-#principal-section .stat-card {
+#principal-section .stat-card, #caja-section .stat-card {
     background: white;
     border-radius: 14px;
     padding: 22px;
@@ -89,7 +97,7 @@
     overflow: hidden;
 }
 
-#principal-section .stat-card::before {
+#principal-section .stat-card::before, #caja-section .stat-card::before {
     content: '';
     position: absolute;
     top: 0;
@@ -101,18 +109,18 @@
     transition: opacity 0.3s ease;
 }
 
-#principal-section .stat-card:hover::before {
+#principal-section .stat-card:hover::before, #caja-section .stat-card:hover::before {
     opacity: 1;
 }
 
-#principal-section .stat-card:hover {
+#principal-section .stat-card:hover, #caja-section .stat-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     border-color: #e0e0e0;
 }
 
 /* Iconos de Stats con Gradientes */
-#principal-section .stat-icon {
+#principal-section .stat-icon, #caja-section .stat-icon {
     width: 64px;
     height: 64px;
     border-radius: 16px;
@@ -126,36 +134,37 @@
 }
 
 /* Icono Verde - Ventas/Éxito */
-#principal-section .stat-icon.green {
+#principal-section .stat-icon.green, #caja-section .stat-icon.green {
     background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
     color: white;
 }
 
 /* Icono Azul - Información */
-#principal-section .stat-icon.blue {
+#principal-section .stat-icon.blue, #caja-section .stat-icon.blue {
     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
     color: white;
 }
 
 /* Icono Morado - Productos */
-#principal-section .stat-icon.purple {
+#principal-section .stat-icon.purple, #caja-section .stat-icon.purple {
     background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
     color: white;
 }
 
 /* Iconos para Alertas */
-#principal-section .stat-card.alert .stat-icon {
+#principal-section .stat-card.alert .stat-icon, #caja-section .stat-card.alert .stat-icon,
+#principal-section .stat-icon.alert, #caja-section .stat-icon.alert {
     background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
     color: white;
 }
 
-#principal-section .stat-card.warning .stat-icon {
+#principal-section .stat-card.warning .stat-icon, #caja-section .stat-card.warning .stat-icon,
+#principal-section .stat-icon.warning, #caja-section .stat-icon.warning {
     background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
     color: white;
 }
 
-/* Contenido de Stats */
-#principal-section .stat-content {
+#principal-section .stat-content, #caja-section .stat-content {
     flex: 1;
     display: flex;
     flex-direction: column;
@@ -164,6 +173,16 @@
 
 #principal-section .stat-content h3 {
     font-size: 32px;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0;
+    padding: 0;
+    border: none;
+    line-height: 1.2;
+}
+
+#caja-section .stat-content h3 {
+    font-size: 24px; /* Más chico para la Caja */
     font-weight: 700;
     color: #2c3e50;
     margin: 0;
@@ -181,12 +200,20 @@
     letter-spacing: 0.5px;
 }
 
-/* Estilos especiales para números de alerta */
-#principal-section .stat-card.alert .stat-content h3 {
+#caja-section .stat-content p {
+    font-size: 11px; /* Más chico para la Caja */
+    font-weight: 500;
+    color: #6c757d;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+#principal-section .stat-card.alert .stat-content h3, #caja-section .stat-card.alert .stat-content h3 {
     color: #dc3545;
 }
 
-#principal-section .stat-card.warning .stat-content h3 {
+#principal-section .stat-card.warning .stat-content h3, #caja-section .stat-card.warning .stat-content h3 {
     color: #ff9800;
 }
 

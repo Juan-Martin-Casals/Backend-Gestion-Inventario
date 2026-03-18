@@ -1,6 +1,7 @@
 package com.gestioninventariodemo2.cruddemo2.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -26,8 +27,8 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
             WHERE v.fecha BETWEEN :inicio AND :fin
             """)
     InformeResponseDTO obtenerResumenVentas(
-            @Param("inicio") LocalDate inicio,
-            @Param("fin") LocalDate fin);
+            @Param("inicio") LocalDateTime inicio,
+            @Param("fin") LocalDateTime fin);
 
     @Query(value = """
             SELECT p.nombre
@@ -40,17 +41,17 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
             LIMIT 1
             """, nativeQuery = true)
     String obtenerProductoMasVendido(
-            @Param("inicio") LocalDate inicio,
-            @Param("fin") LocalDate fin);
+            @Param("inicio") LocalDateTime inicio,
+            @Param("fin") LocalDateTime fin);
 
     @Query("SELECT COUNT(v) FROM Venta v WHERE v.fecha BETWEEN :inicio AND :fin")
-    Long countVentasEnRango(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+    Long countVentasEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
     @Query("SELECT SUM(dv.cantidad) FROM DetalleVenta dv JOIN dv.venta v WHERE v.fecha BETWEEN :inicio AND :fin")
-    Long sumProductosEnRango(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+    Long sumProductosEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
     @Query("SELECT SUM(v.total) FROM Venta v WHERE v.fecha BETWEEN :inicio AND :fin")
-    Double sumRecaudacionEnRango(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+    Double sumRecaudacionEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
     @Query("""
             SELECT p.nombre
@@ -61,7 +62,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
             GROUP BY p.id, p.nombre
             ORDER BY SUM(dv.cantidad) DESC
             """)
-    List<String> obtenerProductoMasVendidoEnRango(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+    List<String> obtenerProductoMasVendidoEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
     @Query("""
             SELECT p.nombre
@@ -72,7 +73,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
             GROUP BY p.id, p.nombre
             ORDER BY SUM(dv.cantidad) ASC
             """)
-    List<String> obtenerProductoMenosVendidoEnRango(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+    List<String> obtenerProductoMenosVendidoEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
     @Query("SELECT COUNT(v) FROM Venta v")
     Long countVentasHistoricas();
@@ -85,7 +86,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
     // ==========================================================
 
     @Query("SELECT SUM(v.total) FROM Venta v WHERE v.fecha BETWEEN :inicio AND :fin")
-    Double sumTotalVentasEnRango(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+    Double sumTotalVentasEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
     @Query(value = """
             SELECT DATE(v.fecha) as fecha, COALESCE(SUM(v.total), 0) as total
@@ -94,7 +95,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
             GROUP BY DATE(v.fecha)
             ORDER BY DATE(v.fecha)
             """, nativeQuery = true)
-    List<Object[]> sumVentasPorDia(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+    List<Object[]> sumVentasPorDia(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
     @Query(value = """
             SELECT p.nombre, SUM(dv.cantidad) as cantidad, SUM(dv.precio_unitario * dv.cantidad) as total
@@ -107,10 +108,10 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
             LIMIT :limit
             """, nativeQuery = true)
     List<Object[]> findTopProductos(
-            @Param("inicio") LocalDate inicio,
-            @Param("fin") LocalDate fin,
+            @Param("inicio") LocalDateTime inicio,
+            @Param("fin") LocalDateTime fin,
             @Param("limit") Integer limit);
 
     // Query para obtener ventas completas en un rango
-    List<Venta> findByFechaBetween(LocalDate inicio, LocalDate fin);
+    List<Venta> findByFechaBetween(LocalDateTime inicio, LocalDateTime fin);
 }

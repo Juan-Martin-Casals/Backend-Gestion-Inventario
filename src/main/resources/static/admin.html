@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/dashboard-informes.css">
+    <link rel="stylesheet" href="css/caja-dashboard.css">
 
     <!-- Chart.js for dashboard charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -95,6 +96,8 @@
                                     Ventas</span></a></li>
                     </ul>
                 </li>
+                <li><a href="#" data-section="caja"><i class="fas fa-cash-register"></i> <span
+                            class="text">Caja</span></a></li>
                 <li><a href="#" data-section="informes"><i class="fas fa-chart-bar"></i> <span
                             class="text">Informes</span></a></li>
                 <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> <span class="text">Salir</span></a>
@@ -102,11 +105,8 @@
             </ul>
         </aside>
 
-        <!-- Banner de éxito para compras -->
-        <div id="success-banner" class="success-banner">
-            <i class="fas fa-check-circle"></i>
-            <span id="success-banner-text">¡Compra registrada exitosamente!</span>
-        </div>
+
+
 
         <main class="main-content" tabindex="-1">
             <header class="main-header">
@@ -147,7 +147,8 @@
                             </h3>
                             <div class="dashboard-stats"
                                 style="padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-                                <div class="stat-card alert clickable-card" id="card-productos-agotados" style="padding: 15px; margin-bottom: 0;">
+                                <div class="stat-card alert clickable-card" id="card-productos-agotados"
+                                    style="padding: 15px; margin-bottom: 0;">
                                     <div class="stat-icon" style="width: 40px; height: 40px; font-size: 16px;">
                                         <i class="fas fa-times-circle"></i>
                                     </div>
@@ -156,7 +157,8 @@
                                         <p style="font-size: 13px;">Productos Agotados</p>
                                     </div>
                                 </div>
-                                <div class="stat-card warning clickable-card" id="card-stock-bajo" style="padding: 15px; margin-bottom: 0;">
+                                <div class="stat-card warning clickable-card" id="card-stock-bajo"
+                                    style="padding: 15px; margin-bottom: 0;">
                                     <div class="stat-icon" style="width: 40px; height: 40px; font-size: 16px;">
                                         <i class="fas fa-exclamation-triangle"></i>
                                     </div>
@@ -239,11 +241,37 @@
 
                 </div> <!-- Fin DIV TOP-ROW -->
 
-                <!-- FILA INFERIOR: Tabla de Reposición (100% Ancho) -->
+
+
                 <div class="low-stock-section"
                     style="margin: 0 30px 20px; background: #fff; border-radius: 12px; padding: 25px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);">
                     <h3><i class="fas fa-warehouse" style="color: #ff9800;"></i> Productos que necesitan reposición</h3>
                     <div class="table-container">
+                        <!-- Barra de búsqueda principal Reposición -->
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 300px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search"
+                                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                        <input type="text"
+                                            placeholder="Buscar por nombre, descripción, proveedor, email o teléfono..."
+                                            id="main-low-stock-search-input"
+                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="button" class="btn-outline" id="main-low-stock-btn-limpiar"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                    <button type="button" class="btn-primary" id="main-low-stock-btn-exportar-pdf"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-file-pdf"></i> PDF
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         <table class="data-table">
                             <thead>
                                 <tr>
@@ -658,7 +686,8 @@
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
-                                        <input type="text" placeholder="Buscar por nombre, proveedor, email o teléfono..."
+                                        <input type="text"
+                                            placeholder="Buscar por nombre, proveedor, email o teléfono..."
                                             id="agotados-search-input"
                                             style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
                                     </div>
@@ -678,26 +707,37 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th class="sortable" data-sort-by="nombre">Nombre <i class="sort-icon fas fa-sort"></i></th>
-                                    <th class="sortable" data-sort-by="descripcion">Descripción <i class="sort-icon fas fa-sort"></i></th>
-                                    <th class="sortable" data-sort-by="proveedor">Proveedor <i class="sort-icon fas fa-sort"></i></th>
-                                    <th class="sortable" data-sort-by="email">Email <i class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="nombre">Nombre <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="descripcion">Descripción <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="proveedor">Proveedor <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="email">Email <i
+                                            class="sort-icon fas fa-sort"></i></th>
                                     <th>Teléfono</th>
-                                    <th class="sortable col-num" data-sort-by="precioCosto">Precio Costo <i class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable col-num" data-sort-by="precioCosto">Precio Costo <i
+                                            class="sort-icon fas fa-sort"></i></th>
                                 </tr>
                             </thead>
                             <tbody id="agotados-table-body">
-                                <tr><td colspan="6" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>
+                                <tr>
+                                    <td colspan="6" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i>
+                                        Cargando...</td>
+                                </tr>
                             </tbody>
                             <tfoot>
                                 <tr>
                                     <td colspan="6">
-                                        <div class="pagination-controls" style="display: flex; justify-content: flex-end; align-items: center; padding: 10px 0;">
-                                            <span id="agotados-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                        <div class="pagination-controls"
+                                            style="display: flex; justify-content: flex-end; align-items: center; padding: 10px 0;">
+                                            <span id="agotados-page-info" style="margin-right: 15px;">Página 1 de
+                                                1</span>
                                             <button class="btn-outline" id="agotados-prev-page" disabled>
                                                 <i class="fas fa-arrow-left"></i>
                                             </button>
-                                            <button class="btn-outline" id="agotados-next-page" style="margin-left: 5px;">
+                                            <button class="btn-outline" id="agotados-next-page"
+                                                style="margin-left: 5px;">
                                                 <i class="fas fa-arrow-right"></i>
                                             </button>
                                         </div>
@@ -718,7 +758,8 @@
             <div id="modal-stock-bajo" class="modal-overlay" style="display: none;">
                 <div class="modal-content" style="max-width: 1600px !important; width: 98%;">
                     <div class="modal-header">
-                        <h3><i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i> Productos con Stock Bajo</h3>
+                        <h3><i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i> Productos con Stock Bajo
+                        </h3>
                         <button class="modal-close" id="modal-stock-bajo-close">
                             <i class="fas fa-times"></i>
                         </button>
@@ -731,7 +772,8 @@
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
-                                        <input type="text" placeholder="Buscar por nombre, descripción, proveedor, email o teléfono..."
+                                        <input type="text"
+                                            placeholder="Buscar por nombre, descripción, proveedor, email o teléfono..."
                                             id="stock-bajo-search-input"
                                             style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
                                     </div>
@@ -751,28 +793,42 @@
                         <table class="data-table">
                             <thead>
                                 <tr>
-                                    <th class="sortable sort-asc" data-sort-by="nombre">Nombre <i class="sort-icon fas fa-sort-up"></i></th>
-                                    <th class="sortable" data-sort-by="descripcion">Descripción <i class="sort-icon fas fa-sort"></i></th>
-                                    <th class="sortable" data-sort-by="proveedor">Proveedor <i class="sort-icon fas fa-sort"></i></th>
-                                    <th class="sortable" data-sort-by="email">Email <i class="sort-icon fas fa-sort"></i></th>
-                                    <th class="sortable" data-sort-by="telefono">Teléfono <i class="sort-icon fas fa-sort"></i></th>
-                                    <th class="sortable col-num" data-sort-by="stock">Stock Actual <i class="sort-icon fas fa-sort"></i></th>
-                                    <th class="sortable col-num" data-sort-by="stockMinimo">Stock Mínimo <i class="sort-icon fas fa-sort"></i></th>
-                                    <th class="sortable col-num" data-sort-by="precioCosto">Precio de Costo <i class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable sort-asc" data-sort-by="nombre">Nombre <i
+                                            class="sort-icon fas fa-sort-up"></i></th>
+                                    <th class="sortable" data-sort-by="descripcion">Descripción <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="proveedor">Proveedor <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="email">Email <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable" data-sort-by="telefono">Teléfono <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable col-num" data-sort-by="stock">Stock Actual <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable col-num" data-sort-by="stockMinimo">Stock Mínimo <i
+                                            class="sort-icon fas fa-sort"></i></th>
+                                    <th class="sortable col-num" data-sort-by="precioCosto">Precio de Costo <i
+                                            class="sort-icon fas fa-sort"></i></th>
                                 </tr>
                             </thead>
                             <tbody id="stock-bajo-table-body">
-                                <tr><td colspan="8" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>
+                                <tr>
+                                    <td colspan="8" style="text-align:center;"><i class="fas fa-spinner fa-spin"></i>
+                                        Cargando...</td>
+                                </tr>
                             </tbody>
                             <tfoot>
                                 <tr>
                                     <td colspan="8">
-                                        <div class="pagination-controls" style="display: flex; justify-content: flex-end; align-items: center; padding: 10px 0;">
-                                            <span id="stock-bajo-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                        <div class="pagination-controls"
+                                            style="display: flex; justify-content: flex-end; align-items: center; padding: 10px 0;">
+                                            <span id="stock-bajo-page-info" style="margin-right: 15px;">Página 1 de
+                                                1</span>
                                             <button class="btn-outline" id="stock-bajo-prev-page" disabled>
                                                 <i class="fas fa-arrow-left"></i>
                                             </button>
-                                            <button class="btn-outline" id="stock-bajo-next-page" style="margin-left: 5px;">
+                                            <button class="btn-outline" id="stock-bajo-next-page"
+                                                style="margin-left: 5px;">
                                                 <i class="fas fa-arrow-right"></i>
                                             </button>
                                         </div>
@@ -1914,284 +1970,701 @@
 
 
 
-
-        </main>
-    </div>
-
-    <div id="logout-modal" class="modal">
-        <div class="modal-content" style="max-width: 450px; padding: 0;">
-            <div class="modal-header" style="padding: 20px 25px;">
-                <h3 style="margin: 0; font-size: 18px;">
-                    <i class="fas fa-sign-out-alt" style="color: #e74c3c;"></i> Confirmar Salida
-                </h3>
-            </div>
-
-            <div class="modal-body" style="padding: 20px 25px;">
-                <p style="font-size: 15px; margin: 0; text-align: center; line-height: 1.5;">
-                    ¿Estás seguro de que deseas cerrar sesión?
-                </p>
-            </div>
-
-            <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
-                <button id="confirm-logout" class="btn-primary" style="background-color: #e74c3c;">
-                    <i class="fas fa-sign-out-alt"></i> Sí, Salir
-                </button>
-                <button id="cancel-logout" class="btn-outline">Cancelar</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modal de Edición de Proveedor -->
-    <div id="modal-edit-proveedor-overlay" class="modal" style="display: none;">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h3><i class="fas fa-edit"></i> Editar Proveedor</h3>
-                <button id="modal-edit-proveedor-close" class="modal-close">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <div class="modal-body">
-                <form id="edit-proveedor-form" novalidate>
-                    <input type="hidden" id="editProveedorId">
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editProveedorNombre">Nombre del Proveedor</label>
-                            <input type="text" id="editProveedorNombre" placeholder="Nombre del proveedor">
-                            <div class="error-message" id="errorEditNombre"></div>
+            <section id="caja-section" class="spa-section" style="display:none; padding: 40px;">
+                <!-- Título Superior -->
+                <div id="caja-titulo-apertura" style="width: 80%; margin: 0 0 30px 0;">
+                    <h3
+                        style="margin-bottom: 8px; color: #1e293b; display: flex; align-items: center; font-size: 24px; font-weight: 700;">
+                        <div
+                            style="background: #e3f2fd; color: #007bff; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                            <i class="fas fa-cash-register" style="font-size: 16px;"></i>
                         </div>
-                        <div class="form-group">
-                            <label for="editProveedorTelefono">Teléfono</label>
-                            <input type="text" id="editProveedorTelefono" placeholder="123456789">
-                            <div class="error-message" id="errorEditTelefono"></div>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="editProveedorEmail">Email</label>
-                            <input type="email" id="editProveedorEmail" placeholder="email@ejemplo.com">
-                            <div class="error-message" id="errorEditEmail"></div>
-                        </div>
-                        <div class="form-group">
-                            <label for="editProveedorDireccion">Dirección</label>
-                            <input type="text" id="editProveedorDireccion" placeholder="Dirección completa">
-                            <div class="error-message" id="errorEditDireccion"></div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="edit-productos-select-input">Productos que Ofrece</label>
-                        <div id="edit-productos-multi-select-container" class="custom-multi-select-container">
-                            <div id="edit-tags-container" class="tags-container"></div>
-                            <input type="text" id="edit-productos-select-input" class="custom-select-input"
-                                placeholder="Buscar y seleccionar productos...">
-                        </div>
-                        <div id="edit-productos-options-container" class="options-container"></div>
-                        <select id="editProveedorProductosSelect" multiple style="display: none;"></select>
-                        <div class="error-message" id="editProveedorProductosError"></div>
-                    </div>
-
-                    <div id="form-general-message-edit-proveedor" class="form-message"></div>
-                </form>
-            </div>
-
-            <div class="modal-footer">
-                <button type="submit" form="edit-proveedor-form" class="btn-primary">
-                    <i class="fas fa-save"></i> Guardar Cambios
-                </button>
-                <button type="button" class="btn-outline"
-                    onclick="document.getElementById('modal-edit-proveedor-overlay').style.display='none'">
-                    Cancelar
-                </button>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- Modal de Detalles de Proveedor -->
-    <div id="modal-detail-proveedor-overlay" class="modal" style="display: none;">
-        <div class="modal-content modal-large">
-            <div class="modal-header">
-                <h3><i class="fas fa-eye"></i> Detalles del Proveedor</h3>
-                <button id="modal-detail-proveedor-close" class="modal-close">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <div class="modal-body">
-                <!-- Información General -->
-                <div class="detail-section">
-                    <h4><i class="fas fa-info-circle"></i> Información General</h4>
-                    <div class="detail-grid">
-                        <div class="detail-item">
-                            <label>Nombre:</label>
-                            <span id="detail-proveedor-nombre"></span>
-                        </div>
-                        <div class="detail-item">
-                            <label>Email:</label>
-                            <span id="detail-proveedor-email"></span>
-                        </div>
-                        <div class="detail-item">
-                            <label>Teléfono:</label>
-                            <span id="detail-proveedor-telefono"></span>
-                        </div>
-                        <div class="detail-item">
-                            <label>Dirección:</label>
-                            <span id="detail-proveedor-direccion"></span>
-                        </div>
-                    </div>
+                        Apertura de Caja
+                    </h3>
+                    <p style="color: #64748b; font-size: 14px; margin-left: 44px; max-width: 450px; line-height: 1.5;">
+                        Inicie el turno registrando el saldo inicial para asegurar la integridad de las operaciones
+                        diarias.
+                    </p>
                 </div>
 
-                <!-- Productos Ofrecidos -->
-                <div class="detail-section">
-                    <h4><i class="fas fa-box"></i> Productos Ofrecidos</h4>
-                    <div id="detail-proveedor-productos"
-                        style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
+                <!-- Tarjeta Principal -->
+                <div id="caja-panel-apertura"
+                    style="width: 80%; margin: 0; background: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
+
+                    <!-- Encabezado de Operador y Saldo -->
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px;">
+                        <div>
+                            <span
+                                style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px;">Saldo
+                                Cierre Anterior</span>
+                            <div style="display: flex; align-items: center; justify-content: flex-start; gap: 8px;">
+                                <i class="fas fa-wallet" style="color: #007bff; font-size: 14px;"></i>
+                                <span id="caja-saldo-anterior" style="font-size: 18px; font-weight: 700; color: #333;">$
+                                    0.00</span>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span
+                                style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px;">Operador
+                                Responsable</span>
+                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                                <i class="fas fa-user" style="color: #007bff; font-size: 14px;"></i>
+                                <span id="caja-operador-nombre"
+                                    style="font-size: 15px; font-weight: 600; color: #334155;">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="form-apertura-caja">
+                        <!-- Monto Inicial -->
+                        <div class="form-group" style="margin-bottom: 30px;">
+                            <label for="caja-monto-inicial"
+                                style="display: block; font-size: 11px; font-weight: 700; color: #475569; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px;">
+                                Monto Inicial en Efectivo (Real)
+                            </label>
+                            <div style="position: relative; width: 50%; min-width: 250px;">
+                                <span
+                                    style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 20px; color: #333; font-weight: 600;">$</span>
+                                <input type="number" id="caja-monto-inicial" step="0.01" min="0" required
+                                    style="width: 100%; padding: 16px 16px 16px 36px; font-size: 20px; font-weight: 700; color: #333; background-color: #f8faff; border: none; border-bottom: 2px solid #b6d4fe; border-radius: 4px 4px 0 0; outline: none; transition: all 0.2s;">
+                            </div>
+                            <span
+                                style="display: block; margin-top: 8px; font-size: 12px; color: #94a3b8; font-style: italic;">
+                                Ingrese el monto exacto presente en el cajón.
+                            </span>
+                            <div id="caja-monto-warning"
+                                style="display: none; color: #c2410c; margin-top: 8px; font-size: 13px;">
+                                <i class="fas fa-exclamation-triangle"></i> El monto difiere del cierre anterior. Se
+                                registrará una discrepancia.
+                            </div>
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="form-group" style="margin-bottom: 40px;">
+                            <label for="caja-observaciones"
+                                style="display: block; font-size: 11px; font-weight: 700; color: #475569; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px;">
+                                Observaciones (Opcional)
+                            </label>
+                            <textarea id="caja-observaciones" rows="3"
+                                placeholder="Ej: Faltaban $200 de vuelto del turno anterior..."
+                                style="width: 100%; padding: 16px; font-size: 14px; color: #334155; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; resize: none; outline: none; transition: all 0.2s;"></textarea>
+                        </div>
+
+                        <div id="caja-error-message" class="error-message"
+                            style="display: none; text-align: center; margin-bottom: 15px;"></div>
+
+                        <!-- Botón Submit -->
+                        <div style="text-align: right; margin-top: 20px;">
+                            <button type="button" id="btn-abrir-caja" class="btn-primary"
+                                style="padding: 14px 28px; font-size: 14px; font-weight: 600; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-lock-open" style="margin-right: 8px;"></i> Iniciar Operaciones
+                            </button>
+                        </div>
+                    </form>
                 </div>
-            </div>
 
-            <div class="modal-footer">
-                <button class="btn-outline" id="modal-detail-proveedor-close-btn">
-                    Cerrar
-                </button>
-            </div>
-        </div>
-    </div>
+                <div id="caja-panel-cierre" style="display: none; width: 100%;">
+                    <h3
+                        style="margin-bottom: 25px; color: #1e293b; display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 22px;">
+                        <div
+                            style="background: linear-gradient(135deg, #6366f1, #4f46e5); padding: 10px; border-radius: 12px; color: white; display: flex;">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        Resumen de Sesión Activa
+                    </h3>
 
-    <!-- Modal de Confirmación de Eliminación (Genérico) -->
-    <div class="modal" id="delete-confirm-modal" style="display: none;">
-        <div class="modal-content" style="max-width: 450px; padding: 0;">
-            <div class="modal-header" style="padding: 20px 25px;">
-                <h3 style="margin: 0; font-size: 18px;">
-                    <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i> Confirmar Eliminación
-                </h3>
-                <button class="modal-close" onclick="this.closest('.modal').style.display='none'">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <div class="modal-body" style="padding: 20px 25px;">
-                <p id="delete-modal-message" style="font-size: 15px; margin: 0; text-align: center; line-height: 1.5;">
-                    ¿Estás seguro de que deseas eliminar este elemento?
-                </p>
-            </div>
-
-            <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
-                <button type="button" class="btn-primary" id="confirm-delete-btn" style="background-color: #e74c3c;">
-                    <i class="fas fa-trash"></i> Sí, Eliminar
-                </button>
-                <button type="button" class="btn-outline" id="cancel-delete-btn">
-                    Cancelar
-                </button>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- Modal de Detalle de Compra -->
-    <div id="purchase-detail-modal" class="modal">
-        <div class="modal-content modal-large">
-            <span class="close-modal" onclick="cerrarModalDetalleCompra()">&times;</span>
-            <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                <i class="fas fa-receipt"></i> Detalle de Compra <span id="modal-compra-id"
-                    style="color: #666; font-weight: 400; font-size: 18px;"></span>
-            </h3>
-
-            <div class="purchase-detail-info" style="margin-bottom: 20px;">
-                <div class="info-grid"
-                    style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                    <div class="info-item">
-                        <strong style="color: #666; font-size: 13px;">Fecha:</strong>
-                        <p id="modal-compra-fecha" style="margin: 5px 0 0 0; font-size: 15px;"></p>
-                    </div>
-                    <div class="info-item">
-                        <strong style="color: #666; font-size: 13px;">Proveedor:</strong>
-                        <p id="modal-compra-proveedor" style="margin: 5px 0 0 0; font-size: 15px;"></p>
-                    </div>
-                    <div class="info-item">
-                        <strong style="color: #666; font-size: 13px;">Total:</strong>
-                        <p id="modal-compra-total"
-                            style="margin: 5px 0 0 0; font-size: 15px; font-weight: 600; color: #28a745;"></p>
-                    </div>
-                </div>
-            </div>
-
-            <h4 style="margin-bottom: 15px; color: #333; font-size: 16px;">Productos Comprados</h4>
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>Producto</th>
-                            <th>Cantidad</th>
-                            <th>Precio Unitario</th>
-                            <th>Subtotal</th>
-                        </tr>
-                    </thead>
-                    <tbody id="modal-compra-productos">
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td colspan="4">
-                                <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                                    <span id="modal-compra-page-info" style="margin-right: 15px;">Página 1 de 1</span>
-                                    <button class="btn-outline" id="modal-compra-prev-page" disabled>
-                                        <i class="fas fa-arrow-left"></i>
-                                    </button>
-                                    <button class="btn-outline" id="modal-compra-next-page" disabled>
-                                        <i class="fas fa-arrow-right"></i>
-                                    </button>
+                    <div class="caja-layout-grid">
+                        <!-- LADO IZQUIERDO: DATOS (70%) -->
+                        <div class="caja-col-data">
+                            <!-- Monto Inicial Gigante -->
+                            <div class="caja-summary-card initial"
+                                style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <p>Monto Inicial</p>
+                                    <h4 id="caja-resumen-inicial" style="font-size: 38px;">$ 0,00</h4>
                                 </div>
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
-            </div>
+                                <div id="caja-badge-abierta-interno"
+                                    style="padding: 8px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; color: white; background-color: #10b981; display:flex; align-items:center; gap: 6px;">
+                                    <i class="fas fa-lock-open"></i> ABIERTA
+                                </div>
+                            </div>
 
-            <div class="modal-buttons" style="margin-top: 20px; justify-content: flex-end;">
-                <button onclick="cerrarModalDetalleCompra()" class="btn-secondary">Cerrar</button>
+                            <!-- TARJETAS SUPERIORES -->
+                            <div class="dashboard-stats">
+                                <div class="stat-card">
+                                    <div class="stat-icon green">
+                                        <i class="fas fa-dollar-sign"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h3 id="caja-card-total-ventas">$0,00</h3>
+                                        <p>Facturación Total</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon blue">
+                                        <i class="fas fa-shopping-cart"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h3 id="caja-card-cantidad-ventas">0</h3>
+                                        <p>Cant.Ventas</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon green">
+                                        <i class="fas fa-money-bill-wave"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h3 id="caja-card-efectivo">$0,00</h3>
+                                        <p>Efectivo</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon purple">
+                                        <i class="fas fa-credit-card"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h3 id="caja-card-tarjeta">$0,00</h3>
+                                        <p>Tarjeta</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon warning">
+                                        <i class="fas fa-exchange-alt"></i>
+                                    </div>
+                                    <div class="stat-content">
+                                        <h3 id="caja-card-transferencia">$0,00</h3>
+                                        <p>Transferencia</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TABLA DE DESGLOSE -->
+                            <div class="caja-table-wrapper" style="margin-bottom: 25px;">
+                                <h4>
+                                    <i class="fas fa-list"></i> Desglose por Método de Pago
+                                </h4>
+                                <p style="margin: 0 0 20px 0; color: #64748b; font-size: 14px;">Detalle de ingresos con
+                                    facturación registrada en la sesión actual agrupado por cada forma de cobro.</p>
+                                <div class="table-container">
+                                    <table class="data-table" style="margin: 0; width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th>Método de Pago</th>
+                                                <th style="text-align: center;">Operaciones</th>
+                                                <th style="text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="caja-tabla-desglose"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- INGRESOS DE LA SESIÓN -->
+                            <div class="caja-table-wrapper">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                    <h4 style="margin: 0;"><i class="fas fa-receipt"></i> Ingresos de la Sesión</h4>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 13px; color: #64748b; font-weight: 600;">Filtrar
+                                            por:</span>
+                                        <select id="caja-filtro-ingresos"
+                                            style="padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px; color: #334155; background: white; outline: none; cursor: pointer;">
+                                            <option value="Todos">Todos</option>
+                                            <option value="Efectivo">Efectivo</option>
+                                            <option value="Tarjeta">Tarjeta</option>
+                                            <option value="Transferencia">Transferencia</option>
+                                        </select>
+                                        <button id="caja-limpiar-filtros" type="button" class="btn-outline"
+                                            style="padding: 5px 12px; font-size: 13px; display: flex; align-items: center; gap: 5px; white-space: nowrap;">
+                                            <i class="fas fa-eraser" style="font-size: 12px;"></i> Limpiar
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+                                        <input type="text" id="caja-buscar-ingresos" placeholder="Buscar por producto, monto o método..."
+                                            style="width: 100%; padding: 10px 14px 10px 36px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #334155; outline: none; transition: border-color 0.2s; background: #f8fafc;">
+                                    </div>
+                                </div>
+
+                                <div id="caja-lista-ingresos" style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div style="text-align: center; padding: 25px; color: #94a3b8; font-size: 13px;">No
+                                        hay ingresos recientes en esta sesión.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LADO DERECHO: STICKY SIDEBAR (30%) -->
+                        <div class="caja-col-sidebar">
+                            <div
+                                style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+                                <h3
+                                    style="margin: 0 0 25px 0; font-size: 18px; color: #1e293b; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-lock" style="color: #5C6BC0;"></i> Confirmar Arqueo
+                                </h3>
+
+                                <!-- Resumen Contable Griscito -->
+                                <div
+                                    style="background: #f8fafc; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+                                    <p
+                                        style="margin:0; font-size:12px; color:#64748b; font-weight:700; text-transform:uppercase;">
+                                        Efectivo Esperado</p>
+                                    <div
+                                        style="display:flex; justify-content:center; align-items:baseline; gap:5px; margin: 5px 0 8px 0;">
+                                        <span style="font-size: 18px; font-weight:bold; color:#0f172a;">$</span>
+                                        <span id="caja-sidebar-efectivo-esperado"
+                                            style="font-size: 28px; font-weight:900; color:#0f172a;">0,00</span>
+                                    </div>
+                                    <p style="margin:0; font-size:11px; color:#94a3b8;">(Fondo Inicial + Ventas
+                                        Efectivo)</p>
+                                </div>
+
+                                <form id="form-cierre-caja">
+                                    <div class="form-group" style="margin-bottom: 20px;">
+                                        <label for="caja-monto-final"
+                                            style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Efectivo
+                                            Real (Físico)</label>
+                                        <div style="position: relative;">
+                                            <span
+                                                style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 15px; color: #64748b; font-weight: bold;">$</span>
+                                            <input type="number" id="caja-monto-final" step="0.01" min="0" required
+                                                placeholder="Ingrese efectivo en caja" style="padding-left: 35px;">
+                                        </div>
+                                        <div id="caja-monto-final-warning"
+                                            style="display: none; color: #c2410c; margin-top: 8px; font-size: 13px;">
+                                            <i class="fas fa-exclamation-triangle"></i> El monto difiere del esperado. Se registrará una diferencia.
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group" style="margin-bottom: 20px;">
+                                        <label for="caja-fondo-fijo"
+                                            style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Fondo
+                                            Fijo para Mañana</label>
+                                        <div style="position: relative;">
+                                            <span
+                                                style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 15px; color: #64748b; font-weight: bold;">$</span>
+                                            <input type="number" id="caja-fondo-fijo" step="0.01" min="0" required
+                                                placeholder="50000.00" style="padding-left: 35px;">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group" style="margin-bottom: 25px;">
+                                        <label for="caja-observaciones-cierre"
+                                            style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Observaciones</label>
+                                        <textarea id="caja-observaciones-cierre" rows="3"
+                                            placeholder="Escriba cualquier discrepancia o nota relevante aquí..."></textarea>
+                                    </div>
+
+                                    <div id="caja-error-cierre" class="error-message"
+                                        style="display: none; text-align: center; margin-bottom: 15px; font-size: 13px;">
+                                    </div>
+
+                                    <button type="button" id="btn-cerrar-caja" class="caja-btn-cerrar">
+                                        <i class="fas fa-lock"></i> Cerrar Caja
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <div id="logout-modal" class="modal">
+            <div class="modal-content" style="max-width: 450px; padding: 0;">
+                <div class="modal-header" style="padding: 20px 25px;">
+                    <h3 style="margin: 0; font-size: 18px;">
+                        <i class="fas fa-sign-out-alt" style="color: #e74c3c;"></i> Confirmar Salida
+                    </h3>
+                </div>
+
+                <div class="modal-body" style="padding: 20px 25px;">
+                    <p style="font-size: 15px; margin: 0; text-align: center; line-height: 1.5;">
+                        ¿Estás seguro de que deseas cerrar sesión?
+                    </p>
+                </div>
+
+                <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
+                    <button id="confirm-logout" class="btn-primary" style="background-color: #e74c3c;">
+                        <i class="fas fa-sign-out-alt"></i> Sí, Salir
+                    </button>
+                    <button id="cancel-logout" class="btn-outline">Cancelar</button>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div id="confirmation-modal" class="modal">
-        <div class="modal-content" style="max-width: 450px; padding: 0;">
-            <div class="modal-header" style="padding: 20px 25px;">
-                <h3 style="margin: 0; font-size: 18px;">
-                    <i class="fas fa-question-circle" style="color: #2563eb;"></i> Confirmar Acción
+        <!-- Modal de Edición de Proveedor -->
+        <div id="modal-edit-proveedor-overlay" class="modal" style="display: none;">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3><i class="fas fa-edit"></i> Editar Proveedor</h3>
+                    <button id="modal-edit-proveedor-close" class="modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <form id="edit-proveedor-form" novalidate>
+                        <input type="hidden" id="editProveedorId">
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editProveedorNombre">Nombre del Proveedor</label>
+                                <input type="text" id="editProveedorNombre" placeholder="Nombre del proveedor">
+                                <div class="error-message" id="errorEditNombre"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="editProveedorTelefono">Teléfono</label>
+                                <input type="text" id="editProveedorTelefono" placeholder="123456789">
+                                <div class="error-message" id="errorEditTelefono"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="editProveedorEmail">Email</label>
+                                <input type="email" id="editProveedorEmail" placeholder="email@ejemplo.com">
+                                <div class="error-message" id="errorEditEmail"></div>
+                            </div>
+                            <div class="form-group">
+                                <label for="editProveedorDireccion">Dirección</label>
+                                <input type="text" id="editProveedorDireccion" placeholder="Dirección completa">
+                                <div class="error-message" id="errorEditDireccion"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="edit-productos-select-input">Productos que Ofrece</label>
+                            <div id="edit-productos-multi-select-container" class="custom-multi-select-container">
+                                <div id="edit-tags-container" class="tags-container"></div>
+                                <input type="text" id="edit-productos-select-input" class="custom-select-input"
+                                    placeholder="Buscar y seleccionar productos...">
+                            </div>
+                            <div id="edit-productos-options-container" class="options-container"></div>
+                            <select id="editProveedorProductosSelect" multiple style="display: none;"></select>
+                            <div class="error-message" id="editProveedorProductosError"></div>
+                        </div>
+
+                        <div id="form-general-message-edit-proveedor" class="form-message"></div>
+                    </form>
+                </div>
+
+                <div class="modal-footer">
+                    <button type="submit" form="edit-proveedor-form" class="btn-primary">
+                        <i class="fas fa-save"></i> Guardar Cambios
+                    </button>
+                    <button type="button" class="btn-outline"
+                        onclick="document.getElementById('modal-edit-proveedor-overlay').style.display='none'">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Modal de Detalles de Proveedor -->
+        <div id="modal-detail-proveedor-overlay" class="modal" style="display: none;">
+            <div class="modal-content modal-large">
+                <div class="modal-header">
+                    <h3><i class="fas fa-eye"></i> Detalles del Proveedor</h3>
+                    <button id="modal-detail-proveedor-close" class="modal-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="modal-body">
+                    <!-- Información General -->
+                    <div class="detail-section">
+                        <h4><i class="fas fa-info-circle"></i> Información General</h4>
+                        <div class="detail-grid">
+                            <div class="detail-item">
+                                <label>Nombre:</label>
+                                <span id="detail-proveedor-nombre"></span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Email:</label>
+                                <span id="detail-proveedor-email"></span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Teléfono:</label>
+                                <span id="detail-proveedor-telefono"></span>
+                            </div>
+                            <div class="detail-item">
+                                <label>Dirección:</label>
+                                <span id="detail-proveedor-direccion"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Productos Ofrecidos -->
+                    <div class="detail-section">
+                        <h4><i class="fas fa-box"></i> Productos Ofrecidos</h4>
+                        <div id="detail-proveedor-productos"
+                            style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
+                    </div>
+                </div>
+
+                <div class="modal-footer">
+                    <button class="btn-outline" id="modal-detail-proveedor-close-btn">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Confirmación de Eliminación (Genérico) -->
+        <div class="modal" id="delete-confirm-modal" style="display: none;">
+            <div class="modal-content" style="max-width: 450px; padding: 0;">
+                <div class="modal-header" style="padding: 20px 25px;">
+                    <h3 style="margin: 0; font-size: 18px;">
+                        <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i> Confirmar Eliminación
+                    </h3>
+                    <button class="modal-close" onclick="this.closest('.modal').style.display='none'">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="modal-body" style="padding: 20px 25px;">
+                    <p id="delete-modal-message"
+                        style="font-size: 15px; margin: 0; text-align: center; line-height: 1.5;">
+                        ¿Estás seguro de que deseas eliminar este elemento?
+                    </p>
+                </div>
+
+                <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
+                    <button type="button" class="btn-primary" id="confirm-delete-btn"
+                        style="background-color: #e74c3c;">
+                        <i class="fas fa-trash"></i> Sí, Eliminar
+                    </button>
+                    <button type="button" class="btn-outline" id="cancel-delete-btn">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Modal de Detalle de Compra -->
+        <div id="purchase-detail-modal" class="modal">
+            <div class="modal-content modal-large">
+                <span class="close-modal" onclick="cerrarModalDetalleCompra()">&times;</span>
+                <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-receipt"></i> Detalle de Compra <span id="modal-compra-id"
+                        style="color: #666; font-weight: 400; font-size: 18px;"></span>
                 </h3>
-                <button class="modal-close" id="btn-confirm-close">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
 
-            <div class="modal-body" style="padding: 20px 25px;">
-                <p id="confirmation-message" style="font-size: 15px; margin: 0; text-align: center; line-height: 1.5;">
-                    ¿Estás seguro?
-                </p>
-            </div>
+                <div class="purchase-detail-info" style="margin-bottom: 20px;">
+                    <div class="info-grid"
+                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        <div class="info-item">
+                            <strong style="color: #666; font-size: 13px;">Fecha:</strong>
+                            <p id="modal-compra-fecha" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                        </div>
+                        <div class="info-item">
+                            <strong style="color: #666; font-size: 13px;">Proveedor:</strong>
+                            <p id="modal-compra-proveedor" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                        </div>
+                        <div class="info-item">
+                            <strong style="color: #666; font-size: 13px;">Total:</strong>
+                            <p id="modal-compra-total"
+                                style="margin: 5px 0 0 0; font-size: 15px; font-weight: 600; color: #28a745;"></p>
+                        </div>
+                    </div>
+                </div>
 
-            <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
-                <button id="btn-confirm-yes" class="btn-primary" style="background-color: #2563eb;">
-                    <i class="fas fa-check"></i> Confirmar
-                </button>
-                <button id="btn-confirm-cancel" class="btn-outline">Cancelar</button>
+                <h4 style="margin-bottom: 15px; color: #333; font-size: 16px;">Productos Comprados</h4>
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Cantidad</th>
+                                <th>Precio Unitario</th>
+                                <th>Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modal-compra-productos">
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="4">
+                                    <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                        <span id="modal-compra-page-info" style="margin-right: 15px;">Página 1 de
+                                            1</span>
+                                        <button class="btn-outline" id="modal-compra-prev-page" disabled>
+                                            <i class="fas fa-arrow-left"></i>
+                                        </button>
+                                        <button class="btn-outline" id="modal-compra-next-page" disabled>
+                                            <i class="fas fa-arrow-right"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <div class="modal-buttons" style="margin-top: 20px; justify-content: flex-end;">
+                    <button onclick="cerrarModalDetalleCompra()" class="btn-secondary">Cerrar</button>
+                </div>
             </div>
         </div>
-    </div>
+
+        <div id="confirmation-modal" class="modal">
+            <div class="modal-content" style="max-width: 450px; padding: 0;">
+                <div class="modal-header" style="padding: 20px 25px;">
+                    <h3 style="margin: 0; font-size: 18px;">
+                        <i class="fas fa-question-circle" style="color: #2563eb;"></i> Confirmar Acción
+                    </h3>
+                    <button class="modal-close" id="btn-confirm-close">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <div class="modal-body" style="padding: 20px 25px;">
+                    <p id="confirmation-message"
+                        style="font-size: 15px; margin: 0; text-align: center; line-height: 1.5;">
+                        ¿Estás seguro?
+                    </p>
+                </div>
+
+                <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
+                    <button id="btn-confirm-yes" class="btn-primary" style="background-color: #2563eb;">
+                        <i class="fas fa-check"></i> Confirmar
+                    </button>
+                    <button id="btn-confirm-cancel" class="btn-outline">Cancelar</button>
+                </div>
+            </div>
+        </div>
 
 
-    <script src="js/admin.js"></script>
-    <script src="js/utils.js"></script>
-    <script src="js/principal.js"></script>
-    <script src="js/productos.js"></script>
-    <script src="js/proveedor.js"></script>
-    <script src="js/compras.js"></script>
-    <script src="js/usuarios.js"></script>
-    <script src="js/ventas.js"></script>
-    <script src="js/informes.js"></script>
-    <script src="js/stock.js"></script>
+        <!-- MODAL DE RESUMEN DE CIERRE (DISEÑO PREMIUM REORGANIZADO) -->
+        <div id="modal-resumen-cierre" class="modal-overlay-caja">
+            <div class="modal-cierre-container">
+                <!-- Header Integrado -->
+                <div class="modal-cierre-header">
+                    <div class="modal-header-main">
+                        <h3>Resumen de Cierre</h3>
+                        <div class="modal-header-info">
+                            <span class="responsable-tag"><i class="fas fa-user-circle"></i> Responsable:
+                                <strong id="modal-cierre-responsable">---</strong></span>
+                            <span id="modal-cierre-sesion" class="session-badge">Sesión #---</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal-cierre-body">
+                    <!-- Tiempos Discretos -->
+                    <div class="tiempos-discretos">
+                        <span class="tiempo-simple">Apertura: <strong id="modal-resumen-apertura">--:--</strong></span>
+                        <span class="tiempo-simple">Cierre: <strong id="modal-resumen-cierre-hora">--:--</strong></span>
+                    </div>
+
+                    <!-- CARD SUPERIOR: FLUJO DE EFECTIVO -->
+                    <div class="modal-section-card">
+                        <div class="contable-fila">
+                            <span class="contable-label">Saldo Inicial</span>
+                            <span id="modal-resumen-inicial" class="contable-valor">$0,00</span>
+                        </div>
+                        <div class="contable-fila">
+                            <span class="contable-label">Ventas Efectivo</span>
+                            <span id="modal-resumen-ventas-efectivo" class="contable-valor pos-soft">+$0,00</span>
+                        </div>
+                        <div class="contable-fila">
+                            <span class="contable-label">Gastos / Compras</span>
+                            <span id="modal-resumen-gastos" class="contable-valor neg-soft">-$0,00</span>
+                        </div>
+                        <div class="contable-fila fila-destacada">
+                            <span class="contable-label">SALDO ESPERADO</span>
+                            <span id="modal-resumen-esperado" class="contable-valor">$0,00</span>
+                        </div>
+                    </div>
+
+                    <!-- CARD INFERIOR: VENTAS DIGITALES (INFORMATIVO) -->
+                    <div class="modal-section-card compact">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span
+                                style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Ventas
+                                Digitales</span>
+                            <i class="fas fa-info-circle" style="color: #cbd5e1; font-size: 12px;"></i>
+                        </div>
+                        <div class="contable-fila" style="padding: 5px 0;">
+                            <span class="contable-label" style="font-size: 13px;">Tarjeta</span>
+                            <span id="modal-resumen-tarjeta" class="contable-valor"
+                                style="font-size: 13px; color: #6366f1;">$0,00</span>
+                        </div>
+                        <div class="contable-fila" style="padding: 5px 0;">
+                            <span class="contable-label" style="font-size: 13px;">Transferencia</span>
+                            <span id="modal-resumen-transferencia" class="contable-valor"
+                                style="font-size: 13px; color: #f59e0b;">$0,00</span>
+                        </div>
+                    </div>
+
+                    <!-- RESULTADO DEL ARQUEO -->
+                    <div class="resultado-contable-box">
+                        <div class="arqueo-grid">
+                            <div class="arqueo-item">
+                                <span class="arqueo-label">Efectivo Real</span>
+                                <span id="modal-resumen-real" class="arqueo-valor">$0,00</span>
+                            </div>
+                            <div class="arqueo-item">
+                                <span class="arqueo-label">Diferencia</span>
+                                <div class="diff-container">
+                                    <span id="modal-resumen-diferencia" class="diff-pill ok">+$0,00
+                                        (Cuadrado)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="arqueo-grid"
+                            style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+                            <div class="arqueo-item">
+                                <span class="arqueo-label">Fondo para Mañana</span>
+                                <span id="modal-resumen-fondo-proximo" class="arqueo-valor"
+                                    style="font-size: 18px;">$0,00</span>
+                            </div>
+                            <div class="arqueo-item">
+                                <span class="arqueo-label">Retiro Total</span>
+                                <span id="modal-resumen-retiro" class="arqueo-valor"
+                                    style="font-size: 18px; color: #4f46e5;">$0,00</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Footer Acciones -->
+                <div class="modal-cierre-footer">
+                    <button id="btn-confirmar-cierre" class="btn-modal btn-primary-modal">
+                        <i class="fas fa-check-circle"></i> Confirmar y Finalizar
+                    </button>
+                    <button id="btn-previsualizar-cierre" class="btn-modal btn-outline-modal">
+                        <i class="fas fa-print"></i> Vista Previa
+                    </button>
+                    <button id="btn-cancelar-cierre" class="btn-secondary-modal">
+                        <i class="fas fa-arrow-left"></i> Volver a corregir datos
+                    </button>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- seccion caja insertada dentro de main -->
+
+        <script src="js/admin.js"></script>
+
+        <script src="js/utils.js"></script>
+        <script src="js/caja.js"></script>
+        <script src="js/principal.js"></script>
+        <script src="js/productos.js"></script>
+        <script src="js/proveedor.js"></script>
+        <script src="js/compras.js"></script>
+        <script src="js/usuarios.js"></script>
+        <script src="js/ventas.js"></script>
+        <script src="js/informes.js"></script>
+        <script src="js/stock.js"></script>
 
 </body>
 

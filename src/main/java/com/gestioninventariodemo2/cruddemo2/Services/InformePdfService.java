@@ -24,6 +24,7 @@ import java.io.ByteArrayOutputStream;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -37,6 +38,7 @@ public class InformePdfService {
         private final CompraRepository compraRepository;
 
         private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+        private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         private static final DecimalFormat NUMBER_FORMATTER;
 
         static {
@@ -71,11 +73,11 @@ public class InformePdfService {
                         agregarSeccionTopComprados(document, topComprados);
 
                         // ========== TABLA DE VENTAS CON PRODUCTOS ==========
-                        List<Venta> ventas = ventaRepository.findByFechaBetween(inicio, fin);
+                        List<Venta> ventas = ventaRepository.findByFechaBetween(inicio.atStartOfDay(), fin.atTime(LocalTime.MAX));
                         agregarSeccionVentas(document, ventas, inicio, fin);
 
                         // ========== TABLA DE COMPRAS CON PRODUCTOS ==========
-                        List<Compra> compras = compraRepository.findByFechaBetween(inicio, fin);
+                        List<Compra> compras = compraRepository.findByFechaBetween(inicio.atStartOfDay(), fin.atTime(LocalTime.MAX));
                         agregarSeccionCompras(document, compras, inicio, fin);
 
                         // ========== PIE DE PÁGINA ==========
@@ -345,7 +347,7 @@ public class InformePdfService {
                         for (Venta venta : ventas) {
                                 // Fecha
                                 table.addCell(new Cell().add(
-                                                new Paragraph(venta.getFecha().format(DATE_FORMATTER)).setFontSize(10))
+                                                new Paragraph(venta.getFecha().format(DATE_TIME_FORMATTER)).setFontSize(10))
                                                 .setPadding(6));
 
                                 // Cliente

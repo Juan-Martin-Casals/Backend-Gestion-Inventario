@@ -31,7 +31,12 @@ document.addEventListener('DOMContentLoaded', function () {
     let lowStockSortField = 'stock'; // Campo de ordenamiento inicial
     let lowStockSortDirection = 'asc';
     let lowStockAllData = []; // Dataset en memoria para ordenamiento global
-
+    let lowStockFilteredData = []; // Dataset con filtros aplicados
+    
+    // --- Referencias UI de búsqueda de Reposición ---
+    const mainLowStockSearchInput = document.getElementById('main-low-stock-search-input');
+    const mainLowStockBtnLimpiar = document.getElementById('main-low-stock-btn-limpiar');
+    const mainLowStockBtnPdf = document.getElementById('main-low-stock-btn-exportar-pdf');
 
     // --- 3. CONSTANTES DEL DOM (Tarjetas de Stock) ---
     // (Estos son los IDs que agregaste en el HTML)
@@ -154,9 +159,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 const pageData = await response.json();
                 lowStockAllData = pageData.content || [];
             }
+            
+            // Función auxiliar para quitar acentos
+            const quitarAcentos = (str) => {
+                return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+            };
+
+            // Filtrado Local (Search Bar)
+            lowStockFilteredData = lowStockAllData;
+            if (mainLowStockSearchInput && mainLowStockSearchInput.value.trim() !== '') {
+                const query = quitarAcentos(mainLowStockSearchInput.value);
+                lowStockFilteredData = lowStockAllData.filter(producto => {
+                    return (
+                        quitarAcentos(producto.nombre).includes(query) ||
+                        quitarAcentos(producto.descripcion).includes(query) ||
+                        quitarAcentos(producto.proveedor).includes(query) ||
+                        quitarAcentos(producto.email).includes(query) ||
+                        quitarAcentos(producto.telefono).includes(query)
+                    );
+                });
+            }
 
             // Ordenamiento local (Client-Side)
-            const sorted = [...lowStockAllData].sort((a, b) => {
+            const sorted = [...lowStockFilteredData].sort((a, b) => {
                 let valA = a[lowStockSortField];
                 let valB = b[lowStockSortField];
                 if (valA == null) valA = typeof valB === 'number' ? 0 : '';
@@ -183,13 +208,13 @@ document.addEventListener('DOMContentLoaded', function () {
             updateSortIndicators();
 
             requestAnimationFrame(() => {
-                mainContent.focus();
-                window.scrollTo(0, scrollPosition);
+                // Removemos el mainContent.focus() que rompía el input de búsqueda interactivo
                 lowStockTableBody.classList.remove('loading');
             });
-            setTimeout(() => {
-                window.scrollTo(0, scrollPosition);
-            }, 0);
+            // El timeout de scroll también se restringe para evitar saltos.
+            if(window.scrollY !== scrollPosition) {
+               window.scrollTo(0, scrollPosition);
+            }
 
         } catch (error) {
             console.error('Error al cargar tabla de stock bajo:', error);
@@ -218,6 +243,79 @@ document.addEventListener('DOMContentLoaded', function () {
         // Reiniciar a la primera página al ordenar
         lowStockCurrentPage = 0;
         loadLowStockTable();
+    }
+    
+    // --- Lógica de la barra de búsqueda y PDF ---
+    if (mainLowStockSearchInput) {
+        mainLowStockSearchInput.addEventListener('input', () => {
+            lowStockCurrentPage = 0;
+            loadLowStockTable();
+        });
+    }
+
+    if (mainLowStockBtnLimpiar) {
+        mainLowStockBtnLimpiar.addEventListener('click', () => {
+            if (mainLowStockSearchInput) mainLowStockSearchInput.value = '';
+            lowStockCurrentPage = 0;
+            loadLowStockTable();
+        });
+    }
+
+    if (mainLowStockBtnPdf) {
+        mainLowStockBtnPdf.addEventListener('click', () => {
+            exportarTablaPDF(lowStockFilteredData, "Productos_a_Reponer");
+        });
+    }
+    
+    /**
+     * Función genérica para exportar tablas ordenadas.
+     * (Tomada prestada de la base del sistema)
+     */
+    function exportarTablaPDF(data, titulo) {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
+            console.error('jsPDF no está cargado');
+            alert('Error: La librería para generar PDF no está disponible.');
+            return;
+        }
+
+        const doc = new window.jspdf.jsPDF();
+        
+        // Configuración de fecha
+        const hoy = new Date();
+        const fechaFormateada = hoy.toLocaleDateString('es-AR');
+        
+        // Título del documento
+        doc.setFontSize(18);
+        doc.text(titulo.replace(/_/g, " "), 14, 22);
+        
+        doc.setFontSize(11);
+        doc.text(`Fecha de exportación: ${fechaFormateada}`, 14, 30);
+
+        // Armado de datos de la tabla (usaremos solo las 7 columnas que muestra admin.html)
+        const columnas = [
+            "Nombre", "Descripción", "Proveedor", "Email", "Teléfono", "Stock", "Costo ($)"
+        ];
+        
+        const filas = data.map(item => [
+            item.nombre || 'N/A',
+            item.descripcion || '-',
+            item.proveedor || '-',
+            item.email || '-',
+            item.telefono || '-',
+            item.stock !== null ? item.stock.toString() : '0',
+            item.precioCosto !== null ? item.precioCosto.toFixed(2) : '0.00'
+        ]);
+
+        doc.autoTable({
+            head: [columnas],
+            body: filas,
+            startY: 35,
+            theme: 'striped',
+            styles: { fontSize: 8, cellPadding: 2 },
+            headStyles: { fillColor: [65, 84, 241] } // Color azul corporativo
+        });
+
+        doc.save(`${titulo}_${fechaFormateada.replace(/\//g, "-")}.pdf`);
     }
 
     function updateSortIndicators() {
@@ -369,10 +467,34 @@ document.addEventListener('DOMContentLoaded', function () {
             // Mapear ventas a un formato unificado
             const formatCurrency = (val) => new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(val);
 
+            // Función fuerte para parsear LocalDateTime de SpringBoot (Array o String)
+            const parseDate = (d) => {
+                if (!d) return new Date();
+                if (Array.isArray(d)) {
+                    // Meses en JS son de 0 a 11
+                    // Puede venir como [YYYY, MM, DD, HH, mm, ss]
+                    return new Date(d[0], d[1] - 1, d[2] || 1, d[3] || 0, d[4] || 0, d[5] || 0); 
+                }
+                // Convertir a string
+                const str = String(d);
+                if (str.includes('T')) {
+                    const parts = str.split('T');
+                    const dateParts = parts[0].split('-');
+                    const timeParts = parts[1].split(':');
+                    return new Date(dateParts[0], dateParts[1] - 1, dateParts[2], timeParts[0] || 0, timeParts[1] || 0, timeParts[2] ? parseInt(timeParts[2]) : 0);
+                }
+                const parts = str.split('-');
+                if(parts.length === 3) {
+                    return new Date(parts[0], parts[1] - 1, parts[2], 0, 0, 0);
+                }
+                return new Date(d);
+            };
+
             const unifiedActivity = [
                 ...ventas.map(v => ({
                     type: 'venta',
-                    date: new Date(v.fecha), // Asegurate de que v.fecha string sea un formato de fecha válido
+                    date: parseDate(v.fecha),
+                    id: v.idVenta || 0,
                     title: `Venta registrada: ${formatCurrency(v.total)}`,
                     subtitle: `Cliente: ${v.nombreCliente || 'General'} | Vendió: ${v.nombreVendedor || 'Desconocido'} | Pago: ${v.metodoPago || 'Efectivo'}`,
                     icon: 'fa-shopping-cart',
@@ -380,7 +502,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 })),
                 ...compras.map(c => ({
                     type: 'compra',
-                    date: new Date(c.fecha),
+                    date: parseDate(c.fecha),
+                    id: c.id || c.idCompra || 0, 
                     title: `Compra registrada: ${formatCurrency(c.total)}`,
                     subtitle: `Proveedor: ${c.nombreProveedor || 'Desconocido'}`,
                     icon: 'fa-truck-loading',
@@ -389,7 +512,14 @@ document.addEventListener('DOMContentLoaded', function () {
             ];
 
             // Ordenar por fecha descendente (más recientes primero)
-            unifiedActivity.sort((a, b) => b.date - a.date);
+            // Si las fechas son las mismas (mismo día, porque no hay hora), desempatar favoreciendo al ID mayor
+            unifiedActivity.sort((a, b) => {
+                const diffDate = b.date.getTime() - a.date.getTime();
+                if (diffDate === 0 || isNaN(diffDate)) {
+                    return b.id - a.id; 
+                }
+                return diffDate;
+            });
 
             // Tomar solo los primeros 6 elementos para no saturar el panel
             const topActivity = unifiedActivity.slice(0, 6);
@@ -406,13 +536,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             topActivity.forEach(item => {
-                const timeString = item.date.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-                const dateString = item.date.toLocaleDateString('es-AR');
-
-                // Formatear si es "Hoy" o poner fecha
-                const hoy = new Date();
-                const esHoy = item.date.toDateString() === hoy.toDateString();
-                const displayDate = esHoy ? `Hoy, ${timeString} hs` : `${dateString}, ${timeString} hs`;
+                // Formateamos mostrando Fecha, Hora y Minuto
+                const opciones = { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' };
+                const displayDate = item.date.toLocaleDateString('es-AR', opciones) + ' hs';
 
                 // Determinar el prefijo +, - o nada
                 const prefix = item.type === 'venta' ? '+' : '-';
@@ -625,14 +751,20 @@ document.addEventListener('DOMContentLoaded', function () {
             agotadosTableBody.classList.add('loading');
             await new Promise(resolve => setTimeout(resolve, 150));
 
-            // 1. Filtrar por búsqueda (nombre, proveedor, email, teléfono)
-            const query = agotadosSearchQuery.toLowerCase().trim();
+            // Función auxiliar para quitar acentos
+            const quitarAcentos = (str) => {
+                return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+            };
+
+            // 1. Filtrar por búsqueda (nombre, proveedor, email, teléfono, descripcion)
+            const query = quitarAcentos(agotadosSearchQuery);
             const filtered = query
                 ? agotadosAllData.filter(p =>
-                    (p.nombre && p.nombre.toLowerCase().includes(query)) ||
-                    (p.proveedor && p.proveedor.toLowerCase().includes(query)) ||
-                    (p.email && p.email.toLowerCase().includes(query)) ||
-                    (p.telefono && p.telefono.toLowerCase().includes(query))
+                    quitarAcentos(p.nombre).includes(query) ||
+                    quitarAcentos(p.descripcion).includes(query) ||
+                    quitarAcentos(p.proveedor).includes(query) ||
+                    quitarAcentos(p.email).includes(query) ||
+                    quitarAcentos(p.telefono).includes(query)
                 )
                 : agotadosAllData;
 
@@ -864,6 +996,13 @@ document.addEventListener('DOMContentLoaded', function () {
         modalAgotados.addEventListener('click', (e) => {
             if (e.target === modalAgotados) closeAgotadosModal();
         });
+
+        // Cerrar con tecla ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modalAgotados.style.display === 'flex') {
+                closeAgotadosModal();
+            }
+        });
     }
 
     // --- 8. LÓGICA MODAL STOCK BAJO ---
@@ -919,15 +1058,20 @@ document.addEventListener('DOMContentLoaded', function () {
             stockBajoTableBody.classList.add('loading');
             await new Promise(resolve => setTimeout(resolve, 150));
 
+            // Función auxiliar para quitar acentos
+            const quitarAcentos = (str) => {
+                return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase() : '';
+            };
+
             // 1. Filtrar
-            const query = sbSearchQuery.toLowerCase().trim();
+            const query = quitarAcentos(sbSearchQuery);
             const filtered = query
                 ? sbAllData.filter(p =>
-                    (p.nombre && p.nombre.toLowerCase().includes(query)) ||
-                    (p.descripcion && p.descripcion.toLowerCase().includes(query)) ||
-                    (p.proveedor && p.proveedor.toLowerCase().includes(query)) ||
-                    (p.email && p.email.toLowerCase().includes(query)) ||
-                    (p.telefono && p.telefono.toLowerCase().includes(query))
+                    quitarAcentos(p.nombre).includes(query) ||
+                    quitarAcentos(p.descripcion).includes(query) ||
+                    quitarAcentos(p.proveedor).includes(query) ||
+                    quitarAcentos(p.email).includes(query) ||
+                    quitarAcentos(p.telefono).includes(query)
                 )
                 : sbAllData;
 
@@ -1118,6 +1262,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (modalStockBajoClose) modalStockBajoClose.addEventListener('click', closeStockBajoModal);
         if (modalStockBajoCloseBtn) modalStockBajoCloseBtn.addEventListener('click', closeStockBajoModal);
         modalStockBajo.addEventListener('click', (e) => { if (e.target === modalStockBajo) closeStockBajoModal(); });
+
+        // Cerrar con tecla ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && modalStockBajo.style.display === 'flex') {
+                closeStockBajoModal();
+            }
+        });
     }
 
 });

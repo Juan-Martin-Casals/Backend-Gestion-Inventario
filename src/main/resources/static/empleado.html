@@ -10,6 +10,11 @@
     <link rel="stylesheet" href="css/styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/dashboard-informes.css">
+    <link rel="stylesheet" href="css/caja-dashboard.css">
+
+    <!-- jsPDF para exportar PDFs desde el frontend -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 </head>
 
 <body>
@@ -31,6 +36,7 @@
                         <li><a href="#" data-section="ventas" data-subsection="ventas-list">Ver Ventas</a></li>
                     </ul>
                 </li>
+                <li><a href="#" data-section="caja"><i class="fas fa-cash-register"></i> Caja</a></li>
                 <li><a href="#" data-section="stock"><i class="fas fa-box"></i> Productos</a></li>
                 <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
             </ul>
@@ -611,6 +617,296 @@
                 </div>
             </div>
 
+            <section id="caja-section" class="spa-section" style="display:none; padding: 40px;">
+                <!-- Título Superior -->
+                <div id="caja-titulo-apertura" style="width: 80%; margin: 0 0 30px 0;">
+                    <h3
+                        style="margin-bottom: 8px; color: #1e293b; display: flex; align-items: center; font-size: 24px; font-weight: 700;">
+                        <div
+                            style="background: #e3f2fd; color: #007bff; padding: 8px; border-radius: 8px; display: flex; align-items: center; justify-content: center; margin-right: 12px;">
+                            <i class="fas fa-cash-register" style="font-size: 16px;"></i>
+                        </div>
+                        Apertura de Caja
+                    </h3>
+                    <p style="color: #64748b; font-size: 14px; margin-left: 44px; max-width: 450px; line-height: 1.5;">
+                        Inicie el turno registrando el saldo inicial para asegurar la integridad de las operaciones
+                        diarias.
+                    </p>
+                </div>
+
+                <!-- Tarjeta Principal -->
+                <div id="caja-panel-apertura"
+                    style="width: 80%; margin: 0; background: #fff; padding: 40px; border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
+
+                    <!-- Encabezado de Operador y Saldo -->
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 40px; border-bottom: 1px solid #f1f5f9; padding-bottom: 20px;">
+                        <div>
+                            <span
+                                style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px;">Saldo
+                                Cierre Anterior</span>
+                            <div style="display: flex; align-items: center; justify-content: flex-start; gap: 8px;">
+                                <i class="fas fa-wallet" style="color: #007bff; font-size: 14px;"></i>
+                                <span id="caja-saldo-anterior" style="font-size: 18px; font-weight: 700; color: #333;">$
+                                    0.00</span>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span
+                                style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px;">Operador
+                                Responsable</span>
+                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px;">
+                                <i class="fas fa-user" style="color: #007bff; font-size: 14px;"></i>
+                                <span id="caja-operador-nombre"
+                                    style="font-size: 15px; font-weight: 600; color: #334155;">Cargando...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="form-apertura-caja">
+                        <!-- Monto Inicial -->
+                        <div class="form-group" style="margin-bottom: 30px;">
+                            <label for="caja-monto-inicial"
+                                style="display: block; font-size: 11px; font-weight: 700; color: #475569; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px;">
+                                Monto Inicial en Efectivo (Real)
+                            </label>
+                            <div style="position: relative; width: 50%; min-width: 250px;">
+                                <span
+                                    style="position: absolute; left: 15px; top: 50%; transform: translateY(-50%); font-size: 20px; color: #333; font-weight: 600;">$</span>
+                                <input type="number" id="caja-monto-inicial" step="0.01" min="0" required
+                                    style="width: 100%; padding: 16px 16px 16px 36px; font-size: 20px; font-weight: 700; color: #333; background-color: #f8faff; border: none; border-bottom: 2px solid #b6d4fe; border-radius: 4px 4px 0 0; outline: none; transition: all 0.2s;">
+                            </div>
+                            <span
+                                style="display: block; margin-top: 8px; font-size: 12px; color: #94a3b8; font-style: italic;">
+                                Ingrese el monto exacto presente en el cajón.
+                            </span>
+                            <div id="caja-monto-warning"
+                                style="display: none; color: #c2410c; margin-top: 8px; font-size: 13px;">
+                                <i class="fas fa-exclamation-triangle"></i> El monto difiere del cierre anterior. Se
+                                registrará una discrepancia.
+                            </div>
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="form-group" style="margin-bottom: 40px;">
+                            <label for="caja-observaciones"
+                                style="display: block; font-size: 11px; font-weight: 700; color: #475569; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 8px;">
+                                Observaciones (Opcional)
+                            </label>
+                            <textarea id="caja-observaciones" rows="3"
+                                placeholder="Ej: Faltaban $200 de vuelto del turno anterior..."
+                                style="width: 100%; padding: 16px; font-size: 14px; color: #334155; background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4px; resize: none; outline: none; transition: all 0.2s;"></textarea>
+                        </div>
+
+                        <div id="caja-error-message" class="error-message"
+                            style="display: none; text-align: center; margin-bottom: 15px;"></div>
+
+                        <!-- Botón Submit -->
+                        <div style="text-align: right; margin-top: 20px;">
+                            <button type="button" id="btn-abrir-caja" class="btn-primary"
+                                style="padding: 14px 28px; font-size: 14px; font-weight: 600; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; transition: background 0.2s; display: inline-flex; align-items: center; justify-content: center;">
+                                <i class="fas fa-lock-open" style="margin-right: 8px;"></i> Iniciar Operaciones
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="caja-panel-cierre" style="display: none; width: 100%;">
+                    <h3
+                        style="margin-bottom: 25px; color: #1e293b; display: flex; align-items: center; gap: 12px; font-weight: 800; font-size: 22px;">
+                        <div
+                            style="background: linear-gradient(135deg, #6366f1, #4f46e5); padding: 10px; border-radius: 12px; color: white; display: flex;">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        Resumen de Sesión Activa
+                    </h3>
+
+                    <div class="caja-layout-grid">
+                        <!-- LADO IZQUIERDO: DATOS (70%) -->
+                        <div class="caja-col-data">
+                            <!-- Monto Inicial Gigante -->
+                            <div class="caja-summary-card initial"
+                                style="display:flex; justify-content:space-between; align-items:center;">
+                                <div>
+                                    <p>Monto Inicial</p>
+                                    <h4 id="caja-resumen-inicial" style="font-size: 38px;">$ 0,00</h4>
+                                </div>
+                                <div id="caja-badge-abierta-interno"
+                                    style="padding: 8px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; color: white; background-color: #10b981; display:flex; align-items:center; gap: 6px;">
+                                    <i class="fas fa-lock-open"></i> ABIERTA
+                                </div>
+                            </div>
+
+                            <!-- TARJETAS SUPERIORES -->
+                            <div class="dashboard-stats">
+                                <div class="stat-card">
+                                    <div class="stat-icon green"><i class="fas fa-dollar-sign"></i></div>
+                                    <div class="stat-content">
+                                        <h3 id="caja-card-total-ventas">$0,00</h3>
+                                        <p>Facturación Total</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon blue"><i class="fas fa-shopping-cart"></i></div>
+                                    <div class="stat-content">
+                                        <h3 id="caja-card-cantidad-ventas">0</h3>
+                                        <p>Cant.Ventas</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon green"><i class="fas fa-money-bill-wave"></i></div>
+                                    <div class="stat-content">
+                                        <h3 id="caja-card-efectivo">$0,00</h3>
+                                        <p>Efectivo</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon purple"><i class="fas fa-credit-card"></i></div>
+                                    <div class="stat-content">
+                                        <h3 id="caja-card-tarjeta">$0,00</h3>
+                                        <p>Tarjeta</p>
+                                    </div>
+                                </div>
+                                <div class="stat-card">
+                                    <div class="stat-icon warning"><i class="fas fa-exchange-alt"></i></div>
+                                    <div class="stat-content">
+                                        <h3 id="caja-card-transferencia">$0,00</h3>
+                                        <p>Transferencia</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- TABLA DE DESGLOSE -->
+                            <div class="caja-table-wrapper" style="margin-bottom: 25px;">
+                                <h4>
+                                    <i class="fas fa-list"></i> Desglose por Método de Pago
+                                </h4>
+                                <p style="margin: 0 0 20px 0; color: #64748b; font-size: 14px;">Detalle de ingresos con
+                                    facturación registrada en la sesión actual agrupado por cada forma de cobro.</p>
+                                <div class="table-container">
+                                    <table class="data-table" style="margin: 0; width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th>Método de Pago</th>
+                                                <th style="text-align: center;">Operaciones</th>
+                                                <th style="text-align: right;">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="caja-tabla-desglose"></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- INGRESOS DE LA SESIÓN -->
+                            <div class="caja-table-wrapper">
+                                <div
+                                    style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                    <h4 style="margin: 0;"><i class="fas fa-receipt"></i> Ingresos de la Sesión</h4>
+                                    <div style="display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 13px; color: #64748b; font-weight: 600;">Filtrar
+                                            por:</span>
+                                        <select id="caja-filtro-ingresos"
+                                            style="padding: 6px 12px; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 13px; color: #334155; background: white; outline: none; cursor: pointer;">
+                                            <option value="Todos">Todos</option>
+                                            <option value="Efectivo">Efectivo</option>
+                                            <option value="Tarjeta">Tarjeta</option>
+                                            <option value="Transferencia">Transferencia</option>
+                                        </select>
+                                        <button id="caja-limpiar-filtros" type="button" class="btn-outline"
+                                            style="padding: 5px 12px; font-size: 13px; display: flex; align-items: center; gap: 5px; white-space: nowrap;">
+                                            <i class="fas fa-eraser" style="font-size: 12px;"></i> Limpiar
+                                        </button>
+                                    </div>
+                                </div>
+                                <div style="margin-bottom: 15px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+                                        <input type="text" id="caja-buscar-ingresos" placeholder="Buscar por producto, monto o método..."
+                                            style="width: 100%; padding: 10px 14px 10px 36px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #334155; outline: none; transition: border-color 0.2s; background: #f8fafc;">
+                                    </div>
+                                </div>
+
+                                <div id="caja-lista-ingresos" style="display: flex; flex-direction: column; gap: 12px;">
+                                    <div style="text-align: center; padding: 25px; color: #94a3b8; font-size: 13px;">No
+                                        hay ingresos recientes en esta sesión.</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LADO DERECHO: STICKY SIDEBAR (30%) -->
+                        <div class="caja-col-sidebar">
+                            <div
+                                style="background: white; border-radius: 12px; padding: 25px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #f1f5f9;">
+                                <h3
+                                    style="margin: 0 0 25px 0; font-size: 18px; color: #1e293b; display: flex; align-items: center; gap: 10px;">
+                                    <i class="fas fa-lock" style="color: #5C6BC0;"></i> Confirmar Arqueo
+                                </h3>
+
+                                <!-- Resumen Contable Griscito -->
+                                <div
+                                    style="background: #f8fafc; border-radius: 12px; padding: 20px; text-align: center; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+                                    <p
+                                        style="margin:0; font-size:12px; color:#64748b; font-weight:700; text-transform:uppercase;">
+                                        Efectivo Esperado</p>
+                                    <div
+                                        style="display:flex; justify-content:center; align-items:baseline; gap:5px; margin: 5px 0 8px 0;">
+                                        <span style="font-size: 18px; font-weight:bold; color:#0f172a;">$</span>
+                                        <span id="caja-sidebar-efectivo-esperado"
+                                            style="font-size: 28px; font-weight:900; color:#0f172a;">0,00</span>
+                                    </div>
+                                    <p style="margin:0; font-size:11px; color:#94a3b8;">(Fondo Inicial + Ventas
+                                        Efectivo)</p>
+                                </div>
+
+                                <form id="form-cierre-caja">
+                                    <div class="form-group" style="margin-bottom: 20px;">
+                                        <label for="caja-monto-final"
+                                            style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Efectivo
+                                            Real (Físico)</label>
+                                        <div style="position: relative;">
+                                            <span
+                                                style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 15px; color: #64748b; font-weight: bold;">$</span>
+                                            <input type="number" id="caja-monto-final" step="0.01" min="0" required
+                                                placeholder="Ingrese efectivo en caja" style="padding-left: 35px;">
+                                        </div>
+                                        <div id="caja-monto-final-warning"
+                                            style="display: none; color: #c2410c; margin-top: 8px; font-size: 13px;">
+                                            <i class="fas fa-exclamation-triangle"></i> El monto difiere del esperado. Se registrará una diferencia.
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group" style="margin-bottom: 20px;">
+                                        <label for="caja-fondo-fijo"
+                                            style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Fondo
+                                            Fijo para Mañana</label>
+                                        <div style="position: relative;">
+                                            <span
+                                                style="position: absolute; left: 16px; top: 50%; transform: translateY(-50%); font-size: 15px; color: #64748b; font-weight: bold;">$</span>
+                                            <input type="number" id="caja-fondo-fijo" step="0.01" min="0" required
+                                                placeholder="50000.00" style="padding-left: 35px;">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group" style="margin-bottom: 25px;">
+                                        <label for="caja-observaciones-cierre"
+                                            style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Observaciones</label>
+                                        <textarea id="caja-observaciones-cierre" rows="3"
+                                            placeholder="Escriba cualquier discrepancia o nota relevante aquí..."></textarea>
+                                    </div>
+
+                                    <div id="caja-error-cierre" class="error-message"
+                                        style="display: none; text-align: center; margin-bottom: 15px; font-size: 13px;">
+                                    </div>
+
+                                    <button type="button" id="btn-cerrar-caja" class="caja-btn-cerrar">
+                                        <i class="fas fa-lock"></i> Cerrar Caja
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
         </main>
     </div>
 
@@ -662,8 +958,119 @@
             </div>
         </div>
     </div>
+    <!-- seccion caja movida -->
+
+    <!-- MODAL DE RESUMEN DE CIERRE (DISEÑO PREMIUM REORGANIZADO) -->
+    <div id="modal-resumen-cierre" class="modal-overlay-caja">
+        <div class="modal-cierre-container">
+            <!-- Header Integrado -->
+            <div class="modal-cierre-header">
+                <div class="modal-header-main">
+                    <h3>Resumen de Cierre</h3>
+                    <div class="modal-header-info">
+                        <span class="responsable-tag"><i class="fas fa-user-circle"></i> Responsable: <strong
+                                id="modal-cierre-responsable">---</strong></span>
+                        <span id="modal-cierre-sesion" class="session-badge">Sesión #---</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-cierre-body">
+                <!-- Tiempos Discretos -->
+                <div class="tiempos-discretos">
+                    <span class="tiempo-simple">Apertura: <strong id="modal-resumen-apertura">--:--</strong></span>
+                    <span class="tiempo-simple">Cierre: <strong id="modal-resumen-cierre-hora">--:--</strong></span>
+                </div>
+
+                <!-- CARD SUPERIOR: FLUJO DE EFECTIVO -->
+                <div class="modal-section-card">
+                    <div class="contable-fila">
+                        <span class="contable-label">Saldo Inicial</span>
+                        <span id="modal-resumen-inicial" class="contable-valor">$0,00</span>
+                    </div>
+                    <div class="contable-fila">
+                        <span class="contable-label">Ventas Efectivo</span>
+                        <span id="modal-resumen-ventas-efectivo" class="contable-valor pos-soft">+$0,00</span>
+                    </div>
+                    <div class="contable-fila">
+                        <span class="contable-label">Gastos / Compras</span>
+                        <span id="modal-resumen-gastos" class="contable-valor neg-soft">-$0,00</span>
+                    </div>
+                    <div class="contable-fila fila-destacada">
+                        <span class="contable-label">SALDO ESPERADO</span>
+                        <span id="modal-resumen-esperado" class="contable-valor">$0,00</span>
+                    </div>
+                </div>
+
+                <!-- CARD INFERIOR: VENTAS DIGITALES (INFORMATIVO) -->
+                <div class="modal-section-card compact">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span
+                            style="font-size: 11px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">Ventas
+                            Digitales</span>
+                        <i class="fas fa-info-circle" style="color: #cbd5e1; font-size: 12px;"></i>
+                    </div>
+                    <div class="contable-fila" style="padding: 5px 0;">
+                        <span class="contable-label" style="font-size: 13px;">Tarjeta</span>
+                        <span id="modal-resumen-tarjeta" class="contable-valor"
+                            style="font-size: 13px; color: #6366f1;">$0,00</span>
+                    </div>
+                    <div class="contable-fila" style="padding: 5px 0;">
+                        <span class="contable-label" style="font-size: 13px;">Transferencia</span>
+                        <span id="modal-resumen-transferencia" class="contable-valor"
+                            style="font-size: 13px; color: #f59e0b;">$0,00</span>
+                    </div>
+                </div>
+
+                <!-- RESULTADO DEL ARQUEO -->
+                <div class="resultado-contable-box">
+                    <div class="arqueo-grid">
+                        <div class="arqueo-item">
+                            <span class="arqueo-label">Efectivo Real</span>
+                            <span id="modal-resumen-real" class="arqueo-valor">$0,00</span>
+                        </div>
+                        <div class="arqueo-item">
+                            <span class="arqueo-label">Diferencia</span>
+                            <div class="diff-container">
+                                <span id="modal-resumen-diferencia" class="diff-pill ok">+$0,00 (Cuadrado)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="arqueo-grid"
+                        style="margin-top: 20px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+                        <div class="arqueo-item">
+                            <span class="arqueo-label">Fondo para Mañana</span>
+                            <span id="modal-resumen-fondo-proximo" class="arqueo-valor"
+                                style="font-size: 18px;">$0,00</span>
+                        </div>
+                        <div class="arqueo-item">
+                            <span class="arqueo-label">Retiro Total</span>
+                            <span id="modal-resumen-retiro" class="arqueo-valor"
+                                style="font-size: 18px; color: #4f46e5;">$0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer Acciones -->
+            <div class="modal-cierre-footer">
+                <button id="btn-confirmar-cierre" class="btn-modal btn-primary-modal">
+                    <i class="fas fa-check-circle"></i> Confirmar y Finalizar
+                </button>
+                <button id="btn-previsualizar-cierre" class="btn-modal btn-outline-modal">
+                    <i class="fas fa-print"></i> Vista Previa
+                </button>
+                <button id="btn-cancelar-cierre" class="btn-secondary-modal">
+                    <i class="fas fa-arrow-left"></i> Volver a corregir datos
+                </button>
+            </div>
+        </div>
+    </div>
 
     <script src="js/utils.js"></script>
+    <script src="js/caja.js"></script>
     <script src="js/principal.js"></script>
     <script src="js/ventasEmpleado.js"></script>
     <script src="js/stock.js"></script>

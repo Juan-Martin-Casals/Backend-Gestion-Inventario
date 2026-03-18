@@ -1,6 +1,7 @@
 package com.gestioninventariodemo2.cruddemo2.DTO;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import lombok.AllArgsConstructor;
@@ -16,7 +17,7 @@ public class VentaResponseDTO {
 
 
     private Long idVenta;
-    private LocalDate fecha;
+    private LocalDateTime fecha;
     private String nombreCliente;
     private double total;
     private List<ProductoVentaDTO> productos;

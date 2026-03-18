@@ -1,6 +1,7 @@
 package com.gestioninventariodemo2.cruddemo2.Model;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import jakarta.persistence.CascadeType;
@@ -31,7 +32,7 @@ public class Venta {
     private Long idVenta;
 
     @Column(name = "fecha")
-    private LocalDate fecha;
+    private LocalDateTime fecha;
 
     @Column(name = "total")
     private double total;

@@ -1,6 +1,6 @@
 package com.gestioninventariodemo2.cruddemo2.Model;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -32,7 +32,7 @@ public class Compra {
     private Long idCompra;
 
     @Column(name = "fecha")
-    private LocalDate fecha;
+    private LocalDateTime fecha;
 
     @Column(name = "total")
     private double total;

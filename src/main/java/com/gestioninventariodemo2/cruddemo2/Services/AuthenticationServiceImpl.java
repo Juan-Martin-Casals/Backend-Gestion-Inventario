@@ -104,6 +104,7 @@ public class AuthenticationServiceImpl implements AuthenticationService{
         
         // 4. Devolvemos el DTO
         return UsuarioPerfilDTO.builder()
+                .idUsuario(usuario.getIdUsuario())
                 .nombreCompleto(nombreCompleto)
                 .rol(rol)
                 .build();

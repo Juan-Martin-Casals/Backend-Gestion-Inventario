@@ -1,6 +1,7 @@
 package com.gestioninventariodemo2.cruddemo2.Repository;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.domain.Page;
@@ -18,7 +19,7 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
         // ==========================================================
 
         @Query("SELECT SUM(c.total) FROM Compra c WHERE c.fecha BETWEEN :inicio AND :fin")
-        Double sumTotalComprasEnRango(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+        Double sumTotalComprasEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
         @Query(value = """
                         SELECT DATE(c.fecha) as fecha, COALESCE(SUM(c.total), 0) as total
@@ -27,10 +28,10 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
                         GROUP BY DATE(c.fecha)
                         ORDER BY DATE(c.fecha)
                         """, nativeQuery = true)
-        List<Object[]> sumComprasPorDia(@Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin);
+        List<Object[]> sumComprasPorDia(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
         // Query para obtener compras completas en un rango
-        List<Compra> findByFechaBetween(LocalDate inicio, LocalDate fin);
+        List<Compra> findByFechaBetween(LocalDateTime inicio, LocalDateTime fin);
 
         // ==========================================================
         // QUERIES PARA ORDENAMIENTO POR PRODUCTO Y COSTO UNITARIO
@@ -71,10 +72,10 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
                         "OR LOWER(p.nombre) LIKE LOWER(CONCAT('%', :search, '%'))) " +
                         "AND c.fecha BETWEEN :inicio AND :fin")
         Page<Compra> searchComprasConFechas(@Param("search") String search,
-                        @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin, Pageable pageable);
+                        @Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin, Pageable pageable);
 
         // Solo filtro de fechas (paginado)
-        Page<Compra> findByFechaBetween(LocalDate inicio, LocalDate fin, Pageable pageable);
+        Page<Compra> findByFechaBetween(LocalDateTime inicio, LocalDateTime fin, Pageable pageable);
 
         // ==========================================================
         // QUERIES CON BÚSQUEDA + ORDENAMIENTO CUSTOM
@@ -116,29 +117,29 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
         @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
                         "WHERE c.fecha BETWEEN :inicio AND :fin " +
                         "GROUP BY c ORDER BY MIN(p.nombre) ASC")
-        Page<Compra> findByFechaBetweenOrderByProductoNombreAsc(@Param("inicio") LocalDate inicio,
-                        @Param("fin") LocalDate fin, Pageable pageable);
+        Page<Compra> findByFechaBetweenOrderByProductoNombreAsc(@Param("inicio") LocalDateTime inicio,
+                        @Param("fin") LocalDateTime fin, Pageable pageable);
 
         // Fechas + orden por producto nombre DESC
         @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
                         "WHERE c.fecha BETWEEN :inicio AND :fin " +
                         "GROUP BY c ORDER BY MIN(p.nombre) DESC")
-        Page<Compra> findByFechaBetweenOrderByProductoNombreDesc(@Param("inicio") LocalDate inicio,
-                        @Param("fin") LocalDate fin, Pageable pageable);
+        Page<Compra> findByFechaBetweenOrderByProductoNombreDesc(@Param("inicio") LocalDateTime inicio,
+                        @Param("fin") LocalDateTime fin, Pageable pageable);
 
         // Fechas + orden por costo unitario ASC
         @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc " +
                         "WHERE c.fecha BETWEEN :inicio AND :fin " +
                         "GROUP BY c ORDER BY MIN(dc.precioUnitario) ASC")
-        Page<Compra> findByFechaBetweenOrderByPrecioUnitarioAsc(@Param("inicio") LocalDate inicio,
-                        @Param("fin") LocalDate fin, Pageable pageable);
+        Page<Compra> findByFechaBetweenOrderByPrecioUnitarioAsc(@Param("inicio") LocalDateTime inicio,
+                        @Param("fin") LocalDateTime fin, Pageable pageable);
 
         // Fechas + orden por costo unitario DESC
         @Query("SELECT c FROM Compra c LEFT JOIN c.detalleCompras dc " +
                         "WHERE c.fecha BETWEEN :inicio AND :fin " +
                         "GROUP BY c ORDER BY MIN(dc.precioUnitario) DESC")
-        Page<Compra> findByFechaBetweenOrderByPrecioUnitarioDesc(@Param("inicio") LocalDate inicio,
-                        @Param("fin") LocalDate fin, Pageable pageable);
+        Page<Compra> findByFechaBetweenOrderByPrecioUnitarioDesc(@Param("inicio") LocalDateTime inicio,
+                        @Param("fin") LocalDateTime fin, Pageable pageable);
 
         // ==========================================================
         // QUERIES CON BÚSQUEDA + FECHAS + ORDENAMIENTO CUSTOM
@@ -151,7 +152,7 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
                         "AND c.fecha BETWEEN :inicio AND :fin " +
                         "GROUP BY c ORDER BY MIN(p.nombre) ASC")
         Page<Compra> searchComprasConFechasOrderByProductoNombreAsc(@Param("search") String search,
-                        @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin, Pageable pageable);
+                        @Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin, Pageable pageable);
 
         // Búsqueda + fechas + orden por producto nombre DESC
         @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
@@ -160,7 +161,7 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
                         "AND c.fecha BETWEEN :inicio AND :fin " +
                         "GROUP BY c ORDER BY MIN(p.nombre) DESC")
         Page<Compra> searchComprasConFechasOrderByProductoNombreDesc(@Param("search") String search,
-                        @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin, Pageable pageable);
+                        @Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin, Pageable pageable);
 
         // Búsqueda + fechas + orden por costo unitario ASC
         @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
@@ -169,7 +170,7 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
                         "AND c.fecha BETWEEN :inicio AND :fin " +
                         "GROUP BY c ORDER BY MIN(dc.precioUnitario) ASC")
         Page<Compra> searchComprasConFechasOrderByPrecioUnitarioAsc(@Param("search") String search,
-                        @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin, Pageable pageable);
+                        @Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin, Pageable pageable);
 
         // Búsqueda + fechas + orden por costo unitario DESC
         @Query("SELECT DISTINCT c FROM Compra c LEFT JOIN c.detalleCompras dc LEFT JOIN dc.producto p " +
@@ -178,7 +179,7 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
                         "AND c.fecha BETWEEN :inicio AND :fin " +
                         "GROUP BY c ORDER BY MIN(dc.precioUnitario) DESC")
         Page<Compra> searchComprasConFechasOrderByPrecioUnitarioDesc(@Param("search") String search,
-                        @Param("inicio") LocalDate inicio, @Param("fin") LocalDate fin, Pageable pageable);
+                        @Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin, Pageable pageable);
 
         // Top N productos más comprados en un rango (por cantidad total comprada)
         @Query(value = """
@@ -192,7 +193,7 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
                         LIMIT :limit
                         """, nativeQuery = true)
         List<Object[]> findTopProductosComprados(
-                        @Param("inicio") LocalDate inicio,
-                        @Param("fin") LocalDate fin,
+                        @Param("inicio") LocalDateTime inicio,
+                        @Param("fin") LocalDateTime fin,
                         @Param("limit") Integer limit);
 }

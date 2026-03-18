@@ -12,7 +12,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const confirmLogoutBtn = document.getElementById('confirm-logout');
     const cancelLogoutBtn = document.getElementById('cancel-logout');
 
-    // Mapa de sección → clase de ícono FontAwesome
     const sectionIcons = {
         'principal': 'fas fa-home',
         'productos': 'fas fa-box',
@@ -20,7 +19,8 @@ document.addEventListener('DOMContentLoaded', function () {
         'compras': 'fas fa-shopping-bag',
         'usuarios': 'fas fa-users',
         'ventas': 'fas fa-shopping-cart',
-        'informes': 'fas fa-chart-bar'
+        'informes': 'fas fa-chart-bar',
+        'caja': 'fas fa-cash-register'
     };
 
     function updateHeaderIcon(sectionId) {
@@ -136,6 +136,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             else if (sectionId === 'stock' && typeof window.cargarDatosStock === 'function') {
                 window.cargarDatosStock();
+            }
+            else if (sectionId === 'caja' && typeof window.cargarDatosCaja === 'function') {
+                window.cargarDatosCaja();
             }
             // Repite para compras, stock, etc.
         });

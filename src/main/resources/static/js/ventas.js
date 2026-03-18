@@ -141,6 +141,37 @@ document.addEventListener('DOMContentLoaded', function () {
         return soloNumeros.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     }
 
+    function formatearFechaHora(dateInput) {
+        if (!dateInput) return 'N/A';
+        let date;
+        if (Array.isArray(dateInput)) {
+            const [year, month, day, hour = 0, minute = 0] = dateInput;
+            date = new Date(year, month - 1, day, hour, minute);
+        } else if (typeof dateInput === 'string') {
+            const parts = dateInput.split(/\D+/);
+            if (parts.length >= 3) {
+                const year = parseInt(parts[0], 10);
+                const month = parseInt(parts[1], 10) - 1;
+                const day = parseInt(parts[2], 10);
+                const hour = parts[3] ? parseInt(parts[3], 10) : 0;
+                const minute = parts[4] ? parseInt(parts[4], 10) : 0;
+                date = new Date(year, month, day, hour, minute);
+            } else {
+                date = new Date(dateInput);
+            }
+        } else {
+            return 'N/A';
+        }
+        
+        const d = String(date.getDate()).padStart(2, '0');
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const y = date.getFullYear();
+        const hr = String(date.getHours()).padStart(2, '0');
+        const min = String(date.getMinutes()).padStart(2, '0');
+        
+        return `${d}/${m}/${y} ${hr}:${min} hs`;
+    }
+
     // ===============================
     // SELECTORES TABLA HISTORIAL
     // ===============================
@@ -926,8 +957,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÓGICA DE TABLA DE VENTAS
     // ==========================================================
     function crearFilaVentaHTML(venta) {
-        const parts = venta.fecha.split('-');
-        const fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
+        const fechaFormateada = formatearFechaHora(venta.fecha);
 
         const productosTexto = formatProductosList(venta.productos);
         const nombreClienteTexto = venta.nombreCliente || 'Cliente N/A';
@@ -997,8 +1027,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Poblar información general
             document.getElementById('modal-venta-id').textContent = `#${venta.idVenta}`;
 
-            const parts = venta.fecha.split('-');
-            const fechaFormateada = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            const fechaFormateada = formatearFechaHora(venta.fecha);
             document.getElementById('modal-venta-fecha').textContent = fechaFormateada;
             document.getElementById('modal-venta-cliente').textContent = venta.nombreCliente || 'N/A';
             document.getElementById('modal-venta-vendedor').textContent = venta.nombreVendedor || 'N/A';
