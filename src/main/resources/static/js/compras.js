@@ -1134,6 +1134,254 @@ document.addEventListener('DOMContentLoaded', function () {
         modalCurrentPage = 0;
     }
 
+    // ===============================
+    // LÓGICA DE AÑADIR PROVEEDOR RÁPIDO (ATAJO EN COMPRAS)
+    // ===============================
+    const btnAddProveedorCompra = document.getElementById('btn-add-proveedor-compra');
+    const modalAddProveedorCompras = document.getElementById('modal-add-proveedor-compras-overlay');
+    const modalAddProveedorComprasClose = document.getElementById('modal-add-proveedor-compras-close');
+    const addProveedorComprasForm = document.getElementById('add-proveedor-compras-form');
+    const formMsgAddProveedorCompras = document.getElementById('form-general-message-add-proveedor-compras');
+
+    // Multi-select for Add Proveedor in Compras
+    const addCompraSelect = {
+        container: document.getElementById('add-compra-productos-multi-select-container'),
+        tags: document.getElementById('add-compra-tags-container'),
+        options: document.getElementById('add-compra-productos-options-container'),
+        hiddenSelect: document.getElementById('addProveedorComprasProductosSelect'),
+        input: document.getElementById('add-compra-productos-select-input'),
+        errorDiv: document.getElementById('errorAddProveedorComprasProductos')
+    };
+
+    let todosLosProductosSelectInfo = [];
+
+    async function fetchTodosLosProductosParaSelect() {
+        if (todosLosProductosSelectInfo.length > 0) return;
+        try {
+            const res = await fetch(API_PRODUCTOS_URL_SELECT_ALL);
+            if (res.ok) {
+                const data = await res.json();
+                todosLosProductosSelectInfo = data;
+                setupMultiSelect(addCompraSelect, []);
+            }
+        } catch (error) {
+            console.error('Error fetching all products for multi-select:', error);
+        }
+    }
+
+    if (btnAddProveedorCompra) {
+        btnAddProveedorCompra.addEventListener('click', async () => {
+            // Limpiar errores del form
+            document.querySelectorAll('#add-proveedor-compras-form .error-message').forEach(el => el.textContent = '');
+            if (formMsgAddProveedorCompras) formMsgAddProveedorCompras.textContent = '';
+            
+            // Limpiar campos del form
+            addProveedorComprasForm.reset();
+            if (addCompraSelect.hiddenSelect) addCompraSelect.hiddenSelect.innerHTML = '';
+            if (addCompraSelect.tags) addCompraSelect.tags.innerHTML = '';
+
+            // Cargar productos
+            await fetchTodosLosProductosParaSelect();
+            // Re-setup por si acaso
+            setupMultiSelect(addCompraSelect, []);
+
+            modalAddProveedorCompras.style.display = 'flex';
+        });
+    }
+
+    if (modalAddProveedorComprasClose) {
+        modalAddProveedorComprasClose.addEventListener('click', (e) => {
+            e.preventDefault();
+            modalAddProveedorCompras.style.display = 'none';
+        });
+    }
+
+    if (addProveedorComprasForm) {
+        addProveedorComprasForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Limpiar mensajes error
+            document.querySelectorAll('#add-proveedor-compras-form .error-message').forEach(el => el.textContent = '');
+            if (formMsgAddProveedorCompras) formMsgAddProveedorCompras.textContent = '';
+
+            const nombre = document.getElementById('addProveedorComprasNombre').value.trim();
+            const telefono = document.getElementById('addProveedorComprasTelefono').value.trim();
+            const email = document.getElementById('addProveedorComprasEmail').value.trim();
+            const direccion = document.getElementById('addProveedorComprasDireccion').value.trim();
+            
+            const productosIds = Array.from(addCompraSelect.hiddenSelect.selectedOptions).map(option => option.value);
+
+            let isValid = true;
+            if (!nombre) {
+                document.getElementById('errorAddProveedorComprasNombre').textContent = 'El nombre es obligatorio.';
+                isValid = false;
+            }
+            if (email && !email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+                document.getElementById('errorAddProveedorComprasEmail').textContent = 'El formato del email no es válido.';
+                isValid = false;
+            }
+            if (productosIds.length === 0) {
+                addCompraSelect.errorDiv.textContent = 'Debes seleccionar al menos un producto.';
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            const dto = { nombre, telefono, email, direccion, productosIds };
+
+            try {
+                // Notar que la URL Base de proveedores se usa aquí para POST
+                const API_PROVEEDORES_BASE = '/api/proveedores';
+                const response = await fetch(API_PROVEEDORES_BASE, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dto)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Error al guardar el proveedor.');
+                }
+
+                const nuevoProveedor = await response.json();
+                
+                // Agregarlo a todosLosProveedores local
+                if (typeof todosLosProveedores !== 'undefined') {
+                    todosLosProveedores.push(nuevoProveedor);
+                }
+
+                // Autocompletar el input de búsqueda de compras
+                const nombreCapitalizado = capitalizarNombre(nuevoProveedor.nombre);
+                proveedorSearchInput.value = nombreCapitalizado;
+                proveedorHiddenInput.value = nuevoProveedor.id;
+                
+                // Actualizamos variables de control si el compras form ya tenía algo
+                previousProveedorId = nuevoProveedor.id.toString();
+                previousProveedorNombre = nombreCapitalizado;
+                
+                // Limpiar listado de productos de compra temporal y buscar los nuevos
+                detalleItems = [];
+                renderDetalleTemporal();
+                fetchProductosDelProveedor(nuevoProveedor.id);
+                
+                // Disparar evento para que otras vistas se enteren (opcional pero buena idea)
+                document.dispatchEvent(new Event('proveedoresActualizados'));
+
+                modalAddProveedorCompras.style.display = 'none';
+
+            } catch (error) {
+                formMsgAddProveedorCompras.textContent = error.message;
+                formMsgAddProveedorCompras.className = 'form-message error';
+            }
+        });
+    }
+
+    // Funciones Helper para Multi-Select clonadas y adaptadas
+    function setupMultiSelect(selectUI, productosPreSeleccionados = []) {
+        if (!selectUI.options || !selectUI.hiddenSelect || !selectUI.tags) return;
+
+        selectUI.options.innerHTML = '';
+        selectUI.hiddenSelect.innerHTML = '';
+        selectUI.tags.innerHTML = '';
+
+        const preSeleccionadosSet = new Set(productosPreSeleccionados.map(p => p.idProducto));
+
+        // Ordenar productos alfabéticamente
+        const productosOrdenados = [...todosLosProductosSelectInfo].sort((a, b) =>
+            a.nombreProducto.localeCompare(b.nombreProducto)
+        );
+
+        productosOrdenados.forEach(producto => {
+            const realOption = document.createElement('option');
+            realOption.value = producto.idProducto;
+            realOption.textContent = capitalizarNombre(producto.nombreProducto);
+            selectUI.hiddenSelect.appendChild(realOption);
+
+            const visualOption = document.createElement('div');
+            visualOption.classList.add('option');
+            visualOption.textContent = capitalizarNombre(producto.nombreProducto);
+            visualOption.dataset.value = producto.idProducto;
+
+            visualOption.addEventListener('click', (e) => {
+                e.stopPropagation();
+                seleccionarProductoMulti(visualOption, realOption, selectUI);
+            });
+
+            selectUI.options.appendChild(visualOption);
+
+            if (preSeleccionadosSet.has(producto.idProducto)) {
+                seleccionarProductoMulti(visualOption, realOption, selectUI);
+            }
+        });
+        setupMultiSelectUIEvents(selectUI);
+    }
+
+    function seleccionarProductoMulti(visualOption, realOption, selectUI) {
+        realOption.selected = true;
+        visualOption.classList.add('selected-option');
+        crearTag(visualOption.textContent, visualOption.dataset.value, visualOption, realOption, selectUI);
+        visualOption.style.display = 'none';
+        selectUI.input.value = ''; 
+    }
+
+    function crearTag(texto, valor, visualOption, realOption, selectUI) {
+        const tag = document.createElement('div');
+        tag.classList.add('tag');
+        tag.textContent = texto;
+
+        const closeBtn = document.createElement('span');
+        closeBtn.classList.add('tag-close');
+        closeBtn.innerHTML = '&times;';
+
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            realOption.selected = false;
+            visualOption.classList.remove('selected-option');
+            selectUI.tags.removeChild(tag);
+            visualOption.style.display = 'block';
+
+            if (selectUI.tags.children.length === 0) {
+                selectUI.input.placeholder = 'Buscar y seleccionar productos...';
+            }
+        });
+
+        tag.appendChild(closeBtn);
+        selectUI.tags.appendChild(tag);
+    }
+
+    function setupMultiSelectUIEvents(selectUI) {
+        if (selectUI.container) {
+            selectUI.container.addEventListener('click', () => {
+                selectUI.options.style.display = 'block';
+                selectUI.input.focus();
+            });
+        }
+        if (selectUI.input) {
+            selectUI.input.addEventListener('input', () => {
+                const normalizarTexto = (str) =>
+                    str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                const filtro = normalizarTexto(selectUI.input.value);
+
+                selectUI.options.querySelectorAll('.option').forEach(opcion => {
+                    const textoOpcion = normalizarTexto(opcion.textContent);
+                    const isSelected = opcion.classList.contains('selected-option');
+
+                    if (textoOpcion.includes(filtro) && !isSelected) {
+                        opcion.style.display = 'block';
+                    } else {
+                        opcion.style.display = 'none';
+                    }
+                });
+            });
+        }
+    }
+
+    document.addEventListener('click', (e) => {
+        if (addCompraSelect.container && !addCompraSelect.container.contains(e.target) && !addCompraSelect.options.contains(e.target)) {
+            addCompraSelect.options.style.display = 'none';
+        }
+    });
+
     // Exponer funciones globalmente
     window.mostrarDetalleCompra = mostrarDetalleCompra;
     window.cerrarModalDetalleCompra = cerrarModalDetalleCompra;

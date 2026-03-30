@@ -1860,6 +1860,29 @@ body {
     min-height: 450px;
 }
 
+/* ==========================
+   TABLA DE CLIENTES - ANIMACIONES
+   ========================== */
+#tabla-clientes-body {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#tabla-clientes-body.loading {
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.table-container-cliente {
+    min-height: 600px;
+}
+
+#cliente-detail-modal .modal-content {
+    max-width: 850px;
+    width: 90%;
+}
+
 
 .search-with-add {
     display: flex;

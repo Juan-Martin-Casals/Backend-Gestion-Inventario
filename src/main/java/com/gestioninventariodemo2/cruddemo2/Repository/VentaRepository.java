@@ -114,4 +114,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
 
     // Query para obtener ventas completas en un rango
     List<Venta> findByFechaBetween(LocalDateTime inicio, LocalDateTime fin);
+
+    // Ventas de un cliente específico
+    List<Venta> findByClienteIdClienteOrderByFechaDesc(Long idCliente);
 }

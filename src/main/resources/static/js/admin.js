@@ -116,6 +116,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     window.showCategoriaSubsection(subsectionId);
                 }
             }
+            // Manejo de Subsecciones (Clientes)
+            else if (sectionId === 'clientes' && subsectionId) {
+                if (typeof window.showClientesSubsection === 'function') {
+                    window.showClientesSubsection(subsectionId);
+                }
+            }
 
             // ACTUALIZACIÓN: Agregar los casos que faltan
             if (sectionId === 'principal' && typeof window.loadPrincipalData === 'function') {

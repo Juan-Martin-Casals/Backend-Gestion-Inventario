@@ -44,6 +44,10 @@ public class Cliente {
     @Column(name = "email")
     private String email;
 
+    @Builder.Default
+    @Column(name = "activo", columnDefinition = "boolean default true")
+    private Boolean activo = true;
+
     @OneToMany(mappedBy = "cliente")
     private List<Venta> ventas;
 

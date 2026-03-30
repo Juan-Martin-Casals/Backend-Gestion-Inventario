@@ -685,10 +685,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // ===============================
     // LÓGICA DE SUBSECCIONES
     // ===============================
-    const subsectionContainers = document.querySelectorAll('.subsection-container');
+    const productosSection = document.getElementById('productos-section');
+    const subsectionContainers = productosSection ? productosSection.querySelectorAll('.subsection-container') : [];
 
     function showSubsection(subsectionId) {
-        // 1. Ocultar todos los contenedores
+        // 1. Ocultar solo los contenedores de Productos
         subsectionContainers.forEach(container => {
             container.style.display = 'none';
         });

@@ -38,6 +38,7 @@
                 </li>
                 <li><a href="#" data-section="caja"><i class="fas fa-cash-register"></i> Caja</a></li>
                 <li><a href="#" data-section="stock"><i class="fas fa-box"></i> Productos</a></li>
+                <li><a href="#" data-section="clientes"><i class="fas fa-address-book"></i> Clientes</a></li>
                 <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Salir</a></li>
             </ul>
         </aside>
@@ -125,6 +126,110 @@
                 </div>
 
             </section>
+
+        <!-- SECCIÓN CLIENTES (EMPLEADO) -->
+        <section id="clientes-section" class="spa-section" style="display:none">
+            <div id="clientes-list-container" class="subsection-container">
+                <div class="table-section">
+                    <h4>Clientes Registrados</h4>
+                    <p>Vista del historial de clientes</p>
+
+                    <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                        <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 300px;">
+                                <div style="position: relative;">
+                                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                    <input type="text" placeholder="Buscar por nombre, apellido, DNI, teléfono, email..." id="clientes-search-input" style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button type="button" class="btn-outline" id="clientes-btn-limpiar" style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-container-cliente">
+                        <table class="data-table" id="tabla-clientes">
+                            <thead>
+                                <tr>
+                                    <th data-sort-by="nombre">Nombre <i class="sort-icon fas fa-sort"></i></th>
+                                    <th data-sort-by="apellido">Apellido <i class="sort-icon fas fa-sort"></i></th>
+                                    <th data-sort-by="telefono">Teléfono <i class="sort-icon fas fa-sort"></i></th>
+                                    <th data-sort-by="email">Email <i class="sort-icon fas fa-sort"></i></th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabla-clientes-body">
+                            </tbody>
+                        </table>
+                        <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                            <span id="clientes-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                            <button class="btn-outline" id="clientes-prev-page" disabled>
+                                <i class="fas fa-arrow-left"></i>
+                            </button>
+                            <button class="btn-outline" id="clientes-next-page">
+                                <i class="fas fa-arrow-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Detalles -->
+            <div id="cliente-detail-modal" class="modal-overlay" style="display: none;">
+                <div class="modal-content modal-large">
+                    <div class="modal-header">
+                        <h3><i class="fas fa-address-book"></i> Detalle del Cliente</h3>
+                        <button class="modal-close" id="cliente-detail-close"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="detail-grid">
+                            <div class="detail-item"><label>Nombre:</label><span id="detail-cliente-nombre"></span></div>
+                            <div class="detail-item"><label>Apellido:</label><span id="detail-cliente-apellido"></span></div>
+                            <div class="detail-item"><label>DNI:</label><span id="detail-cliente-dni"></span></div>
+                            <div class="detail-item"><label>Teléfono:</label><span id="detail-cliente-telefono"></span></div>
+                            <div class="detail-item"><label>Email:</label><span id="detail-cliente-email"></span></div>
+                            <div class="detail-item full-width"><label>Dirección:</label><span id="detail-cliente-direccion"></span></div>
+                        </div>
+
+                        <!-- Historial de Ventas -->
+                        <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                            <h4 style="margin: 0 0 12px; font-size: 15px; color: #334155; display: flex; align-items: center; gap: 8px;">
+                                <i class="fas fa-shopping-cart" style="color: #6366f1;"></i> Historial de Compras
+                                <span id="detail-cliente-ventas-count" style="font-size: 12px; color: #94a3b8; font-weight: 400;"></span>
+                            </h4>
+                            <table class="data-table" style="font-size: 13px;">
+                                <thead>
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Productos</th>
+                                        <th style="text-align:right;">Total</th>
+                                        <th>Método</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="detail-cliente-ventas-body">
+                                    <tr><td colspan="4" style="text-align:center; color:#94a3b8;">Cargando...</td></tr>
+                                </tbody>
+                            </table>
+                            <div class="pagination-controls" id="detail-ventas-pagination" style="text-align: right; padding: 10px 0; display: none;">
+                                <span id="detail-ventas-page-info" style="margin-right: 15px;"></span>
+                                <button class="btn-outline" id="detail-ventas-prev" disabled>
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <button class="btn-outline" id="detail-ventas-next">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn-outline" id="cliente-detail-close-btn">Cerrar</button>
+                    </div>
+                </div>
+            </div>
+        </section>
 
             <section id="ventas-section" class="spa-section" style="display:none">
 
@@ -1069,12 +1174,15 @@
         </div>
     </div>
 
+
+
     <script src="js/utils.js"></script>
     <script src="js/caja.js"></script>
     <script src="js/principal.js"></script>
     <script src="js/ventasEmpleado.js"></script>
     <script src="js/stock.js"></script>
     <script src="js/empleado.js"></script>
+    <script src="js/cliente.js"></script>
 
 </body>
 

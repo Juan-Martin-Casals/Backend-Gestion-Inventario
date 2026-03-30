@@ -14,5 +14,7 @@ public class ClienteRequestDTO{
     private String apellido;
     private String dni;
     private String telefono;
+    private String direccion;
+    private String email;
     
 }

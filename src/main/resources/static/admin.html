@@ -46,6 +46,19 @@
                 </li>
                 <li class="has-submenu">
                     <a href="#" class="submenu-toggle">
+                        <i class="fas fa-shopping-bag"></i> <span class="text">Compras</span> <i
+                            class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="#" data-section="compras" data-subsection="compras-create"><span
+                                    class="text">Registrar Compra</span></a>
+                        </li>
+                        <li><a href="#" data-section="compras" data-subsection="compras-list"><span class="text">Ver
+                                    Compras</span></a></li>
+                    </ul>
+                </li>
+                <li class="has-submenu">
+                    <a href="#" class="submenu-toggle">
                         <i class="fas fa-user"></i> <span class="text">Proveedores</span> <i
                             class="fas fa-chevron-down arrow-icon"></i>
                     </a>
@@ -60,17 +73,32 @@
                 </li>
                 <li class="has-submenu">
                     <a href="#" class="submenu-toggle">
-                        <i class="fas fa-shopping-bag"></i> <span class="text">Compras</span> <i
+                        <i class="fas fa-shopping-cart"></i> <span class="text">Ventas</span> <i
                             class="fas fa-chevron-down arrow-icon"></i>
                     </a>
                     <ul class="submenu">
-                        <li><a href="#" data-section="compras" data-subsection="compras-create"><span
-                                    class="text">Registrar Compra</span></a>
-                        </li>
-                        <li><a href="#" data-section="compras" data-subsection="compras-list"><span class="text">Ver
-                                    Compras</span></a></li>
+                        <li><a href="#" data-section="ventas" data-subsection="ventas-create"><span
+                                    class="text">Registrar Venta</span></a></li>
+                        <li><a href="#" data-section="ventas" data-subsection="ventas-list"><span class="text">Ver
+                                    Ventas</span></a></li>
                     </ul>
                 </li>
+                <li class="has-submenu">
+                    <a href="#" class="submenu-toggle">
+                        <i class="fas fa-address-book"></i> <span class="text">Clientes</span> <i
+                            class="fas fa-chevron-down arrow-icon"></i>
+                    </a>
+                    <ul class="submenu">
+                        <li><a href="#" data-section="clientes" data-subsection="clientes-create"><span
+                                    class="text">Crear Cliente</span></a></li>
+                        <li><a href="#" data-section="clientes" data-subsection="clientes-list"><span class="text">Ver
+                                    Clientes</span></a></li>
+                    </ul>
+                </li>
+                <li><a href="#" data-section="caja"><i class="fas fa-cash-register"></i> <span
+                            class="text">Caja</span></a></li>
+                <li><a href="#" data-section="informes"><i class="fas fa-chart-bar"></i> <span
+                            class="text">Informes</span></a></li>
                 <li class="has-submenu">
                     <a href="#" class="submenu-toggle">
                         <i class="fas fa-users"></i> <span class="text">Usuarios</span> <i
@@ -84,22 +112,6 @@
                                     Usuarios</span></a></li>
                     </ul>
                 </li>
-                <li class="has-submenu">
-                    <a href="#" class="submenu-toggle">
-                        <i class="fas fa-shopping-cart"></i> <span class="text">Ventas</span> <i
-                            class="fas fa-chevron-down arrow-icon"></i>
-                    </a>
-                    <ul class="submenu">
-                        <li><a href="#" data-section="ventas" data-subsection="ventas-create"><span
-                                    class="text">Registrar Venta</span></a></li>
-                        <li><a href="#" data-section="ventas" data-subsection="ventas-list"><span class="text">Ver
-                                    Ventas</span></a></li>
-                    </ul>
-                </li>
-                <li><a href="#" data-section="caja"><i class="fas fa-cash-register"></i> <span
-                            class="text">Caja</span></a></li>
-                <li><a href="#" data-section="informes"><i class="fas fa-chart-bar"></i> <span
-                            class="text">Informes</span></a></li>
                 <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> <span class="text">Salir</span></a>
                 </li>
             </ul>
@@ -313,6 +325,272 @@
                     </div>
                 </div>
 
+            </section>
+
+            <!-- SECCIÓN CLIENTES -->
+            <section id="clientes-section" class="spa-section" style="display:none">
+
+                <!-- Subsección: Crear Cliente -->
+                <div id="clientes-create-container" class="subsection-container" style="display: none;">
+                    <div class="form-section">
+                        <h4>Registrar Nuevo Cliente</h4>
+                        <form id="crear-cliente-form" class="supplier-form" novalidate>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="crearClienteNombre">Nombre</label>
+                                    <input type="text" id="crearClienteNombre" placeholder="Juan">
+                                    <div class="error-message" id="errorCrearClienteNombre"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="crearClienteApellido">Apellido</label>
+                                    <input type="text" id="crearClienteApellido" placeholder="García">
+                                    <div class="error-message" id="errorCrearClienteApellido"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="crearClienteDNI">DNI</label>
+                                    <input type="text" id="crearClienteDNI" placeholder="36222999">
+                                    <div class="error-message" id="errorCrearClienteDNI"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="crearClienteTelefono">Teléfono</label>
+                                    <input type="tel" id="crearClienteTelefono" placeholder="+54 11 4321 9876">
+                                    <div class="error-message" id="errorCrearClienteTelefono"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="crearClienteDireccion">Dirección</label>
+                                    <input type="text" id="crearClienteDireccion"
+                                        placeholder="Argentina, Santa Fe, Santa Fe, Aristóbulo del Valle 1234">
+                                    <div class="error-message" id="errorCrearClienteDireccion"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="crearClienteEmail">Email</label>
+                                    <input type="email" id="crearClienteEmail" placeholder="ejemplo@mail.com">
+                                    <div class="error-message" id="errorCrearClienteEmail"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-message" id="form-general-message-crear-cliente"></div>
+
+                            <div class="form-buttons"
+                                style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
+                                <button type="submit" class="btn-primary">
+                                    <i class="fas fa-plus"></i>
+                                    Registrar Cliente
+                                </button>
+                                <button type="button" id="btn-limpiar-crear-cliente" class="btn-outline">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="clientes-list-container" class="subsection-container">
+                    <div class="table-section">
+                        <h4>Clientes Registrados</h4>
+                        <p>Historial de clientes</p>
+
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                                <div style="flex: 1; min-width: 300px;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search"
+                                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
+                                        <input type="text"
+                                            placeholder="Buscar por nombre, apellido, DNI, teléfono, email..."
+                                            id="clientes-search-input"
+                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                    </div>
+                                </div>
+                                <div style="display: flex; gap: 10px;">
+                                    <button type="button" class="btn-outline" id="clientes-btn-limpiar"
+                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="table-container-cliente">
+                            <table class="data-table" id="tabla-clientes">
+                                <thead>
+                                    <tr>
+                                        <th data-sort-by="nombre">Nombre <i class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="apellido">Apellido <i class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="telefono">Teléfono <i class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="email">Email <i class="sort-icon fas fa-sort"></i></th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tabla-clientes-body">
+                                </tbody>
+                            </table>
+                            <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                <span id="clientes-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                <button class="btn-outline" id="clientes-prev-page" disabled>
+                                    <i class="fas fa-arrow-left"></i>
+                                </button>
+                                <button class="btn-outline" id="clientes-next-page">
+                                    <i class="fas fa-arrow-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal de Detalles -->
+                <div id="cliente-detail-modal" class="modal-overlay" style="display: none;">
+                    <div class="modal-content modal-large">
+                        <div class="modal-header">
+                            <h3><i class="fas fa-address-book"></i> Detalle del Cliente</h3>
+                            <button class="modal-close" id="cliente-detail-close"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="detail-grid">
+                                <div class="detail-item"><label>Nombre:</label><span id="detail-cliente-nombre"></span>
+                                </div>
+                                <div class="detail-item"><label>Apellido:</label><span
+                                        id="detail-cliente-apellido"></span></div>
+                                <div class="detail-item"><label>DNI:</label><span id="detail-cliente-dni"></span></div>
+                                <div class="detail-item"><label>Teléfono:</label><span
+                                        id="detail-cliente-telefono"></span></div>
+                                <div class="detail-item"><label>Email:</label><span id="detail-cliente-email"></span>
+                                </div>
+                                <div class="detail-item full-width"><label>Dirección:</label><span
+                                        id="detail-cliente-direccion"></span></div>
+                            </div>
+
+                            <!-- Historial de Ventas -->
+                            <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
+                                <h4
+                                    style="margin: 0 0 12px; font-size: 15px; color: #334155; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-shopping-cart" style="color: #6366f1;"></i> Historial de Compras
+                                    <span id="detail-cliente-ventas-count"
+                                        style="font-size: 12px; color: #94a3b8; font-weight: 400;"></span>
+                                </h4>
+                                <table class="data-table" style="font-size: 13px;">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Productos</th>
+                                            <th style="text-align:right;">Total</th>
+                                            <th>Método</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="detail-cliente-ventas-body">
+                                        <tr>
+                                            <td colspan="4" style="text-align:center; color:#94a3b8;">Cargando...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <div class="pagination-controls" id="detail-ventas-pagination"
+                                    style="text-align: right; padding: 10px 0; display: none;">
+                                    <span id="detail-ventas-page-info" style="margin-right: 15px;"></span>
+                                    <button class="btn-outline" id="detail-ventas-prev" disabled>
+                                        <i class="fas fa-arrow-left"></i>
+                                    </button>
+                                    <button class="btn-outline" id="detail-ventas-next">
+                                        <i class="fas fa-arrow-right"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn-outline" id="cliente-detail-close-btn">Cerrar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Editar -->
+                <div id="cliente-edit-modal" class="modal" style="display: none;">
+                    <div class="modal-content modal-content-wide">
+                        <div class="modal-header">
+                            <h3><i class="fas fa-edit"></i> Editar Cliente</h3>
+                            <button class="modal-close" id="cliente-edit-close"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="edit-cliente-form" class="supplier-form" novalidate>
+                                <input type="hidden" id="edit-cliente-id">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Nombre:</label>
+                                        <input type="text" id="edit-cliente-nombre">
+                                        <div class="error-message" id="error-edit-cliente-nombre"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Apellido:</label>
+                                        <input type="text" id="edit-cliente-apellido">
+                                        <div class="error-message" id="error-edit-cliente-apellido"></div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>DNI:</label>
+                                        <input type="text" id="edit-cliente-dni">
+                                        <div class="error-message" id="error-edit-cliente-dni"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Teléfono:</label>
+                                        <input type="text" id="edit-cliente-telefono">
+                                        <div class="error-message" id="error-edit-cliente-telefono"></div>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Email:</label>
+                                        <input type="email" id="edit-cliente-email">
+                                        <div class="error-message" id="error-edit-cliente-email"></div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Dirección:</label>
+                                        <input type="text" id="edit-cliente-direccion">
+                                        <div class="error-message" id="error-edit-cliente-direccion"></div>
+                                    </div>
+                                </div>
+                                <div id="edit-cliente-form-msg" class="form-message"></div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn-primary" id="cliente-edit-save"><i class="fas fa-save"></i>
+                                Guardar</button>
+                            <button class="btn-outline" id="cliente-edit-cancel">Cancelar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Eliminar -->
+                <div id="cliente-delete-modal" class="modal" style="display: none;">
+                    <div class="modal-content" style="max-width: 450px; padding: 0;">
+                        <div class="modal-header" style="padding: 20px 25px;">
+                            <h3 style="margin: 0; font-size: 18px;">
+                                <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i> Confirmar Eliminación
+                            </h3>
+                            <button class="modal-close" id="cliente-delete-close">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="modal-body" style="padding: 20px 25px;">
+                            <p id="delete-cliente-message"
+                                style="font-size: 15px; margin: 0; text-align: center; line-height: 1.5;">
+                            </p>
+                        </div>
+                        <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
+                            <button type="button" class="btn-primary" id="cliente-delete-confirm"
+                                style="background-color: #e74c3c;">
+                                <i class="fas fa-trash"></i> Sí, Eliminar
+                            </button>
+                            <button type="button" class="btn-outline" id="cliente-delete-cancel">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </section>
 
             <section id="productos-section" class="spa-section" style="display:none">
@@ -1009,14 +1287,19 @@
                                 <div class="form-group">
                                     <label for="compra-proveedor-search">Proveedor</label>
 
-                                    <div class="product-search-container">
+                                    <div class="search-with-add">
                                         <input type="text" id="compra-proveedor-search"
                                             placeholder="Buscar proveedor por nombre..." class="product-search-input"
                                             autocomplete="off">
-                                        <input type="hidden" id="compra-proveedor-id-hidden">
-                                        <div id="compra-proveedor-results" class="product-results"
-                                            style="display: none;">
-                                        </div>
+
+                                        <button type="button" id="btn-add-proveedor-compra" class="btn-icon btn-add-quick"
+                                            title="Añadir Nuevo Proveedor">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </div>
+                                    <input type="hidden" id="compra-proveedor-id-hidden">
+                                    <div id="compra-proveedor-results" class="product-results"
+                                        style="display: none;">
                                     </div>
 
                                     <div class="error-message" id="errorCompraProveedor"></div>
@@ -1198,6 +1481,66 @@
                         </div>
                     </div>
                 </div>
+                <!-- Modal Añadir Proveedor Rápido (Compras) -->
+                <div id="modal-add-proveedor-compras-overlay" class="modal" style="display: none;">
+                    <div class="modal-content modal-content-wide">
+                        <button id="modal-add-proveedor-compras-close" class="modal-close">&times;</button>
+
+                        <header class="modal-header">
+                            <h2>Añadir Nuevo Proveedor</h2>
+                        </header>
+
+                        <form id="add-proveedor-compras-form" class="modal-form supplier-form" novalidate>
+                            <div class="form-message" id="form-general-message-add-proveedor-compras"></div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="addProveedorComprasNombre">Nombre del Proveedor</label>
+                                    <input type="text" id="addProveedorComprasNombre" placeholder="Nombre proveedor">
+                                    <div class="error-message" id="errorAddProveedorComprasNombre"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="addProveedorComprasTelefono">Teléfono</label>
+                                    <input type="text" id="addProveedorComprasTelefono" placeholder="+54 11 4321 9876">
+                                    <div class="error-message" id="errorAddProveedorComprasTelefono"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="addProveedorComprasEmail">Email</label>
+                                    <input type="email" id="addProveedorComprasEmail" placeholder="email@ejemplo.com">
+                                    <div class="error-message" id="errorAddProveedorComprasEmail"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="addProveedorComprasDireccion">Dirección</label>
+                                    <input type="text" id="addProveedorComprasDireccion"
+                                        placeholder="Argentina, Santa Fe, Santa Fe, Aristóbulo del Valle 1234">
+                                    <div class="error-message" id="errorAddProveedorComprasDireccion"></div>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="addProveedorComprasProductosSelect">Productos que Ofrece</label>
+                                <div id="add-compra-productos-multi-select-container" class="custom-multi-select-container">
+                                    <div id="add-compra-tags-container" class="tags-container"></div>
+                                    <input type="text" id="add-compra-productos-select-input" class="custom-select-input"
+                                        placeholder="Buscar y seleccionar productos...">
+                                </div>
+                                <div id="add-compra-productos-options-container" class="options-container"></div>
+                                <select id="addProveedorComprasProductosSelect" multiple style="display:none;"></select>
+                                <div class="error-message" id="errorAddProveedorComprasProductos"></div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Guardar Proveedor
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
             </section>
 
             <section id="usuarios-section" class="spa-section" style="display:none">
@@ -2183,8 +2526,10 @@
                                 </div>
                                 <div style="margin-bottom: 15px;">
                                     <div style="position: relative;">
-                                        <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
-                                        <input type="text" id="caja-buscar-ingresos" placeholder="Buscar por producto, monto o método..."
+                                        <i class="fas fa-search"
+                                            style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+                                        <input type="text" id="caja-buscar-ingresos"
+                                            placeholder="Buscar por producto, monto o método..."
                                             style="width: 100%; padding: 10px 14px 10px 36px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; color: #334155; outline: none; transition: border-color 0.2s; background: #f8fafc;">
                                     </div>
                                 </div>
@@ -2234,7 +2579,8 @@
                                         </div>
                                         <div id="caja-monto-final-warning"
                                             style="display: none; color: #c2410c; margin-top: 8px; font-size: 13px;">
-                                            <i class="fas fa-exclamation-triangle"></i> El monto difiere del esperado. Se registrará una diferencia.
+                                            <i class="fas fa-exclamation-triangle"></i> El monto difiere del esperado.
+                                            Se registrará una diferencia.
                                         </div>
                                     </div>
 
@@ -2653,6 +2999,8 @@
 
         <!-- seccion caja insertada dentro de main -->
 
+
+
         <script src="js/admin.js"></script>
 
         <script src="js/utils.js"></script>
@@ -2665,6 +3013,7 @@
         <script src="js/ventas.js"></script>
         <script src="js/informes.js"></script>
         <script src="js/stock.js"></script>
+        <script src="js/cliente.js"></script>
 
 </body>
 

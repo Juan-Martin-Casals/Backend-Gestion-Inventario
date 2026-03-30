@@ -11,7 +11,12 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ClienteResponseDTO {
 
+    private Long idCliente;
     private String nombre;
     private String apellido;
+    private String dni;
+    private String telefono;
+    private String direccion;
+    private String email;
 
 }
