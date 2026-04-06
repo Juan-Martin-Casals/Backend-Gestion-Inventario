@@ -133,7 +133,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         removeAccents(producto.categoria.toLowerCase()).includes(textoBusqueda);
                     const coincideDescripcion = producto.descripcion &&
                         removeAccents(producto.descripcion.toLowerCase()).includes(textoBusqueda);
-                    return coincideNombre || coincideCategoria || coincideDescripcion;
+                    const coincideProveedor = producto.proveedorNombre &&
+                        removeAccents(producto.proveedorNombre.toLowerCase()).includes(textoBusqueda);
+                    return coincideNombre || coincideCategoria || coincideDescripcion || coincideProveedor;
                 });
             }
 
@@ -164,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (error) {
             console.error('Error al cargar los productos:', error);
-            productTableBody.innerHTML = `<tr><td colspan="5">Error al cargar productos.</td></tr>`;
+            productTableBody.innerHTML = `<tr><td colspan="6">Error al cargar productos.</td></tr>`;
             productTableBody.classList.remove('loading');
         }
     }
@@ -204,6 +206,13 @@ document.addEventListener('DOMContentLoaded', function () {
             let aVal = a[actualField];
             let bVal = b[actualField];
 
+            // Productos sin proveedor siempre al final
+            if (actualField === 'proveedorNombre') {
+                if (aVal == null && bVal == null) return 0;
+                if (aVal == null) return 1;
+                if (bVal == null) return -1;
+            }
+
             // Handle null/undefined
             if (aVal == null) aVal = '';
             if (bVal == null) bVal = '';
@@ -213,8 +222,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 return sortDirection === 'asc' ? aVal - bVal : bVal - aVal;
             }
 
-            // Comparación string
-            const comparison = String(aVal).localeCompare(String(bVal));
+            // Comparación string (con soporte de acentos español)
+            const comparison = String(aVal).localeCompare(String(bVal), 'es', { sensitivity: 'base' });
             return sortDirection === 'asc' ? comparison : -comparison;
         });
 
@@ -501,18 +510,37 @@ document.addEventListener('DOMContentLoaded', function () {
 
         productTableBody.innerHTML = '';
         if (products.length === 0) {
-            productTableBody.innerHTML = '<tr><td colspan="5">No hay productos registrados.</td></tr>';
+            productTableBody.innerHTML = '<tr><td colspan="6">No hay productos registrados.</td></tr>';
             return;
         }
 
         products.forEach(product => {
             const stockBadge = getStockBadge(product.stockActual, product.estadoStock);
 
+            // Construir celda de proveedor
+            let proveedorCell = '<span style="color: #94a3b8; font-style: italic;">Sin proveedor</span>';
+            if (product.proveedorNombre) {
+                proveedorCell = product.proveedorNombre;
+                if (product.totalProveedores > 1) {
+                    const extras = product.totalProveedores - 1;
+                    const nombres = (product.otrosProveedores && product.otrosProveedores.length > 0)
+                        ? product.otrosProveedores.join(', ')
+                        : `${extras} proveedor(es) más`;
+                    proveedorCell += ` <span class="proveedor-badge-wrapper">` +
+                        `<span class="proveedor-badge">+${extras} ${extras === 1 ? 'opción' : 'opciones'}</span>` +
+                        `<span class="proveedor-popover">` +
+                        `<div class="popover-label">También suministrado por:</div>` +
+                        `<div class="popover-names">${nombres}</div>` +
+                        `</span></span>`;
+                }
+            }
+
             const row = `
                 <tr>
                     <td>${product.nombre || 'N/A'}</td>
                     <td>${product.categoria || 'N/A'}</td>
                     <td>${product.descripcion || 'N/A'}</td>
+                    <td>${proveedorCell}</td>
                     <td>${stockBadge}</td>
                     <td>
                         <div class="action-buttons">
@@ -765,6 +793,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const estadoBadge = `<span class="stock-badge ${estadoClase}" style="padding-left: 6px; padding-right: 8px;">${estadoTexto}</span>`;
             document.getElementById('detail-stock-estado').innerHTML = estadoBadge;
+
+            // Cargar proveedores asociados
+            const proveedoresBody = document.getElementById('detail-proveedores-body');
+            proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
+
+            try {
+                const provResponse = await fetch(`${API_PRODUCTOS_URL}/${productId}/proveedores`, { cache: 'no-store' });
+                if (provResponse.ok) {
+                    const proveedores = await provResponse.json();
+                    if (proveedores.length === 0) {
+                        proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">Sin proveedores asociados</td></tr>';
+                    } else {
+                        proveedoresBody.innerHTML = proveedores.map(prov => `
+                            <tr>
+                                <td style="font-weight: 500;">${prov.nombre || 'N/A'}</td>
+                                <td>${prov.telefono || '<span style="color: #94a3b8;">—</span>'}</td>
+                                <td>${prov.email || '<span style="color: #94a3b8;">—</span>'}</td>
+                                <td style="text-align: right; font-weight: 600;">${prov.ultimoCosto != null ? '$' + prov.ultimoCosto.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '<span style="color: #94a3b8;">—</span>'}</td>
+                            </tr>
+                        `).join('');
+                    }
+                } else {
+                    proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #e74c3c; padding: 20px;">Error al cargar proveedores</td></tr>';
+                }
+            } catch (provErr) {
+                console.error('Error al cargar proveedores:', provErr);
+                proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #e74c3c; padding: 20px;">Error al cargar proveedores</td></tr>';
+            }
 
             // Mostrar modal
             detailModal.style.display = 'flex';

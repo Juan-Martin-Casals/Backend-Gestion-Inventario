@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const paginatedItems = currentListForPagination.slice(startIndex, endIndex);
 
         if (paginatedItems.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="5">No se encontraron productos.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="6">No se encontraron productos.</td></tr>`;
         } else {
             paginatedItems.forEach(producto => {
                 let stockClass = 'good';
@@ -154,11 +154,30 @@ document.addEventListener('DOMContentLoaded', function () {
                         </td>`;
                 }
 
+                // Construir celda de proveedor
+                let proveedorCell = '<span style="color: #94a3b8; font-style: italic;">Sin proveedor</span>';
+                if (producto.proveedor) {
+                    proveedorCell = producto.proveedor;
+                    if (producto.totalProveedores > 1) {
+                        const extras = producto.totalProveedores - 1;
+                        const nombres = (producto.otrosProveedores && producto.otrosProveedores.length > 0)
+                            ? producto.otrosProveedores.join(', ')
+                            : `${extras} proveedor(es) más`;
+                        proveedorCell += ` <span class="proveedor-badge-wrapper">` +
+                            `<span class="proveedor-badge">+${extras} ${extras === 1 ? 'opción' : 'opciones'}</span>` +
+                            `<span class="proveedor-popover">` +
+                            `<div class="popover-label">También suministrado por:</div>` +
+                            `<div class="popover-names">${nombres}</div>` +
+                            `</span></span>`;
+                    }
+                }
+
                 const row = `
                     <tr>
                         <td>${producto.nombre}</td>
                         <td>${producto.categoria}</td>
                         <td>${producto.descripcion}</td>
+                        <td>${proveedorCell}</td>
                         <td class="col-num"><span class="stock-badge ${stockClass}">${producto.stock}</span></td>
                         ${accionesHtml}
                     </tr>
@@ -214,9 +233,19 @@ document.addEventListener('DOMContentLoaded', function () {
         currentListForPagination.sort((a, b) => {
             let valA = a[sortField];
             let valB = b[sortField];
+
+            // Productos sin proveedor siempre al final
+            if (sortField === 'proveedor') {
+                if (valA == null && valB == null) return 0;
+                if (valA == null) return 1;
+                if (valB == null) return -1;
+            }
+
             if (typeof valA === 'string') {
                 valA = valA.toLowerCase();
-                valB = valB.toLowerCase();
+                valB = (valB || '').toLowerCase();
+                let comparison = valA.localeCompare(valB, 'es', { sensitivity: 'base' });
+                return (sortDirection === 'desc') ? (comparison * -1) : comparison;
             }
             let comparison = 0;
             if (valA > valB) comparison = 1;
@@ -363,6 +392,35 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             const estadoBadge = `<span class="stock-badge ${estadoClase}" style="padding-left: 6px; padding-right: 8px;">${estadoTexto}</span>`;
             document.getElementById('detail-stock-estado').innerHTML = estadoBadge;
+
+            // Cargar proveedores asociados
+            const proveedoresBody = document.getElementById('detail-proveedores-body');
+            if (proveedoresBody) {
+                proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
+                try {
+                    const provResponse = await fetch(`/api/productos/${productId}/proveedores`, { cache: 'no-store' });
+                    if (provResponse.ok) {
+                        const proveedores = await provResponse.json();
+                        if (proveedores.length === 0) {
+                            proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">Sin proveedores asociados</td></tr>';
+                        } else {
+                            proveedoresBody.innerHTML = proveedores.map(prov => `
+                                <tr>
+                                    <td style="font-weight: 500;">${prov.nombre || 'N/A'}</td>
+                                    <td>${prov.telefono || '<span style="color: #94a3b8;">—</span>'}</td>
+                                    <td>${prov.email || '<span style="color: #94a3b8;">—</span>'}</td>
+                                    <td style="text-align: right; font-weight: 600;">${prov.ultimoCosto != null ? '$' + prov.ultimoCosto.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '<span style="color: #94a3b8;">—</span>'}</td>
+                                </tr>
+                            `).join('');
+                        }
+                    } else {
+                        proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #e74c3c; padding: 20px;">Error al cargar proveedores</td></tr>';
+                    }
+                } catch (provErr) {
+                    console.error('Error al cargar proveedores:', provErr);
+                    proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #e74c3c; padding: 20px;">Error al cargar proveedores</td></tr>';
+                }
+            }
 
             detailModal.style.display = 'flex';
 

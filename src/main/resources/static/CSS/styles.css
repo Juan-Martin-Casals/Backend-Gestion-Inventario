@@ -1492,7 +1492,90 @@ body {
     min-height: 650px;
 }
 
+/* ===== POPOVER DE PROVEEDORES ===== */
+.proveedor-badge-wrapper {
+    display: inline-block;
+    position: relative;
+}
 
+.proveedor-badge {
+    background: #e0e7ff;
+    color: #4f46e5;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    user-select: none;
+}
+
+.proveedor-badge:hover {
+    background: #c7d2fe;
+    transform: scale(1.05);
+}
+
+.proveedor-popover {
+    display: none;
+    position: absolute;
+    bottom: calc(100% + 10px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1e293b;
+    color: #f1f5f9;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.5;
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0;
+    animation: popoverFadeIn 0.2s ease forwards;
+}
+
+.proveedor-popover::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1e293b;
+}
+
+.proveedor-popover .popover-label {
+    color: #94a3b8;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+}
+
+.proveedor-popover .popover-names {
+    font-weight: 500;
+    color: #e2e8f0;
+}
+
+.proveedor-badge-wrapper:hover .proveedor-popover,
+.proveedor-badge-wrapper.popover-active .proveedor-popover {
+    display: block;
+    opacity: 1;
+}
+
+@keyframes popoverFadeIn {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
 
 .table-container-venta {
     min-height: 600px;
@@ -1757,6 +1840,47 @@ body {
 .table-container-proveedor {
     /* (7 filas * 50px aprox) + 50px cabecera = 400px */
     min-height: 650px;
+}
+
+/* ===== MODAL DETALLE PROVEEDOR - SIN SCROLL GENERAL ===== */
+#modal-detail-proveedor-overlay .modal-content.modal-large {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Sin scroll en el modal completo */
+}
+
+#modal-detail-proveedor-overlay .modal-header {
+    flex-shrink: 0; /* El header nunca se encoge */
+}
+
+#modal-detail-proveedor-overlay .modal-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Sin scroll en el body general */
+    min-height: 0; /* Clave para que flex + overflow funcione */
+}
+
+#modal-detail-proveedor-overlay .modal-body .detail-section:first-child {
+    flex-shrink: 0; /* Info general siempre visible, no se encoge */
+}
+
+#modal-detail-proveedor-overlay .modal-body .detail-section:last-child {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 0;
+}
+
+#modal-detail-proveedor-overlay .modal-body .detail-section:last-child .table-container {
+    flex: 1;
+    overflow: hidden; /* Sin scroll, la tabla usa paginación */
+    min-height: 0;
+}
+
+#modal-detail-proveedor-overlay .modal-footer {
+    flex-shrink: 0; /* El footer nunca se encoge */
 }
 
 #compras-historial-tabla-body {
@@ -2160,11 +2284,62 @@ body {
     width: 90%;
 }
 
+/* Modal de detalle del producto - layout de grilla */
+#product-detail-modal .modal-content.modal-large {
+    max-width: 950px;
+    width: 92%;
+}
+
+.detail-grid-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.detail-grid-layout .detail-col-full {
+    grid-column: 1 / -1;
+}
+
+.detail-grid-layout .detail-col-half {
+    grid-column: span 1;
+}
+
+/* En pantallas chicas, vuelve a una sola columna */
+@media (max-width: 768px) {
+    .detail-grid-layout {
+        grid-template-columns: 1fr;
+    }
+    .detail-grid-layout .detail-col-half {
+        grid-column: 1 / -1;
+    }
+}
+
+/* Tabla de proveedores asociados - scroll interno con header sticky */
+#detail-proveedores-container {
+    max-height: 250px;
+    overflow-y: auto;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+#detail-proveedores-container thead th {
+    position: sticky;
+    top: 0;
+    background: #f1f3f5;
+    z-index: 1;
+    box-shadow: 0 1px 0 #dee2e6;
+}
+
 .detail-section {
     margin-bottom: 25px;
     padding: 20px;
     background: #f8f9fa;
     border-radius: 12px;
+}
+
+.detail-grid-layout .detail-section {
+    margin-bottom: 0;
+    height: 100%;
 }
 
 .detail-section h4 {

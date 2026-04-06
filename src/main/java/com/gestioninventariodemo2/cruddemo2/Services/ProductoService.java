@@ -16,8 +16,10 @@ import com.gestioninventariodemo2.cruddemo2.DTO.ProductoInventarioDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoSelectDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorProductoDetalleDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.StockTablaDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.Categoria;
+import com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra;
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
 import com.gestioninventariodemo2.cruddemo2.Model.Stock;
 import com.gestioninventariodemo2.cruddemo2.Repository.CategoriaRepository;
@@ -128,6 +130,26 @@ public class ProductoService {
                         stockActual = p.getStocks().get(0).getStockActual();
                         stockMinimo = p.getStocks().get(0).getStockMinimo();
                     }
+
+                    // Obtener información del proveedor
+                    String proveedorNombre = null;
+                    int totalProveedores = productoProveedorRepository.countByProducto(p);
+                    List<DetalleCompra> compras = detalleCompraRepository.findByProductoOrderByCompraFechaDesc(p);
+                    if (!compras.isEmpty() && compras.get(0).getCompra() != null && compras.get(0).getCompra().getProveedor() != null) {
+                        proveedorNombre = compras.get(0).getCompra().getProveedor().getNombre();
+                    }
+
+                    // Obtener nombres de los demás proveedores para el popover
+                    final String mainProveedor = proveedorNombre;
+                    List<String> otrosProveedores = java.util.Collections.emptyList();
+                    if (p.getProductoProveedores() != null && totalProveedores > 1) {
+                        otrosProveedores = p.getProductoProveedores().stream()
+                                .map(pp -> pp.getProveedor().getNombre())
+                                .filter(nombre -> !nombre.equals(mainProveedor))
+                                .distinct()
+                                .collect(Collectors.toList());
+                    }
+
                     return StockTablaDTO.builder()
                             .id(p.getIdProducto())
                             .nombre(p.getNombre())
@@ -136,6 +158,9 @@ public class ProductoService {
                             .precio(p.getPrecio())
                             .stock(stockActual)
                             .stockMinimo(stockMinimo)
+                            .proveedor(proveedorNombre)
+                            .totalProveedores(totalProveedores)
+                            .otrosProveedores(otrosProveedores)
                             .build();
                 })
                 .toList();
@@ -321,6 +346,25 @@ public class ProductoService {
                             estadoStock = "BUENO";
                         }
 
+                        // Obtener información del proveedor
+                        String proveedorNombre = null;
+                        int totalProveedores = productoProveedorRepository.countByProducto(p);
+                        List<DetalleCompra> compras = detalleCompraRepository.findByProductoOrderByCompraFechaDesc(p);
+                        if (!compras.isEmpty() && compras.get(0).getCompra() != null && compras.get(0).getCompra().getProveedor() != null) {
+                            proveedorNombre = compras.get(0).getCompra().getProveedor().getNombre();
+                        }
+
+                        // Obtener nombres de los demás proveedores para el popover
+                        final String mainProveedor = proveedorNombre;
+                        List<String> otrosProveedores = java.util.Collections.emptyList();
+                        if (p.getProductoProveedores() != null && totalProveedores > 1) {
+                            otrosProveedores = p.getProductoProveedores().stream()
+                                    .map(pp -> pp.getProveedor().getNombre())
+                                    .filter(nombre -> !nombre.equals(mainProveedor))
+                                    .distinct()
+                                    .collect(Collectors.toList());
+                        }
+
                         return ProductoInventarioDTO.builder()
                                 .idProducto(p.getIdProducto())
                                 .nombre(p.getNombre())
@@ -332,6 +376,9 @@ public class ProductoService {
                                 .stockMinimo(stockMin)
                                 .stockMaximo(stockMax)
                                 .estadoStock(estadoStock)
+                                .proveedorNombre(proveedorNombre)
+                                .totalProveedores(totalProveedores)
+                                .otrosProveedores(otrosProveedores)
                                 .build();
                     })
                     .collect(Collectors.toList());
@@ -393,6 +440,25 @@ public class ProductoService {
                     estadoStock = "BUENO";
                 }
 
+                // Obtener información del proveedor
+                String proveedorNombre = null;
+                int totalProveedores = productoProveedorRepository.countByProducto(p);
+                List<DetalleCompra> compras = detalleCompraRepository.findByProductoOrderByCompraFechaDesc(p);
+                if (!compras.isEmpty() && compras.get(0).getCompra() != null && compras.get(0).getCompra().getProveedor() != null) {
+                    proveedorNombre = compras.get(0).getCompra().getProveedor().getNombre();
+                }
+
+                // Obtener nombres de los demás proveedores para el popover
+                final String mainProveedor = proveedorNombre;
+                List<String> otrosProveedores = java.util.Collections.emptyList();
+                if (p.getProductoProveedores() != null && totalProveedores > 1) {
+                    otrosProveedores = p.getProductoProveedores().stream()
+                            .map(pp -> pp.getProveedor().getNombre())
+                            .filter(nombre -> !nombre.equals(mainProveedor))
+                            .distinct()
+                            .collect(Collectors.toList());
+                }
+
                 return ProductoInventarioDTO.builder()
                         .idProducto(p.getIdProducto())
                         .nombre(p.getNombre())
@@ -404,6 +470,9 @@ public class ProductoService {
                         .stockMinimo(stockMin)
                         .stockMaximo(stockMax)
                         .estadoStock(estadoStock)
+                        .proveedorNombre(proveedorNombre)
+                        .totalProveedores(totalProveedores)
+                        .otrosProveedores(otrosProveedores)
                         .build();
             });
         }
@@ -431,6 +500,55 @@ public class ProductoService {
                 .precioVenta(producto.getPrecio())
                 .stockActual(stockActual)
                 .build();
+    }
+
+    /**
+     * Obtiene la lista de proveedores asociados a un producto,
+     * con su teléfono y el último costo de compra.
+     */
+    @Transactional(readOnly = true)
+    public List<ProveedorProductoDetalleDTO> listarProveedoresDeProducto(Long idProducto) {
+        Producto producto = productoRepository.findById(idProducto)
+                .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado con id: " + idProducto));
+
+        List<com.gestioninventariodemo2.cruddemo2.Model.ProductoProveedor> relaciones = producto.getProductoProveedores();
+        if (relaciones == null || relaciones.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // Obtener todas las compras de este producto, ordenadas por fecha desc
+        List<DetalleCompra> todasLasCompras = detalleCompraRepository.findByProductoOrderByCompraFechaDesc(producto);
+
+        return relaciones.stream().map(pp -> {
+            com.gestioninventariodemo2.cruddemo2.Model.Proveedor prov = pp.getProveedor();
+
+            // Buscar el último costo y fecha de compra con este proveedor
+            Double ultimoCosto = null;
+            int ordenCompra = Integer.MAX_VALUE; // Para ordenar: menor = más reciente
+            for (int i = 0; i < todasLasCompras.size(); i++) {
+                DetalleCompra dc = todasLasCompras.get(i);
+                if (dc.getCompra() != null && dc.getCompra().getProveedor() != null
+                        && dc.getCompra().getProveedor().getIdProveedor().equals(prov.getIdProveedor())) {
+                    ultimoCosto = dc.getPrecioUnitario();
+                    ordenCompra = i; // Posición en lista ordenada por fecha desc
+                    break;
+                }
+            }
+
+            return new Object[] {
+                ProveedorProductoDetalleDTO.builder()
+                    .idProveedor(prov.getIdProveedor())
+                    .nombre(prov.getNombre())
+                    .telefono(prov.getTelefono())
+                    .email(prov.getEmail())
+                    .ultimoCosto(ultimoCosto)
+                    .build(),
+                ordenCompra
+            };
+        })
+        .sorted((a, b) -> Integer.compare((int) a[1], (int) b[1]))
+        .map(arr -> (ProveedorProductoDetalleDTO) arr[0])
+        .collect(Collectors.toList());
     }
 
 }

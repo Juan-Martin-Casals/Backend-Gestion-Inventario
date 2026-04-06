@@ -170,12 +170,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    async function fetchProductosDelProveedor(idProveedor) {
+    async function fetchAllProductosParaCompra() {
         if (!productoSearchInput) return;
         todosLosProductos = [];
 
         try {
-            const response = await fetch(`${API_PRODUCTOS_URL_BASE}/por-proveedor/${idProveedor}`);
+            const response = await fetch(API_PRODUCTOS_URL_SELECT_ALL);
             if (!response.ok) throw new Error('No se pudieron cargar los productos');
             todosLosProductos = await response.json();
 
@@ -183,7 +183,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 productoSearchInput.placeholder = "Buscar producto...";
                 productoSearchInput.disabled = false;
             } else {
-                productoSearchInput.placeholder = "Este proveedor no tiene productos";
+                productoSearchInput.placeholder = "No hay productos registrados";
             }
         } catch (error) {
             console.error(error);
@@ -249,7 +249,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         proveedorHiddenInput.value = newProveedorId;
                         previousProveedorId = newProveedorId;
                         previousProveedorNombre = newProveedorNombre;
-                        fetchProductosDelProveedor(newProveedorId);
+                        fetchAllProductosParaCompra();
                         proveedorResultsContainer.style.display = 'none';
                         if (proveedorError) proveedorError.textContent = '';
                         productoSearchInput.value = '';
@@ -268,7 +268,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 proveedorHiddenInput.value = newProveedorId;
                 previousProveedorId = newProveedorId;
                 previousProveedorNombre = newProveedorNombre;
-                fetchProductosDelProveedor(newProveedorId);
+                fetchAllProductosParaCompra();
                 proveedorResultsContainer.style.display = 'none';
                 if (proveedorError) proveedorError.textContent = '';
                 productoSearchInput.value = '';
@@ -812,7 +812,7 @@ document.addEventListener('DOMContentLoaded', function () {
         await loadProveedoresParaCompra();
         if (historialCurrentPage === 0) { loadComprasHistorial(); }
         const idProveedorSeleccionado = proveedorHiddenInput.value;
-        if (idProveedorSeleccionado) { fetchProductosDelProveedor(idProveedorSeleccionado); }
+        if (idProveedorSeleccionado) { fetchAllProductosParaCompra(); }
         establecerFechaActual(); // Establecer fecha actual al recargar datos
     };
 
@@ -1262,7 +1262,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Limpiar listado de productos de compra temporal y buscar los nuevos
                 detalleItems = [];
                 renderDetalleTemporal();
-                fetchProductosDelProveedor(nuevoProveedor.id);
+                fetchAllProductosParaCompra();
                 
                 // Disparar evento para que otras vistas se enteren (opcional pero buena idea)
                 document.dispatchEvent(new Event('proveedoresActualizados'));

@@ -1,5 +1,7 @@
 package com.gestioninventariodemo2.cruddemo2.DTO;
 
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -23,4 +25,6 @@ public class StockTablaDTO {
     private String email;
     private String telefono;
     private Double precioCosto;
+    private int totalProveedores;
+    private List<String> otrosProveedores;
 }

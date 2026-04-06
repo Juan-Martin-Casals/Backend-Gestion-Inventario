@@ -177,7 +177,7 @@ public class ProveedorService {
 
     @Transactional(readOnly = true)
     public ProveedorResponseDTO buscarPorId(Long id) {
-        Proveedor proveedor = proveedorRepository.findById(id)
+        Proveedor proveedor = proveedorRepository.findByIdWithProductos(id)
                 .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado con id: " + id));
         return mapToDTO(proveedor);
     }

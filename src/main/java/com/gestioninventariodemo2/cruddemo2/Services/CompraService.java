@@ -19,7 +19,9 @@ import com.gestioninventariodemo2.cruddemo2.Repository.ProveedorRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.ProductoRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.StockRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.UsuarioRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.ProductoProveedorRepository;
 import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
+import com.gestioninventariodemo2.cruddemo2.Model.ProductoProveedor;
 
 // Importaciones de Spring y Java
 import lombok.RequiredArgsConstructor;
@@ -48,6 +50,7 @@ public class CompraService {
     private final ProductoRepository productoRepository;
     private final StockRepository stockRepository;
     private final UsuarioRepository usuarioRepository;
+    private final ProductoProveedorRepository productoProveedorRepository;
     private final CajaService cajaService;
 
     /**
@@ -130,6 +133,17 @@ public class CompraService {
             int stockNuevo = stockDelProducto.getStockActual() + detalleDto.getCantidad();
             stockDelProducto.setStockActual(stockNuevo);
             stockRepository.save(stockDelProducto); // Guarda el stock actualizado en 'Stock'
+
+            // --- 4. ASOCIACIÓN ORGÁNICA: Vincular Producto y Proveedor si no existe la relación ---
+            boolean yaExiste = productoProveedorRepository.existsByProductoIdProductoAndProveedorIdProveedor(
+                    productoDB.getIdProducto(), proveedor.getIdProveedor());
+            if (!yaExiste) {
+                ProductoProveedor nuevaRelacion = ProductoProveedor.builder()
+                        .producto(productoDB)
+                        .proveedor(proveedor)
+                        .build();
+                productoProveedorRepository.save(nuevaRelacion);
+            }
         }
 
         return compraGuardada; // Devuelve la entidad completa

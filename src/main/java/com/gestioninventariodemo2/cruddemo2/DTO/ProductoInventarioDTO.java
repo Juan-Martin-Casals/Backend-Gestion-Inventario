@@ -1,6 +1,7 @@
 package com.gestioninventariodemo2.cruddemo2.DTO;
 
 import java.time.LocalDate;
+import java.util.List;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -38,4 +39,9 @@ public class ProductoInventarioDTO {
 
     // Estado calculado del stock
     private String estadoStock; // "BUENO", "BAJO", "AGOTADO"
+
+    // Información del proveedor
+    private String proveedorNombre; // Nombre del último proveedor
+    private int totalProveedores;   // Cantidad total de proveedores distintos
+    private List<String> otrosProveedores; // Nombres de los demás proveedores (para popover)
 }

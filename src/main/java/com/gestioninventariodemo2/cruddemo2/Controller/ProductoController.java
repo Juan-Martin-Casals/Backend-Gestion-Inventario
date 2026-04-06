@@ -65,6 +65,15 @@ public class ProductoController {
         return ResponseEntity.ok(productos);
     }
 
+    /**
+     * Obtiene los proveedores asociados a un producto con teléfono y último costo.
+     */
+    @GetMapping("/{id}/proveedores")
+    public ResponseEntity<List<com.gestioninventariodemo2.cruddemo2.DTO.ProveedorProductoDetalleDTO>> listarProveedoresDeProducto(@PathVariable Long id) {
+        List<com.gestioninventariodemo2.cruddemo2.DTO.ProveedorProductoDetalleDTO> proveedores = productoService.listarProveedoresDeProducto(id);
+        return ResponseEntity.ok(proveedores);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<String> eliminarProducto(@PathVariable Long id) { // <-- Cambiado a ResponseEntity<String>
         try {

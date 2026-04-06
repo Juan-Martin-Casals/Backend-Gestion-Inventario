@@ -569,7 +569,8 @@
                     <div class="modal-content" style="max-width: 450px; padding: 0;">
                         <div class="modal-header" style="padding: 20px 25px;">
                             <h3 style="margin: 0; font-size: 18px;">
-                                <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i> Confirmar Eliminación
+                                <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i> Confirmar
+                                Eliminación
                             </h3>
                             <button class="modal-close" id="cliente-delete-close">
                                 <i class="fas fa-times"></i>
@@ -704,6 +705,8 @@
                                                 class="sort-icon fas fa-sort"></i></th>
                                         <th data-sort-by="descripcion" class="sortable">Descripción <i
                                                 class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="proveedorNombre" class="sortable">Proveedor <i
+                                                class="sort-icon fas fa-sort"></i></th>
                                         <th data-sort-by="stock" class="sortable">Stock <i
                                                 class="sort-icon fas fa-sort"></i></th>
                                         <th>Acciones</th>
@@ -718,7 +721,7 @@
                         </div>
                         <tfoot>
                             <tr>
-                                <td colspan="5">
+                                <td colspan="6">
                                     <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
                                         <span id="product-page-info" style="margin-right: 15px;">Página 1 de 1</span>
                                         <button class="btn-outline" id="product-prev-page" disabled>
@@ -745,61 +748,96 @@
                         </button>
                     </div>
                     <div class="modal-body">
-                        <!-- Información Básica -->
-                        <div class="detail-section">
-                            <h4><i class="fas fa-info-circle"></i> Información Básica</h4>
-                            <div class="detail-grid">
-                                <div class="detail-item">
-                                    <label>Nombre:</label>
-                                    <span id="detail-nombre"></span>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Categoría:</label>
-                                    <span id="detail-categoria"></span>
-                                </div>
-                                <div class="detail-item full-width">
-                                    <label>Descripción:</label>
-                                    <span id="detail-descripcion"></span>
-                                </div>
-                            </div>
-                        </div>
+                        <div class="detail-grid-layout">
 
-                        <!-- Información Comercial -->
-                        <div class="detail-section">
-                            <h4><i class="fas fa-dollar-sign"></i> Información Comercial</h4>
-                            <div class="detail-grid">
-                                <div class="detail-item">
-                                    <label>Precio de Venta:</label>
-                                    <span id="detail-precio" class="price-highlight"></span>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Fecha de Creación:</label>
-                                    <span id="detail-fecha"></span>
+                            <!-- Fila 1: Información Básica (ancho completo) -->
+                            <div class="detail-col-full">
+                                <div class="detail-section">
+                                    <h4><i class="fas fa-info-circle"></i> Información Básica</h4>
+                                    <div class="detail-grid">
+                                        <div class="detail-item">
+                                            <label>Nombre:</label>
+                                            <span id="detail-nombre"></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <label>Categoría:</label>
+                                            <span id="detail-categoria"></span>
+                                        </div>
+                                        <div class="detail-item full-width">
+                                            <label>Descripción:</label>
+                                            <span id="detail-descripcion"></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Gestión de Stock -->
-                        <div class="detail-section">
-                            <h4><i class="fas fa-warehouse"></i> Gestión de Stock</h4>
-                            <div class="detail-grid">
-                                <div class="detail-item">
-                                    <label>Stock Actual:</label>
-                                    <span id="detail-stock-actual" class="stock-highlight"></span>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Stock Mínimo:</label>
-                                    <span id="detail-stock-min"></span>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Stock Máximo:</label>
-                                    <span id="detail-stock-max"></span>
-                                </div>
-                                <div class="detail-item">
-                                    <label>Estado:</label>
-                                    <span id="detail-stock-estado"></span>
+                            <!-- Fila 2: Comercial (izq) + Stock (der) -->
+                            <div class="detail-col-half">
+                                <div class="detail-section">
+                                    <h4><i class="fas fa-dollar-sign"></i> Información Comercial</h4>
+                                    <div class="detail-grid">
+                                        <div class="detail-item">
+                                            <label>Precio de Venta:</label>
+                                            <span id="detail-precio" class="price-highlight"></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <label>Fecha de Creación:</label>
+                                            <span id="detail-fecha"></span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
+
+                            <div class="detail-col-half">
+                                <div class="detail-section">
+                                    <h4><i class="fas fa-warehouse"></i> Gestión de Stock</h4>
+                                    <div class="detail-grid">
+                                        <div class="detail-item">
+                                            <label>Stock Actual:</label>
+                                            <span id="detail-stock-actual" class="stock-highlight"></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <label>Stock Mínimo:</label>
+                                            <span id="detail-stock-min"></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <label>Stock Máximo:</label>
+                                            <span id="detail-stock-max"></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <label>Estado:</label>
+                                            <span id="detail-stock-estado"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Fila 3: Proveedores Asociados (ancho completo) -->
+                            <div class="detail-col-full">
+                                <div class="detail-section">
+                                    <h4><i class="fas fa-truck"></i> Proveedores Asociados</h4>
+                                    <div id="detail-proveedores-container">
+                                        <table class="data-table" style="font-size: 13px; margin: 0;">
+                                            <thead>
+                                                <tr>
+                                                    <th>Proveedor</th>
+                                                    <th>Teléfono</th>
+                                                    <th>Email</th>
+                                                    <th style="text-align: right;">Coste Unitario</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="detail-proveedores-body">
+                                                <tr>
+                                                    <td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">
+                                                        <i class="fas fa-spinner fa-spin"></i> Cargando...
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1158,25 +1196,7 @@
                                     <div class="error-message" id="errorDireccion"></div>
                                 </div>
                             </div>
-                            <div class="form-group">
-                                <label for="proveedorProductosSelect">Productos que Ofrece</label>
 
-                                <div id="productos-multi-select-container" class="custom-multi-select-container">
-
-                                    <div id="tags-container" class="tags-container">
-
-                                    </div>
-
-                                    <input type="text" id="productos-select-input" class="custom-select-input"
-                                        placeholder="Buscar y seleccionar productos...">
-
-                                </div>
-                                <div id="productos-options-container" class="options-container">
-                                </div>
-                                <select id="proveedorProductosSelect" name="productosIds" multiple>
-                                </select>
-                                <div class="error-message" id="proveedorProductosError"></div>
-                            </div>
                             <div class="form-buttons"
                                 style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
                                 <button type="submit" class="btn-primary">
@@ -1292,14 +1312,13 @@
                                             placeholder="Buscar proveedor por nombre..." class="product-search-input"
                                             autocomplete="off">
 
-                                        <button type="button" id="btn-add-proveedor-compra" class="btn-icon btn-add-quick"
-                                            title="Añadir Nuevo Proveedor">
+                                        <button type="button" id="btn-add-proveedor-compra"
+                                            class="btn-icon btn-add-quick" title="Añadir Nuevo Proveedor">
                                             <i class="fas fa-plus"></i>
                                         </button>
                                     </div>
                                     <input type="hidden" id="compra-proveedor-id-hidden">
-                                    <div id="compra-proveedor-results" class="product-results"
-                                        style="display: none;">
+                                    <div id="compra-proveedor-results" class="product-results" style="display: none;">
                                     </div>
 
                                     <div class="error-message" id="errorCompraProveedor"></div>
@@ -1505,7 +1524,7 @@
                                     <div class="error-message" id="errorAddProveedorComprasTelefono"></div>
                                 </div>
                             </div>
-                            
+
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="addProveedorComprasEmail">Email</label>
@@ -1520,17 +1539,7 @@
                                 </div>
                             </div>
 
-                            <div class="form-group">
-                                <label for="addProveedorComprasProductosSelect">Productos que Ofrece</label>
-                                <div id="add-compra-productos-multi-select-container" class="custom-multi-select-container">
-                                    <div id="add-compra-tags-container" class="tags-container"></div>
-                                    <input type="text" id="add-compra-productos-select-input" class="custom-select-input"
-                                        placeholder="Buscar y seleccionar productos...">
-                                </div>
-                                <div id="add-compra-productos-options-container" class="options-container"></div>
-                                <select id="addProveedorComprasProductosSelect" multiple style="display:none;"></select>
-                                <div class="error-message" id="errorAddProveedorComprasProductos"></div>
-                            </div>
+
 
                             <div class="modal-footer">
                                 <button type="submit" class="btn btn-primary">
@@ -2681,17 +2690,7 @@
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="edit-productos-select-input">Productos que Ofrece</label>
-                            <div id="edit-productos-multi-select-container" class="custom-multi-select-container">
-                                <div id="edit-tags-container" class="tags-container"></div>
-                                <input type="text" id="edit-productos-select-input" class="custom-select-input"
-                                    placeholder="Buscar y seleccionar productos...">
-                            </div>
-                            <div id="edit-productos-options-container" class="options-container"></div>
-                            <select id="editProveedorProductosSelect" multiple style="display: none;"></select>
-                            <div class="error-message" id="editProveedorProductosError"></div>
-                        </div>
+
 
                         <div id="form-general-message-edit-proveedor" class="form-message"></div>
                     </form>
@@ -2712,7 +2711,7 @@
 
         <!-- Modal de Detalles de Proveedor -->
         <div id="modal-detail-proveedor-overlay" class="modal" style="display: none;">
-            <div class="modal-content modal-large">
+            <div class="modal-content modal-large" style="width: 95%; max-width: 950px;">
                 <div class="modal-header">
                     <h3><i class="fas fa-eye"></i> Detalles del Proveedor</h3>
                     <button id="modal-detail-proveedor-close" class="modal-close">
@@ -2744,11 +2743,38 @@
                         </div>
                     </div>
 
-                    <!-- Productos Ofrecidos -->
-                    <div class="detail-section">
-                        <h4><i class="fas fa-box"></i> Productos Ofrecidos</h4>
-                        <div id="detail-proveedor-productos"
-                            style="display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px;"></div>
+                    <!-- Productos Asociados -->
+                    <div class="detail-section" style="margin-top: 20px;">
+                        <h4><i class="fas fa-box"></i> Productos Asociados</h4>
+                        <div class="table-container">
+                            <table class="data-table" style="table-layout: fixed; width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 30%;">Producto</th>
+                                        <th style="width: 40%;">Descripción</th>
+                                        <th style="width: 15%;">Precio</th>
+                                        <th style="width: 15%;">Stock</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="modal-proveedor-productos-body">
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <td colspan="4">
+                                            <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
+                                                <span id="modal-proveedor-page-info" style="margin-right: 15px;">Página 1 de 1</span>
+                                                <button class="btn-outline" id="modal-proveedor-prev-page" disabled>
+                                                    <i class="fas fa-arrow-left"></i>
+                                                </button>
+                                                <button class="btn-outline" id="modal-proveedor-next-page" disabled>
+                                                    <i class="fas fa-arrow-right"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
