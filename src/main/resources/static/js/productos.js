@@ -526,24 +526,24 @@ document.addEventListener('DOMContentLoaded', function () {
                     const nombres = (product.otrosProveedores && product.otrosProveedores.length > 0)
                         ? product.otrosProveedores.join(', ')
                         : `${extras} proveedor(es) más`;
-                    proveedorCell += ` <span class="proveedor-badge-wrapper">` +
+                    proveedorCell += ` <div class="proveedor-badge-wrapper">` +
                         `<span class="proveedor-badge">+${extras} ${extras === 1 ? 'opción' : 'opciones'}</span>` +
-                        `<span class="proveedor-popover">` +
+                        `<div class="proveedor-popover">` +
                         `<div class="popover-label">También suministrado por:</div>` +
                         `<div class="popover-names">${nombres}</div>` +
-                        `</span></span>`;
+                        `</div></div>`;
                 }
             }
 
             const row = `
                 <tr>
-                    <td>${product.nombre || 'N/A'}</td>
-                    <td>${product.categoria || 'N/A'}</td>
-                    <td>${product.descripcion || 'N/A'}</td>
-                    <td>${proveedorCell}</td>
-                    <td>${stockBadge}</td>
-                    <td>
-                        <div class="action-buttons">
+                    <td style="text-align: left; font-weight: 500;">${product.nombre || 'N/A'}</td>
+                    <td style="text-align: left;">${product.categoria || 'N/A'}</td>
+                    <td style="text-align: center;">${proveedorCell}</td>
+                    <td style="text-align: center;">${stockBadge}</td>
+                    <td style="text-align: right; font-weight: 600;">$${product.precio != null ? product.precio.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</td>
+                    <td style="text-align: right;">
+                        <div class="action-buttons" style="justify-content: flex-end;">
                             <button class="btn-action view" title="Ver detalles" data-id="${product.idProducto}">
                                 <i class="fas fa-eye"></i>
                             </button>

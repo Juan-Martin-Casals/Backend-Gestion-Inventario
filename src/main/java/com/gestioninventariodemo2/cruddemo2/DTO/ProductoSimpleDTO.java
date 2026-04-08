@@ -15,4 +15,6 @@ public class ProductoSimpleDTO {
     private String descripcion;
     private double precio;
     private int stock;
+    private double ultimoCosto;
+    private double margen;
 }

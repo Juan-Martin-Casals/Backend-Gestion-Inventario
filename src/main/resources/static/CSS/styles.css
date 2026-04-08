@@ -716,9 +716,9 @@ body {
     border-collapse: collapse;
     background: #fff;
     border-radius: 8px;
-    overflow: hidden;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
+
 
 .data-table th {
     background: #f8f9fa;
@@ -737,12 +737,15 @@ body {
     color: #333;
 }
 
-.data-table tr:last-child td {
-    border-bottom: none;
+.data-table tr {
+    position: relative; /* Evita que queden atrapados en capas inferiores */
+    border-bottom: 1px solid #eee;
+    overflow: visible !important;
 }
 
 .data-table tr:hover {
     background: #f8f9fa;
+    z-index: 900; /* Asegura que la fila activa flote sobre todo lo demás */
 }
 
 /* Alineacion derecha para columnas numericas (precios, cantidades, totales, stock) */
@@ -1490,6 +1493,30 @@ body {
      * Ejemplo: (7 filas * 50px) + 50px = 400px 
      */
     min-height: 650px;
+    padding-bottom: 80px;
+}
+
+.table-container-product .data-table {
+    overflow: visible !important;
+    /* Permitir que los tooltips escapen de la tabla */
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.table-container-product .data-table th:first-child {
+    border-top-left-radius: 8px;
+}
+
+.table-container-product .data-table th:last-child {
+    border-top-right-radius: 8px;
+}
+
+.table-container-product .data-table tr:last-child td:first-child {
+    border-bottom-left-radius: 8px;
+}
+
+.table-container-product .data-table tr:last-child td:last-child {
+    border-bottom-right-radius: 8px;
 }
 
 /* ===== POPOVER DE PROVEEDORES ===== */
@@ -1519,7 +1546,7 @@ body {
 .proveedor-popover {
     display: none;
     position: absolute;
-    bottom: calc(100% + 10px);
+    top: calc(100% + 8px);
     left: 50%;
     transform: translateX(-50%);
     background: #1e293b;
@@ -1530,7 +1557,7 @@ body {
     line-height: 1.5;
     white-space: nowrap;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-    z-index: 9999;
+    z-index: 99999;
     pointer-events: none;
     opacity: 0;
     animation: popoverFadeIn 0.2s ease forwards;
@@ -1539,11 +1566,11 @@ body {
 .proveedor-popover::after {
     content: '';
     position: absolute;
-    top: 100%;
+    bottom: 100%;
     left: 50%;
     transform: translateX(-50%);
     border: 6px solid transparent;
-    border-top-color: #1e293b;
+    border-bottom-color: #1e293b;
 }
 
 .proveedor-popover .popover-label {
@@ -1571,6 +1598,7 @@ body {
         opacity: 0;
         transform: translateX(-50%) translateY(4px);
     }
+
     to {
         opacity: 1;
         transform: translateX(-50%) translateY(0);
@@ -1846,41 +1874,121 @@ body {
 #modal-detail-proveedor-overlay .modal-content.modal-large {
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Sin scroll en el modal completo */
+    overflow: hidden;
+    /* Sin scroll en el modal completo */
 }
 
 #modal-detail-proveedor-overlay .modal-header {
-    flex-shrink: 0; /* El header nunca se encoge */
+    flex-shrink: 0;
+    /* El header nunca se encoge */
 }
 
 #modal-detail-proveedor-overlay .modal-body {
     flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden; /* Sin scroll en el body general */
-    min-height: 0; /* Clave para que flex + overflow funcione */
+    overflow: hidden;
+    /* Sin scroll en el body general */
+    min-height: 0;
+    /* Clave para que flex + overflow funcione */
 }
 
 #modal-detail-proveedor-overlay .modal-body .detail-section:first-child {
-    flex-shrink: 0; /* Info general siempre visible, no se encoge */
+    flex-shrink: 0;
+    /* Info general siempre visible, no se encoge */
 }
 
 #modal-detail-proveedor-overlay .modal-body .detail-section:last-child {
-    flex: 1;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
     min-height: 0;
+    /* Permite comprimirse en pantallas chicas */
+    flex: 0 1 auto;
+    /* No ocupa el espacio vacío sobrante (no whitespace), pero se achica si falta */
+    overflow: hidden;
+    background: transparent;
+    padding: 0;
+    margin-bottom: 20px;
 }
 
 #modal-detail-proveedor-overlay .modal-body .detail-section:last-child .table-container {
-    flex: 1;
-    overflow: hidden; /* Sin scroll, la tabla usa paginación */
-    min-height: 0;
+    flex: 0 1 auto;
+    /* Idem: abraza su contenido pero se estruja si es necesario */
+    max-height: 450px;
+    /* Alrededor de 7 u 8 filas seguras */
+    overflow-y: auto;
+    /* Agregamos los bordes redondeados y el contorno estilo tarjeta */
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background-color: #ffffff;
+    /* Quitamos los paddings derechos o inferiores para que el borde redondeado cierre perfecto */
+}
+
+/* Scrollbar moderno y sutil */
+#modal-detail-proveedor-overlay .table-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+#modal-detail-proveedor-overlay .table-container::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 8px;
+}
+
+#modal-detail-proveedor-overlay .table-container::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+#modal-detail-proveedor-overlay .table-container::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
+/* Encabezado fijo */
+#modal-detail-proveedor-overlay .table-container thead th {
+    position: sticky;
+    top: 0;
+    background: #f3f4f6;
+    /* Fondo gris claro */
+    color: #374151;
+    /* Texto oscuro suave */
+    font-weight: 600;
+    font-size: 13px;
+    padding: 12px 16px;
+    text-align: left;
+    z-index: 2;
+    /* Borde inferior nítido igual al mockup en lugar de sombra */
+    border-bottom: 1px solid #e5e7eb;
+}
+
+#modal-detail-proveedor-overlay .table-container tbody td {
+    padding: 12px 16px;
+    color: #4b5563;
+    font-size: 13px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+#modal-proveedor-productos-body {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#modal-proveedor-productos-body.loading {
+    opacity: 0;
+}
+
+#modal-detail-proveedor-overlay .table-container tbody tr:last-child td {
+    border-bottom: none;
+    /* Quitamos el borde al último para que no doble con el borde del container */
+}
+
+#modal-detail-proveedor-overlay .table-container tbody tr:hover {
+    background-color: #f9fafb;
 }
 
 #modal-detail-proveedor-overlay .modal-footer {
-    flex-shrink: 0; /* El footer nunca se encoge */
+    flex-shrink: 0;
+    /* El footer nunca se encoge */
 }
 
 #compras-historial-tabla-body {
@@ -2149,11 +2257,8 @@ body {
    TRUNCATE LONG TEXT IN PRODUCT TABLE
    ======================================== */
 
-/* Limitar el ancho de las columnas de nombre y descripción */
-.data-table td:nth-child(1),
-/* Nombre */
-.data-table td:nth-child(3) {
-    /* Descripción */
+/* Limitar el ancho de las columnas de nombre */
+.data-table td:nth-child(1) {
     max-width: 250px;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -2309,6 +2414,7 @@ body {
     .detail-grid-layout {
         grid-template-columns: 1fr;
     }
+
     .detail-grid-layout .detail-col-half {
         grid-column: 1 / -1;
     }

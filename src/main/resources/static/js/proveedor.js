@@ -528,75 +528,79 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================================
     const handleDetailEsc = (e) => { if (e.key === 'Escape') closeDetailModal(); };
 
-    // Variables de paginación para los productos del proveedor
+    // Variable de búsqueda
+    let modalProveedorSearchTerm = '';
     let productosProveedorActual = [];
-    let modalProductosCurrentPage = 1;
-    let modalProductosItemsPerPage = 5;
+
+    function normalizeText(text) {
+        if (!text) return '';
+        return text.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    }
 
     function renderModalProductos() {
         const tbody = document.getElementById('modal-proveedor-productos-body');
-        const pageInfo = document.getElementById('modal-proveedor-page-info');
-        const btnPrev = document.getElementById('modal-proveedor-prev-page');
-        const btnNext = document.getElementById('modal-proveedor-next-page');
-        
+
         if (!tbody) return;
 
+        // 1. Limpiamos la tabla
         tbody.innerHTML = '';
-        
-        if (!productosProveedorActual || productosProveedorActual.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 20px; color: #64748b;">No hay productos asociados a este proveedor.</td></tr>';
-            if (pageInfo) pageInfo.textContent = 'Página 1 de 1';
-            if (btnPrev) btnPrev.disabled = true;
-            if (btnNext) btnNext.disabled = true;
+
+        // 2. Aplicar filtro ignorando mayúsculas, minúsculas y acentos
+        let filteredProducts = productosProveedorActual || [];
+        if (modalProveedorSearchTerm) {
+            filteredProducts = filteredProducts.filter(prod => {
+                const nombre = normalizeText(prod.nombreProducto || '');
+                return nombre.includes(modalProveedorSearchTerm);
+            });
+        }
+
+        // 3. Si no hay productos, mostramos el mensaje
+        if (filteredProducts.length === 0) {
+            const mensaje = modalProveedorSearchTerm 
+                ? 'No hay coincidencias con tu búsqueda.' 
+                : 'No hay productos asociados a este proveedor.';
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: #64748b;">${mensaje}</td></tr>`;
             return;
         }
 
-        const totalPages = Math.ceil(productosProveedorActual.length / modalProductosItemsPerPage);
-        if (modalProductosCurrentPage > totalPages) modalProductosCurrentPage = totalPages;
+        // 4. Recorremos los productos filtrados y los agregamos a la tabla
+        filteredProducts.forEach(prod => {
+            const costoFormat = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(prod.ultimoCosto || 0);
 
-        const startIndex = (modalProductosCurrentPage - 1) * modalProductosItemsPerPage;
-        const endIndex = startIndex + modalProductosItemsPerPage;
-        const pageItems = productosProveedorActual.slice(startIndex, endIndex);
-
-        pageItems.forEach(prod => {
-            const precioFormat = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(prod.precio || 0);
-            
             const row = `
-                <tr>
-                    <td>${prod.nombreProducto || 'N/A'}</td>
-                    <td>${prod.descripcion || '-'}</td>
-                    <td>${precioFormat}</td>
-                    <td>${prod.stock || 0}</td>
-                </tr>
-            `;
+            <tr>
+                <td>${prod.nombreProducto || 'N/A'}</td>
+                <td>${costoFormat}</td>
+                <td>${prod.stock || 0}</td>
+            </tr>
+        `;
             tbody.innerHTML += row;
         });
-
-        if (pageInfo) pageInfo.textContent = `Página ${modalProductosCurrentPage} de ${totalPages}`;
-        if (btnPrev) btnPrev.disabled = modalProductosCurrentPage === 1;
-        if (btnNext) btnNext.disabled = modalProductosCurrentPage === totalPages;
     }
 
-    // Configizar listeners de paginación del modal
-    const btnPrevModalProd = document.getElementById('modal-proveedor-prev-page');
-    const btnNextModalProd = document.getElementById('modal-proveedor-next-page');
-
-    if (btnPrevModalProd) {
-        btnPrevModalProd.addEventListener('click', () => {
-            if (modalProductosCurrentPage > 1) {
-                modalProductosCurrentPage--;
-                renderModalProductos();
+    // Configizar listener de búsqueda
+    const modalSearchInput = document.getElementById('modal-proveedor-productos-search');
+    let modalSearchTimeout;
+    
+    if (modalSearchInput) {
+        modalSearchInput.addEventListener('input', (e) => {
+            clearTimeout(modalSearchTimeout);
+            
+            const tbody = document.getElementById('modal-proveedor-productos-body');
+            if (tbody) {
+                tbody.classList.add('loading');
             }
-        });
-    }
 
-    if (btnNextModalProd) {
-        btnNextModalProd.addEventListener('click', () => {
-            const totalPages = Math.ceil(productosProveedorActual.length / modalProductosItemsPerPage);
-            if (modalProductosCurrentPage < totalPages) {
-                modalProductosCurrentPage++;
+            modalSearchTimeout = setTimeout(() => {
+                modalProveedorSearchTerm = normalizeText(e.target.value.trim());
                 renderModalProductos();
-            }
+                
+                if (tbody) {
+                    requestAnimationFrame(() => {
+                        tbody.classList.remove('loading');
+                    });
+                }
+            }, 200); // 200ms para empatar con la transición CSS
         });
     }
 
@@ -606,15 +610,20 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!response.ok) throw new Error('Error al cargar proveedor');
             const proveedor = await response.json();
 
-            // Llenar información general
+            // Llenar datos estáticos
             document.getElementById('detail-proveedor-nombre').textContent = proveedor.nombre || 'N/A';
             document.getElementById('detail-proveedor-email').textContent = proveedor.email || 'N/A';
             document.getElementById('detail-proveedor-telefono').textContent = proveedor.telefono || 'N/A';
             document.getElementById('detail-proveedor-direccion').textContent = proveedor.direccion || 'N/A';
 
-            // Productos Asociados con Paginación Front-end
+            // Productos Asociados
             productosProveedorActual = proveedor.productos || [];
-            modalProductosCurrentPage = 1;
+            
+            // Limpiar búsqueda al abrir
+            modalProveedorSearchTerm = '';
+            const mSearchInput = document.getElementById('modal-proveedor-productos-search');
+            if (mSearchInput) mSearchInput.value = '';
+
             renderModalProductos();
 
             detailModal.style.display = 'flex';

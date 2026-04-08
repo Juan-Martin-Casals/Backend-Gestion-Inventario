@@ -12,6 +12,19 @@
     <link rel="stylesheet" href="css/dashboard-informes.css">
     <link rel="stylesheet" href="css/caja-dashboard.css">
 
+    <!-- FIX INLINE CACHE BYPASS -->
+    <style>
+        .data-table {
+            overflow: visible !important;
+        }
+        .table-container-product .data-table {
+            overflow: visible !important;
+        }
+        /* Para que no se pierdan los bordes redondos de la tabla principal */
+        .data-table th:first-child { border-top-left-radius: 8px; }
+        .data-table th:last-child { border-top-right-radius: 8px; }
+    </style>
+
     <!-- jsPDF para exportar PDFs desde el frontend -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -101,7 +114,7 @@
                             </div>
                             <div class="stat-content">
                                 <h3 id="ventas-hoy-amount">$0.00</h3>
-                                <p>Ganancia del Día</p>
+                                <p>Ingresos Totales</p>
                             </div>
                         </div>
                         <div class="stat-card">
@@ -610,17 +623,12 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th data-sort-by="nombre" class="sortable">Nombre <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="categoria" class="sortable">Categoría <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="descripcion" class="sortable">Descripción <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="proveedor" class="sortable">Proveedor <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="stock" class="sortable col-num">Stock <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th>Acciones</th>
+                                        <th data-sort-by="nombre" class="sortable" style="text-align: left;">Nombre <i class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="categoria" class="sortable" style="text-align: left;">Categoría <i class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="proveedorNombre" class="sortable" style="text-align: center;">Proveedor <i class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="stock" class="sortable" style="text-align: center;">Stock <i class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="precio" class="sortable" style="text-align: right;">Precio Venta <i class="sort-icon fas fa-sort"></i></th>
+                                        <th style="text-align: right;">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="stock-table-body">

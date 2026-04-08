@@ -157,12 +157,42 @@ public class ProveedorService {
     }
 
     public ProveedorResponseDTO mapToDTO(Proveedor proveedor) {
-        // Ahora mapeamos a ProductoSimpleDTO
         List<ProductoSimpleDTO> productosDTO = proveedor.getProductoProveedor().stream()
-                .map(pp -> ProductoSimpleDTO.builder()
-                        .idProducto(pp.getProducto().getIdProducto())
-                        .nombreProducto(pp.getProducto().getNombre())
-                        .build())
+                .map(pp -> {
+                    com.gestioninventariodemo2.cruddemo2.Model.Producto producto = pp.getProducto();
+                    
+                    int stockActual = 0;
+                    if (producto.getStocks() != null && !producto.getStocks().isEmpty()) {
+                        stockActual = producto.getStocks().get(0).getStockActual();
+                    }
+
+                    double ultimoCosto = 0.0;
+                    if (producto.getDetalleCompras() != null && !producto.getDetalleCompras().isEmpty()) {
+                        com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra ultimoDetalle = producto.getDetalleCompras().stream()
+                                .max(java.util.Comparator.comparing(com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra::getIdDetalleCompra))
+                                .orElse(null);
+                        if (ultimoDetalle != null) {
+                            ultimoCosto = ultimoDetalle.getPrecioUnitario();
+                        }
+                    }
+
+                    double margen = 0.0;
+                    if (ultimoCosto > 0) {
+                        margen = ((producto.getPrecio() - ultimoCosto) / ultimoCosto) * 100;
+                    } else if (producto.getPrecio() > 0) {
+                        margen = 100.0;
+                    }
+
+                    return ProductoSimpleDTO.builder()
+                            .idProducto(producto.getIdProducto())
+                            .nombreProducto(producto.getNombre())
+                            .descripcion(producto.getDescripcion())
+                            .precio(producto.getPrecio())
+                            .stock(stockActual)
+                            .ultimoCosto(ultimoCosto)
+                            .margen(margen)
+                            .build();
+                })
                 .collect(Collectors.toList());
 
         return ProveedorResponseDTO.builder()
@@ -171,7 +201,7 @@ public class ProveedorService {
                 .telefono(proveedor.getTelefono())
                 .email(proveedor.getEmail())
                 .direccion(proveedor.getDireccion())
-                .productos(productosDTO) // <-- DTO modificado
+                .productos(productosDTO)
                 .build();
     }
 
