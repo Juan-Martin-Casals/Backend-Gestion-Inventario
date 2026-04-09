@@ -13,8 +13,8 @@ import com.gestioninventariodemo2.cruddemo2.Model.Pago;
 @Repository
 public interface PagoRepository extends JpaRepository<Pago, Long> {
 
-    // Encontrar pago por ID de venta (relación 1:1)
-    Pago findByVentaIdVenta(Long idVenta);
+    // Encontrar pago por ID de compra (relación 1:1)
+    Pago findByCompraIdCompra(Long idCompra);
 
     // Obtener pagos por método de pago
     List<Pago> findByMetodoPagoIdMetodoPago(Long idMetodoPago);
@@ -22,13 +22,7 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     // Obtener pagos entre fechas
     List<Pago> findByFechaPagoBetween(LocalDateTime inicio, LocalDateTime fin);
 
-    // Consulta personalizada para reportes: total por método de pago
-    @Query("SELECT p.metodoPago.nombre, SUM(p.importe), COUNT(p) " +
-            "FROM Pago p " +
-            "GROUP BY p.metodoPago.nombre")
-    List<Object[]> obtenerTotalPorMetodoPago();
-
-    // Total por método de pago entre fechas
+    // Total por método de pago entre fechas (para reportes de caja)
     @Query("SELECT p.metodoPago.nombre, SUM(p.importe), COUNT(p) " +
             "FROM Pago p " +
             "WHERE p.fechaPago BETWEEN :inicio AND :fin " +

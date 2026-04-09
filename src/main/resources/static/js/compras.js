@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
             // Manejar formato "YYYY-MM-DDTHH:mm:ss" o "YYYY-MM-DD HH:mm:ss.S"
             let fechaParsed;
-            
+
             // Si es un array [year, month, day, hour, minute] generado por backend (sucede a veces con Jackson)
             if (Array.isArray(fechaString)) {
                 const year = fechaString[0];
@@ -71,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.warn("Fecha inválida en ventas:", fechaString);
                 return fechaString; // Devolver original si es inválido
             }
-            
+
             return fechaParsed.toLocaleString('es-AR', {
                 year: 'numeric',
                 month: '2-digit',
@@ -569,6 +569,32 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!fecha) { document.getElementById('errorCompraFecha').textContent = 'La fecha es obligatoria.'; isValid = false; }
             if (!idProveedor) { document.getElementById('errorCompraProveedor').textContent = 'El proveedor es obligatorio.'; isValid = false; }
             if (detalleItems.length === 0) { if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto al detalle.'; isValid = false; }
+
+            // Validar método de pago
+            const metodoPagoSelect = document.getElementById('compra-metodo-pago');
+            const idMetodoPago = metodoPagoSelect ? metodoPagoSelect.value : '';
+            if (!idMetodoPago) {
+                const errorEl = document.getElementById('errorCompraMetodoPago');
+                if (errorEl) errorEl.textContent = 'Debe seleccionar un método de pago.';
+                isValid = false;
+            }
+
+            // Validar estado y fecha de vencimiento
+            const estadoSelect = document.getElementById('compra-estado-pago');
+            const estadoPago = estadoSelect ? estadoSelect.value : 'PAGADO';
+            const fechaVencimientoInput = document.getElementById('compra-fecha-vencimiento');
+            let fechaVencimiento = null;
+
+            if (estadoPago === 'PENDIENTE') {
+                if (fechaVencimientoInput && fechaVencimientoInput.value) {
+                    fechaVencimiento = fechaVencimientoInput.value;
+                } else {
+                    const errorVencimiento = document.getElementById('errorCompraFechaVencimiento');
+                    if (errorVencimiento) errorVencimiento.textContent = 'Debe indicar la fecha de vencimiento si el pago está pendiente.';
+                    isValid = false;
+                }
+            }
+
             if (!isValid) {
                 if (generalMessageCompra) {
                     generalMessageCompra.textContent = "Debe completar todos los campos correctamente.";
@@ -578,7 +604,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             showConfirmationModal("¿Estás seguro de que deseas registrar esta compra?", async () => {
-                const compraRequestDTO = { fecha: fecha, idProveedor: parseInt(idProveedor), detalleCompras: detalleItems };
+                const compraRequestDTO = {
+                    fecha: fecha,
+                    idProveedor: parseInt(idProveedor),
+                    detalleCompras: detalleItems,
+                    idMetodoPago: parseInt(idMetodoPago),
+                    estadoPago: estadoPago,
+                    fechaVencimientoPago: fechaVencimiento
+                };
                 try {
                     const response = await fetch(API_COMPRAS_URL, {
                         method: 'POST',
@@ -704,13 +737,12 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             const totalFormateado = `$${formatoMoneda.format(compra.total || 0)}`;
             let fechaFormateada = formatearFechaHora(compra.fecha);
-            
+
             const row = `
                 <tr>
                     <td>${fechaFormateada}</td>
                     <td>${compra.nombreProveedor || 'N/A'}</td>
                     <td>${productosTexto}</td>
-                    <td class="col-num">${costosTexto}</td> 
                     <td class="col-num">${totalFormateado}</td>
                     <td>
                         <button type="button" class="btn-icon btn-view-compra" onclick="mostrarDetalleCompra(${compra.id})" title="Ver Detalle">
@@ -789,6 +821,19 @@ document.addEventListener('DOMContentLoaded', function () {
         productoSearchInput.placeholder = "Seleccione un proveedor primero";
         todosLosProductos = [];
 
+        // Resetear método de pago
+        const metodoPagoSelect = document.getElementById('compra-metodo-pago');
+        if (metodoPagoSelect) metodoPagoSelect.selectedIndex = 0;
+        
+        const estadoPagoSelect = document.getElementById('compra-estado-pago');
+        if (estadoPagoSelect) estadoPagoSelect.selectedIndex = 0;
+        
+        const vencimientoContainer = document.getElementById('compra-vencimiento-container');
+        if (vencimientoContainer) vencimientoContainer.style.display = 'none';
+        
+        const vencimientoInput = document.getElementById('compra-fecha-vencimiento');
+        if (vencimientoInput) vencimientoInput.value = '';
+
         // Establecer fecha actual nuevamente
         establecerFechaActual();
     }
@@ -800,11 +845,62 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================================
+    // LÓGICA DE MÉTODO DE PAGO (Campos condicionales)
+    // ==========================================================
+    const metodoPagoSelect = document.getElementById('compra-metodo-pago');
+    const tipoTarjetaContainer = document.getElementById('compra-tipo-tarjeta-container');
+
+    /**
+     * Cargar métodos de pago activos desde la API
+     */
+    async function cargarMetodosPagoCompra() {
+        try {
+            const response = await fetch('/api/metodos-pago/activos');
+            if (!response.ok) throw new Error('Error al cargar métodos de pago');
+
+            const metodos = await response.json();
+
+            if (metodoPagoSelect) {
+                metodoPagoSelect.innerHTML = '<option value="">Seleccionar método</option>';
+                metodos.forEach(metodo => {
+                    const option = document.createElement('option');
+                    option.value = metodo.idMetodoPago;
+                    option.textContent = metodo.nombre;
+                    option.dataset.requiereExtra = metodo.requiereDatosExtra;
+                    option.dataset.nombre = metodo.nombre;
+                    metodoPagoSelect.appendChild(option);
+                });
+            }
+        } catch (error) {
+            console.error('Error cargando métodos de pago:', error);
+        }
+    }
+
+    // Cargar métodos de pago al iniciar
+    cargarMetodosPagoCompra();
+
+    const estadoPagoSelect = document.getElementById('compra-estado-pago');
+    const vencimientoContainer = document.getElementById('compra-vencimiento-container');
+
+    if (estadoPagoSelect && vencimientoContainer) {
+        estadoPagoSelect.addEventListener('change', function() {
+            if (this.value === 'PENDIENTE') {
+                vencimientoContainer.style.display = 'block';
+            } else {
+                vencimientoContainer.style.display = 'none';
+                const vencimientoInput = document.getElementById('compra-fecha-vencimiento');
+                if (vencimientoInput) vencimientoInput.value = '';
+            }
+        });
+    }
+
+    // ==========================================================
     // CARGA INICIAL Y EXPOSICIÓN
     // ==========================================================
     loadProveedoresParaCompra();
     loadComprasHistorial();
     renderDetalleTemporal();
+    cargarMetodosPagoCompra();
     establecerFechaActual(); // Establecer fecha actual al cargar
     if (productoSearchInput) { productoSearchInput.disabled = true; productoSearchInput.placeholder = "Seleccione un proveedor primero"; }
 
@@ -1008,10 +1104,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // MODAL DETALLE DE COMPRA
     // ==========================================================
 
-    // Variables para paginación del modal
+    // Variables para el modal
     let modalProductosActuales = [];
-    let modalCurrentPage = 0;
-    const modalItemsPerPage = 5;
+    let modalCompraCurrentSortCol = -1;
+    let modalCompraCurrentSortAsc = true;
 
     async function mostrarDetalleCompra(compraId) {
         const modal = document.getElementById('purchase-detail-modal');
@@ -1033,13 +1129,48 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('modal-compra-id').textContent = `#${compra.id}`;
             document.getElementById('modal-compra-fecha').textContent = fechaFormateada;
             document.getElementById('modal-compra-proveedor').textContent = compra.nombreProveedor || 'N/A';
+            document.getElementById('modal-compra-metodo-pago').textContent = compra.metodoPago || '-';
+            
+            const estadoSpan = document.createElement('span');
+            estadoSpan.textContent = compra.estadoPago || 'PAGADO';
+            estadoSpan.className = (compra.estadoPago === 'PENDIENTE') ? 'status-badge pending' : 'status-badge success';
+            const estadoContainer = document.getElementById('modal-compra-estado');
+            estadoContainer.innerHTML = '';
+            estadoContainer.appendChild(estadoSpan);
+
+            const vencimientoContainer = document.getElementById('modal-compra-vencimiento-container');
+            if (compra.estadoPago === 'PENDIENTE' && compra.fechaVencimientoPago) {
+                // Formatear si viene de la db
+                let venciStr = compra.fechaVencimientoPago;
+                if (venciStr.includes('-')) {
+                    const partes = venciStr.split('-');
+                    if (partes.length >= 3) {
+                       venciStr = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                    }
+                }
+                document.getElementById('modal-compra-vencimiento').textContent = venciStr;
+                vencimientoContainer.style.display = 'block';
+            } else {
+                vencimientoContainer.style.display = 'none';
+            }
+
             document.getElementById('modal-compra-total').textContent = `$${formatoMoneda.format(compra.total || 0)}`;
 
-            // Guardar productos y resetear paginación
+            // Guardar productos
             modalProductosActuales = compra.productosComprados || [];
-            modalCurrentPage = 0;
 
-            // Renderizar tabla con paginación
+            // Resetear UI de busqueda y ordenamiento
+            const searchInput = document.getElementById('modal-compra-productos-search');
+            if (searchInput) searchInput.value = '';
+            document.querySelectorAll('.modal-sortable').forEach(th => {
+                th.classList.remove('sort-asc', 'sort-desc');
+                const icon = th.querySelector('.sort-icon');
+                if (icon) icon.className = 'sort-icon fas fa-sort';
+            });
+            modalCompraCurrentSortCol = -1;
+            modalCompraCurrentSortAsc = true;
+
+            // Renderizar tabla con productos
             renderModalProductos();
 
             // Mostrar modal
@@ -1052,9 +1183,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function renderModalProductos() {
         const tbody = document.getElementById('modal-compra-productos');
-        const pageInfo = document.getElementById('modal-compra-page-info');
-        const prevBtn = document.getElementById('modal-compra-prev-page');
-        const nextBtn = document.getElementById('modal-compra-next-page');
 
         if (!tbody) return;
 
@@ -1062,20 +1190,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (modalProductosActuales.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4">No hay productos en esta compra.</td></tr>';
-            if (pageInfo) pageInfo.textContent = 'Página 0 de 0';
-            if (prevBtn) prevBtn.disabled = true;
-            if (nextBtn) nextBtn.disabled = true;
             return;
         }
 
-        // Calcular paginación
-        const totalPages = Math.ceil(modalProductosActuales.length / modalItemsPerPage);
-        const startIndex = modalCurrentPage * modalItemsPerPage;
-        const endIndex = Math.min(startIndex + modalItemsPerPage, modalProductosActuales.length);
-        const productosEnPagina = modalProductosActuales.slice(startIndex, endIndex);
-
-        // Renderizar productos de la página actual
-        productosEnPagina.forEach(producto => {
+        // Renderizar todos los productos para vista scrolleable
+        modalProductosActuales.forEach(producto => {
             const subtotal = (producto.cantidad || 0) * (producto.precioUnitario || 0);
             const row = `
                 <tr>
@@ -1088,51 +1207,23 @@ document.addEventListener('DOMContentLoaded', function () {
             tbody.innerHTML += row;
         });
 
-        // Actualizar controles de paginación
-        if (pageInfo) {
-            pageInfo.textContent = `Página ${modalCurrentPage + 1} de ${totalPages}`;
-        }
-        if (prevBtn) {
-            prevBtn.disabled = (modalCurrentPage === 0);
-        }
-        if (nextBtn) {
-            nextBtn.disabled = (modalCurrentPage + 1 >= totalPages);
-        }
-    }
-
-    function modalPrevPage() {
-        if (modalCurrentPage > 0) {
-            modalCurrentPage--;
-            renderModalProductos();
-        }
-    }
-
-    function modalNextPage() {
-        const totalPages = Math.ceil(modalProductosActuales.length / modalItemsPerPage);
-        if (modalCurrentPage + 1 < totalPages) {
-            modalCurrentPage++;
-            renderModalProductos();
-        }
-    }
-
-    // Event listeners para botones de paginación del modal
-    const modalPrevBtn = document.getElementById('modal-compra-prev-page');
-    const modalNextBtn = document.getElementById('modal-compra-next-page');
-
-    if (modalPrevBtn) {
-        modalPrevBtn.addEventListener('click', modalPrevPage);
-    }
-    if (modalNextBtn) {
-        modalNextBtn.addEventListener('click', modalNextPage);
+        // Removed cushion as footer is no longer explicitly sticky
     }
 
     function cerrarModalDetalleCompra() {
         const modal = document.getElementById('purchase-detail-modal');
         if (modal) modal.style.display = 'none';
-        // Resetear paginación al cerrar
         modalProductosActuales = [];
-        modalCurrentPage = 0;
     }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('purchase-detail-modal');
+            if (modal && modal.style.display === 'block') {
+                cerrarModalDetalleCompra();
+            }
+        }
+    });
 
     // ===============================
     // LÓGICA DE AÑADIR PROVEEDOR RÁPIDO (ATAJO EN COMPRAS)
@@ -1174,7 +1265,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Limpiar errores del form
             document.querySelectorAll('#add-proveedor-compras-form .error-message').forEach(el => el.textContent = '');
             if (formMsgAddProveedorCompras) formMsgAddProveedorCompras.textContent = '';
-            
+
             // Limpiar campos del form
             addProveedorComprasForm.reset();
             if (addCompraSelect.hiddenSelect) addCompraSelect.hiddenSelect.innerHTML = '';
@@ -1199,7 +1290,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (addProveedorComprasForm) {
         addProveedorComprasForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             // Limpiar mensajes error
             document.querySelectorAll('#add-proveedor-compras-form .error-message').forEach(el => el.textContent = '');
             if (formMsgAddProveedorCompras) formMsgAddProveedorCompras.textContent = '';
@@ -1208,7 +1299,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const telefono = document.getElementById('addProveedorComprasTelefono').value.trim();
             const email = document.getElementById('addProveedorComprasEmail').value.trim();
             const direccion = document.getElementById('addProveedorComprasDireccion').value.trim();
-            
+
             const productosIds = Array.from(addCompraSelect.hiddenSelect.selectedOptions).map(option => option.value);
 
             let isValid = true;
@@ -1244,7 +1335,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const nuevoProveedor = await response.json();
-                
+
                 // Agregarlo a todosLosProveedores local
                 if (typeof todosLosProveedores !== 'undefined') {
                     todosLosProveedores.push(nuevoProveedor);
@@ -1254,16 +1345,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 const nombreCapitalizado = capitalizarNombre(nuevoProveedor.nombre);
                 proveedorSearchInput.value = nombreCapitalizado;
                 proveedorHiddenInput.value = nuevoProveedor.id;
-                
+
                 // Actualizamos variables de control si el compras form ya tenía algo
                 previousProveedorId = nuevoProveedor.id.toString();
                 previousProveedorNombre = nombreCapitalizado;
-                
+
                 // Limpiar listado de productos de compra temporal y buscar los nuevos
                 detalleItems = [];
                 renderDetalleTemporal();
                 fetchAllProductosParaCompra();
-                
+
                 // Disparar evento para que otras vistas se enteren (opcional pero buena idea)
                 document.dispatchEvent(new Event('proveedoresActualizados'));
 
@@ -1321,7 +1412,7 @@ document.addEventListener('DOMContentLoaded', function () {
         visualOption.classList.add('selected-option');
         crearTag(visualOption.textContent, visualOption.dataset.value, visualOption, realOption, selectUI);
         visualOption.style.display = 'none';
-        selectUI.input.value = ''; 
+        selectUI.input.value = '';
     }
 
     function crearTag(texto, valor, visualOption, realOption, selectUI) {
@@ -1381,6 +1472,169 @@ document.addEventListener('DOMContentLoaded', function () {
             addCompraSelect.options.style.display = 'none';
         }
     });
+
+    // ==========================================================
+    // BUSQUEDA Y ORDENAMIENTO EN MODAL DETALLE DE COMPRA
+    // ==========================================================
+
+    function initializeModalInteractions() {
+        const removeAccents = (str) => {
+            return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        };
+
+        const searchInput = document.getElementById('modal-compra-productos-search');
+        if (searchInput) {
+            searchInput.addEventListener('input', function() {
+                const tbody = document.getElementById('modal-compra-productos');
+                // Añadir clase de animación
+                tbody.classList.add('loading');
+
+                const query = removeAccents(this.value.trim().toLowerCase());
+                
+                // Esperar a que la animacion de fade-out (200ms aprox) surta efecto
+                setTimeout(() => {
+                    const rows = document.querySelectorAll('#modal-compra-productos tr');
+                    rows.forEach(row => {
+                        const productNameTd = row.querySelector('td:first-child');
+                        if (productNameTd) {
+                            const productName = removeAccents(productNameTd.textContent.trim().toLowerCase());
+                            if (productName.includes(query)) {
+                                row.style.display = '';
+                            } else {
+                                row.style.display = 'none';
+                            }
+                        }
+                    });
+                    
+                    // Remover clase y el tbody vuelve a fade-in solo
+                    tbody.classList.remove('loading');
+                }, 200);
+            });
+        }
+
+        const sortableHeaders = document.querySelectorAll('.modal-sortable');
+        
+        sortableHeaders.forEach(th => {
+            th.addEventListener('click', () => {
+                const colIndex = parseInt(th.getAttribute('data-col-index'));
+                const dataType = th.getAttribute('data-type');
+                
+                if (modalCompraCurrentSortCol === colIndex) {
+                    modalCompraCurrentSortAsc = !modalCompraCurrentSortAsc;
+                } else {
+                    modalCompraCurrentSortCol = colIndex;
+                    modalCompraCurrentSortAsc = true;
+                }
+
+                sortableHeaders.forEach(header => {
+                    header.classList.remove('sort-asc', 'sort-desc');
+                    const icon = header.querySelector('.sort-icon');
+                    if (icon) icon.className = 'sort-icon fas fa-sort';
+                });
+
+                if (modalCompraCurrentSortAsc) {
+                    th.classList.add('sort-asc');
+                } else {
+                    th.classList.add('sort-desc');
+                }
+
+                const icon = th.querySelector('.sort-icon');
+                if (icon) {
+                    icon.className = modalCompraCurrentSortAsc ? 'sort-icon fas fa-sort-up' : 'sort-icon fas fa-sort-down';
+                }
+
+                const tbody = document.getElementById('modal-compra-productos');
+                
+                // Animación previa a ordenar
+                tbody.classList.add('loading');
+
+                setTimeout(() => {
+                    const rows = Array.from(tbody.querySelectorAll('tr'));
+                    
+                    rows.sort((a, b) => {
+                        if(!a.children[colIndex] || !b.children[colIndex]) return 0;
+                        
+                        const valA = a.children[colIndex].textContent.trim();
+                        const valB = b.children[colIndex].textContent.trim();
+
+                        let cmpA, cmpB;
+
+                        if (dataType === 'number') {
+                            cmpA = parseInt(valA, 10) || 0;
+                            cmpB = parseInt(valB, 10) || 0;
+                        } else if (dataType === 'currency') {
+                            const cleanA = valA.replace(/\$/g, '').replace(/\./g, '').replace(',', '.');
+                            const cleanB = valB.replace(/\$/g, '').replace(/\./g, '').replace(',', '.');
+                            cmpA = parseFloat(cleanA) || 0;
+                            cmpB = parseFloat(cleanB) || 0;
+                        } else {
+                            cmpA = removeAccents(valA.toLowerCase());
+                            cmpB = removeAccents(valB.toLowerCase());
+                        }
+
+                        if (cmpA < cmpB) return modalCompraCurrentSortAsc ? -1 : 1;
+                        if (cmpA > cmpB) return modalCompraCurrentSortAsc ? 1 : -1;
+                        return 0;
+                    });
+
+                    tbody.innerHTML = '';
+                    rows.forEach(row => tbody.appendChild(row));
+                    
+                    if(searchInput && searchInput.value) {
+                         // Ejecutar internamente sin el timeout para la recarga en cascada
+                         const query = removeAccents(searchInput.value.trim().toLowerCase());
+                         const newRows = document.querySelectorAll('#modal-compra-productos tr');
+                         newRows.forEach(row => {
+                             const td = row.querySelector('td:first-child');
+                             if (td) {
+                                 if (removeAccents(td.textContent.trim().toLowerCase()).includes(query)) {
+                                     row.style.display = '';
+                                 } else {
+                                     row.style.display = 'none';
+                                 }
+                             }
+                         });
+                    }
+                    
+                    // Fin animacion
+                    tbody.classList.remove('loading');
+                }, 200);
+            });
+        });
+        // 3. Botón para Limpiar Filtros y Ordenamiento
+        const btnCleanFilters = document.getElementById('modal-compra-clean-filters');
+        if (btnCleanFilters) {
+            btnCleanFilters.addEventListener('click', () => {
+                const tbody = document.getElementById('modal-compra-productos');
+                tbody.classList.add('loading');
+
+                setTimeout(() => {
+                    // Resetear input de busqueda
+                    if (searchInput) searchInput.value = '';
+
+                    // Resetear variables de ordenamiento
+                    modalCompraCurrentSortCol = -1;
+                    modalCompraCurrentSortAsc = true;
+
+                    // Remover clases y colores visuales de los encabezados
+                    sortableHeaders.forEach(th => {
+                        th.classList.remove('sort-asc', 'sort-desc');
+                        const icon = th.querySelector('.sort-icon');
+                        if (icon) icon.className = 'sort-icon fas fa-sort';
+                    });
+
+                    // Como renderModalProductos usa la informacion original sin mutar (modalProductosActuales),
+                    // invocarlo nos asegura recuperar el orden de la compra exacta inicial de la Base de Datos
+                    renderModalProductos();
+
+                    tbody.classList.remove('loading');
+                }, 200);
+            });
+        }
+    }
+
+    // Inicializar listeners del modal
+    initializeModalInteractions();
 
     // Exponer funciones globalmente
     window.mostrarDetalleCompra = mostrarDetalleCompra;

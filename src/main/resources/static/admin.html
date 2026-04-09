@@ -17,12 +17,19 @@
         .data-table {
             overflow: visible !important;
         }
+
         .table-container-product .data-table {
             overflow: visible !important;
         }
+
         /* Para que no se pierdan los bordes redondos de la tabla principal */
-        .data-table th:first-child { border-top-left-radius: 8px; }
-        .data-table th:last-child { border-top-right-radius: 8px; }
+        .data-table th:first-child {
+            border-top-left-radius: 8px;
+        }
+
+        .data-table th:last-child {
+            border-top-right-radius: 8px;
+        }
     </style>
 
     <!-- Chart.js for dashboard charts -->
@@ -712,11 +719,16 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th data-sort-by="nombre" class="sortable" style="text-align: left;">Nombre <i class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="categoria" class="sortable" style="text-align: left;">Categoría <i class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="proveedorNombre" class="sortable" style="text-align: center;">Proveedor <i class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="stock" class="sortable" style="text-align: center;">Stock <i class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="precio" class="sortable" style="text-align: right;">Precio Venta <i class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="nombre" class="sortable" style="text-align: left;">Nombre <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="categoria" class="sortable" style="text-align: left;">
+                                            Categoría <i class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="proveedorNombre" class="sortable" style="text-align: center;">
+                                            Proveedor <i class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="stock" class="sortable" style="text-align: center;">Stock <i
+                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="precio" class="sortable" style="text-align: right;">Precio
+                                            Venta <i class="sort-icon fas fa-sort"></i></th>
                                         <th style="text-align: right;">Acciones</th>
                                     </tr>
                                 </thead>
@@ -836,7 +848,8 @@
                                             </thead>
                                             <tbody id="detail-proveedores-body">
                                                 <tr>
-                                                    <td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;">
+                                                    <td colspan="4"
+                                                        style="text-align: center; color: #94a3b8; padding: 20px;">
                                                         <i class="fas fa-spinner fa-spin"></i> Cargando...
                                                     </td>
                                                 </tr>
@@ -1404,6 +1417,30 @@
                                 </div>
                             </div>
 
+                            <!-- Sección Método de Pago -->
+                            <div class="form-row" id="compra-payment-row">
+                                <div class="form-group">
+                                    <label for="compra-metodo-pago">Método de Pago</label>
+                                    <select id="compra-metodo-pago" class="form-control">
+                                        <option value="">Seleccionar método</option>
+                                        <!-- Se cargan dinámicamente desde la API -->
+                                    </select>
+                                    <div class="error-message" id="errorCompraMetodoPago"></div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="compra-estado-pago">Estado del Pago</label>
+                                    <select id="compra-estado-pago" class="form-control">
+                                        <option value="PAGADO">Pagado</option>
+                                        <option value="PENDIENTE">Pendiente</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" id="compra-vencimiento-container" style="display: none;">
+                                    <label for="compra-fecha-vencimiento">Vencimiento del Pago</label>
+                                    <input type="date" id="compra-fecha-vencimiento">
+                                    <div class="error-message" id="errorCompraFechaVencimiento"></div>
+                                </div>
+                            </div>
+
                             <div style="text-align: right;">
                                 <button type="submit" class="btn-primary" style="margin-top: 10px;">
                                     <i class="fas fa-plus"></i>
@@ -1484,8 +1521,6 @@
                                         <th data-sort-by="proveedor.nombre" class="sortable">Proveedor <i
                                                 class="sort-icon fas fa-sort"></i></th>
                                         <th data-sort-by="productos" class="sortable">Productos <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="costoUnitario" class="sortable">Costo Unit. <i
                                                 class="sort-icon fas fa-sort"></i></th>
                                         <th data-sort-by="total" class="sortable">Total <i
                                                 class="sort-icon fas fa-sort"></i></th>
@@ -1852,20 +1887,6 @@
                                     <select id="metodo-pago" class="form-control">
                                         <option value="">Seleccionar método</option>
                                     </select>
-                                    <div class="error-message" id="errorMetodoPago"></div>
-                                </div>
-
-                                <!-- Campo para Tipo de Tarjeta (solo visible si selecciona Tarjeta) -->
-                                <div id="campos-tipo-tarjeta" style="display: none;">
-                                    <div class="form-group">
-                                        <label for="tipo-tarjeta">Tipo de Tarjeta</label>
-                                        <select id="tipo-tarjeta" class="form-control">
-                                            <option value="">Seleccionar tipo de tarjeta</option>
-                                            <option value="Débito">Débito</option>
-                                            <option value="Crédito">Crédito</option>
-                                        </select>
-                                        <div class="error-message" id="errorTipoTarjeta"></div>
-                                    </div>
                                 </div>
                             </div>
 
@@ -2719,7 +2740,8 @@
 
         <!-- Modal de Detalles de Proveedor -->
         <div id="modal-detail-proveedor-overlay" class="modal" style="display: none;">
-            <div class="modal-content modal-large" style="width: 95%; max-width: 1000px; min-height: 75vh; max-height: 95vh; display: flex; flex-direction: column;">
+            <div class="modal-content modal-large"
+                style="width: 95%; max-width: 1000px; min-height: 75vh; max-height: 95vh; display: flex; flex-direction: column;">
                 <div class="modal-header">
                     <h3><i class="fas fa-eye"></i> Detalles del Proveedor</h3>
                     <button id="modal-detail-proveedor-close" class="modal-close">
@@ -2753,12 +2775,14 @@
 
                     <!-- Productos Asociados -->
                     <div class="detail-section" style="margin-top: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                             <h4 style="margin-bottom: 0;"><i class="fas fa-box"></i> Productos Asociados</h4>
                             <div style="position: relative; width: 280px;">
-                                <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666; font-size: 14px;"></i>
-                                <input type="text" id="modal-proveedor-productos-search" placeholder="Buscar..." 
-                                       style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
+                                <i class="fas fa-search"
+                                    style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666; font-size: 14px;"></i>
+                                <input type="text" id="modal-proveedor-productos-search" placeholder="Buscar..."
+                                    style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                             </div>
                         </div>
                         <div class="table-container">
@@ -2819,14 +2843,14 @@
 
         <!-- Modal de Detalle de Compra -->
         <div id="purchase-detail-modal" class="modal">
-            <div class="modal-content modal-large">
+            <div class="modal-content modal-large" style="max-width: 950px;">
                 <span class="close-modal" onclick="cerrarModalDetalleCompra()">&times;</span>
                 <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                     <i class="fas fa-receipt"></i> Detalle de Compra <span id="modal-compra-id"
                         style="color: #666; font-weight: 400; font-size: 18px;"></span>
                 </h3>
 
-                <div class="purchase-detail-info" style="margin-bottom: 20px;">
+                <div class="purchase-detail-info" style="margin-bottom: 30px;">
                     <div class="info-grid"
                         style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
                         <div class="info-item">
@@ -2838,48 +2862,57 @@
                             <p id="modal-compra-proveedor" style="margin: 5px 0 0 0; font-size: 15px;"></p>
                         </div>
                         <div class="info-item">
-                            <strong style="color: #666; font-size: 13px;">Total:</strong>
-                            <p id="modal-compra-total"
-                                style="margin: 5px 0 0 0; font-size: 15px; font-weight: 600; color: #28a745;"></p>
+                            <strong style="color: #666; font-size: 13px;">Pago:</strong>
+                            <p id="modal-compra-metodo-pago" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                        </div>
+                        <div class="info-item">
+                            <strong style="color: #666; font-size: 13px;">Estado:</strong>
+                            <p id="modal-compra-estado" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                        </div>
+                        <div class="info-item" id="modal-compra-vencimiento-container" style="display: none;">
+                            <strong style="color: #666; font-size: 13px;">Vencimiento:</strong>
+                            <p id="modal-compra-vencimiento" style="margin: 5px 0 0 0; font-size: 15px;"></p>
                         </div>
                     </div>
                 </div>
 
-                <h4 style="margin-bottom: 15px; color: #333; font-size: 16px;">Productos Comprados</h4>
-                <div class="table-container">
+                <hr style="border: none; border-top: 1px solid #e2e8f0; margin-bottom: 30px;">
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h4 style="margin-bottom: 0; color: #333; font-size: 16px;">Productos Comprados</h4>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <div style="position: relative; width: 280px;">
+                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666; font-size: 14px;"></i>
+                            <input type="text" id="modal-compra-productos-search" placeholder="Buscar producto..." 
+                                   style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
+                        </div>
+                        <button id="modal-compra-clean-filters" class="btn-outline" style="padding: 8px 12px; font-size: 13px; white-space: nowrap;" title="Limpiar Filtros y Ordenamiento">
+                            <i class="fas fa-eraser"></i> Limpiar
+                        </button>
+                    </div>
+                </div>
+                <div class="table-container" style="max-height: 350px; overflow-y: auto;">
                     <table class="data-table">
-                        <thead>
+                        <thead style="position: sticky; top: 0; z-index: 10;">
                             <tr>
-                                <th>Producto</th>
-                                <th>Cantidad</th>
-                                <th>Precio Unitario</th>
-                                <th>Subtotal</th>
+                                <th data-col-index="0" data-type="text" class="modal-sortable" style="cursor: pointer;">Producto <i class="sort-icon fas fa-sort"></i></th>
+                                <th data-col-index="1" data-type="number" class="modal-sortable" style="cursor: pointer;">Cantidad <i class="sort-icon fas fa-sort"></i></th>
+                                <th data-col-index="2" data-type="currency" class="modal-sortable" style="cursor: pointer;">Costo Unitario <i class="sort-icon fas fa-sort"></i></th>
+                                <th data-col-index="3" data-type="currency" class="modal-sortable" style="cursor: pointer;">Subtotal <i class="sort-icon fas fa-sort"></i></th>
                             </tr>
                         </thead>
                         <tbody id="modal-compra-productos">
                         </tbody>
-                        <tfoot>
-                            <tr>
-                                <td colspan="4">
-                                    <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
-                                        <span id="modal-compra-page-info" style="margin-right: 15px;">Página 1 de
-                                            1</span>
-                                        <button class="btn-outline" id="modal-compra-prev-page" disabled>
-                                            <i class="fas fa-arrow-left"></i>
-                                        </button>
-                                        <button class="btn-outline" id="modal-compra-next-page" disabled>
-                                            <i class="fas fa-arrow-right"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tfoot>
                     </table>
                 </div>
 
-                <div class="modal-buttons" style="margin-top: 20px; justify-content: flex-end;">
-                    <button onclick="cerrarModalDetalleCompra()" class="btn-secondary">Cerrar</button>
+                <div style="display: flex; justify-content: flex-end; align-items: center; padding-right: 20px; margin-top: 20px; margin-bottom: 15px;">
+                    <span style="font-weight: 700; font-size: 18px; margin-right: 15px;">Total General:</span>
+                    <span id="modal-compra-total" style="font-weight: 700; font-size: 22px; color: #0f172a;"></span>
                 </div>
+
+
+
             </div>
         </div>
 

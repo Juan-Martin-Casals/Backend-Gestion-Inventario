@@ -16,4 +16,11 @@ public class CompraRequestDTO {
     private Long idProveedor; // Solo necesitamos el ID del proveedor
 
         private List<DetalleCompraRequestDTO> detalleCompras;
+
+    // Datos del pago
+    private Long idMetodoPago; // Obligatorio
+    private String tipoTarjeta; // Opcional
+    private String estadoPago; // PAGADO o PENDIENTE
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate fechaVencimientoPago; // Solo si estadoPago = PENDIENTE
 }

@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class DesglosePagoDTO {
+public class DesgloseCobroDTO {
     private String metodoPago;
     private Long cantidadOperaciones;
     private Double totalIngresado;

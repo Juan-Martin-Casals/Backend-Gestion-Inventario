@@ -15,10 +15,10 @@ import com.gestioninventariodemo2.cruddemo2.DTO.ClienteSelectDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoVentaDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.VentaResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.Cliente;
-import com.gestioninventariodemo2.cruddemo2.Model.Pago;
+import com.gestioninventariodemo2.cruddemo2.Model.Cobro;
 import com.gestioninventariodemo2.cruddemo2.Model.Venta;
 import com.gestioninventariodemo2.cruddemo2.Repository.ClienteRepository;
-import com.gestioninventariodemo2.cruddemo2.Repository.PagoRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.CobroRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.VentaRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -28,7 +28,7 @@ public class ClienteService {
 
     private final ClienteRepository clienteRepository;
     private final VentaRepository ventaRepository;
-    private final PagoRepository pagoRepository;
+    private final CobroRepository cobroRepository;
 
     /**
      * Normaliza un DNI eliminando todo carácter que no sea dígito.
@@ -169,11 +169,11 @@ public class ClienteService {
         List<Venta> ventas = ventaRepository.findByClienteIdClienteOrderByFechaDesc(idCliente);
 
         return ventas.stream().map(v -> {
-            // Get payment method from Pago entity
+            // Get payment method from Cobro entity
             String metodoPagoNombre = "-";
-            Pago pago = pagoRepository.findByVentaIdVenta(v.getIdVenta());
-            if (pago != null && pago.getMetodoPago() != null) {
-                metodoPagoNombre = pago.getMetodoPago().getNombre();
+            Cobro cobro = cobroRepository.findByVentaIdVenta(v.getIdVenta());
+            if (cobro != null && cobro.getMetodoPago() != null) {
+                metodoPagoNombre = cobro.getMetodoPago().getNombre();
             }
 
             return VentaResponseDTO.builder()

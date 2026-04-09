@@ -33,5 +33,8 @@ public class MetodoPago {
     private LocalDateTime fechaActualizacion;
 
     @OneToMany(mappedBy = "metodoPago")
+    private List<Cobro> cobros;
+
+    @OneToMany(mappedBy = "metodoPago")
     private List<Pago> pagos;
 }

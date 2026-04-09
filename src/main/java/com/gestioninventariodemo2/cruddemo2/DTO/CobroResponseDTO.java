@@ -12,14 +12,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class PagoResponseDTO {
-    private Long idPago;
+public class CobroResponseDTO {
+    private Long idCobro;
     private Long idVenta;
     private String metodoPago;
     private BigDecimal importe;
     private String nroTransaccion;
     private String tipoTarjeta;
     private String ultimosDigitos;
-    private LocalDate fechaPago;
+    private LocalDate fechaCobro;
     private String nombreUsuario;
 }

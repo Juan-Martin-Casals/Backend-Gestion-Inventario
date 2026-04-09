@@ -26,6 +26,6 @@ public class CajaDetalleDTO {
     private Double totalTarjeta;
     private Double totalTransferencia;
 
-    // Detalle de métodos de pago
-    private List<DesglosePagoDTO> desglosePagos;
+    // Detalle de métodos de pago (cobros)
+    private List<DesgloseCobroDTO> desgloseCobros;
 }

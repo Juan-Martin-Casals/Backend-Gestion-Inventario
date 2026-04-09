@@ -1,7 +1,6 @@
 package com.gestioninventariodemo2.cruddemo2.Model;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import jakarta.persistence.Entity;
@@ -17,34 +16,30 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Entity
-@Table(name = "pago")
+@Table(name = "cobro")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class Pago {
+public class Cobro {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long idPago;
+    private Long idCobro;
 
     @OneToOne
-    @JoinColumn(name = "id_compra", unique = true)
-    private Compra compra;
+    @JoinColumn(name = "id_venta", unique = true)
+    private Venta venta;
 
     @ManyToOne
     @JoinColumn(name = "id_metodo_pago")
     private MetodoPago metodoPago;
 
     private BigDecimal importe;
+    private String nroTransaccion;
     private String tipoTarjeta;
+    private String ultimosDigitos;
 
-    private LocalDateTime fechaPago;
-
-    // Estado del pago: PAGADO o PENDIENTE
-    private String estado;
-
-    // Fecha de vencimiento (solo si estado = PENDIENTE)
-    private LocalDate fechaVencimiento;
+    private LocalDateTime fechaCobro;
 
     @ManyToOne
     @JoinColumn(name = "id_usuario")

@@ -4,14 +4,14 @@ import com.gestioninventariodemo2.cruddemo2.DTO.AperturaCajaRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.CajaResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.CierreCajaRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.CajaDetalleDTO;
-import com.gestioninventariodemo2.cruddemo2.DTO.DesglosePagoDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.DesgloseCobroDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.SesionCaja;
 import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
 import com.gestioninventariodemo2.cruddemo2.Repository.SesionCajaRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.UsuarioRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.VentaRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.CompraRepository;
-import com.gestioninventariodemo2.cruddemo2.Repository.PagoRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.CobroRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -28,7 +28,7 @@ public class CajaService {
     private final UsuarioRepository usuarioRepository;
     private final VentaRepository ventaRepository;
     private final CompraRepository compraRepository;
-    private final PagoRepository pagoRepository;
+    private final CobroRepository cobroRepository;
 
     /**
      * Verifica estadísticamente si el usuario actual tiene una caja ABIERTA
@@ -104,15 +104,15 @@ public class CajaService {
 
         Double saldoEsperado = sesion.getMontoInicialReal() + totalVentas - totalCompras;
 
-        // Desglose por Método de Pago
-        List<Object[]> resultadosPagos = pagoRepository.obtenerTotalPorMetodoPagoEntreFechas(inicio, fin);
-        List<DesglosePagoDTO> desglose = new ArrayList<>();
+        // Desglose por Método de Pago (Cobros)
+        List<Object[]> resultadosCobros = cobroRepository.obtenerTotalPorMetodoPagoEntreFechas(inicio, fin);
+        List<DesgloseCobroDTO> desglose = new ArrayList<>();
 
         Double calcEfectivo = 0.0;
         Double calcTarjeta = 0.0;
         Double calcTransferencia = 0.0;
 
-        for (Object[] row : resultadosPagos) {
+        for (Object[] row : resultadosCobros) {
             String metodo = (String) row[0];
             Double sumImporte = 0.0;
             if (row[1] instanceof BigDecimal) {
@@ -122,7 +122,7 @@ public class CajaService {
             }
             Long countOp = ((Number) row[2]).longValue();
 
-            desglose.add(DesglosePagoDTO.builder()
+            desglose.add(DesgloseCobroDTO.builder()
                     .metodoPago(metodo)
                     .cantidadOperaciones(countOp)
                     .totalIngresado(sumImporte)
@@ -151,7 +151,7 @@ public class CajaService {
                 .totalEfectivo(calcEfectivo)
                 .totalTarjeta(calcTarjeta)
                 .totalTransferencia(calcTransferencia)
-                .desglosePagos(desglose)
+                .desgloseCobros(desglose)
                 .build();
     }
 

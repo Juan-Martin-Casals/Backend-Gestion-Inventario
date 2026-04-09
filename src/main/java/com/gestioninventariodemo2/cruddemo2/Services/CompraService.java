@@ -52,6 +52,8 @@ public class CompraService {
     private final UsuarioRepository usuarioRepository;
     private final ProductoProveedorRepository productoProveedorRepository;
     private final CajaService cajaService;
+    private final PagoService pagoService;
+    private final MetodoPagoService metodoPagoService;
 
     /**
      * Registra una nueva compra, sus detalles, y actualiza el stock y precios.
@@ -146,7 +148,30 @@ public class CompraService {
             }
         }
 
+        // 8. Registrar el pago de la compra
+        registrarPagoCompra(dto, compraGuardada, usuario);
+
         return compraGuardada; // Devuelve la entidad completa
+    }
+
+    /**
+     * Registrar el pago asociado a una compra
+     */
+    private void registrarPagoCompra(CompraRequestDTO dto, Compra compra, Usuario usuario) {
+        if (dto.getIdMetodoPago() == null) {
+            throw new IllegalArgumentException("Debe seleccionar un método de pago");
+        }
+
+        var metodoPago = metodoPagoService.obtenerPorId(dto.getIdMetodoPago());
+
+        pagoService.registrarPago(
+                compra,
+                metodoPago,
+                java.math.BigDecimal.valueOf(compra.getTotal()),
+                dto.getTipoTarjeta(),
+                dto.getEstadoPago(),
+                dto.getFechaVencimientoPago(),
+                usuario);
     }
 
     /**
@@ -267,12 +292,32 @@ public class CompraService {
                         .build())
                 .collect(Collectors.toList());
 
-        // 2. Mapear la compra principal
+        // 2. Obtener método de pago y estado
+        String metodoPagoNombre = "-";
+        String estadoPago = "PAGADO";
+        LocalDate fechaVencimiento = null;
+        try {
+            var pago = pagoService.obtenerPagoPorCompra(compra.getIdCompra());
+            if (pago != null) {
+                if (pago.getMetodoPago() != null) {
+                    metodoPagoNombre = pago.getMetodoPago().getNombre();
+                }
+                estadoPago = pago.getEstado() != null ? pago.getEstado() : "PAGADO";
+                fechaVencimiento = pago.getFechaVencimiento();
+            }
+        } catch (Exception e) {
+            // Ignorar si no se encuentra
+        }
+
+        // 3. Mapear la compra principal
         return CompraResponseDTO.builder()
                 .id(compra.getIdCompra())
                 .fecha(compra.getFecha())
                 .total(compra.getTotal())
                 .nombreProveedor(compra.getProveedor().getNombre())
+                .metodoPago(metodoPagoNombre)
+                .estadoPago(estadoPago)
+                .fechaVencimientoPago(fechaVencimiento)
                 .productosComprados(detalleDTO)
                 .build();
 

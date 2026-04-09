@@ -2,6 +2,7 @@ package com.gestioninventariodemo2.cruddemo2.DTO;
 
 import lombok.Builder;
 import lombok.Data;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -13,6 +14,9 @@ public class CompraResponseDTO {
     private LocalDateTime fecha;
     private double total;
     private String nombreProveedor;
+    private String metodoPago;
+    private String estadoPago;
+    private LocalDate fechaVencimientoPago;
 
     // Anidamos la lista de DTOs de detalle
     private List<DetalleCompraResponseDTO> productosComprados;

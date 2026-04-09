@@ -125,10 +125,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Crear mapa de datos reales del backend indexado por nombre normalizado
             const datosReales = {};
-            if (resumenData.desglosePagos && resumenData.desglosePagos.length > 0) {
-                resumenData.desglosePagos.forEach(pago => {
-                    const key = (pago.metodoPago || '').toLowerCase();
-                    datosReales[key] = pago;
+            if (resumenData.desgloseCobros && resumenData.desgloseCobros.length > 0) {
+                resumenData.desgloseCobros.forEach(cobro => {
+                    const key = (cobro.metodoPago || '').toLowerCase();
+                    datosReales[key] = cobro;
                 });
             }
 
@@ -566,8 +566,8 @@ document.addEventListener('DOMContentLoaded', function () {
         doc.text("DESGLOSE POR PAGOS", 40, y, {align: "center"});
         doc.setFont("helvetica", "normal");
         
-        if (data.desglosePagos && data.desglosePagos.length > 0) {
-            const bodyDatos = data.desglosePagos.map(p => [
+        if (data.desgloseCobros && data.desgloseCobros.length > 0) {
+            const bodyDatos = data.desgloseCobros.map(p => [
                 p.metodoPago, 
                 formatter.format(p.totalIngresado)
             ]);

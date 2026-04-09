@@ -17,7 +17,7 @@ public class VentaRequestDTO {
     private List<DetalleVentaRequestDTO> detalles;
     private LocalDate fecha;
 
-    // Datos del pago (NUEVO)
+    // Datos del cobro
     private Long idMetodoPago; // Obligatorio
     private String nroTransaccion; // Opcional para Tarjeta/Transferencia
     private String tipoTarjeta; // Opcional: 'Débito' o 'Crédito'

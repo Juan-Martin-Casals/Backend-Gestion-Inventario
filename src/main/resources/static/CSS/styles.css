@@ -1812,12 +1812,12 @@ body {
 }
 
 
-#product-table-body {
+#product-table-body, #modal-compra-productos {
     opacity: 1;
     transition: opacity 0.2s ease-in-out;
 }
 
-#product-table-body.loading {
+#product-table-body.loading, #modal-compra-productos.loading {
     opacity: 0;
     /* Oculta la tabla cuando se están cargando nuevos datos */
 }
@@ -2670,7 +2670,8 @@ body {
     margin: 25px 30px;
 }
 
-#payment-row {
+#payment-row,
+#compra-payment-row {
     grid-template-columns: 1fr 1fr;
 }
 

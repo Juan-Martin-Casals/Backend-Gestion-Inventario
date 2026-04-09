@@ -850,16 +850,6 @@ document.addEventListener('DOMContentLoaded', function () {
             isValid = false;
         }
 
-        // Validar tipo de tarjeta si es necesario
-        const selectedOption = metodoPagoSelect.options[metodoPagoSelect.selectedIndex];
-        if (selectedOption && selectedOption.dataset.nombre === 'Tarjeta') {
-            const tipoTarjeta = tipoTarjetaSelect.value;
-            if (!tipoTarjeta) {
-                const errorTipoTarjeta = document.getElementById('errorTipoTarjeta');
-                if (errorTipoTarjeta) errorTipoTarjeta.textContent = 'Debe seleccionar el tipo de tarjeta.';
-                isValid = false;
-            }
-        }
 
         if (!isValid) {
             generalMessage.textContent = 'Por favor, complete todos los campos obligatorios.';
@@ -882,9 +872,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     fecha: fechaVenta,
                     idCliente: parseInt(idCliente),
                     detalles: detallesParaBackend,
-                    // Datos del pago (simplificados)
+                    // Datos del cobro
                     idMetodoPago: parseInt(idMetodoPago),
-                    tipoTarjeta: tipoTarjetaSelect.value || null,
                 };
 
                 const response = await fetch(API_VENTAS_URL, {
@@ -1636,24 +1625,6 @@ document.addEventListener('DOMContentLoaded', function () {
      * Manejar cambio de método de pago
      */
     function handleMetodoPagoChange() {
-        const selectedOption = metodoPagoSelect.options[metodoPagoSelect.selectedIndex];
-        const camposTipoTarjeta = document.getElementById('campos-tipo-tarjeta');
-
-        if (!selectedOption || !selectedOption.value) {
-            // No hay método seleccionado
-            if (camposTipoTarjeta) camposTipoTarjeta.style.display = 'none';
-            return;
-        }
-
-        const nombreMetodo = selectedOption.dataset.nombre;
-
-        // Mostrar campo de tipo de tarjeta solo si es Tarjeta
-        if (nombreMetodo === 'Tarjeta') {
-            if (camposTipoTarjeta) camposTipoTarjeta.style.display = 'block';
-        } else {
-            if (camposTipoTarjeta) camposTipoTarjeta.style.display = 'none';
-        }
-
         // Limpiar errores
         if (errorMetodoPago) errorMetodoPago.textContent = '';
     }
@@ -1716,11 +1687,7 @@ document.addEventListener('DOMContentLoaded', function () {
         previousClienteNombre = '';
 
         // Resetear método de pago
-        document.querySelectorAll('input[name="metodo-pago"]').forEach(radio => {
-            radio.checked = false;
-        });
-        document.getElementById('campos-tipo-tarjeta').style.display = 'none';
-        document.getElementById('tipo-tarjeta').value = '';
+        if (metodoPagoSelect) metodoPagoSelect.selectedIndex = 0;
 
         // Establecer fecha actual nuevamente
         setFechaActual();

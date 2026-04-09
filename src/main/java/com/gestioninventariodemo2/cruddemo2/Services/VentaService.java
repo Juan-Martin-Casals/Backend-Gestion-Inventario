@@ -41,7 +41,7 @@ public class VentaService {
     private final ClienteRepository clienteRepository;
     private final UsuarioRepository usuarioRepository;
     private final MetodoPagoService metodoPagoService;
-    private final PagoService pagoService;
+    private final CobroService cobroService;
     private final CajaService cajaService;
 
     @Transactional
@@ -123,8 +123,8 @@ public class VentaService {
 
         Venta ventaGuardada = ventaRepository.save(venta);
 
-        // 7. Registrar el pago automáticamente
-        registrarPagoVenta(ventaRequestDTO, ventaGuardada, usuario);
+        // 7. Registrar el cobro automáticamente
+        registrarCobroVenta(ventaRequestDTO, ventaGuardada, usuario);
 
         return mapToVentaDTO(ventaGuardada);
     }
@@ -172,12 +172,12 @@ public class VentaService {
         // Obtener el método de pago
         String metodoPago = "Desconocido";
         try {
-            var pago = pagoService.obtenerPagoPorVenta(venta.getIdVenta());
-            if (pago != null && pago.getMetodoPago() != null) {
-                metodoPago = pago.getMetodoPago();
+            var cobro = cobroService.obtenerCobroPorVenta(venta.getIdVenta());
+            if (cobro != null && cobro.getMetodoPago() != null) {
+                metodoPago = cobro.getMetodoPago();
             }
         } catch (Exception e) {
-            // Ignorar el error si no se encuentra el pago
+            // Ignorar el error si no se encuentra el cobro
         }
 
         return VentaResponseDTO.builder()
@@ -192,9 +192,9 @@ public class VentaService {
     }
 
     /**
-     * Registrar el pago de una venta
+     * Registrar el cobro de una venta
      */
-    private void registrarPagoVenta(VentaRequestDTO ventaRequestDTO, Venta venta, Usuario usuario) {
+    private void registrarCobroVenta(VentaRequestDTO ventaRequestDTO, Venta venta, Usuario usuario) {
         // Validar que se haya enviado el método de pago
         if (ventaRequestDTO.getIdMetodoPago() == null) {
             throw new IllegalArgumentException("Debe seleccionar un método de pago");
@@ -203,8 +203,8 @@ public class VentaService {
         // Obtener el método de pago
         var metodoPago = metodoPagoService.obtenerPorId(ventaRequestDTO.getIdMetodoPago());
 
-        // Registrar el pago
-        pagoService.registrarPago(
+        // Registrar el cobro
+        cobroService.registrarCobro(
                 venta,
                 metodoPago,
                 java.math.BigDecimal.valueOf(venta.getTotal()), // El importe siempre es el total de la venta
