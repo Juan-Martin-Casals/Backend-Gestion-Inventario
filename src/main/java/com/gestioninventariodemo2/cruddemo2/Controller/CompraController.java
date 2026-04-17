@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.gestioninventariodemo2.cruddemo2.DTO.AgregarPagoCompraDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.CompraRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.CompraResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.Compra;
@@ -44,6 +45,12 @@ public class CompraController {
 
         // Si todo sale bien, devuelve 201 CREATED
         return ResponseEntity.status(HttpStatus.CREATED).body(compraGuardada);
+    }
+
+    @PostMapping("/{id}/pagos")
+    public ResponseEntity<Void> agregarPago(@PathVariable Long id, @RequestBody AgregarPagoCompraDTO dto, @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+        compraService.agregarPagoDiferido(id, dto, userDetails);
+        return ResponseEntity.ok().build();
     }
 
     @GetMapping

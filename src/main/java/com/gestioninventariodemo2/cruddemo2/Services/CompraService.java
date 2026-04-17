@@ -5,6 +5,8 @@ import com.gestioninventariodemo2.cruddemo2.DTO.CompraRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.DetalleCompraRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.CompraResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.DetalleCompraResponseDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.AgregarPagoCompraDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.PagoResponseDTO;
 
 // Importaciones de Modelos (Entidades)
 import com.gestioninventariodemo2.cruddemo2.Model.Compra;
@@ -22,6 +24,7 @@ import com.gestioninventariodemo2.cruddemo2.Repository.UsuarioRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.ProductoProveedorRepository;
 import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
 import com.gestioninventariodemo2.cruddemo2.Model.ProductoProveedor;
+import com.gestioninventariodemo2.cruddemo2.Model.Pago;
 
 // Importaciones de Spring y Java
 import lombok.RequiredArgsConstructor;
@@ -106,6 +109,7 @@ public class CompraService {
 
         // 5. Asignar el total y la lista de detalles a la compra
         compra.setTotal(totalCompra);
+        compra.setFechaVencimientoPago(dto.getFechaVencimientoPago());
         compra.setDetalleCompras(detallesEntidad);
 
         // 6. Guardar la Compra y sus Detalles (¡Cascade hace la magia!)
@@ -155,24 +159,64 @@ public class CompraService {
     }
 
     /**
-     * Registrar el pago asociado a una compra
+     * Registrar los pagos asociados a una compra
      */
     private void registrarPagoCompra(CompraRequestDTO dto, Compra compra, Usuario usuario) {
-        if (dto.getIdMetodoPago() == null) {
-            throw new IllegalArgumentException("Debe seleccionar un método de pago");
+        if (dto.getPagos() == null || dto.getPagos().isEmpty()) {
+            throw new IllegalArgumentException("Debe ingresar al menos un método de pago");
         }
 
-        var metodoPago = metodoPagoService.obtenerPorId(dto.getIdMetodoPago());
+        double totalPagado = 0;
 
-        pagoService.registrarPago(
+        for (com.gestioninventariodemo2.cruddemo2.DTO.PagoRequestDTO pagoDto : dto.getPagos()) {
+            if (pagoDto.getIdMetodoPago() == null) {
+                throw new IllegalArgumentException("Todos los pagos deben tener un método seleccionado");
+            }
+
+            var metodoPago = metodoPagoService.obtenerPorId(pagoDto.getIdMetodoPago());
+
+            pagoService.registrarPago(
+                    compra,
+                    metodoPago,
+                    pagoDto.getImporte(),
+                    pagoDto.getTipoTarjeta(),
+                    pagoDto.getEstadoPago(),
+                    pagoDto.getFechaVencimientoPago(),
+                    usuario);
+            totalPagado += pagoDto.getImporte().doubleValue();
+        }
+
+        // Opcionalmente se podría validar, pero dejaremos flexibilidad.
+    }
+
+    /**
+     * Agrega un pago diferido a una compra existente (cuando estaba PENDIENTE).
+     */
+    public void agregarPagoDiferido(Long compraId, AgregarPagoCompraDTO dto, org.springframework.security.core.userdetails.UserDetails userDetails) {
+        String userEmail = userDetails.getUsername();
+        Usuario usuario = usuarioRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + userEmail));
+
+        if (!cajaService.verificarCajaActiva(usuario.getIdUsuario())) {
+            throw new RuntimeException("Debe abrir la caja antes de registrar un pago.");
+        }
+
+        Compra compra = compraRepository.findById(compraId)
+                .orElseThrow(() -> new RuntimeException("Compra no encontrada con ID: " + compraId));
+
+        var metodoPago = metodoPagoService.obtenerPorId(dto.getIdMetodoPago());
+        
+        java.time.LocalDateTime fechaP = dto.getFechaPago() != null ? dto.getFechaPago().atTime(java.time.LocalTime.now()) : java.time.LocalDateTime.now();
+        // Se registra el pago. El estado del pago se marca como PAGADO ya que es un pago efectivo.
+        pagoService.registrarPagoDiferido(
                 compra,
                 metodoPago,
-                java.math.BigDecimal.valueOf(compra.getTotal()),
-                dto.getTipoTarjeta(),
-                dto.getEstadoPago(),
-                dto.getFechaVencimientoPago(),
+                dto.getImporte(),
+                "PAGADO",
+                fechaP,
                 usuario);
     }
+
 
     /**
      * Lista todas las compras registradas con un formato simplificado.
@@ -292,18 +336,51 @@ public class CompraService {
                         .build())
                 .collect(Collectors.toList());
 
-        // 2. Obtener método de pago y estado
+        // 2. Obtener métodos de pago y estados
         String metodoPagoNombre = "-";
         String estadoPago = "PAGADO";
+        double montoPendiente = 0.0;
         LocalDate fechaVencimiento = null;
+        LocalDateTime fechaUltimoPago = null;
+        List<Pago> pagos = null;
         try {
-            var pago = pagoService.obtenerPagoPorCompra(compra.getIdCompra());
-            if (pago != null) {
-                if (pago.getMetodoPago() != null) {
-                    metodoPagoNombre = pago.getMetodoPago().getNombre();
+            pagos = pagoService.obtenerPagosPorCompra(compra.getIdCompra());
+            if (pagos != null && !pagos.isEmpty()) {
+                // Nombres de todos los métodos separados por barra
+                metodoPagoNombre = pagos.stream()
+                        .filter(p -> p.getMetodoPago() != null)
+                        .map(p -> p.getMetodoPago().getNombre())
+                        .distinct()
+                        .collect(Collectors.joining(" / "));
+                
+                // Estado general de la compra en base a dinero ingresado (permite deudas implícitas)
+                double dineroTotalDato = pagos.stream()
+                        .mapToDouble(p -> p.getImporte() != null ? p.getImporte().doubleValue() : 0.0)
+                        .sum();
+                
+                estadoPago = (dineroTotalDato < compra.getTotal() - 0.05) ? "PENDIENTE" : "PAGADO";
+                montoPendiente = Math.max(0.0, compra.getTotal() - dineroTotalDato);
+                
+                // Extraer el vencimiento principal de la compra (nuevo formato), o de los pagos (modo legacy)
+                fechaVencimiento = compra.getFechaVencimientoPago();
+                if (fechaVencimiento == null) {
+                    fechaVencimiento = pagos.stream()
+                            .filter(p -> p.getFechaVencimiento() != null)
+                            .map(Pago::getFechaVencimiento)
+                            .max(LocalDate::compareTo)
+                            .orElse(null);
                 }
-                estadoPago = pago.getEstado() != null ? pago.getEstado() : "PAGADO";
-                fechaVencimiento = pago.getFechaVencimiento();
+
+                // Extraer la fecha del ultimo pago
+                fechaUltimoPago = pagos.stream()
+                        .filter(p -> p.getFechaPago() != null && "PAGADO".equalsIgnoreCase(p.getEstado()))
+                        .map(Pago::getFechaPago)
+                        .max(LocalDateTime::compareTo)
+                        .orElse(null);
+            } else if (compra.getTotal() > 0) {
+                // Si hay total a pagar pero no se ingresó ningún pago, la compra debe considerarse como Cta Corriente / Deuda total
+                estadoPago = "PENDIENTE";
+                montoPendiente = compra.getTotal();
             }
         } catch (Exception e) {
             // Ignorar si no se encuentra
@@ -318,7 +395,18 @@ public class CompraService {
                 .metodoPago(metodoPagoNombre)
                 .estadoPago(estadoPago)
                 .fechaVencimientoPago(fechaVencimiento)
+                .fechaUltimoPago(fechaUltimoPago)
+                .montoPendiente(montoPendiente)
                 .productosComprados(detalleDTO)
+                .pagos(pagos != null ? pagos.stream()
+                    .map(p -> PagoResponseDTO.builder()
+                        .idPago(p.getIdPago())
+                        .metodoPago(p.getMetodoPago() != null ? p.getMetodoPago().getNombre() : "N/A")
+                        .importe(p.getImporte())
+                        .fechaPago(p.getFechaPago())
+                        .estado(p.getEstado())
+                        .build())
+                    .collect(Collectors.toList()) : null)
                 .build();
 
     }

@@ -17,7 +17,10 @@ public class CompraResponseDTO {
     private String metodoPago;
     private String estadoPago;
     private LocalDate fechaVencimientoPago;
+    private LocalDateTime fechaUltimoPago;
+    private double montoPendiente;
 
     // Anidamos la lista de DTOs de detalle
     private List<DetalleCompraResponseDTO> productosComprados;
+    private List<PagoResponseDTO> pagos;
 }

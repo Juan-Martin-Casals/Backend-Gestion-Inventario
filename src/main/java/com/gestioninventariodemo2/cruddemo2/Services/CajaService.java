@@ -12,6 +12,7 @@ import com.gestioninventariodemo2.cruddemo2.Repository.UsuarioRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.VentaRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.CompraRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.CobroRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.PagoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,6 +30,7 @@ public class CajaService {
     private final VentaRepository ventaRepository;
     private final CompraRepository compraRepository;
     private final CobroRepository cobroRepository;
+    private final PagoRepository pagoRepository;
 
     /**
      * Verifica estadísticamente si el usuario actual tiene una caja ABIERTA
@@ -102,9 +104,7 @@ public class CajaService {
         if (totalCompras == null)
             totalCompras = 0.0;
 
-        Double saldoEsperado = sesion.getMontoInicialReal() + totalVentas - totalCompras;
-
-        // Desglose por Método de Pago (Cobros)
+        // Desglose por Método de Pago (Cobros -> Ingresos por Ventas)
         List<Object[]> resultadosCobros = cobroRepository.obtenerTotalPorMetodoPagoEntreFechas(inicio, fin);
         List<DesgloseCobroDTO> desglose = new ArrayList<>();
 
@@ -130,7 +130,7 @@ public class CajaService {
 
             if (metodo != null) {
                 String m = metodo.toLowerCase();
-                if (m.contains("efectivo")) {
+                if (m.contains("efectivo") && !m.contains("aporte externo")) {
                     calcEfectivo += sumImporte;
                 } else if (m.contains("tarjeta")) {
                     calcTarjeta += sumImporte;
@@ -139,6 +139,30 @@ public class CajaService {
                 }
             }
         }
+
+        // Obtener Total por tipo de Pago de Compras
+        List<Object[]> resultadosPagos = pagoRepository.obtenerTotalPorMetodoPagoEntreFechas(inicio, fin);
+        Double calcEfectivoCajaPagos = 0.0;
+        for (Object[] row : resultadosPagos) {
+            String metodo = (String) row[0];
+            Double sumImporte = 0.0;
+            if (row[1] instanceof BigDecimal) {
+                sumImporte = ((BigDecimal) row[1]).doubleValue();
+            } else if (row[1] instanceof Double) {
+                sumImporte = (Double) row[1];
+            }
+
+            if (metodo != null) {
+                String m = metodo.toLowerCase();
+                // Solo sustrae de caja si se pago con "efectivo (caja)" o el "efectivo" viejo.
+                if (m.contains("efectivo") && !m.contains("aporte externo")) {
+                    calcEfectivoCajaPagos += sumImporte;
+                }
+            }
+        }
+
+        // Saldo esperado en caja = Monto inicial + Ventas cobradas por Efectivo - Compras pagadas por Efectivo
+        Double saldoEsperado = sesion.getMontoInicialReal() + calcEfectivo - calcEfectivoCajaPagos;
 
         return CajaDetalleDTO.builder()
                 .idSesion(sesion.getIdSesion())

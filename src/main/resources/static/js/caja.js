@@ -175,7 +175,7 @@ document.addEventListener('DOMContentLoaded', function () {
             tbodyDesglose.appendChild(trTotal);
 
             // 4. Lógica de Fondo Fijo y Retiro
-            const totalEfectivoTeorico = (resumenData.montoInicial || 0) + (resumenData.totalEfectivo || 0) - (resumenData.totalCompras || 0);
+            const totalEfectivoTeorico = resumenData.saldoEsperado || ((resumenData.montoInicial || 0) + (resumenData.totalEfectivo || 0) - (resumenData.totalCompras || 0));
             
             // Popula Efvo Esperado en el sidebar derecho
             const labelEsperado = document.getElementById('caja-sidebar-efectivo-esperado');
@@ -400,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // 3. Población dinámica del Modal con datos reales
             const data = resumenCajaActual || {};
-            const totalEfTeorico = (data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalCompras || 0);
+            const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalCompras || 0));
             const diferencia = montoFisicoVal - totalEfTeorico;
 
             // Header - Responsable y Sesión
@@ -593,7 +593,7 @@ document.addEventListener('DOMContentLoaded', function () {
         doc.setFont("helvetica", "normal");
         
         y += 8;
-        const totalEfTeorico = (data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalCompras || 0);
+        const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalCompras || 0));
         doc.text(`Efectivo Esperado: ${formatter.format(totalEfTeorico)}`, 5, y);
         y += 6;
         doc.text(`Efectivo Físico Aud: ${formatter.format(montoFisicoReal)}`, 5, y);

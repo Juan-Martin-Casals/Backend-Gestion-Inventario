@@ -14,5 +14,6 @@ public class ProductoSelectDTO {
     private String nombreProducto;
     private Double precioVenta;
     private Integer stockActual;
+    private Double ultimoCosto;
 
 }

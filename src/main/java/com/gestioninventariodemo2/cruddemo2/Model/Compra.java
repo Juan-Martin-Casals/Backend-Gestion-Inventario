@@ -37,6 +37,8 @@ public class Compra {
     @Column(name = "total")
     private double total;
 
+    @Column(name = "fecha_vencimiento_pago")
+    private java.time.LocalDate fechaVencimientoPago;
 
     @ManyToOne
     @JoinColumn(name = "idProveedor")
@@ -45,6 +47,10 @@ public class Compra {
 
     @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL)
     private List<DetalleCompra>detalleCompras;
+
+    // Relación con Pago (1 Compra : Muchos Pagos)
+    @OneToMany(mappedBy = "compra", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Pago> pagos;
 
 
 }

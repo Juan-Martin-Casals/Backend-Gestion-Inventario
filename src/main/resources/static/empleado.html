@@ -323,10 +323,6 @@
                                 </div>
                             </div>
 
-                            <div class="total-section" style="text-align: right;">
-                                <h4 id="total-venta">$ Total: $0.00</h4>
-                            </div>
-
                             <div class="form-row" id="payment-row">
                                 <div class="form-group">
                                     <label for="metodo-pago">Método de Pago</label>
@@ -348,6 +344,32 @@
                                         <div class="error-message" id="errorTipoTarjeta"></div>
                                     </div>
                                 </div>
+                            </div>
+
+                            <div class="total-section" style="text-align: right;">
+                                <div class="form-group" style="margin-bottom: 10px; text-align: left;">
+                                    <label for="descuento-venta" style="font-size: 0.85rem;">Descuento</label>
+                                    <div style="display: flex; gap: 8px;">
+                                        <input type="number" id="descuento-venta" class="form-control"
+                                            placeholder="0" min="0" step="0.01"
+                                            style="flex: 2; padding: 6px 10px; font-size: 0.85rem;">
+                                        <select id="tipo-descuento-venta" class="form-control"
+                                            style="flex: 1; padding: 6px 10px; font-size: 0.85rem;">
+                                            <option value="$">$</option>
+                                            <option value="%">%</option>
+                                        </select>
+                                    </div>
+                                    <div class="error-message" id="errorDescuento"></div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                    <span style="font-size: 0.9rem; color: #666;">Subtotal:</span>
+                                    <span id="subtotal-venta" style="font-size: 0.9rem; color: #666;">$0.00</span>
+                                </div>
+                                <p id="descuento-aplicado-display" style="font-size: 0.8rem; color: #2e7d32; margin: 8px 0; display: none;">
+                                    <i class="fas fa-arrow-down"></i> Descuento: <span id="monto-descuento-mostrado">-$0.00</span>
+                                </p>
+                                <hr style="margin: 10px 0; border: none; border-top: 1px solid #e0e0e0;">
+                                <h4 id="total-venta">$ Total: $0.00</h4>
                             </div>
 
                             <div style="text-align: right; margin-top: 20px;">

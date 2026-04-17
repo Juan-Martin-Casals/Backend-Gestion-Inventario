@@ -17,10 +17,9 @@ public class CompraRequestDTO {
 
         private List<DetalleCompraRequestDTO> detalleCompras;
 
-    // Datos del pago
-    private Long idMetodoPago; // Obligatorio
-    private String tipoTarjeta; // Opcional
-    private String estadoPago; // PAGADO o PENDIENTE
+    // Lista de pagos mixtos
+    private List<PagoRequestDTO> pagos;
+
     @JsonFormat(pattern = "yyyy-MM-dd")
-    private LocalDate fechaVencimientoPago; // Solo si estadoPago = PENDIENTE
+    private LocalDate fechaVencimientoPago; // Fecha para saldos pendientes
 }

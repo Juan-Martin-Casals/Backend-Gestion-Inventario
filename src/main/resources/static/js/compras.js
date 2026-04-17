@@ -90,10 +90,20 @@ document.addEventListener('DOMContentLoaded', function () {
     // ESTADO GLOBAL
     // ===============================
     let detalleItems = [];
+    let pagosMixtos = []; // Nueva lista para pagos mixtos
     let todosLosProveedores = [];
     let todosLosProductos = [];
     let editIndex = -1; // Index of item being edited inline
     let originalItemData = null; // Backup of original data for cancel
+
+    function calcularTotalGenerico(items) {
+        let t = 0;
+        if (!items || items.length === 0) return 0;
+        items.forEach(item => {
+            t += (item.cantidad * item.precioUnitario);
+        });
+        return t;
+    }
 
     // ===============================
     // SELECTORES
@@ -192,6 +202,55 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================================
+    // NAVEGACIÓN POR TECLADO PARA SEARCHES
+    // ==========================================================
+    let proveedorSelectedIndex = -1;
+    let productoSelectedIndex = -1;
+
+function getResultItems(container) {
+        const items = container.querySelectorAll('.product-result-item');
+        return Array.from(items).filter(item => !item.textContent.includes('No se encontraron'));
+    }
+
+    function updateSelection(items, selectedIndex) {
+        items.forEach((item, i) => {
+            item.classList.toggle('selected', i === selectedIndex);
+        });
+        if (selectedIndex >= 0 && items[selectedIndex]) {
+            items[selectedIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }
+
+    function handleSearchKeyboard(e, searchInput, resultsContainer, selectedIndexRef, onSelect) {
+        const items = getResultItems(resultsContainer);
+        if (items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            e.stopPropagation();
+            if (resultsContainer.style.display === 'none') {
+                resultsContainer.style.display = 'block';
+            }
+            selectedIndexRef.current = Math.min(selectedIndexRef.current + 1, items.length - 1);
+            updateSelection(items, selectedIndexRef.current);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            e.stopPropagation();
+            selectedIndexRef.current = Math.max(selectedIndexRef.current - 1, 0);
+            updateSelection(items, selectedIndexRef.current);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            if (selectedIndexRef.current >= 0 && items[selectedIndexRef.current]) {
+                const selectedItem = items[selectedIndexRef.current];
+                const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+                selectedItem.dispatchEvent(clickEvent);
+                onSelect();
+            }
+        }
+    }
+
+    // ==========================================================
     // BUSCADOR PROVEEDORES
     // ==========================================================
 
@@ -206,6 +265,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderResultadosProveedores(proveedores) {
+        proveedorSelectedIndex = -1;
         if (proveedores.length === 0) {
             proveedorResultsContainer.innerHTML = '<div class="product-result-item">No se encontraron proveedores</div>';
         } else {
@@ -297,6 +357,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             filtrarProveedores();
         });
+        proveedorSearchInput.addEventListener('keydown', (e) => {
+            const indexRef = { current: proveedorSelectedIndex };
+            handleSearchKeyboard(e, proveedorSearchInput, proveedorResultsContainer, indexRef, () => {
+                proveedorSelectedIndex = -1;
+                productoSearchInput.focus();
+            });
+            proveedorSelectedIndex = indexRef.current;
+        });
     }
     if (proveedorResultsContainer) proveedorResultsContainer.addEventListener('click', seleccionarProveedor);
 
@@ -305,6 +373,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================================
 
     function renderResultadosProductos(productos) {
+        productoSelectedIndex = -1;
         if (productos.length === 0) {
             productoResultsContainer.innerHTML = '<div class="product-result-item">No se encontraron productos</div>';
         } else {
@@ -338,8 +407,16 @@ document.addEventListener('DOMContentLoaded', function () {
             productoSearchInput.value = capitalizarNombre(producto.nombreProducto);
             productoHiddenInput.value = producto.idProducto;
             productoResultsContainer.style.display = 'none';
+            // Limpiar todos los errores del detalle al seleccionar un producto
             if (productoError) productoError.textContent = '';
+            const errCosto = document.getElementById('errorCompraCosto');
+            const errVenta = document.getElementById('errorCompraVenta');
+            const errCantidad = document.getElementById('errorCompraCantidad');
+            if (errCosto) errCosto.textContent = '';
+            if (errVenta) errVenta.textContent = '';
+            if (errCantidad) errCantidad.textContent = '';
             if (ventaInput) ventaInput.value = formatoMoneda.format(producto.precioVenta);
+            if (costoInput) costoInput.value = producto.ultimoCosto ? formatoMoneda.format(producto.ultimoCosto) : '';
         }
     }
 
@@ -356,8 +433,36 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             filtrarProductos();
         });
+        productoSearchInput.addEventListener('keydown', (e) => {
+            const indexRef = { current: productoSelectedIndex };
+            handleSearchKeyboard(e, productoSearchInput, productoResultsContainer, indexRef, () => {
+                productoSelectedIndex = -1;
+                cantidadInput.focus();
+            });
+            productoSelectedIndex = indexRef.current;
+        });
     }
     if (productoResultsContainer) productoResultsContainer.addEventListener('click', seleccionarProducto);
+
+    // Limpiar errores individuales al escribir en los campos de precio/cantidad
+    if (costoInput) {
+        costoInput.addEventListener('input', () => {
+            const errCosto = document.getElementById('errorCompraCosto');
+            if (errCosto) errCosto.textContent = '';
+        });
+    }
+    if (ventaInput) {
+        ventaInput.addEventListener('input', () => {
+            const errVenta = document.getElementById('errorCompraVenta');
+            if (errVenta) errVenta.textContent = '';
+        });
+    }
+    if (cantidadInput) {
+        cantidadInput.addEventListener('input', () => {
+            const errCantidad = document.getElementById('errorCompraCantidad');
+            if (errCantidad) errCantidad.textContent = '';
+        });
+    }
 
     document.addEventListener('click', function (event) {
         if (proveedorSearchInput && !proveedorSearchInput.contains(event.target) && proveedorResultsContainer && !proveedorResultsContainer.contains(event.target)) {
@@ -570,34 +675,58 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!idProveedor) { document.getElementById('errorCompraProveedor').textContent = 'El proveedor es obligatorio.'; isValid = false; }
             if (detalleItems.length === 0) { if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto al detalle.'; isValid = false; }
 
-            // Validar método de pago
-            const metodoPagoSelect = document.getElementById('compra-metodo-pago');
-            const idMetodoPago = metodoPagoSelect ? metodoPagoSelect.value : '';
-            if (!idMetodoPago) {
-                const errorEl = document.getElementById('errorCompraMetodoPago');
-                if (errorEl) errorEl.textContent = 'Debe seleccionar un método de pago.';
+            // Auto-absorber cuotas sueltas si el usuario tipeó el pago pero no tocó el botón +
+            const selectMetodoSuelto = document.getElementById('compra-metodo-pago');
+            const inputMontoSuelto = document.getElementById('compra-pago-monto');
+            const montoSueltoValue = inputMontoSuelto && inputMontoSuelto.value ? parseFloat(inputMontoSuelto.value.replace(/\./g, '').replace(',', '.')) : 0;
+            if (selectMetodoSuelto && inputMontoSuelto && selectMetodoSuelto.value && montoSueltoValue > 0) {
+                pagosMixtos.push({
+                    idMetodoPago: parseInt(selectMetodoSuelto.value),
+                    nombreMetodo: selectMetodoSuelto.options[selectMetodoSuelto.selectedIndex]?.text,
+                    importe: montoSueltoValue,
+                    estadoPago: 'PAGADO',
+                    fechaVencimientoPago: null
+                });
+                selectMetodoSuelto.value = '';
+                inputMontoSuelto.value = '';
+                renderPagosMixtos(); // Render visual para que concuerde la validación debajo
+            }
+
+            // Validar pagos mixtos (solo evitar que excedan el total)
+            const totalCompraActual = calcularTotalGenerico(detalleItems);
+            let totalPagosIngresados = 0;
+            pagosMixtos.forEach(p => totalPagosIngresados += parseFloat(p.importe));
+
+            if (totalPagosIngresados > totalCompraActual + 0.05) {
+                const errorEl = document.getElementById('errorCompraPagoMonto');
+                if (errorEl) errorEl.textContent = `Los pagos exceden el total. Sobran $${formatoMoneda.format(totalPagosIngresados - totalCompraActual)}.`;
                 isValid = false;
             }
 
-            // Validar estado y fecha de vencimiento
-            const estadoSelect = document.getElementById('compra-estado-pago');
-            const estadoPago = estadoSelect ? estadoSelect.value : 'PAGADO';
-            const fechaVencimientoInput = document.getElementById('compra-fecha-vencimiento');
-            let fechaVencimiento = null;
-
-            if (estadoPago === 'PENDIENTE') {
-                if (fechaVencimientoInput && fechaVencimientoInput.value) {
-                    fechaVencimiento = fechaVencimientoInput.value;
+            // Validar saldo pendiente (Vencimiento)
+            const diff = totalCompraActual - totalPagosIngresados;
+            const scheduledDateInput = document.getElementById('compra-fecha-programada-pago');
+            let fechaVencimientoGlobal = null;
+            if (diff > 0.05 && isValid) {
+                if (!scheduledDateInput || !scheduledDateInput.value) {
+                    if (generalMessageCompra) {
+                        generalMessageCompra.textContent = "Debe seleccionar una fecha de pago para el saldo pendiente.";
+                        generalMessageCompra.classList.add('error');
+                    }
+                    // Hacer reset visual rapido para que el usuario se de cuenta
+                    if (scheduledDateInput) scheduledDateInput.style.border = '2px solid red';
+                    return;
                 } else {
-                    const errorVencimiento = document.getElementById('errorCompraFechaVencimiento');
-                    if (errorVencimiento) errorVencimiento.textContent = 'Debe indicar la fecha de vencimiento si el pago está pendiente.';
-                    isValid = false;
+                    if (scheduledDateInput) scheduledDateInput.style.border = '1px solid #ced4da';
                 }
+
+                // Extraer la fecha para la compra entera
+                fechaVencimientoGlobal = scheduledDateInput.value;
             }
 
             if (!isValid) {
                 if (generalMessageCompra) {
-                    generalMessageCompra.textContent = "Debe completar todos los campos correctamente.";
+                    generalMessageCompra.textContent = "Debe completar todos los campos y pagos correctamente.";
                     generalMessageCompra.classList.add('error');
                 }
                 return;
@@ -608,9 +737,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     fecha: fecha,
                     idProveedor: parseInt(idProveedor),
                     detalleCompras: detalleItems,
-                    idMetodoPago: parseInt(idMetodoPago),
-                    estadoPago: estadoPago,
-                    fechaVencimientoPago: fechaVencimiento
+                    pagos: pagosMixtos, // Ahora enviamos la lista de pagos
+                    fechaVencimientoPago: fechaVencimientoGlobal // GUARDAR A NIVEL COMPRA
                 };
                 try {
                     const response = await fetch(API_COMPRAS_URL, {
@@ -640,7 +768,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     compraForm.reset();
                     detalleItems = [];
-                    renderDetalleTemporal();
+                    pagosMixtos = []; // IMPORTANTE: vaciar el array local de pagos
+                    renderDetalleTemporal(); // Esto autodispara renderPagosMixtos
                     proveedorSearchInput.value = '';
                     proveedorHiddenInput.value = '';
                     previousProveedorId = null;
@@ -649,6 +778,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     productoHiddenInput.value = '';
                     todosLosProductos = [];
                     if (productoSearchInput) { productoSearchInput.placeholder = "Seleccione un proveedor primero"; productoSearchInput.disabled = true; }
+
+                    const scheduledInputReset = document.getElementById('compra-fecha-programada-pago');
+                    if (scheduledInputReset) {
+                        scheduledInputReset.value = '';
+                        scheduledInputReset.style.border = '1px solid #ced4da';
+                    }
 
                     await new Promise(resolve => setTimeout(resolve, 250));
                     historialCurrentPage = 0;
@@ -719,32 +854,58 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (compra.productosComprados && compra.productosComprados.length > 0) {
                 const productos = compra.productosComprados;
-                const maxProductos = 2;
+                const maxProductos = 3;
 
                 if (productos.length <= maxProductos) {
-                    // Mostrar todos los productos
-                    productosTexto = productos.map(p => `${p.nombreProducto} (x${p.cantidad})`).join('<br>');
-                    costosTexto = productos.map(p => `$${formatoMoneda.format(p.precioUnitario || 0)}`).join('<br>');
+                    // Mostrar todos los productos en una línea separados por coma
+                    productosTexto = productos.map(p => `${p.nombreProducto} (x${p.cantidad})`).join(' · ');
+                    costosTexto = productos.map(p => `$${formatoMoneda.format(p.precioUnitario || 0)}`).join(' · ');
                 } else {
-                    // Mostrar solo los primeros 2 + contador
+                    // Mostrar solo los primeros + contador, en una línea
                     const productosAMostrar = productos.slice(0, maxProductos);
                     const productosRestantes = productos.length - maxProductos;
-                    productosTexto = productosAMostrar.map(p => `${p.nombreProducto} (x${p.cantidad})`).join('<br>') +
-                        `<br><span style="color: #666; font-style: italic;">+${productosRestantes} más...</span>`;
-                    costosTexto = productosAMostrar.map(p => `$${formatoMoneda.format(p.precioUnitario || 0)}`).join('<br>') +
-                        '<br><span style="color: #666;">...</span>';
+                    productosTexto = productosAMostrar.map(p => `${p.nombreProducto} (x${p.cantidad})`).join(' · ') +
+                        ` <span style="color: #666; font-style: italic;">(+${productosRestantes} más...)</span>`;
+                    costosTexto = productosAMostrar.map(p => `$${formatoMoneda.format(p.precioUnitario || 0)}`).join(' · ') +
+                        ' <span style="color: #666;">...</span>';
                 }
             }
             const totalFormateado = `$${formatoMoneda.format(compra.total || 0)}`;
             let fechaFormateada = formatearFechaHora(compra.fecha);
 
+            let estadoBadge = '';
+            if (compra.estadoPago === 'PENDIENTE') {
+                // Formatear fecha de vencimiento
+                let fechaPagoTexto = 'No definida';
+                if (compra.fechaVencimientoPago) {
+                    const parts = compra.fechaVencimientoPago.split('-');
+                    fechaPagoTexto = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+                const montoPendienteTexto = `$${formatoMoneda.format(compra.montoPendiente || 0)}`;
+
+                estadoBadge = `<div class="pendiente-popover-wrapper">` +
+                    `<span class="status-badge pending" style="background-color: #ffebee; color: #d32f2f; cursor: pointer;">Pendiente</span>` +
+                    `<div class="pendiente-popover">` +
+                    `<div class="popover-line"><strong>Fecha de pago:</strong> ${fechaPagoTexto}</div>` +
+                    `<div class="popover-line"><strong>Monto:</strong> ${montoPendienteTexto}</div>` +
+                    `</div></div>`;
+            } else {
+                estadoBadge = '<span class="status-badge success" style="background-color: #e8f5e9; color: #2e7d32;">Pagado</span>';
+            }
+
             const row = `
-                <tr>
-                    <td>${fechaFormateada}</td>
+                <tr style="vertical-align: middle;">
+                    <td style="white-space: nowrap;">${fechaFormateada}</td>
                     <td>${compra.nombreProveedor || 'N/A'}</td>
-                    <td>${productosTexto}</td>
-                    <td class="col-num">${totalFormateado}</td>
-                    <td>
+                    <td style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${productosTexto}</td>
+                    <td class="col-num" style="white-space: nowrap; text-align: right; padding-right: 20px;">${totalFormateado}</td>
+                    <td style="white-space: nowrap; text-align: center;">${estadoBadge}</td>
+                    <td style="white-space: nowrap; text-align: center;">
+                        ${compra.estadoPago === 'PENDIENTE' ? `
+                        <button type="button" class="btn-icon btn-pay-compra" onclick="abrirModalPagarCompra(${compra.id})" title="Pasar a Pagado" style="color: #4CAF50; margin-right: 5px;">
+                            <i class="fas fa-check"></i>
+                        </button>
+                        ` : ''}
                         <button type="button" class="btn-icon btn-view-compra" onclick="mostrarDetalleCompra(${compra.id})" title="Ver Detalle">
                             <i class="fas fa-eye"></i>
                         </button>
@@ -821,18 +982,15 @@ document.addEventListener('DOMContentLoaded', function () {
         productoSearchInput.placeholder = "Seleccione un proveedor primero";
         todosLosProductos = [];
 
-        // Resetear método de pago
+        // Resetear método de pago e input
         const metodoPagoSelect = document.getElementById('compra-metodo-pago');
         if (metodoPagoSelect) metodoPagoSelect.selectedIndex = 0;
-        
-        const estadoPagoSelect = document.getElementById('compra-estado-pago');
-        if (estadoPagoSelect) estadoPagoSelect.selectedIndex = 0;
-        
-        const vencimientoContainer = document.getElementById('compra-vencimiento-container');
-        if (vencimientoContainer) vencimientoContainer.style.display = 'none';
-        
-        const vencimientoInput = document.getElementById('compra-fecha-vencimiento');
-        if (vencimientoInput) vencimientoInput.value = '';
+
+        const inputMonto = document.getElementById('compra-pago-monto');
+        if (inputMonto) inputMonto.value = '';
+
+        pagosMixtos = [];
+        renderPagosMixtos();
 
         // Establecer fecha actual nuevamente
         establecerFechaActual();
@@ -863,12 +1021,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (metodoPagoSelect) {
                 metodoPagoSelect.innerHTML = '<option value="">Seleccionar método</option>';
                 metodos.forEach(metodo => {
-                    const option = document.createElement('option');
-                    option.value = metodo.idMetodoPago;
-                    option.textContent = metodo.nombre;
-                    option.dataset.requiereExtra = metodo.requiereDatosExtra;
-                    option.dataset.nombre = metodo.nombre;
-                    metodoPagoSelect.appendChild(option);
+                    // Compras: mostrar todos EXCEPTO "Efectivo" simple
+                    if (metodo.nombre !== 'Efectivo') {
+                        const option = document.createElement('option');
+                        option.value = metodo.idMetodoPago;
+                        option.textContent = metodo.nombre;
+                        option.dataset.requiereExtra = metodo.requiereDatosExtra;
+                        option.dataset.nombre = metodo.nombre;
+                        metodoPagoSelect.appendChild(option);
+                    }
                 });
             }
         } catch (error) {
@@ -883,7 +1044,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const vencimientoContainer = document.getElementById('compra-vencimiento-container');
 
     if (estadoPagoSelect && vencimientoContainer) {
-        estadoPagoSelect.addEventListener('change', function() {
+        estadoPagoSelect.addEventListener('change', function () {
             if (this.value === 'PENDIENTE') {
                 vencimientoContainer.style.display = 'block';
             } else {
@@ -1101,6 +1262,124 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================================
+    // MODAL PAGAR COMPRA PENDIENTE
+    // ==========================================================
+    window.abrirModalPagarCompra = async function (compraId) {
+        console.log("Abrir modal para pagar la compra PENDIENTE id:", compraId);
+        try {
+            const response = await fetch(`${API_COMPRAS_URL}/${compraId}`);
+            if (!response.ok) throw new Error('Error al cargar la compra');
+            const compra = await response.json();
+
+            // Setea el ID
+            document.getElementById('pago-compra-id').value = compra.id;
+
+            // 1. Monto a Pagar
+            const montoPagarInput = document.getElementById('pago-compra-monto');
+            const montoPendiente = compra.montoPendiente !== undefined && compra.montoPendiente !== null ? compra.montoPendiente : compra.total;
+            montoPagarInput.value = montoPendiente;
+
+            // 2. Fecha del Pago 
+            const fechaInput = document.getElementById('pago-compra-fecha');
+            const hoy = new Date();
+            const anio = hoy.getFullYear();
+            const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+            const dia = String(hoy.getDate()).padStart(2, '0');
+            fechaInput.value = `${anio}-${mes}-${dia}`;
+
+            // 3. Método de Pago (copiamos las opciones del select original)
+            const pagoMetodoSelect = document.getElementById('pago-compra-metodo');
+            const compraMetodoSelect = document.getElementById('compra-metodo-pago');
+
+            if (pagoMetodoSelect && compraMetodoSelect) {
+                pagoMetodoSelect.innerHTML = compraMetodoSelect.innerHTML;
+                // Asegurarse de tener la primera opción vacía si no la copió
+                if (pagoMetodoSelect.options.length > 0 && pagoMetodoSelect.options[0].value !== "") {
+                    const defaultOpt = document.createElement('option');
+                    defaultOpt.value = "";
+                    defaultOpt.textContent = "Seleccionar método";
+                    pagoMetodoSelect.insertBefore(defaultOpt, pagoMetodoSelect.firstChild);
+                }
+            }
+
+            // Ocultar mensajes de error previos
+            const errorDiv = document.getElementById('pago-compra-error');
+            if (errorDiv) errorDiv.style.display = 'none';
+
+            // Mostrar el modal
+            document.getElementById('pago-compra-modal').style.display = 'flex';
+
+        } catch (error) {
+            console.error('Error al cargar la información de la compra:', error);
+            if (typeof showToast === 'function') {
+                showToast('No se pudo cargar la información de la compra para el pago.', 'error');
+            } else {
+                alert('No se pudo cargar la información de la compra para el pago.');
+            }
+        }
+    };
+
+    // Agregar evento al botón Confirmar Pago en el Modal
+    const btnConfirmarPagoCompra = document.getElementById('btn-confirmar-pago-compra');
+    if (btnConfirmarPagoCompra) {
+        btnConfirmarPagoCompra.addEventListener('click', async function () {
+            const compraId = document.getElementById('pago-compra-id').value;
+            const monto = document.getElementById('pago-compra-monto').value;
+            const metodoId = document.getElementById('pago-compra-metodo').value;
+            const fechaPago = document.getElementById('pago-compra-fecha').value;
+            const errorDiv = document.getElementById('pago-compra-error');
+
+            if (!monto || monto <= 0 || !metodoId || !fechaPago) {
+                errorDiv.textContent = 'Por favor complete todos los campos correctamente.';
+                errorDiv.style.display = 'block';
+                return;
+            }
+
+            try {
+                // Bloquear botón
+                btnConfirmarPagoCompra.disabled = true;
+                btnConfirmarPagoCompra.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
+
+                const response = await fetch(`${API_COMPRAS_URL}/${compraId}/pagos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        idMetodoPago: parseInt(metodoId, 10),
+                        importe: parseFloat(monto),
+                        fechaPago: fechaPago
+                    })
+                });
+
+                if (response.ok) {
+                    // Éxito
+                    document.getElementById('pago-compra-modal').style.display = 'none';
+                    if (typeof showToast === 'function') {
+                        showToast('Pago registrado con éxito', 'success');
+                    } else {
+                        alert('Pago registrado con éxito');
+                    }
+                    if (typeof loadComprasHistorial === 'function') {
+                        loadComprasHistorial();
+                    } else {
+                        window.location.reload();
+                    }
+                } else {
+                    const textError = await response.text();
+                    errorDiv.textContent = textError || 'Error al registrar el pago.';
+                    errorDiv.style.display = 'block';
+                }
+            } catch (error) {
+                console.error("Error al registrar pago diferido: ", error);
+                errorDiv.textContent = 'Ocurrió un error (ej. caja cerrada).';
+                errorDiv.style.display = 'block';
+            } finally {
+                btnConfirmarPagoCompra.disabled = false;
+                btnConfirmarPagoCompra.innerHTML = '<i class="fas fa-check" style="margin-right: 5px;"></i> Confirmar Pago';
+            }
+        });
+    }
+
+    // ==========================================================
     // MODAL DETALLE DE COMPRA
     // ==========================================================
 
@@ -1130,34 +1409,93 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('modal-compra-fecha').textContent = fechaFormateada;
             document.getElementById('modal-compra-proveedor').textContent = compra.nombreProveedor || 'N/A';
             document.getElementById('modal-compra-metodo-pago').textContent = compra.metodoPago || '-';
-            
+
             const estadoSpan = document.createElement('span');
             estadoSpan.textContent = compra.estadoPago || 'PAGADO';
             estadoSpan.className = (compra.estadoPago === 'PENDIENTE') ? 'status-badge pending' : 'status-badge success';
+            if (compra.estadoPago === 'PENDIENTE') {
+                estadoSpan.style.backgroundColor = '#ffebee';
+                estadoSpan.style.color = '#d32f2f';
+            } else {
+                estadoSpan.style.backgroundColor = '#e8f5e9';
+                estadoSpan.style.color = '#2e7d32';
+            }
             const estadoContainer = document.getElementById('modal-compra-estado');
             estadoContainer.innerHTML = '';
             estadoContainer.appendChild(estadoSpan);
 
+            // Fecha de Vencimiento en header
             const vencimientoContainer = document.getElementById('modal-compra-vencimiento-container');
+            let venciFormateada = '';
             if (compra.estadoPago === 'PENDIENTE' && compra.fechaVencimientoPago) {
-                // Formatear si viene de la db
                 let venciStr = compra.fechaVencimientoPago;
                 if (venciStr.includes('-')) {
                     const partes = venciStr.split('-');
                     if (partes.length >= 3) {
-                       venciStr = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                        venciStr = `${partes[2]}/${partes[1]}/${partes[0]}`;
                     }
                 }
+                venciFormateada = venciStr;
                 document.getElementById('modal-compra-vencimiento').textContent = venciStr;
                 vencimientoContainer.style.display = 'block';
             } else {
                 vencimientoContainer.style.display = 'none';
             }
 
+            // Resumen de Pago (visible SIEMPRE)
+            const resumenPagoDiv = document.getElementById('modal-compra-resumen-pago');
+            resumenPagoDiv.style.display = 'block';
+            document.getElementById('modal-compra-monto-pagar').textContent = `$${formatoMoneda.format(compra.total || 0)}`;
+
+            const montoPendienteEl = document.getElementById('modal-compra-monto-pendiente');
+            const cardPendiente = document.getElementById('modal-compra-card-pendiente');
+            const venceElDiv = document.getElementById('modal-compra-vence-el');
+
+            if (compra.estadoPago === 'PENDIENTE') {
+                // Estilo rojo para pendiente
+                montoPendienteEl.textContent = `$${formatoMoneda.format(compra.montoPendiente || 0)}`;
+                montoPendienteEl.style.color = '#d32f2f';
+
+                if (venciFormateada) {
+                    venceElDiv.innerHTML = `<i class="fas fa-calendar-alt" style="margin-right: 4px;"></i> Vence el: <span>${venciFormateada}</span>`;
+                    venceElDiv.style.color = '#d32f2f';
+                    venceElDiv.style.display = 'block';
+                } else {
+                    venceElDiv.style.display = 'none';
+                }
+            } else {
+                // Estilo verde para pagado
+                montoPendienteEl.textContent = '$0';
+                montoPendienteEl.style.color = '#2e7d32';
+
+                // Mostrar "Pagado el: fecha de la compra"
+                let fechaPagadoTexto = fechaFormateada;
+                if (compra.fechaUltimoPago) {
+                    let f = compra.fechaUltimoPago;
+                    if (typeof f === 'string') {
+                        const partes = f.split('T')[0].split('-');
+                        if (partes.length >= 3) {
+                            fechaPagadoTexto = `${partes[2]}/${partes[1]}/${partes[0]}`;
+                        }
+                    } else if (Array.isArray(f)) {
+                        const d = String(f[2]).padStart(2, '0');
+                        const m = String(f[1]).padStart(2, '0');
+                        const y = f[0];
+                        fechaPagadoTexto = `${d}/${m}/${y}`;
+                    }
+                }
+                venceElDiv.innerHTML = `<i class="fas fa-check-circle" style="margin-right: 4px; color: #2e7d32;"></i> Pagado el: <span>${fechaPagadoTexto}</span>`;
+                venceElDiv.style.color = '#2e7d32';
+                venceElDiv.style.display = 'block';
+            }
+
             document.getElementById('modal-compra-total').textContent = `$${formatoMoneda.format(compra.total || 0)}`;
 
             // Guardar productos
             modalProductosActuales = compra.productosComprados || [];
+
+            // Renderizar historial de pagos
+            renderModalPagos(compra.pagos);
 
             // Resetear UI de busqueda y ordenamiento
             const searchInput = document.getElementById('modal-compra-productos-search');
@@ -1177,8 +1515,55 @@ document.addEventListener('DOMContentLoaded', function () {
             modal.style.display = 'block';
         } catch (error) {
             console.error('Error al cargar el detalle de la compra:', error);
-            alert('No se pudo cargar el detalle de la compra.');
+            if (typeof showToast === 'function') {
+                showToast('No se pudo cargar el detalle de la compra.', 'error');
+            } else {
+                alert('No se pudo cargar el detalle de la compra.');
+            }
         }
+    }
+
+    function renderModalPagos(pagos) {
+        const container = document.getElementById('modal-compra-pagos-list');
+        if (!container) return;
+
+        if (!pagos || pagos.length === 0) {
+            container.innerHTML = '<div style="padding: 15px; text-align: center; color: #666; background: #f8f9fa; border-radius: 8px;">No hay pagos registrados</div>';
+            return;
+        }
+
+        let html = '<table style="width: 100%; border-collapse: collapse; font-size: 14px;">';
+        html += '<thead><tr style="background: #f8f9fa;">';
+        html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">Fecha</th>';
+        html += '<th style="padding: 10px; text-align: left; border-bottom: 2px solid #dee2e6;">Método</th>';
+        html += '<th style="padding: 10px; text-align: right; border-bottom: 2px solid #dee2e6;">Importe</th>';
+        html += '<th style="padding: 10px; text-align: center; border-bottom: 2px solid #dee2e6;">Estado</th>';
+        html += '</tr></thead><tbody>';
+
+        pagos.forEach(pago => {
+            let fechaStr = 'N/A';
+            if (pago.fechaPago) {
+                const fecha = new Date(pago.fechaPago);
+                const d = String(fecha.getDate()).padStart(2, '0');
+                const m = String(fecha.getMonth() + 1).padStart(2, '0');
+                const y = fecha.getFullYear();
+                const h = String(fecha.getHours()).padStart(2, '0');
+                const min = String(fecha.getMinutes()).padStart(2, '0');
+                fechaStr = `${d}/${m}/${y} ${h}:${min}`;
+            }
+
+            const estadoClass = pago.estado === 'PAGADO' ? 'style="color: #2e7d32; font-weight: 600;"' : 'style="color: #d32f2f; font-weight: 600;"';
+            
+            html += `<tr style="border-bottom: 1px solid #dee2e6;">`;
+            html += `<td style="padding: 10px;">${fechaStr}</td>`;
+            html += `<td style="padding: 10px;">${pago.metodoPago || 'N/A'}</td>`;
+            html += `<td style="padding: 10px; text-align: right;">$${formatoMoneda.format(pago.importe || 0)}</td>`;
+            html += `<td style="padding: 10px; text-align: center;" ${estadoClass}>${pago.estado || 'N/A'}</td>`;
+            html += `</tr>`;
+        });
+
+        html += '</tbody></table>';
+        container.innerHTML = html;
     }
 
     function renderModalProductos() {
@@ -1216,7 +1601,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modalProductosActuales = [];
     }
 
-    document.addEventListener('keydown', function(e) {
+    document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {
             const modal = document.getElementById('purchase-detail-modal');
             if (modal && modal.style.display === 'block') {
@@ -1484,13 +1869,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const searchInput = document.getElementById('modal-compra-productos-search');
         if (searchInput) {
-            searchInput.addEventListener('input', function() {
+            searchInput.addEventListener('input', function () {
                 const tbody = document.getElementById('modal-compra-productos');
                 // Añadir clase de animación
                 tbody.classList.add('loading');
 
                 const query = removeAccents(this.value.trim().toLowerCase());
-                
+
                 // Esperar a que la animacion de fade-out (200ms aprox) surta efecto
                 setTimeout(() => {
                     const rows = document.querySelectorAll('#modal-compra-productos tr');
@@ -1505,7 +1890,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             }
                         }
                     });
-                    
+
                     // Remover clase y el tbody vuelve a fade-in solo
                     tbody.classList.remove('loading');
                 }, 200);
@@ -1513,12 +1898,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const sortableHeaders = document.querySelectorAll('.modal-sortable');
-        
+
         sortableHeaders.forEach(th => {
             th.addEventListener('click', () => {
                 const colIndex = parseInt(th.getAttribute('data-col-index'));
                 const dataType = th.getAttribute('data-type');
-                
+
                 if (modalCompraCurrentSortCol === colIndex) {
                     modalCompraCurrentSortAsc = !modalCompraCurrentSortAsc;
                 } else {
@@ -1544,16 +1929,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const tbody = document.getElementById('modal-compra-productos');
-                
+
                 // Animación previa a ordenar
                 tbody.classList.add('loading');
 
                 setTimeout(() => {
                     const rows = Array.from(tbody.querySelectorAll('tr'));
-                    
+
                     rows.sort((a, b) => {
-                        if(!a.children[colIndex] || !b.children[colIndex]) return 0;
-                        
+                        if (!a.children[colIndex] || !b.children[colIndex]) return 0;
+
                         const valA = a.children[colIndex].textContent.trim();
                         const valB = b.children[colIndex].textContent.trim();
 
@@ -1579,23 +1964,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     tbody.innerHTML = '';
                     rows.forEach(row => tbody.appendChild(row));
-                    
-                    if(searchInput && searchInput.value) {
-                         // Ejecutar internamente sin el timeout para la recarga en cascada
-                         const query = removeAccents(searchInput.value.trim().toLowerCase());
-                         const newRows = document.querySelectorAll('#modal-compra-productos tr');
-                         newRows.forEach(row => {
-                             const td = row.querySelector('td:first-child');
-                             if (td) {
-                                 if (removeAccents(td.textContent.trim().toLowerCase()).includes(query)) {
-                                     row.style.display = '';
-                                 } else {
-                                     row.style.display = 'none';
-                                 }
-                             }
-                         });
+
+                    if (searchInput && searchInput.value) {
+                        // Ejecutar internamente sin el timeout para la recarga en cascada
+                        const query = removeAccents(searchInput.value.trim().toLowerCase());
+                        const newRows = document.querySelectorAll('#modal-compra-productos tr');
+                        newRows.forEach(row => {
+                            const td = row.querySelector('td:first-child');
+                            if (td) {
+                                if (removeAccents(td.textContent.trim().toLowerCase()).includes(query)) {
+                                    row.style.display = '';
+                                } else {
+                                    row.style.display = 'none';
+                                }
+                            }
+                        });
                     }
-                    
+
                     // Fin animacion
                     tbody.classList.remove('loading');
                 }, 200);
@@ -1639,4 +2024,187 @@ document.addEventListener('DOMContentLoaded', function () {
     // Exponer funciones globalmente
     window.mostrarDetalleCompra = mostrarDetalleCompra;
     window.cerrarModalDetalleCompra = cerrarModalDetalleCompra;
+    // -----------------------------------------------------
+    // LÓGICA DE PAGOS MIXTOS PARA COMPRAS
+    // -----------------------------------------------------
+    // -----------------------------------------------------
+    // LÓGICA DE PAGOS MIXTOS PARA COMPRAS
+    // -----------------------------------------------------
+    const btnAddPagoMixto = document.getElementById('btn-add-pago-mixto');
+    const selectMetodoGlobal = document.getElementById('compra-metodo-pago');
+    const inputMontoGlobal = document.getElementById('compra-pago-monto');
+
+    if (selectMetodoGlobal && inputMontoGlobal) {
+        selectMetodoGlobal.addEventListener('change', () => {
+            // Autocompletar solo si se eligió un método válido y el monto está vacío
+            const valFormateadoNum = inputMontoGlobal.value ? parseFloat(inputMontoGlobal.value.replace(/\./g, '')) : 0;
+            if (selectMetodoGlobal.value && valFormateadoNum === 0) {
+                const totalCompra = calcularTotalGenerico(detalleItems);
+                let totalPagosActuales = 0;
+                pagosMixtos.forEach(p => totalPagosActuales += parseFloat(p.importe));
+                const diff = Math.round(totalCompra - totalPagosActuales); // Evitar decimales
+                if (diff > 0) {
+                    inputMontoGlobal.value = new Intl.NumberFormat('es-AR').format(diff);
+                    renderPagosMixtos(); // Refresh balance visual
+                }
+            }
+        });
+
+        // Evento input para recalcular el balance inferior orgánicamente y formatear en miles
+        inputMontoGlobal.addEventListener('input', function () {
+            let cursorPosition = this.selectionStart;
+            let oldLength = this.value.length;
+
+            let valueRaw = this.value.replace(/[^0-9]/g, '');
+            if (valueRaw === '') {
+                this.value = '';
+                renderPagosMixtos();
+                return;
+            }
+
+            let num = parseInt(valueRaw, 10);
+            this.value = new Intl.NumberFormat('es-AR').format(num);
+
+            let diffLen = this.value.length - oldLength;
+            this.setSelectionRange(cursorPosition + diffLen, cursorPosition + diffLen);
+
+            renderPagosMixtos();
+        });
+    }
+
+    if (btnAddPagoMixto) {
+        btnAddPagoMixto.addEventListener('click', () => {
+            const selectMetodo = document.getElementById('compra-metodo-pago');
+            const inputMonto = document.getElementById('compra-pago-monto');
+            const errorMonto = document.getElementById('errorCompraPagoMonto');
+
+            errorMonto.textContent = '';
+
+            const idMetodo = selectMetodo.value;
+            const nombreMetodo = selectMetodo.options[selectMetodo.selectedIndex]?.text;
+            const montoRaw = inputMonto.value ? inputMonto.value.replace(/\./g, '') : '0';
+            const monto = parseFloat(montoRaw);
+
+            if (!idMetodo) {
+                errorMonto.textContent = 'Seleccione un método de pago.';
+                return;
+            }
+            if (isNaN(monto) || monto <= 0) {
+                errorMonto.textContent = 'Ingrese un monto válido mayor a 0.';
+                return;
+            }
+
+            const totalCompraActual = Math.round(calcularTotalGenerico(detalleItems));
+            let totalPagosActuales = 0;
+            pagosMixtos.forEach(p => totalPagosActuales += parseFloat(p.importe));
+
+            if ((totalPagosActuales + monto) > totalCompraActual + 0.05) {
+                errorMonto.textContent = `El monto excede. Resta pagar: $${formatoMoneda.format(totalCompraActual - totalPagosActuales)}`;
+                return;
+            }
+
+            // Agregar a la lista temporal
+            pagosMixtos.push({
+                idMetodoPago: parseInt(idMetodo),
+                nombreMetodo: nombreMetodo,
+                importe: monto,
+                estadoPago: 'PAGADO', // Todo lo pagado asume estado cancelado
+                fechaVencimientoPago: null
+            });
+
+            inputMonto.value = '';
+            renderPagosMixtos();
+        });
+    }
+
+    function renderPagosMixtos() {
+        const container = document.getElementById('pagos-mixtos-container');
+        const balanceIndicator = document.getElementById('payment-balance-indicator');
+        const inputMonto = document.getElementById('compra-pago-monto');
+
+        if (!container) return;
+        container.innerHTML = '';
+
+        let totalPagosActuales = 0;
+
+        // Render Píldoras
+        pagosMixtos.forEach((pago, index) => {
+            totalPagosActuales += parseFloat(pago.importe);
+            const cardHtml = `
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <span style="font-weight: 600; font-size: 0.85rem; color: #475569;">${pago.nombreMetodo}</span>
+                        <span style="font-size: 0.85rem; font-weight: 500; color: #1e293b;">$${formatoMoneda.format(pago.importe)}</span>
+                    </div>
+                    <button type="button" class="btn-icon btn-delete-pago" data-index="${index}" style="color: #94a3b8; background: none; border: none; cursor: pointer; padding: 2px 6px;">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', cardHtml);
+        });
+
+        container.querySelectorAll('.btn-delete-pago').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(e.currentTarget.getAttribute('data-index'));
+                pagosMixtos.splice(idx, 1);
+                renderPagosMixtos();
+            });
+        });
+
+        // UI de Saldo
+        const totalCompraActual = calcularTotalGenerico(detalleItems);
+
+        // Sumar lo tippeado en el input para el display instantáneo (sin tocar "+")
+        let sumFromInput = 0;
+        if (inputMonto && inputMonto.value) {
+            const parsed = parseFloat(inputMonto.value.replace(/\./g, ''));
+            if (!isNaN(parsed)) sumFromInput = parsed;
+        }
+
+        const diff = totalCompraActual - (totalPagosActuales + sumFromInput);
+
+        if (balanceIndicator) {
+            balanceIndicator.style.textAlign = 'left';
+            balanceIndicator.innerHTML = `
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 1; padding: 12px; background: #f0f2f5; border-radius: 6px;">
+                        <div style="font-size: 0.70rem; color: #64748b; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px;">Monto Pagado</div>
+                        <div style="font-size: 1.3rem; font-weight: 600; color: #1e293b;">$${formatoMoneda.format(totalPagosActuales + sumFromInput)}</div>
+                    </div>
+                    <div style="flex: 1; padding: 12px; background: ${diff > 0.05 ? '#fee2e2' : '#f0f2f5'}; border-radius: 6px;">
+                        <div style="font-size: 0.70rem; color: ${diff > 0.05 ? '#b91c1c' : '#64748b'}; font-weight: 700; text-transform: uppercase; margin-bottom: 5px; letter-spacing: 0.5px;">Saldo Pendiente</div>
+                        <div style="font-size: 1.3rem; font-weight: 600; color: ${diff > 0.05 ? '#b91c1c' : '#1e293b'};">$${formatoMoneda.format(diff > 0 ? diff : 0)}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Mostrar / Ocultar el input de Fecha a Pagar si hay Saldo Pendiente
+        const dateContainer = document.getElementById('compra-fecha-programada-container');
+        if (dateContainer) {
+            if (diff > 0.05) {
+                dateContainer.style.display = 'block';
+            } else {
+                dateContainer.style.display = 'none';
+                const scheduledInput = document.getElementById('compra-fecha-programada-pago');
+                if (scheduledInput) {
+                    scheduledInput.value = ''; // Limpiar si se ocultó
+                    scheduledInput.style.border = '1px solid #ced4da';
+                }
+            }
+        }
+
+        // Se ELIMINÓ el autocompletado nativo aquí para permitir escritura libre
+    }
+
+    const originalRenderDetalleTemporal = renderDetalleTemporal;
+    renderDetalleTemporal = function () {
+        originalRenderDetalleTemporal();
+        renderPagosMixtos();
+    };
+
+    // Render initially to show empty balance cards
+    renderPagosMixtos();
+
 });

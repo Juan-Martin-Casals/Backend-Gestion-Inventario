@@ -51,6 +51,14 @@ document.addEventListener('DOMContentLoaded', function () {
     const tipoTarjetaSelect = document.getElementById('tipo-tarjeta');
     const errorMetodoPago = document.getElementById('errorMetodoPago');
 
+    // --- Selectores Descuento ---
+    const descuentoInput = document.getElementById('descuento-venta');
+    const tipoDescuentoSelect = document.getElementById('tipo-descuento-venta');
+    const descuentoDisplay = document.getElementById('descuento-aplicado-display');
+    const montoDescuentoMostrado = document.getElementById('monto-descuento-mostrado');
+    const subtotalVentaDisplay = document.getElementById('subtotal-venta');
+    const errorDescuento = document.getElementById('errorDescuento');
+
     // ===================================
     // SELECTORES - MODAL NUEVO CLIENTE
     // ===================================
@@ -769,6 +777,34 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         totalVentaDisplay.textContent = `$ Total: $${formatoMoneda.format(totalAcumulado)}`;
+
+        // Calcular descuento aplicado
+        const descuento = parseFloat(descuentoInput?.value) || 0;
+        const tipoDescuento = tipoDescuentoSelect?.value || '$';
+        let descuentoMonto = 0;
+        let totalConDescuento = totalAcumulado;
+
+        if (descuento > 0 && totalAcumulado > 0) {
+            if (tipoDescuento === '%') {
+                descuentoMonto = totalAcumulado * (descuento / 100);
+            } else {
+                descuentoMonto = descuento;
+            }
+            descuentoMonto = Math.min(descuentoMonto, totalAcumulado);
+            totalConDescuento = totalAcumulado - descuentoMonto;
+
+            if (descuentoDisplay) {
+                descuentoDisplay.style.display = 'block';
+                montoDescuentoMostrado.textContent = `-${formatoMoneda.format(descuentoMonto)}`;
+            }
+        } else {
+            if (descuentoDisplay) {
+                descuentoDisplay.style.display = 'none';
+            }
+        }
+
+        // Mostrar total real (con descuento)
+        totalVentaDisplay.textContent = `$ Total: $${formatoMoneda.format(totalConDescuento)}`;
     }
 
     // ==========================================================
@@ -880,6 +916,36 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        // Calcular descuentos para validación y DTO
+        let descuentoMonto = 0;
+        const descuento = parseFloat(descuentoInput?.value) || 0;
+        const tipoDescuento = tipoDescuentoSelect?.value || '$';
+
+        // Calcular total base (sin descuento)
+        let totalBase = 0;
+        detallesVenta.forEach(item => {
+            totalBase += item.precioVenta * item.cantidad;
+        });
+
+        if (descuento > 0 && totalBase > 0) {
+            if (tipoDescuento === '%') {
+                descuentoMonto = totalBase * (descuento / 100);
+            } else {
+                descuentoMonto = descuento;
+            }
+            descuentoMonto = Math.min(descuentoMonto, totalBase);
+        }
+
+        const totalFinal = totalBase - descuentoMonto;
+
+        // Validar que el total no sea <= 0
+        if (totalFinal <= 0) {
+            if (errorDescuento) {
+                errorDescuento.textContent = 'El total con descuento debe ser mayor a $0.';
+                isValid = false;
+            }
+        }
+
         if (!isValid) {
             generalMessage.textContent = 'Por favor, complete todos los campos obligatorios.';
             generalMessage.classList.add('error');
@@ -901,7 +967,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     idCliente: parseInt(idCliente),
                     detalles: detallesParaBackend,
                     idMetodoPago: parseInt(idMetodoPago),
-                    tipoTarjeta: tipoTarjetaSelect ? (tipoTarjetaSelect.value || null) : null
+                    tipoTarjeta: tipoTarjetaSelect ? (tipoTarjetaSelect.value || null) : null,
+                    descuento: descuento,
+                    tipoDescuento: tipoDescuento
                 };
 
                 const response = await fetch(API_VENTAS_URL, {
@@ -934,6 +1002,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 clienteSearchInput.value = '';
                 productSearchInput.value = '';
                 cantidadProductoInput.value = '1';
+                // Resetear descuento
+                if (descuentoInput) descuentoInput.value = '';
+                if (tipoDescuentoSelect) tipoDescuentoSelect.value = '$';
+                if (descuentoDisplay) descuentoDisplay.style.display = 'none';
+                if (subtotalVentaDisplay) subtotalVentaDisplay.textContent = '$0.00';
                 previousClienteId = null;
                 previousClienteNombre = '';
 
@@ -1143,6 +1216,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 camposTipoTarjeta.style.display = esTarjeta ? 'block' : 'none';
             }
             if (!esTarjeta && tipoTarjetaSelect) tipoTarjetaSelect.value = '';
+        });
+    }
+
+    // Event listeners para descuento
+    if (descuentoInput) {
+        descuentoInput.addEventListener('input', function () {
+            renderDetalleTemporal();
+        });
+    }
+    if (tipoDescuentoSelect) {
+        tipoDescuentoSelect.addEventListener('change', function () {
+            renderDetalleTemporal();
         });
     }
 

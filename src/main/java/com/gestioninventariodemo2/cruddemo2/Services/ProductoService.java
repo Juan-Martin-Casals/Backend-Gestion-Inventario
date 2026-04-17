@@ -177,11 +177,18 @@ public class ProductoService {
                         stockActual = p.getStocks().get(0).getStockActual();
                     }
 
+                    Double ultimoCosto = null;
+                    List<DetalleCompra> compras = detalleCompraRepository.findByProductoOrderByCompraFechaDesc(p);
+                    if (!compras.isEmpty()) {
+                        ultimoCosto = compras.get(0).getPrecioUnitario();
+                    }
+
                     return ProductoSelectDTO.builder()
                             .idProducto(p.getIdProducto())
                             .nombreProducto(p.getNombre())
                             .precioVenta(p.getPrecio())
                             .stockActual(stockActual)
+                            .ultimoCosto(ultimoCosto)
                             .build();
                 })
                 .toList();
@@ -494,11 +501,18 @@ public class ProductoService {
             stockActual = producto.getStocks().get(0).getStockActual();
         }
 
+        Double ultimoCosto = null;
+        List<DetalleCompra> compras = detalleCompraRepository.findByProductoOrderByCompraFechaDesc(producto);
+        if (!compras.isEmpty()) {
+            ultimoCosto = compras.get(0).getPrecioUnitario();
+        }
+
         return ProductoSelectDTO.builder()
                 .idProducto(producto.getIdProducto())
                 .nombreProducto(producto.getNombre())
                 .precioVenta(producto.getPrecio())
                 .stockActual(stockActual)
+                .ultimoCosto(ultimoCosto)
                 .build();
     }
 

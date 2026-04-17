@@ -184,7 +184,7 @@ public class VentaService {
                 .idVenta(venta.getIdVenta())
                 .fecha(venta.getFecha())
                 .nombreCliente(nombreCliente)
-                .nombreVendedor(nombreVendedor) // <-- Usamos la variable segura
+                .nombreVendedor(nombreVendedor)
                 .total(venta.getTotal())
                 .productos(productosDTO)
                 .metodoPago(metodoPago)

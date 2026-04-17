@@ -41,10 +41,24 @@ public class PagoService {
         return pagoRepository.save(pago);
     }
 
+    public Pago registrarPagoDiferido(Compra compra, MetodoPago metodoPago, java.math.BigDecimal importe,
+            String estado, java.time.LocalDateTime fechaPago, Usuario usuario) {
+        Pago pago = new Pago();
+        pago.setCompra(compra);
+        pago.setMetodoPago(metodoPago);
+        pago.setImporte(importe);
+        pago.setTipoTarjeta(null);
+        pago.setFechaPago(fechaPago != null ? fechaPago : java.time.LocalDateTime.now());
+        pago.setEstado(estado != null ? estado : "PAGADO");
+        pago.setFechaVencimiento(null);
+        pago.setUsuario(usuario);
+        return pagoRepository.save(pago);
+    }
+
     /**
-     * Obtener el pago asociado a una compra
+     * Obtener los pagos asociados a una compra
      */
-    public Pago obtenerPagoPorCompra(Long idCompra) {
+    public java.util.List<Pago> obtenerPagosPorCompra(Long idCompra) {
         return pagoRepository.findByCompraIdCompra(idCompra);
     }
 }

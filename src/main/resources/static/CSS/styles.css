@@ -738,14 +738,16 @@ body {
 }
 
 .data-table tr {
-    position: relative; /* Evita que queden atrapados en capas inferiores */
+    position: relative;
+    /* Evita que queden atrapados en capas inferiores */
     border-bottom: 1px solid #eee;
     overflow: visible !important;
 }
 
 .data-table tr:hover {
     background: #f8f9fa;
-    z-index: 900; /* Asegura que la fila activa flote sobre todo lo demás */
+    z-index: 900;
+    /* Asegura que la fila activa flote sobre todo lo demás */
 }
 
 /* Alineacion derecha para columnas numericas (precios, cantidades, totales, stock) */
@@ -1605,6 +1607,111 @@ body {
     }
 }
 
+/* ===== POPOVER DE ESTADO PENDIENTE (COMPRAS) ===== */
+.pendiente-popover-wrapper {
+    display: inline-block;
+    position: relative;
+}
+
+.pendiente-popover {
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #ffffff;
+    color: #1e293b;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 12px;
+    line-height: 1.6;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    z-index: 99999;
+    pointer-events: none;
+    opacity: 0;
+    animation: popoverFadeIn 0.2s ease forwards;
+    text-align: left;
+    font-weight: bold;
+}
+
+.pendiente-popover::after {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-bottom-color: #ffffff;
+}
+
+/* Pseudo-elemento extra para el borde de la flechita si hay borde en el tooltip */
+.pendiente-popover::before {
+    content: '';
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 7px solid transparent;
+    border-bottom-color: #e2e8f0;
+    margin-bottom: -1px;
+}
+
+.pendiente-popover .popover-line {
+    color: #0f172a;
+    font-size: 12px;
+    font-weight: 400; /* Normal weight for dynamic values */
+    margin-bottom: 2px;
+}
+
+.pendiente-popover-wrapper:hover .pendiente-popover {
+    display: block;
+    opacity: 1;
+}
+
+/* ===== TABLA DE PRODUCTOS EN MODAL DETALLE COMPRA ===== */
+.compra-productos-wrapper {
+    max-height: 300px;
+    overflow-y: auto;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background-color: #ffffff;
+}
+
+.compra-productos-wrapper thead th {
+    position: sticky;
+    top: 0;
+    background: #f3f4f6;
+    color: #374151;
+    font-weight: 600;
+    font-size: 13px;
+    padding: 12px 16px;
+    text-align: left;
+    z-index: 2;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+/* Scrollbar sutil */
+.compra-productos-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.compra-productos-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 8px;
+}
+
+.compra-productos-wrapper::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 8px;
+    transition: background 0.2s;
+}
+
+.compra-productos-wrapper::-webkit-scrollbar-thumb:hover {
+    background: #9ca3af;
+}
+
 .table-container-venta {
     min-height: 600px;
 }
@@ -1812,12 +1919,14 @@ body {
 }
 
 
-#product-table-body, #modal-compra-productos {
+#product-table-body,
+#modal-compra-productos {
     opacity: 1;
     transition: opacity 0.2s ease-in-out;
 }
 
-#product-table-body.loading, #modal-compra-productos.loading {
+#product-table-body.loading,
+#modal-compra-productos.loading {
     opacity: 0;
     /* Oculta la tabla cuando se están cargando nuevos datos */
 }
@@ -2798,4 +2907,90 @@ body {
 
 .password-checklist li.valid i {
     font-size: 11px;
+}
+
+/* =============================================
+   Dashboard Layout (Compras)
+   ============================================= */
+.dashboard-layout {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    /* Permite que el sidebar sea sticky al soltarse del alto del main */
+}
+
+.dashboard-layout .col-left {
+    flex: 7;
+    /* 70% para content principal */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    /* Separación entre cards del main */
+}
+
+.dashboard-layout .col-right {
+    flex: 3;
+    /* 30% */
+    position: sticky;
+    top: 25px;
+    /* Altura a la que hace stop el scroll */
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* Reducción en celulares */
+@media (max-width: 900px) {
+    .dashboard-layout {
+        flex-direction: column;
+    }
+
+    .dashboard-layout .col-right {
+        position: static;
+        flex: auto;
+        width: 100%;
+    }
+}
+
+/* =============================================
+   Modern Card Style
+   ============================================= */
+.card-modern {
+    background-color: white;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border: 1px solid #e0e0e0;
+}
+
+.card-modern .section-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f4f7f6;
+    color: #2c3e50;
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.card-modern .section-title i {
+    color: #4a90e2;
+}
+
+/* Ajustes Visuales Específicos */
+.summary-card .total-display-container {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    border-left: 5px solid #28a745;
+}
+
+.summary-card #compra-total-display {
+    margin: 0;
+    color: #28a745;
+    font-size: 1.8rem;
+    font-weight: bold;
 }

@@ -13,8 +13,8 @@ import com.gestioninventariodemo2.cruddemo2.Model.Pago;
 @Repository
 public interface PagoRepository extends JpaRepository<Pago, Long> {
 
-    // Encontrar pago por ID de compra (relación 1:1)
-    Pago findByCompraIdCompra(Long idCompra);
+    // Encontrar pagos por ID de compra (relación 1:N)
+    List<Pago> findByCompraIdCompra(Long idCompra);
 
     // Obtener pagos por método de pago
     List<Pago> findByMetodoPagoIdMetodoPago(Long idMetodoPago);

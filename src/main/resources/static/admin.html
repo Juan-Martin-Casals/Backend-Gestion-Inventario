@@ -1316,141 +1316,185 @@
 
                 <!-- Subsección: Registrar Compra -->
                 <div id="compras-create-container" class="subsection-container" style="display: none;">
-                    <div class="form-section">
-                        <h4>Registrar Nueva Compra</h4>
+                    <div style="padding: 30px;">
+
                         <form id="compra-form" class="sale-form" novalidate>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="compra-fecha">Fecha de Compra</label>
-                                    <input type="date" id="compra-fecha" value="">
-                                    <div class="error-message" id="errorCompraFecha"></div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="compra-proveedor-search">Proveedor</label>
+                            <div class="dashboard-layout">
+                                <!-- Columna Izquierda: Carga -->
+                                <div class="col-left">
+                                    <div class="card-modern">
+                                        <h5 class="section-title"><i class="fas fa-info-circle"></i> Información General
+                                        </h5>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="compra-fecha">Fecha de Compra</label>
+                                                <input type="date" id="compra-fecha" value="">
+                                                <div class="error-message" id="errorCompraFecha"></div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="compra-proveedor-search">Proveedor</label>
 
-                                    <div class="search-with-add">
-                                        <input type="text" id="compra-proveedor-search"
-                                            placeholder="Buscar proveedor por nombre..." class="product-search-input"
-                                            autocomplete="off">
+                                                <div class="search-with-add">
+                                                    <input type="text" id="compra-proveedor-search"
+                                                        placeholder="Buscar proveedor por nombre..."
+                                                        class="product-search-input" autocomplete="off">
 
-                                        <button type="button" id="btn-add-proveedor-compra"
-                                            class="btn-icon btn-add-quick" title="Añadir Nuevo Proveedor">
-                                            <i class="fas fa-plus"></i>
-                                        </button>
+                                                    <button type="button" id="btn-add-proveedor-compra"
+                                                        class="btn-icon btn-add-quick" title="Añadir Nuevo Proveedor">
+                                                        <i class="fas fa-plus"></i>
+                                                    </button>
+                                                </div>
+                                                <input type="hidden" id="compra-proveedor-id-hidden">
+                                                <div id="compra-proveedor-results" class="product-results"
+                                                    style="display: none;">
+                                                </div>
+
+                                                <div class="error-message" id="errorCompraProveedor"></div>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <input type="hidden" id="compra-proveedor-id-hidden">
-                                    <div id="compra-proveedor-results" class="product-results" style="display: none;">
-                                    </div>
 
-                                    <div class="error-message" id="errorCompraProveedor"></div>
-                                </div>
-                            </div>
+                                    <div class="card-modern product-selection">
+                                        <h5 class="section-title"><i class="fas fa-box"></i> Detalle de la Compra</h5>
 
-                            <div class="product-selection">
-                                <h5><i class="fas fa-box"></i> Detalle de la Compra</h5>
+                                        <!-- Fila 1: Producto y Cantidad -->
+                                        <div class="form-row">
+                                            <div class="form-group" style="flex: 3;">
+                                                <label for="compra-producto-search">Producto</label>
 
-                                <!-- Fila 1: Producto y Cantidad -->
-                                <div class="form-row">
-                                    <div class="form-group" style="flex: 3;">
-                                        <label for="compra-producto-search">Producto</label>
+                                                <div class="product-search-container">
+                                                    <input type="text" id="compra-producto-search"
+                                                        placeholder="Buscar producto por nombre..."
+                                                        class="product-search-input" autocomplete="off">
+                                                    <input type="hidden" id="compra-producto-id-hidden">
+                                                    <div id="compra-producto-results" class="product-results"
+                                                        style="display: none;">
+                                                    </div>
+                                                </div>
 
-                                        <div class="product-search-container">
-                                            <input type="text" id="compra-producto-search"
-                                                placeholder="Buscar producto por nombre..." class="product-search-input"
-                                                autocomplete="off">
-                                            <input type="hidden" id="compra-producto-id-hidden">
-                                            <div id="compra-producto-results" class="product-results"
-                                                style="display: none;">
+                                                <div class="error-message" id="errorCompraProducto"></div>
+                                            </div>
+
+                                            <div class="form-group" style="flex: 1;">
+                                                <label for="compra-cantidad">Cantidad</label>
+                                                <input type="number" id="compra-cantidad" value="1" min="1">
+                                                <div class="error-message" id="errorCompraCantidad"></div>
                                             </div>
                                         </div>
 
-                                        <div class="error-message" id="errorCompraProducto"></div>
+                                        <!-- Fila 2: Precios -->
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="compra-costo-unit">Precio de Costo (Unit.)</label>
+                                                <input type="text" id="compra-costo-unit" placeholder="0.00">
+                                                <div class="error-message" id="errorCompraCosto"></div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="compra-venta-unit">Nuevo Precio Venta (Unit.)</label>
+                                                <input type="text" id="compra-venta-unit" placeholder="0.00">
+                                                <div class="error-message" id="errorCompraVenta"></div>
+                                            </div>
+                                        </div>
+
+                                        <button type="button" id="add-detalle-btn" class="btn-primary"
+                                            style="margin-top: 10px; float: right;">
+                                            <i class="fas fa-plus"></i>
+                                            Agregar Producto al Detalle
+                                        </button>
+                                        <div class="error-message" id="errorDetalleGeneral"></div>
+                                        <div style="clear: both;"></div>
+
+                                        <div class="table-container" style="margin-top: 20px;">
+                                            <table class="data-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Producto</th>
+                                                        <th class="col-num">Cantidad</th>
+                                                        <th class="col-num">Costo Unit.</th>
+                                                        <th class="col-num">Precio Venta</th>
+                                                        <th class="col-num">Subtotal</th>
+                                                        <th>Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="compra-detalle-temporal">
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Columna Derecha: Sidebar Sticky -->
+                                <div class="col-right">
+                                    <div class="card-modern summary-card">
+                                        <h5 class="section-title"><i class="fas fa-receipt"></i> Resumen</h5>
+                                        <div class="total-display-container">
+                                            <h3 id="compra-total-display">Total: $0.00</h3>
+                                        </div>
                                     </div>
 
-                                    <div class="form-group" style="flex: 1;">
-                                        <label for="compra-cantidad">Cantidad</label>
-                                        <input type="number" id="compra-cantidad" value="1" min="1">
-                                        <div class="error-message" id="errorCompraCantidad"></div>
+                                    <div class="card-modern payment-card"
+                                        style="width: 95%; margin: 0 auto; display: flex; flex-direction: column;">
+                                        <h5 class="section-title"><i class="fas fa-wallet"></i> Gestión de Pagos</h5>
+                                        <!-- UI Provisional de Pagos (usa IDs existentes para no romper JS) -->
+                                        <div id="compra-payment-row"
+                                            style="display: flex; gap: 10px; align-items: flex-end;">
+                                            <div class="form-group" style="flex: 2; margin: 0;">
+                                                <label for="compra-metodo-pago"
+                                                    style="font-size: 0.85rem; margin-bottom: 4px;">Método</label>
+                                                <select id="compra-metodo-pago" class="form-control"
+                                                    style="padding: 6px 10px; font-size: 0.9rem; height: 36px;">
+                                                    <option value="">Seleccionar</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group" style="flex: 2; margin: 0;">
+                                                <label for="compra-pago-monto"
+                                                    style="font-size: 0.85rem; margin-bottom: 4px;">Monto</label>
+                                                <input type="text" id="compra-pago-monto" class="form-control"
+                                                    placeholder="0"
+                                                    style="padding: 6px 10px; font-size: 0.9rem; height: 36px;">
+                                            </div>
+                                            <button type="button" id="btn-add-pago-mixto" class="btn-primary"
+                                                style="padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; height: 36px; min-width: 36px; max-width: 36px;"
+                                                title="Añadir Pago">
+                                                <i class="fas fa-plus" style="margin: 0;"></i>
+                                            </button>
+                                        </div>
+                                        <div class="error-message" id="errorCompraMetodoPago" style="margin-top: 5px;">
+                                        </div>
+                                        <div class="error-message" id="errorCompraPagoMonto" style="margin-top: 2px;">
+                                        </div>
+
+                                        <!-- Contenedor dinámico de Pagos Mixtos y Saldo -->
+                                        <div id="pagos-mixtos-container"
+                                            style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
+                                        </div>
+                                        <div id="payment-balance-indicator"
+                                            style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; margin-bottom: 25px; text-align: center; font-weight: 600;">
+                                        </div>
+
+                                        <!-- Nuevo campo de Fecha a Pagar -->
+                                        <div id="compra-fecha-programada-container" class="form-group"
+                                            style="margin-top: -10px; margin-bottom: 25px; display: none;">
+                                            <label for="compra-fecha-programada-pago"
+                                                style="font-size: 0.85rem; margin-bottom: 4px;">Fecha a Pagar /
+                                                Vencimiento (Saldo Pendiente)</label>
+                                            <input type="date" id="compra-fecha-programada-pago" class="form-control"
+                                                style="padding: 6px 10px; font-size: 0.9rem; height: 36px; width: 100%;">
+                                        </div>
+
+                                        <div class="action-buttons"
+                                            style="flex-direction: column; align-items: center; gap: 12px; border-top: 1px solid #f4f7f6; padding-top: 20px;">
+                                            <button type="submit" class="btn-primary"
+                                                style="width: 100%; padding: 16px 20px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 8px;">
+                                                <i class="fas fa-check-circle"></i> Registrar Compra
+                                            </button>
+                                            <button type="button" class="btn-outline" id="limpiar-form-compra"
+                                                style="width: 100%; padding: 16px 20px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 8px;">
+                                                <i class="fas fa-eraser"></i> Limpiar Formulario
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-
-                                <!-- Fila 2: Precios -->
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="compra-costo-unit">Precio de Costo (Unit.)</label>
-                                        <input type="text" id="compra-costo-unit" placeholder="0.00">
-                                        <div class="error-message" id="errorCompraCosto"></div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="compra-venta-unit">Nuevo Precio Venta (Unit.)</label>
-                                        <input type="text" id="compra-venta-unit" placeholder="0.00">
-                                        <div class="error-message" id="errorCompraVenta"></div>
-                                    </div>
-                                </div>
-
-                                <button type="button" id="add-detalle-btn" class="btn-secondary"
-                                    style="margin-top: 10px; float: right;">
-                                    <i class="fas fa-plus"></i>
-                                    Agregar Producto al Detalle
-                                </button>
-                                <div class="error-message" id="errorDetalleGeneral"></div>
-                                <div style="clear: both;"></div>
-
-                                <div class="table-container" style="margin-top: 20px;">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Producto</th>
-                                                <th class="col-num">Cantidad</th>
-                                                <th class="col-num">Costo Unit.</th>
-                                                <th class="col-num">Precio Venta</th>
-                                                <th class="col-num">Subtotal</th>
-                                                <th>Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="compra-detalle-temporal">
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="total-section" style="text-align: right;">
-                                    <h4 id="compra-total-display">Total Compra: $0.00</h4>
-                                </div>
-                            </div>
-
-                            <!-- Sección Método de Pago -->
-                            <div class="form-row" id="compra-payment-row">
-                                <div class="form-group">
-                                    <label for="compra-metodo-pago">Método de Pago</label>
-                                    <select id="compra-metodo-pago" class="form-control">
-                                        <option value="">Seleccionar método</option>
-                                        <!-- Se cargan dinámicamente desde la API -->
-                                    </select>
-                                    <div class="error-message" id="errorCompraMetodoPago"></div>
-                                </div>
-                                <div class="form-group">
-                                    <label for="compra-estado-pago">Estado del Pago</label>
-                                    <select id="compra-estado-pago" class="form-control">
-                                        <option value="PAGADO">Pagado</option>
-                                        <option value="PENDIENTE">Pendiente</option>
-                                    </select>
-                                </div>
-                                <div class="form-group" id="compra-vencimiento-container" style="display: none;">
-                                    <label for="compra-fecha-vencimiento">Vencimiento del Pago</label>
-                                    <input type="date" id="compra-fecha-vencimiento">
-                                    <div class="error-message" id="errorCompraFechaVencimiento"></div>
-                                </div>
-                            </div>
-
-                            <div style="text-align: right;">
-                                <button type="submit" class="btn-primary" style="margin-top: 10px;">
-                                    <i class="fas fa-plus"></i>
-                                    Registrar Compra
-                                </button>
-                                <button type="button" class="btn-outline" id="limpiar-form-compra"
-                                    style="margin-top: 10px; margin-left: 10px;">
-                                    <i class="fas fa-eraser"></i>
-                                    Limpiar Formulario
-                                </button>
                             </div>
                         </form>
                         <p id="form-general-message-compra" class="form-message"></p>
@@ -1516,15 +1560,18 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th data-sort-by="fecha" class="sortable">Fecha <i
+                                        <th data-sort-by="fecha" class="sortable"
+                                            style="width: 12%; white-space: nowrap;">Fecha <i
                                                 class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="proveedor.nombre" class="sortable">Proveedor <i
+                                        <th data-sort-by="proveedor.nombre" class="sortable" style="width: 23%;">
+                                            Proveedor <i class="sort-icon fas fa-sort"></i></th>
+                                        <th data-sort-by="productos" class="sortable" style="width: 35%;">Productos <i
                                                 class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="productos" class="sortable">Productos <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="total" class="sortable">Total <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th>Acciones</th>
+                                        <th data-sort-by="total" class="sortable"
+                                            style="width: 10%; white-space: nowrap; text-align: right; padding-right: 20px;">
+                                            Total <i class="sort-icon fas fa-sort"></i></th>
+                                        <th style="width: 10%; text-align: center;">Estado</th>
+                                        <th style="width: 10%; text-align: center;">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="compras-historial-tabla-body">
@@ -1800,108 +1847,172 @@
 
                 <!-- Subsección: Registrar Venta -->
                 <div id="ventas-create-container" class="subsection-container" style="display: none;">
-                    <div class="form-section">
-                        <h4>Registrar Nueva Venta</h4>
-                        <form class="sale-form" id="venta-form">
+                    <div style="padding: 30px;">
 
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label for="fecha-venta">Fecha</label>
-                                    <input type="date" id="fecha-venta" readonly style="cursor: not-allowed;">
-                                    <div class="error-message" id="errorFechaVenta"></div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="venta-cliente-search">Cliente (Nombre, Apellido o DNI)</label>
-
-                                    <div class="search-with-add">
-                                        <input type="text" id="venta-cliente-search" autocomplete="off"
-                                            placeholder="Buscar cliente existente...">
-
-                                        <button type="button" id="btn-add-cliente" class="btn-icon btn-add-quick"
-                                            title="Crear Nuevo Cliente">
-                                            <i class="fas fa-plus"></i>
-                                        </button>
-                                    </div>
-
-                                    <input type="hidden" id="venta-cliente-id-hidden">
-                                    <div class="product-results" id="venta-cliente-results"></div>
-                                    <span class="error-message" id="errorVentaCliente"></span>
-                                </div>
-                            </div>
-
-                            <div class="product-selection">
-                                <h5><i class="fas fa-box"></i> Selección de Producto</h5>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="product-search">Producto</label>
-                                        <div class="product-search-container">
-                                            <input type="text" id="product-search"
-                                                placeholder="Buscar producto por nombre..."
-                                                class="product-search-input">
-                                            <div id="product-results" class="product-results" style="display: none;">
+                        <form id="venta-form" class="sale-form" novalidate>
+                            <div class="dashboard-layout">
+                                <!-- Columna Izquierda: Carga -->
+                                <div class="col-left">
+                                    <div class="card-modern">
+                                        <h5 class="section-title"><i class="fas fa-info-circle"></i> Información General</h5>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="fecha-venta">Fecha</label>
+                                                <input type="date" id="fecha-venta" readonly style="cursor: not-allowed;">
+                                                <div class="error-message" id="errorFechaVenta"></div>
                                             </div>
                                         </div>
-                                        <div class="error-message" id="errorProducto"></div>
+                                        <div class="form-group" style="margin-top: 15px;">
+                                            <label for="venta-cliente-search">Cliente</label>
+
+                                            <div class="search-with-add">
+                                                <input type="text" id="venta-cliente-search" autocomplete="off"
+                                                    placeholder="Buscar cliente por nombre o DNI...">
+
+                                                <button type="button" id="btn-add-cliente" class="btn-icon btn-add-quick"
+                                                    title="Crear Nuevo Cliente">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </div>
+
+                                            <input type="hidden" id="venta-cliente-id-hidden">
+                                            <div class="product-results" id="venta-cliente-results" style="display: none;"></div>
+                                            <span class="error-message" id="errorVentaCliente"></span>
+                                        </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label for="cantidad-producto">Cantidad</label>
-                                        <input type="number" id="cantidad-producto" value="1">
-                                        <div class="error-message" id="errorCompraCantidad"></div>
+
+                                    <div class="card-modern product-selection">
+                                        <h5 class="section-title"><i class="fas fa-box"></i> Detalle de la Venta</h5>
+
+                                        <!-- Fila: Producto y Cantidad -->
+                                        <div class="form-row">
+                                            <div class="form-group" style="flex: 3;">
+                                                <label for="product-search">Producto</label>
+
+                                                <div class="product-search-container">
+                                                    <input type="text" id="product-search"
+                                                        placeholder="Buscar producto por nombre..."
+                                                        class="product-search-input" autocomplete="off">
+                                                    <div id="product-results" class="product-results" style="display: none;">
+                                                    </div>
+                                                </div>
+
+                                                <div class="error-message" id="errorProducto"></div>
+                                            </div>
+
+                                            <div class="form-group" style="flex: 1;">
+                                                <label for="cantidad-producto">Cantidad</label>
+                                                <input type="number" id="cantidad-producto" value="1" min="1">
+                                                <div class="error-message" id="errorCantidad"></div>
+                                            </div>
+                                        </div>
+
+                                        <button type="button" id="btn-agregar-producto" class="btn-primary"
+                                            style="margin-top: 10px; float: right;">
+                                            <i class="fas fa-plus"></i>
+                                            Agregar Producto a la Venta
+                                        </button>
+
+                                        <p id="errorStockVenta" class="form-message" style="display: none;"></p>
+                                        <div class="error-message" id="errorDetalleGeneral"></div>
+                                        <div style="clear: both;"></div>
+
+                                        <div class="table-container" style="margin-top: 20px;">
+                                            <table class="data-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Producto</th>
+                                                        <th class="col-num">Cantidad</th>
+                                                        <th class="col-num">Precio Unit.</th>
+                                                        <th class="col-num">Subtotal</th>
+                                                        <th>Acciones</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="venta-detalle-temporal">
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
-                                <button type="button" id="btn-agregar-producto" class="btn-secondary">
-                                    <i class="fas fa-plus"></i>
-                                    Agregar Producto a la Venta
-                                </button>
 
-                                <!-- Mensaje de error para stock -->
-                                <p id="errorStockVenta" class="form-message" style="display: none;"></p>
+                                <!-- Columna Derecha: Sidebar Sticky -->
+                                <div class="col-right">
+                                    <div class="card-modern payment-card"
+                                        style="width: 95%; margin: 0 auto; display: flex; flex-direction: column;">
+                                        <h5 class="section-title"><i class="fas fa-wallet"></i> Método de Pago</h5>
 
-                                <div class="error-message" id="errorDetalleGeneral"></div>
+                                        <div class="form-group" style="margin-bottom: 15px;">
+                                            <label for="metodo-pago" style="font-size: 0.85rem; margin-bottom: 4px;">Método de Pago</label>
+                                            <select id="metodo-pago" class="form-control" style="padding: 8px 12px; font-size: 0.9rem;">
+                                                <option value="">Seleccionar método</option>
+                                            </select>
+                                            <div class="error-message" id="errorMetodoPago"></div>
+                                        </div>
 
-                                <div class="table-container" style="margin-top: 20px;">
-                                    <table class="data-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Producto</th>
-                                                <th class="col-num">Cantidad</th>
-                                                <th class="col-num">Precio Unit.</th>
-                                                <th class="col-num">Subtotal</th>
-                                                <th>Acciones</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="venta-detalle-temporal">
-                                        </tbody>
-                                    </table>
+                                        <div id="paga-con-container" style="display: none; margin-bottom: 15px;">
+                                            <label for="paga-con" style="font-size: 0.85rem; margin-bottom: 4px;">Paga con</label>
+                                            <input type="text" id="paga-con" class="form-control" placeholder="0" style="padding: 8px 12px; font-size: 0.9rem;">
+                                        </div>
+
+                                        <div id="vuelto-display" style="display: none; text-align: center; padding: 12px; background: #e8f5e9; border-radius: 8px; margin-bottom: 15px;">
+                                            <span style="font-size: 13px; color: #666;">Vuelto:</span>
+                                            <span id="vuelto-amount" style="font-size: 22px; font-weight: 700; color: #2e7d32;">$0</span>
+                                        </div>
+
+                                        <div class="form-group" id="tipo-tarjeta-container" style="display: none;">
+                                            <label for="tipo-tarjeta" style="font-size: 0.85rem; margin-bottom: 4px;">Tipo de Tarjeta</label>
+                                            <select id="tipo-tarjeta" class="form-control" style="padding: 8px 12px; font-size: 0.9rem;">
+                                                <option value="">Seleccionar</option>
+                                                <option value="Débito">Débito</option>
+                                                <option value="Crédito">Crédito</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="card-modern summary-card">
+                                        <h5 class="section-title"><i class="fas fa-receipt"></i> Resumen</h5>
+
+                                        <div class="form-group" style="margin-bottom: 15px;">
+                                            <label for="descuento-venta" style="font-size: 0.85rem; margin-bottom: 4px;">Descuento</label>
+                                            <div style="display: flex; gap: 8px;">
+                                                <input type="number" id="descuento-venta" class="form-control"
+                                                    placeholder="0" min="0" step="0.01"
+                                                    style="flex: 2; padding: 8px 12px; font-size: 0.9rem;">
+                                                <select id="tipo-descuento-venta" class="form-control"
+                                                    style="flex: 1; padding: 8px 12px; font-size: 0.9rem;">
+                                                    <option value="$">$</option>
+                                                    <option value="%">%</option>
+                                                </select>
+                                            </div>
+                                            <div class="error-message" id="errorDescuento"></div>
+                                        </div>
+
+                                        <div class="total-display-container">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                <span style="font-size: 0.9rem; color: #666;">Subtotal:</span>
+                                                <span id="subtotal-venta" style="font-size: 0.9rem; color: #666;">$0.00</span>
+                                            </div>
+                                            <p id="descuento-aplicado-display" style="font-size: 0.8rem; color: #2e7d32; margin: 8px 0; display: none;">
+                                                <i class="fas fa-arrow-down"></i> Descuento: <span id="monto-descuento-mostrado">-$0.00</span>
+                                            </p>
+                                            <hr style="margin: 10px 0; border: none; border-top: 1px solid #e0e0e0;">
+                                            <h3 id="total-venta">Total: $0.00</h3>
+                                        </div>
+                                    </div>
+
+                                    <div class="action-buttons"
+                                        style="width: 95%; margin: 0 auto; flex-direction: column; align-items: center; gap: 12px; padding-top: 20px;">
+                                        <button type="submit" class="btn-primary"
+                                            style="width: 100%; padding: 16px 20px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 8px;">
+                                            <i class="fas fa-check-circle"></i> Registrar Venta
+                                        </button>
+                                        <button type="button" class="btn-outline" id="limpiar-form-venta"
+                                            style="width: 100%; padding: 16px 20px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 8px;">
+                                            <i class="fas fa-eraser"></i> Limpiar Formulario
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
-
-                            <div class="total-section" style="text-align: right;">
-                                <h4 id="total-venta">$ Total: $0.00</h4>
-                            </div>
-
-                            <div class="form-row" id="payment-row">
-                                <div class="form-group">
-                                    <label for="metodo-pago">Método de Pago</label>
-                                    <select id="metodo-pago" class="form-control">
-                                        <option value="">Seleccionar método</option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <div style="text-align: right; margin-top: 20px;">
-                                <button type="submit" class="btn-primary" id="btn-registrar-venta">
-                                    <i class="fas fa-plus"></i>
-                                    Registrar Venta
-                                </button>
-                                <button type="button" class="btn-outline" id="limpiar-form-venta"
-                                    style="margin-left: 10px;">
-                                    <i class="fas fa-eraser"></i>
-                                    Limpiar Formulario
-                                </button>
-                            </div>
-
                         </form>
                         <p id="form-general-message-venta" class="form-message"></p>
                     </div>
@@ -2843,16 +2954,16 @@
 
         <!-- Modal de Detalle de Compra -->
         <div id="purchase-detail-modal" class="modal">
-            <div class="modal-content modal-large" style="max-width: 950px;">
+            <div class="modal-content modal-large" style="max-width: 1100px; height: 90vh; max-height: 95vh; overflow: hidden; display: flex; flex-direction: column;">
                 <span class="close-modal" onclick="cerrarModalDetalleCompra()">&times;</span>
                 <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                     <i class="fas fa-receipt"></i> Detalle de Compra <span id="modal-compra-id"
                         style="color: #666; font-weight: 400; font-size: 18px;"></span>
                 </h3>
 
-                <div class="purchase-detail-info" style="margin-bottom: 30px;">
+                <div class="purchase-detail-info" style="margin-bottom: 25px;">
                     <div class="info-grid"
-                        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                        style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
                         <div class="info-item">
                             <strong style="color: #666; font-size: 13px;">Fecha:</strong>
                             <p id="modal-compra-fecha" style="margin: 5px 0 0 0; font-size: 15px;"></p>
@@ -2861,44 +2972,81 @@
                             <strong style="color: #666; font-size: 13px;">Proveedor:</strong>
                             <p id="modal-compra-proveedor" style="margin: 5px 0 0 0; font-size: 15px;"></p>
                         </div>
-                        <div class="info-item">
-                            <strong style="color: #666; font-size: 13px;">Pago:</strong>
-                            <p id="modal-compra-metodo-pago" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                        <div class="info-item" id="modal-compra-vencimiento-container" style="display: none;">
+                            <strong style="color: #666; font-size: 13px;">Fecha de Vencimiento:</strong>
+                            <p id="modal-compra-vencimiento" style="margin: 5px 0 0 0; font-size: 15px;"></p>
                         </div>
                         <div class="info-item">
                             <strong style="color: #666; font-size: 13px;">Estado:</strong>
                             <p id="modal-compra-estado" style="margin: 5px 0 0 0; font-size: 15px;"></p>
                         </div>
-                        <div class="info-item" id="modal-compra-vencimiento-container" style="display: none;">
-                            <strong style="color: #666; font-size: 13px;">Vencimiento:</strong>
-                            <p id="modal-compra-vencimiento" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                    </div>
+                </div>
+
+                <!-- Método de pago oculto (se usa internamente) -->
+                <span id="modal-compra-metodo-pago" style="display: none;"></span>
+
+                <!-- Resumen de Pago (visible solo cuando es PENDIENTE) -->
+                <div id="modal-compra-resumen-pago" style="display: none; margin-bottom: 20px;">
+                    <h4 style="margin-bottom: 12px; color: #333; font-size: 15px;">Resumen de Pago</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                        <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
+                            <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">Monto a Pagar</div>
+                            <div id="modal-compra-monto-pagar" style="font-size: 20px; font-weight: 700; color: #0f172a;">$0</div>
+                        </div>
+                        <div id="modal-compra-card-pendiente" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
+                            <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">Monto Pendiente</div>
+                            <div id="modal-compra-monto-pendiente" style="font-size: 20px; font-weight: 700; color: #d32f2f;">$0</div>
+                            <div id="modal-compra-vence-el" style="font-size: 11px; color: #d32f2f; margin-top: 4px; display: none;">
+                                <i class="fas fa-calendar-alt" style="margin-right: 4px;"></i>
+                                Vence el: <span id="modal-compra-vence-fecha"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <hr style="border: none; border-top: 1px solid #e2e8f0; margin-bottom: 30px;">
+                <hr style="border: none; border-top: 1px solid #e2e8f0; margin-bottom: 25px;">
+
+                <!-- Historial de Pagos -->
+                <div id="modal-compra-pagos-container" style="margin-bottom: 25px;">
+                    <h4 style="margin-bottom: 15px; color: #333; font-size: 16px;">
+                        <i class="fas fa-history"></i> Historial de Pagos
+                    </h4>
+                    <div id="modal-compra-pagos-list" style="font-size: 14px; color: #666;">
+                        <!-- Se llena dinámicamente -->
+                    </div>
+                </div>
+
+                <hr style="border: none; border-top: 1px solid #e2e8f0; margin-bottom: 25px;">
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                     <h4 style="margin-bottom: 0; color: #333; font-size: 16px;">Productos Comprados</h4>
                     <div style="display: flex; gap: 10px; align-items: center;">
                         <div style="position: relative; width: 280px;">
-                            <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666; font-size: 14px;"></i>
-                            <input type="text" id="modal-compra-productos-search" placeholder="Buscar producto..." 
-                                   style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
+                            <i class="fas fa-search"
+                                style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666; font-size: 14px;"></i>
+                            <input type="text" id="modal-compra-productos-search" placeholder="Buscar producto..."
+                                style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                         </div>
-                        <button id="modal-compra-clean-filters" class="btn-outline" style="padding: 8px 12px; font-size: 13px; white-space: nowrap;" title="Limpiar Filtros y Ordenamiento">
+                        <button id="modal-compra-clean-filters" class="btn-outline"
+                            style="padding: 8px 12px; font-size: 13px; white-space: nowrap;"
+                            title="Limpiar Filtros y Ordenamiento">
                             <i class="fas fa-eraser"></i> Limpiar
                         </button>
                     </div>
                 </div>
-                <div class="table-container" style="max-height: 350px; overflow-y: auto;">
+                <div class="compra-productos-wrapper" style="max-height: 300px; overflow: auto;">
                     <table class="data-table">
-                        <thead style="position: sticky; top: 0; z-index: 10;">
+                        <thead>
                             <tr>
-                                <th data-col-index="0" data-type="text" class="modal-sortable" style="cursor: pointer;">Producto <i class="sort-icon fas fa-sort"></i></th>
-                                <th data-col-index="1" data-type="number" class="modal-sortable" style="cursor: pointer;">Cantidad <i class="sort-icon fas fa-sort"></i></th>
-                                <th data-col-index="2" data-type="currency" class="modal-sortable" style="cursor: pointer;">Costo Unitario <i class="sort-icon fas fa-sort"></i></th>
-                                <th data-col-index="3" data-type="currency" class="modal-sortable" style="cursor: pointer;">Subtotal <i class="sort-icon fas fa-sort"></i></th>
+                                <th data-col-index="0" data-type="text" class="modal-sortable" style="cursor: pointer;">
+                                    Producto <i class="sort-icon fas fa-sort"></i></th>
+                                <th data-col-index="1" data-type="number" class="modal-sortable"
+                                    style="cursor: pointer;">Cantidad <i class="sort-icon fas fa-sort"></i></th>
+                                <th data-col-index="2" data-type="currency" class="modal-sortable"
+                                    style="cursor: pointer;">Costo Unitario <i class="sort-icon fas fa-sort"></i></th>
+                                <th data-col-index="3" data-type="currency" class="modal-sortable"
+                                    style="cursor: pointer;">Subtotal <i class="sort-icon fas fa-sort"></i></th>
                             </tr>
                         </thead>
                         <tbody id="modal-compra-productos">
@@ -2906,13 +3054,64 @@
                     </table>
                 </div>
 
-                <div style="display: flex; justify-content: flex-end; align-items: center; padding-right: 20px; margin-top: 20px; margin-bottom: 15px;">
+                <div
+                    style="display: flex; justify-content: flex-end; align-items: center; padding-right: 20px; margin-top: 20px; margin-bottom: 15px;">
                     <span style="font-weight: 700; font-size: 18px; margin-right: 15px;">Total General:</span>
                     <span id="modal-compra-total" style="font-weight: 700; font-size: 22px; color: #0f172a;"></span>
                 </div>
 
 
 
+            </div>
+        </div>
+
+        <!-- Modal Pagar Compra Diferido -->
+        <div id="pago-compra-modal" class="modal">
+            <div class="modal-content" style="max-width: 450px; padding: 0;">
+                <div class="modal-header" style="padding: 20px 25px;">
+                    <h3 style="margin: 0; font-size: 18px;">
+                        <i class="fas fa-hand-holding-usd" style="color: #2563eb;"></i> Registrar Pago
+                    </h3>
+                    <button class="modal-close" onclick="document.getElementById('pago-compra-modal').style.display='none'">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="modal-body" style="padding: 20px 25px;">
+                    <form id="form-pagar-compra">
+                        <input type="hidden" id="pago-compra-id">
+                        
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label for="pago-compra-monto" style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Monto a Pagar</label>
+                            <div style="position: relative;">
+                                <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; color: #64748b; font-weight: bold;">$</span>
+                                <input type="number" id="pago-compra-monto" step="0.01" min="0" required style="width: 100%; padding: 10px 14px 10px 32px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border 0.3s; color: #334155;">
+                            </div>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label for="pago-compra-metodo" style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Método de Pago</label>
+                            <select id="pago-compra-metodo" required style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; background-color: white; color: #334155; transition: border 0.3s;">
+                                <option value="">Seleccionar método</option>
+                                <!-- Llenado dinámicamente -->
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 20px;">
+                            <label for="pago-compra-fecha" style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Fecha del Pago</label>
+                            <input type="date" id="pago-compra-fecha" required style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; background-color: white; color: #334155; transition: border 0.3s;">
+                        </div>
+
+                        <div id="pago-compra-error" class="error-message" style="display: none; text-align: center; margin-bottom: 15px;"></div>
+                    </form>
+                </div>
+                
+                <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
+                    <button type="button" class="btn-outline" onclick="document.getElementById('pago-compra-modal').style.display='none'">Cancelar</button>
+                    <button type="button" id="btn-confirmar-pago-compra" class="btn-primary" style="background-color: #2563eb; border-color: #2563eb;">
+                        <i class="fas fa-check" style="margin-right: 5px;"></i> Confirmar Pago
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -3074,7 +3273,5 @@
         <script src="js/cliente.js"></script>
 
 </body>
-
-</html>
 
 </html>
