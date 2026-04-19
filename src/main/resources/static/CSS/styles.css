@@ -2658,8 +2658,14 @@ body {
 }
 
 /* Cuando el modal está visible */
-.modal-overlay[style*="display: flex"] {
+.modal-overlay[style*="display: flex"],
+.modal-overlay.modal-visible {
     display: flex !important;
+}
+
+.modal-overlay.modal-visible {
+    visibility: visible;
+    opacity: 1;
 }
 
 /* Contenido del modal */

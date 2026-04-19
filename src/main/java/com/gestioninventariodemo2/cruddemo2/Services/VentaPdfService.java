@@ -2,10 +2,16 @@ package com.gestioninventariodemo2.cruddemo2.Services;
 
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoVentaDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.VentaResponseDTO;
+import com.gestioninventariodemo2.cruddemo2.Model.DetalleVenta;
+import com.gestioninventariodemo2.cruddemo2.Model.Venta;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.font.PdfFont;
+import com.itextpdf.kernel.font.PdfFontFactory;
+import com.itextpdf.kernel.geom.PageSize;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.io.font.constants.StandardFonts;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
@@ -29,12 +35,22 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
 @Service
 public class VentaPdfService {
 
         private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         private static final DecimalFormat NUMBER_FORMATTER;
+
+        // Datos del negocio (hardcodeados por ahora)
+        private static final String NOMBRE_NEGOCIO = "Mi Negocio";
+        private static final String DIRECCION_NEGOCIO = "Calle Falsa 123";
+        private static final String TELEFONO_NEGOCIO = "11 1234-5678";
+
+        @Autowired
+        private CobroService cobroService;
 
         static {
                 DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.of("es", "AR"));
@@ -425,5 +441,111 @@ public class VentaPdfService {
 
         private String formatCurrency(double amount) {
                 return NUMBER_FORMATTER.format(amount);
+        }
+
+        public byte[] generarTicketVenta(Venta venta) {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+                try {
+                        // ========== CONFIGURACIÓN ==========
+                        // Ancho de 80mm = 226 puntos
+                        float widthPt = 226f;
+
+                        // Calcular alto dinámico según cantidad de productos
+                        int cantProductos = (venta.getDetalleVentas() != null) ? venta.getDetalleVentas().size() : 0;
+                        float baseHeight = 250f; // altura base mínima
+                        float heightPerItem = 18f; // altura por cada producto
+                        float heightPt = baseHeight + (cantProductos * heightPerItem);
+
+                        // Usar fuente monoespaciada (COURIER)
+                        PdfFont fontMono = PdfFontFactory.createFont(StandardFonts.COURIER);
+                        PdfFont fontMonoBold = PdfFontFactory.createFont(StandardFonts.COURIER_BOLD);
+
+                        PdfWriter writer = new PdfWriter(baos);
+                        PdfDocument pdf = new PdfDocument(writer);
+                        PageSize pageSize = new PageSize(widthPt, heightPt);
+                        Document document = new Document(pdf, pageSize);
+                        document.setMargins(5, 5, 5, 5);
+
+                        // ========== ENCABEZADO ==========
+                        Paragraph header = new Paragraph(NOMBRE_NEGOCIO + "\n" + DIRECCION_NEGOCIO + "\n" + TELEFONO_NEGOCIO)
+                                .setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER);
+                        document.add(header);
+
+                        document.add(new Paragraph("================================").setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+
+                        document.add(new Paragraph("TICKET #" + venta.getIdVenta()).setFont(fontMonoBold).setFontSize(9).setTextAlignment(TextAlignment.CENTER));
+
+                        String fechaStr = (venta.getFecha() != null) ? venta.getFecha().format(DATE_TIME_FORMATTER) : "N/A";
+                        document.add(new Paragraph(fechaStr).setFont(fontMono).setFontSize(7).setTextAlignment(TextAlignment.CENTER));
+
+                        document.add(new Paragraph("================================").setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+
+                        // ========== TABLA DE PRODUCTOS ==========
+                        // 2 columnas: 70% nombre/cantidad, 30% precio
+                        float[] colWidths = { 70f, 30f };
+                        Table table = new Table(UnitValue.createPercentArray(colWidths))
+                                .setWidth(UnitValue.createPercentValue(100));
+                        table.setBorder(null);
+
+                        if (venta.getDetalleVentas() != null && !venta.getDetalleVentas().isEmpty()) {
+                                for (DetalleVenta detalle : venta.getDetalleVentas()) {
+                                        String nombre = (detalle.getProducto() != null) ? detalle.getProducto().getNombre() : "Producto";
+                                        if (nombre.length() > 18) nombre = nombre.substring(0, 15) + "...";
+
+                                        String nombreCol = nombre + " x" + detalle.getCantidad();
+                                        String precioCol = "$" + formatCurrency(detalle.getPrecioUnitario() * detalle.getCantidad());
+
+                                        Cell cellNombre = new Cell().add(new Paragraph(nombreCol).setFont(fontMono).setFontSize(8))
+                                                .setBorder(null).setPadding(1);
+                                        Cell cellPrecio = new Cell().add(new Paragraph(precioCol).setFont(fontMono).setFontSize(8))
+                                                .setBorder(null).setPadding(1).setTextAlignment(TextAlignment.RIGHT);
+
+                                        table.addCell(cellNombre);
+                                        table.addCell(cellPrecio);
+                                }
+                        }
+                        document.add(table);
+
+                        document.add(new Paragraph("================================").setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+
+                        // ========== TOTALES ==========
+                        if (venta.getSubtotal() != null && venta.getSubtotal() > 0) {
+                                document.add(new Paragraph("Subtotal: $" + formatCurrency(venta.getSubtotal()))
+                                        .setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.RIGHT));
+                        }
+
+                        if (venta.getDescuentoMonto() != null && venta.getDescuentoMonto() > 0) {
+                                document.add(new Paragraph("Descuento: -$" + formatCurrency(venta.getDescuentoMonto()))
+                                        .setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.RIGHT));
+                        }
+
+                        document.add(new Paragraph("================================").setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+
+                        document.add(new Paragraph("TOTAL: $" + formatCurrency(venta.getTotal()))
+                                .setFont(fontMonoBold).setFontSize(11).setTextAlignment(TextAlignment.CENTER));
+
+                        document.add(new Paragraph("================================").setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+
+                        // ========== METODO PAGO ==========
+                        String metodoPago = "Pago: ";
+                        try {
+                                var cobro = cobroService.obtenerCobroPorVenta(venta.getIdVenta());
+                                metodoPago += (cobro != null && cobro.getMetodoPago() != null) ? cobro.getMetodoPago() : "No especificado";
+                        } catch (Exception e) {
+                                metodoPago += "No especificado";
+                        }
+                        document.add(new Paragraph(metodoPago).setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+
+                        // ========== PIE ==========
+                        document.add(new Paragraph("¡Gracias por su compra!")
+                                .setFont(fontMonoBold).setFontSize(9).setTextAlignment(TextAlignment.CENTER));
+
+                        document.close();
+                        return baos.toByteArray();
+
+                } catch (Exception e) {
+                        throw new RuntimeException("Error al generar ticket de venta", e);
+                }
         }
 }

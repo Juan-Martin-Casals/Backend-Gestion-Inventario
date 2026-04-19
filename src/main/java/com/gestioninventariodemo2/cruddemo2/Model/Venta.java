@@ -37,6 +37,15 @@ public class Venta {
     @Column(name = "total")
     private double total;
 
+    @Column(name = "subtotal")
+    private Double subtotal;
+
+    @Column(name = "descuento_monto")
+    private Double descuentoMonto;
+
+    @Column(name = "descuento_tipo")
+    private String tipoDescuento;
+
     @ManyToOne
     @JoinColumn(name = "idUsuario")
     private Usuario usuario;

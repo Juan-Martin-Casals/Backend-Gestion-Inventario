@@ -91,4 +91,21 @@ public class VentaController {
                 .body(pdfBytes);
     }
 
+    // ENDPOINT PARA GENERAR TICKET DE VENTA
+    @GetMapping("/{id}/ticket")
+    public ResponseEntity<byte[]> generarTicket(@PathVariable Long id) {
+        var venta = ventaService.obtenerVentaEntity(id);
+        byte[] pdfBytes = ventaPdfService.generarTicketVenta(venta);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData(
+                "attachment",
+                "Ticket_Venta_" + id + ".pdf");
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfBytes);
+    }
+
 }

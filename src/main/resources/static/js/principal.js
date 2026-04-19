@@ -90,7 +90,10 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadTodayData() {
         try {
             const hoy = new Date();
-            const fechaHoy = hoy.toISOString().split('T')[0]; // YYYY-MM-DD
+            const year = hoy.getFullYear();
+            const month = String(hoy.getMonth() + 1).padStart(2, '0');
+            const day = String(hoy.getDate()).padStart(2, '0');
+            const fechaHoy = `${year}-${month}-${day}`;
 
             // Obtener KPIs de hoy
             const response = await fetch(`/api/informes/kpis?inicio=${fechaHoy}&fin=${fechaHoy}`);

@@ -20,8 +20,12 @@ public class VentaResponseDTO {
     private LocalDateTime fecha;
     private String nombreCliente;
     private double total;
+    private Double subtotal;
+    private Double descuentoMonto;
     private List<ProductoVentaDTO> productos;
     private String nombreVendedor;
     private String metodoPago;
+    private Double montoPagado;
+    private Double vuelto;
 
 }

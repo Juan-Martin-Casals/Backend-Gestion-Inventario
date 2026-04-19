@@ -59,6 +59,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const tipoTarjetaSelect = document.getElementById('tipo-tarjeta');
     const errorMetodoPago = document.getElementById('errorMetodoPago');
 
+    // --- Navegación con teclado en dropdowns ---
+    let clienteSelectedIndex = -1;
+    let productoSelectedIndex = -1;
+
     // --- Selectores Descuento ---
     const descuentoInput = document.getElementById('descuento-venta');
     const tipoDescuentoSelect = document.getElementById('tipo-descuento-venta');
@@ -75,6 +79,85 @@ document.addEventListener('DOMContentLoaded', function () {
     const addClienteCloseBtn = document.getElementById('modal-add-cliente-close');
     const addClienteForm = document.getElementById('add-cliente-form');
     const addClienteMessage = document.getElementById('form-general-message-add-cliente');
+
+    // ===================================
+    // SELECTORES - MODAL TICKET
+    // ===================================
+    const modalTicketOverlay = document.getElementById('modal-ticket-overlay');
+    const btnGenerarTicket = document.getElementById('btn-generar-ticket');
+    const btnCerrarTicket = document.getElementById('btn-cerrar-ticket');
+
+    // Variable para guardar el ID de la última venta
+    let ultimaVentaId = null;
+
+    // Función para mostrar modal ticket
+    function mostrarModalTicket(idVenta) {
+        console.log('Mostrando modal ticket para venta:', idVenta);
+        ultimaVentaId = idVenta;
+        if (modalTicketOverlay) {
+            console.log('Modal encontrado, mostrando...');
+            modalTicketOverlay.style.display = 'block';
+        } else {
+            console.log('Modal NO encontrado en el DOM');
+        }
+    }
+
+    // Función para cerrar modal ticket
+    function cerrarModalTicket() {
+        if (modalTicketOverlay) {
+            modalTicketOverlay.style.display = 'none';
+        }
+        ultimaVentaId = null;
+    }
+
+    // Event listeners para botones del modal ticket
+    if (btnGenerarTicket) {
+        btnGenerarTicket.addEventListener('click', async () => {
+            if (!ultimaVentaId) return;
+            try {
+                const response = await fetch(`/api/ventas/${ultimaVentaId}/ticket`);
+                if (!response.ok) throw new Error('Error al generar ticket');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Ticket_Venta_${ultimaVentaId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            } catch (error) {
+                console.error('Error al descargar ticket:', error);
+                alert('Error al generar el ticket');
+            }
+            cerrarModalTicket();
+        });
+    }
+
+    if (btnCerrarTicket) {
+        btnCerrarTicket.addEventListener('click', cerrarModalTicket);
+    }
+
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalTicketOverlay && modalTicketOverlay.style.display !== 'none') {
+            cerrarModalTicket();
+        }
+    });
+
+    // Click fuera del modal para cerrar (en el div interno)
+    if (modalTicketOverlay) {
+        const modalInner = modalTicketOverlay.firstElementChild;
+        if (modalInner) {
+            modalInner.addEventListener('click', (e) => {
+                // Solo cerrar si hace click en el fondo oscuro
+                if (e.target === modalInner) {
+                    cerrarModalTicket();
+                }
+            });
+        }
+    }
 
     // ===============================
     // RESTRICCIÓN DE CAMPO TELÉFONO CLIENTE
@@ -147,6 +230,17 @@ document.addEventListener('DOMContentLoaded', function () {
     function capitalizarNombre(str) {
         if (!str) return '';
         return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
+    function actualizarSeleccionKeyboard(items, selectedIndex) {
+        items.forEach((item, index) => {
+            if (index === selectedIndex) {
+                item.classList.add('selected');
+                item.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            } else {
+                item.classList.remove('selected');
+            }
+        });
     }
 
     function formatearDNI(dni) {
@@ -478,18 +572,44 @@ document.addEventListener('DOMContentLoaded', function () {
         if (clientes.length === 0) {
             clienteResultsContainer.innerHTML = '<div class="product-result-item">No se encontraron clientes</div>';
         } else {
-            // Ordenar alfabéticamente por nombre + apellido
-            const clientesOrdenados = [...clientes].sort((a, b) => {
+            // Separar "Consumidor Final" del resto
+            const consumidorFinal = clientes.find(c => 
+                c.nombre && c.nombre.toLowerCase() === 'consumidor' && 
+                c.apellido && c.apellido.toLowerCase() === 'final'
+            );
+            
+            const otrosClientes = clientes.filter(c => 
+                !(c.nombre && c.nombre.toLowerCase() === 'consumidor' && 
+                  c.apellido && c.apellido.toLowerCase() === 'final')
+            );
+            
+            // Ordenar el resto alfabéticamente
+            const clientesOrdenados = [...otrosClientes].sort((a, b) => {
                 const nombreA = `${a.nombre} ${a.apellido || ''}`.toLowerCase();
                 const nombreB = `${b.nombre} ${b.apellido || ''}`.toLowerCase();
                 return nombreA.localeCompare(nombreB);
             });
+            
+            // Consumidor Final primero, luego los demás
+            const clientesFinal = consumidorFinal 
+                ? [consumidorFinal, ...clientesOrdenados] 
+                : clientesOrdenados;
 
-            clienteResultsContainer.innerHTML = clientesOrdenados.map(c => {
+            clienteResultsContainer.innerHTML = clientesFinal.map(c => {
                 const nombre = capitalizarNombre(c.nombre);
                 const apellido = capitalizarNombre(c.apellido);
-                const dniFormateado = formatearDNI(c.dni);
-                const nombreCompleto = `${nombre} ${apellido} (${dniFormateado})`;
+                
+                // Si es Consumidor Final, no mostrar DNI
+                const esConsumidorFinal = c.nombre && c.nombre.toLowerCase() === 'consumidor' && 
+                                          c.apellido && c.apellido.toLowerCase() === 'final';
+                
+                let nombreCompleto;
+                if (esConsumidorFinal) {
+                    nombreCompleto = `${nombre} ${apellido}`;
+                } else {
+                    const dniFormateado = formatearDNI(c.dni);
+                    nombreCompleto = `${nombre} ${apellido} (${dniFormateado})`;
+                }
                 return `<div class="product-result-item" data-id="${c.id}">${nombreCompleto.trim()}</div>`;
             }).join('');
         }
@@ -779,6 +899,19 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
+        // Validar descuento en tiempo real
+        if (totalConDescuento <= 0 && descuento > 0) {
+            if (errorDescuento) {
+                errorDescuento.textContent = 'El total con descuento debe ser mayor a $0.';
+                errorDescuento.style.display = 'block';
+            }
+        } else {
+            if (errorDescuento) {
+                errorDescuento.textContent = '';
+                errorDescuento.style.display = 'none';
+            }
+        }
+
         // Mostrar total real (con descuento)
         totalVentaDisplay.textContent = `$ Total: $${formatoMoneda.format(totalConDescuento)}`;
     }
@@ -881,6 +1014,9 @@ document.addEventListener('DOMContentLoaded', function () {
             isValid = false;
         }
 
+        // Variable para monto pagado (se usará en el DTO)
+        let montoPagado = null;
+
         if (detallesVenta.length === 0) {
             if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto.';
             isValid = false;
@@ -899,7 +1035,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (nombreMetodo.includes('efectivo') && detallesVenta.length > 0) {
             const pagaConInput = document.getElementById('paga-con');
             if (pagaConInput && pagaConInput.value.trim() !== '') {
-                const montoPagado = parsearMoneda(pagaConInput.value);
+                montoPagado = parsearMoneda(pagaConInput.value);
                 let totalVenta = 0;
                 detallesVenta.forEach(item => {
                     totalVenta += item.precioVenta * item.cantidad;
@@ -965,7 +1101,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     detalles: detallesParaBackend,
                     idMetodoPago: parseInt(idMetodoPago),
                     descuento: descuento,
-                    tipoDescuento: tipoDescuento
+                    tipoDescuento: tipoDescuento,
+                    montoPagado: montoPagado // Agregar monto pagado al DTO
                 };
 
                 const response = await fetch(API_VENTAS_URL, {
@@ -985,16 +1122,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const ventaCreada = await response.json();
-                console.log('Venta registrada con éxito:', ventaCreada);
 
-                generalMessage.textContent = '¡Venta registrada con éxito!';
-                generalMessage.classList.add('success');
+                // Mostrar modal de ticket inmediatamente después de que se cierre el modal de confirmación
                 setTimeout(() => {
-                    generalMessage.textContent = '';
-                    generalMessage.className = 'form-message';
-                }, 4000);
+                    console.log('Intentando mostrar modal ticket...');
+                    try {
+                        mostrarModalTicket(ventaCreada.idVenta);
+                    } catch (e) {
+                        console.error('Error al mostrar modal:', e);
+                    }
+                }, 100);
 
-                ventaForm.reset();
+                // Resetear formulario
                 detallesVenta = [];
                 editIndexVenta = -1; // Reset edit mode
                 renderDetalleTemporal();
@@ -1048,6 +1187,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const productosTexto = formatProductosList(venta.productos);
         const nombreClienteTexto = venta.nombreCliente || 'Cliente N/A';
         const nombreVendedorTexto = venta.nombreVendedor || 'N/A';
+        const metodoPagoTexto = venta.metodoPago || 'No especificado';
 
         return `
             <tr>
@@ -1056,6 +1196,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${productosTexto}</td> 
                 <td class="col-num">$${formatoMoneda.format(venta.total)}</td>
                 <td>${nombreVendedorTexto}</td>
+                <td>${metodoPagoTexto}</td>
                 <td>
                     <button class="btn-icon btn-view-venta" onclick="mostrarDetalleVenta(${venta.idVenta})" title="Ver detalle">
                         <i class="fas fa-eye"></i>
@@ -1070,7 +1211,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ventaTableBody.innerHTML = '';
 
         if (!Array.isArray(ventas) || ventas.length === 0) {
-            ventaTableBody.innerHTML = '<tr><td colspan="6">No hay ventas registradas.</td></tr>';
+            ventaTableBody.innerHTML = '<tr><td colspan="7">No hay ventas registradas.</td></tr>';
             return;
         }
 
@@ -1117,7 +1258,31 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('modal-venta-fecha').textContent = fechaFormateada;
             document.getElementById('modal-venta-cliente').textContent = venta.nombreCliente || 'N/A';
             document.getElementById('modal-venta-vendedor').textContent = venta.nombreVendedor || 'N/A';
+            document.getElementById('modal-venta-metodo-pago').textContent = venta.metodoPago || 'No especificado';
+
+            // Totales
+            document.getElementById('modal-venta-subtotal').textContent = `$${formatoMoneda.format(venta.subtotal || 0)}`;
+            
+            // Descuento
+            const descuentoContainer = document.getElementById('modal-venta-descuento-container');
+            if (venta.descuentoMonto && venta.descuentoMonto > 0) {
+                descuentoContainer.style.display = 'flex';
+                document.getElementById('modal-venta-descuento').textContent = `-$${formatoMoneda.format(venta.descuentoMonto)}`;
+            } else {
+                descuentoContainer.style.display = 'none';
+            }
+            
             document.getElementById('modal-venta-total').textContent = `$${formatoMoneda.format(venta.total)}`;
+
+            // Resumen pago efectivo
+            const resumenPago = document.getElementById('modal-venta-resumen-pago');
+            if (venta.metodoPago === 'Efectivo' && venta.montoPagado && venta.vuelto !== null) {
+                resumenPago.style.display = 'block';
+                document.getElementById('modal-venta-pago-con').textContent = `$${formatoMoneda.format(venta.montoPagado)}`;
+                document.getElementById('modal-venta-vuelto').textContent = `$${formatoMoneda.format(venta.vuelto)}`;
+            } else {
+                resumenPago.style.display = 'none';
+            }
 
             // Guardar productos y resetear paginación
             modalVentaProductos = venta.productos || [];
@@ -1531,6 +1696,33 @@ document.addEventListener('DOMContentLoaded', function () {
             filtrarClientes();
         });
         clienteSearchInput.addEventListener('focus', filtrarClientes);
+        clienteSearchInput.addEventListener('keydown', (e) => {
+            const items = clienteResultsContainer.querySelectorAll('.product-result-item[data-id]');
+            if (items.length === 0) return;
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                clienteSelectedIndex = Math.min(clienteSelectedIndex + 1, items.length - 1);
+                actualizarSeleccionKeyboard(items, clienteSelectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                clienteSelectedIndex = Math.max(clienteSelectedIndex - 1, 0);
+                actualizarSeleccionKeyboard(items, clienteSelectedIndex);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (clienteSelectedIndex >= 0 && items[clienteSelectedIndex]) {
+                    items[clienteSelectedIndex].click();
+                    clienteSearchInput.blur();
+                }
+            }
+        });
+        clienteSearchInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                clienteSelectedIndex = -1;
+                const items = clienteResultsContainer.querySelectorAll('.product-result-item');
+                items.forEach(item => item.classList.remove('selected'));
+            }, 150);
+        });
     }
     if (clienteResultsContainer) {
         clienteResultsContainer.addEventListener('click', seleccionarCliente);
@@ -1540,6 +1732,33 @@ document.addEventListener('DOMContentLoaded', function () {
         productSearchInput.addEventListener('input', buscarProductos);
         productSearchInput.addEventListener('focus', buscarProductos);
         productSearchInput.addEventListener('click', buscarProductos);
+        productSearchInput.addEventListener('keydown', (e) => {
+            const items = productResultsContainer.querySelectorAll('.product-result-item[data-id]');
+            if (items.length === 0) return;
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                productoSelectedIndex = Math.min(productoSelectedIndex + 1, items.length - 1);
+                actualizarSeleccionKeyboard(items, productoSelectedIndex);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                productoSelectedIndex = Math.max(productoSelectedIndex - 1, 0);
+                actualizarSeleccionKeyboard(items, productoSelectedIndex);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (productoSelectedIndex >= 0 && items[productoSelectedIndex]) {
+                    items[productoSelectedIndex].click();
+                    productSearchInput.blur();
+                }
+            }
+        });
+        productSearchInput.addEventListener('blur', () => {
+            setTimeout(() => {
+                productoSelectedIndex = -1;
+                const items = productResultsContainer.querySelectorAll('.product-result-item');
+                items.forEach(item => item.classList.remove('selected'));
+            }, 150);
+        });
     }
     if (productResultsContainer) {
         productResultsContainer.addEventListener('click', seleccionarProducto);

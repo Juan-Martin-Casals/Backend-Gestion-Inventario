@@ -30,7 +30,7 @@ public class CobroService {
     @Transactional
     public Cobro registrarCobro(Venta venta, MetodoPago metodoPago, BigDecimal importe,
             String nroTransaccion, String tipoTarjeta, String ultimosDigitos,
-            Usuario usuario) {
+            BigDecimal montoPagado, BigDecimal vuelto, Usuario usuario) {
 
         Cobro cobro = new Cobro();
         cobro.setVenta(venta);
@@ -39,6 +39,8 @@ public class CobroService {
         cobro.setNroTransaccion(nroTransaccion);
         cobro.setTipoTarjeta(tipoTarjeta);
         cobro.setUltimosDigitos(ultimosDigitos);
+        cobro.setMontoPagado(montoPagado);
+        cobro.setVuelto(vuelto);
         cobro.setFechaCobro(LocalDateTime.now());
         cobro.setUsuario(usuario);
 
@@ -87,6 +89,8 @@ public class CobroService {
                 .idVenta(cobro.getVenta().getIdVenta())
                 .metodoPago(cobro.getMetodoPago().getNombre())
                 .importe(cobro.getImporte())
+                .montoPagado(cobro.getMontoPagado())
+                .vuelto(cobro.getVuelto())
                 .nroTransaccion(cobro.getNroTransaccion())
                 .tipoTarjeta(cobro.getTipoTarjeta())
                 .ultimosDigitos(cobro.getUltimosDigitos())

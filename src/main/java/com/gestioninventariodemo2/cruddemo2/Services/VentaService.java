@@ -1,5 +1,6 @@
 package com.gestioninventariodemo2.cruddemo2.Services;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -73,7 +74,7 @@ public class VentaService {
         venta.setCliente(cliente);
         venta.setUsuario(usuario); // <-- ¡Guardamos al vendedor!
 
-        double totalVenta = 0;
+        double subtotal = 0;
         List<DetalleVenta> detalles = new ArrayList<>();
 
         // 5. Validar stock ANTES de procesar
@@ -108,7 +109,7 @@ public class VentaService {
             detalleVenta.setVenta(venta);
 
             detalles.add(detalleVenta);
-            totalVenta += (precioUsado * detalleDTO.getCantidad());
+            subtotal += (precioUsado * detalleDTO.getCantidad());
 
             // Descontar stock
             Stock stock = stockRepository.findByProducto(producto)
@@ -119,7 +120,23 @@ public class VentaService {
         }
 
         venta.setDetalleVentas(detalles);
-        venta.setTotal(totalVenta);
+
+        double descuentoMonto = 0;
+        if (ventaRequestDTO.getDescuento() != null && ventaRequestDTO.getDescuento() > 0) {
+            if ("%".equals(ventaRequestDTO.getTipoDescuento())) {
+                descuentoMonto = subtotal * (ventaRequestDTO.getDescuento() / 100);
+            } else {
+                descuentoMonto = ventaRequestDTO.getDescuento();
+            }
+            descuentoMonto = Math.min(descuentoMonto, subtotal);
+        }
+
+        double totalFinal = subtotal - descuentoMonto;
+
+        venta.setSubtotal(subtotal);
+        venta.setDescuentoMonto(descuentoMonto);
+        venta.setTipoDescuento(ventaRequestDTO.getTipoDescuento());
+        venta.setTotal(totalFinal);
 
         Venta ventaGuardada = ventaRepository.save(venta);
 
@@ -148,6 +165,11 @@ public class VentaService {
         return mapToVentaDTO(venta);
     }
 
+    public Venta obtenerVentaEntity(Long id) {
+        return ventaRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Venta no encontrada con ID: " + id));
+    }
+
     private VentaResponseDTO mapToVentaDTO(Venta venta) {
         List<ProductoVentaDTO> productosDTO = venta.getDetalleVentas().stream()
                 .map(detalle -> ProductoVentaDTO.builder()
@@ -169,12 +191,22 @@ public class VentaService {
         }
         // --- FIN DE LA LÓGICA SEGURA ---
 
-        // Obtener el método de pago
+        // Obtener el método de pago y datos del cobro
         String metodoPago = "Desconocido";
+        Double montoPagado = null;
+        Double vuelto = null;
         try {
             var cobro = cobroService.obtenerCobroPorVenta(venta.getIdVenta());
-            if (cobro != null && cobro.getMetodoPago() != null) {
-                metodoPago = cobro.getMetodoPago();
+            if (cobro != null) {
+                if (cobro.getMetodoPago() != null) {
+                    metodoPago = cobro.getMetodoPago();
+                }
+                if (cobro.getMontoPagado() != null) {
+                    montoPagado = cobro.getMontoPagado().doubleValue();
+                }
+                if (cobro.getVuelto() != null) {
+                    vuelto = cobro.getVuelto().doubleValue();
+                }
             }
         } catch (Exception e) {
             // Ignorar el error si no se encuentra el cobro
@@ -186,14 +218,18 @@ public class VentaService {
                 .nombreCliente(nombreCliente)
                 .nombreVendedor(nombreVendedor)
                 .total(venta.getTotal())
+                .subtotal(venta.getSubtotal())
+                .descuentoMonto(venta.getDescuentoMonto())
                 .productos(productosDTO)
                 .metodoPago(metodoPago)
+                .montoPagado(montoPagado)
+                .vuelto(vuelto)
                 .build();
     }
 
-    /**
-     * Registrar el cobro de una venta
-     */
+/**
+      * Registrar el cobro de una venta
+      */
     private void registrarCobroVenta(VentaRequestDTO ventaRequestDTO, Venta venta, Usuario usuario) {
         // Validar que se haya enviado el método de pago
         if (ventaRequestDTO.getIdMetodoPago() == null) {
@@ -203,14 +239,31 @@ public class VentaService {
         // Obtener el método de pago
         var metodoPago = metodoPagoService.obtenerPorId(ventaRequestDTO.getIdMetodoPago());
 
+// Calcular vuelto si es efectivo
+        BigDecimal montoPagado = null;
+        BigDecimal vuelto = null;
+        if (ventaRequestDTO.getMontoPagado() != null && ventaRequestDTO.getMontoPagado() > 0) {
+            montoPagado = BigDecimal.valueOf(ventaRequestDTO.getMontoPagado());
+            double totalVenta = venta.getTotal();
+            double monto = ventaRequestDTO.getMontoPagado();
+            double v = monto - totalVenta;
+            if (v > 0) {
+                vuelto = BigDecimal.valueOf(v);
+            } else {
+                vuelto = BigDecimal.ZERO;
+            }
+        }
+
         // Registrar el cobro
         cobroService.registrarCobro(
                 venta,
                 metodoPago,
-                java.math.BigDecimal.valueOf(venta.getTotal()), // El importe siempre es el total de la venta
+                BigDecimal.valueOf(venta.getTotal()), // El importe siempre es el total de la venta
                 ventaRequestDTO.getNroTransaccion(),
                 ventaRequestDTO.getTipoTarjeta(),
                 ventaRequestDTO.getUltimosDigitos(),
+                montoPagado,
+                vuelto,
                 usuario);
     }
 

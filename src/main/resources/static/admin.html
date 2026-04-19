@@ -614,6 +614,7 @@
                 </div>
             </section>
 
+
             <section id="productos-section" class="spa-section" style="display:none">
 
 
@@ -1854,30 +1855,33 @@
                                 <!-- Columna Izquierda: Carga -->
                                 <div class="col-left">
                                     <div class="card-modern">
-                                        <h5 class="section-title"><i class="fas fa-info-circle"></i> Información General</h5>
+                                        <h5 class="section-title"><i class="fas fa-info-circle"></i> Información General
+                                        </h5>
                                         <div class="form-row">
-                                            <div class="form-group">
+                                            <div class="form-group" style="flex: 1;">
                                                 <label for="fecha-venta">Fecha</label>
-                                                <input type="date" id="fecha-venta" readonly style="cursor: not-allowed;">
+                                                <input type="date" id="fecha-venta" readonly
+                                                    style="cursor: not-allowed;">
                                                 <div class="error-message" id="errorFechaVenta"></div>
                                             </div>
-                                        </div>
-                                        <div class="form-group" style="margin-top: 15px;">
-                                            <label for="venta-cliente-search">Cliente</label>
+                                            <div class="form-group" style="flex: 2;">
+                                                <label for="venta-cliente-search">Cliente</label>
 
-                                            <div class="search-with-add">
-                                                <input type="text" id="venta-cliente-search" autocomplete="off"
-                                                    placeholder="Buscar cliente por nombre o DNI...">
+                                                <div class="search-with-add">
+                                                    <input type="text" id="venta-cliente-search" autocomplete="off"
+                                                        placeholder="Buscar cliente por nombre o DNI...">
 
-                                                <button type="button" id="btn-add-cliente" class="btn-icon btn-add-quick"
-                                                    title="Crear Nuevo Cliente">
-                                                    <i class="fas fa-plus"></i>
-                                                </button>
+                                                    <button type="button" id="btn-add-cliente"
+                                                        class="btn-icon btn-add-quick" title="Crear Nuevo Cliente">
+                                                        <i class="fas fa-plus"></i>
+                                                    </button>
+                                                </div>
+
+                                                <input type="hidden" id="venta-cliente-id-hidden">
+                                                <div class="product-results" id="venta-cliente-results"
+                                                    style="display: none;"></div>
+                                                <span class="error-message" id="errorVentaCliente"></span>
                                             </div>
-
-                                            <input type="hidden" id="venta-cliente-id-hidden">
-                                            <div class="product-results" id="venta-cliente-results" style="display: none;"></div>
-                                            <span class="error-message" id="errorVentaCliente"></span>
                                         </div>
                                     </div>
 
@@ -1893,7 +1897,8 @@
                                                     <input type="text" id="product-search"
                                                         placeholder="Buscar producto por nombre..."
                                                         class="product-search-input" autocomplete="off">
-                                                    <div id="product-results" class="product-results" style="display: none;">
+                                                    <div id="product-results" class="product-results"
+                                                        style="display: none;">
                                                     </div>
                                                 </div>
 
@@ -1942,26 +1947,35 @@
                                         <h5 class="section-title"><i class="fas fa-wallet"></i> Método de Pago</h5>
 
                                         <div class="form-group" style="margin-bottom: 15px;">
-                                            <label for="metodo-pago" style="font-size: 0.85rem; margin-bottom: 4px;">Método de Pago</label>
-                                            <select id="metodo-pago" class="form-control" style="padding: 8px 12px; font-size: 0.9rem;">
+                                            <label for="metodo-pago"
+                                                style="font-size: 0.85rem; margin-bottom: 4px;">Método de Pago</label>
+                                            <select id="metodo-pago" class="form-control"
+                                                style="padding: 8px 12px; font-size: 0.9rem;">
                                                 <option value="">Seleccionar método</option>
                                             </select>
                                             <div class="error-message" id="errorMetodoPago"></div>
                                         </div>
 
                                         <div id="paga-con-container" style="display: none; margin-bottom: 15px;">
-                                            <label for="paga-con" style="font-size: 0.85rem; margin-bottom: 4px;">Paga con</label>
-                                            <input type="text" id="paga-con" class="form-control" placeholder="0" style="padding: 8px 12px; font-size: 0.9rem;">
+                                            <label for="paga-con"
+                                                style="font-size: 0.85rem; margin-bottom: 4px; display: block;">Paga
+                                                con</label>
+                                            <input type="text" id="paga-con" placeholder="0"
+                                                style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;">
                                         </div>
 
-                                        <div id="vuelto-display" style="display: none; text-align: center; padding: 12px; background: #e8f5e9; border-radius: 8px; margin-bottom: 15px;">
+                                        <div id="vuelto-display"
+                                            style="display: none; text-align: center; padding: 12px; background: #e8f5e9; border-radius: 8px; margin-bottom: 15px;">
                                             <span style="font-size: 13px; color: #666;">Vuelto:</span>
-                                            <span id="vuelto-amount" style="font-size: 22px; font-weight: 700; color: #2e7d32;">$0</span>
+                                            <span id="vuelto-amount"
+                                                style="font-size: 22px; font-weight: 700; color: #2e7d32;">$0</span>
                                         </div>
 
                                         <div class="form-group" id="tipo-tarjeta-container" style="display: none;">
-                                            <label for="tipo-tarjeta" style="font-size: 0.85rem; margin-bottom: 4px;">Tipo de Tarjeta</label>
-                                            <select id="tipo-tarjeta" class="form-control" style="padding: 8px 12px; font-size: 0.9rem;">
+                                            <label for="tipo-tarjeta"
+                                                style="font-size: 0.85rem; margin-bottom: 4px;">Tipo de Tarjeta</label>
+                                            <select id="tipo-tarjeta" class="form-control"
+                                                style="padding: 8px 12px; font-size: 0.9rem;">
                                                 <option value="">Seleccionar</option>
                                                 <option value="Débito">Débito</option>
                                                 <option value="Crédito">Crédito</option>
@@ -1973,7 +1987,8 @@
                                         <h5 class="section-title"><i class="fas fa-receipt"></i> Resumen</h5>
 
                                         <div class="form-group" style="margin-bottom: 15px;">
-                                            <label for="descuento-venta" style="font-size: 0.85rem; margin-bottom: 4px;">Descuento</label>
+                                            <label for="descuento-venta"
+                                                style="font-size: 0.85rem; margin-bottom: 4px;">Descuento</label>
                                             <div style="display: flex; gap: 8px;">
                                                 <input type="number" id="descuento-venta" class="form-control"
                                                     placeholder="0" min="0" step="0.01"
@@ -1988,12 +2003,16 @@
                                         </div>
 
                                         <div class="total-display-container">
-                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                            <div
+                                                style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                                                 <span style="font-size: 0.9rem; color: #666;">Subtotal:</span>
-                                                <span id="subtotal-venta" style="font-size: 0.9rem; color: #666;">$0.00</span>
+                                                <span id="subtotal-venta"
+                                                    style="font-size: 0.9rem; color: #666;">$0.00</span>
                                             </div>
-                                            <p id="descuento-aplicado-display" style="font-size: 0.8rem; color: #2e7d32; margin: 8px 0; display: none;">
-                                                <i class="fas fa-arrow-down"></i> Descuento: <span id="monto-descuento-mostrado">-$0.00</span>
+                                            <p id="descuento-aplicado-display"
+                                                style="font-size: 0.8rem; color: #2e7d32; margin: 8px 0; display: none;">
+                                                <i class="fas fa-arrow-down"></i> Descuento: <span
+                                                    id="monto-descuento-mostrado">-$0.00</span>
                                             </p>
                                             <hr style="margin: 10px 0; border: none; border-top: 1px solid #e0e0e0;">
                                             <h3 id="total-venta">Total: $0.00</h3>
@@ -2086,6 +2105,7 @@
                                                 class="sort-icon fas fa-sort"></i></th>
                                         <th data-sort-by="vendedor.nombre" class="sortable">Vendedor <i
                                                 class="sort-icon fas fa-sort"></i></th>
+                                        <th>Método de Pago</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -2109,35 +2129,52 @@
                 <div id="venta-detail-modal" class="modal">
                     <div class="modal-content modal-large">
                         <span class="close-modal" onclick="cerrarModalDetalleVenta()">&times;</span>
-                        <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
-                            <i class="fas fa-shopping-cart"></i> Detalle de Venta <span id="modal-venta-id"
-                                style="color: #666; font-weight: 400; font-size: 18px;"></span>
-                        </h3>
 
-                        <div class="venta-detail-info" style="margin-bottom: 20px;">
-                            <div class="info-grid"
-                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 20px;">
-                                <div class="info-item">
-                                    <strong style="color: #666; font-size: 13px;">Fecha:</strong>
-                                    <p id="modal-venta-fecha" style="margin: 5px 0 0 0; font-size: 15px;"></p>
+                        <!-- Header -->
+                        <div style="border-bottom: 1px solid #e5e7eb; padding-bottom: 15px; margin-bottom: 20px;">
+                            <h3 style="margin: 0 0 10px 0; display: flex; align-items: center; gap: 10px;">
+                                <i class="fas fa-receipt" style="color: #667eea;"></i>
+                                Detalle de Venta <span id="modal-venta-id"
+                                    style="color: #666; font-weight: 400; font-size: 18px;"></span>
+                            </h3>
+                            <p id="modal-venta-fecha" style="margin: 0; color: #666; font-size: 14px;"></p>
+                        </div>
+
+                        <!-- Info Grid -->
+                        <div
+                            style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 20px;">
+                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                                <div style="color: #666; font-size: 12px; margin-bottom: 4px;">Cliente</div>
+                                <div id="modal-venta-cliente" style="font-weight: 600; font-size: 14px;"></div>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                                <div style="color: #666; font-size: 12px; margin-bottom: 4px;">Vendedor</div>
+                                <div id="modal-venta-vendedor" style="font-weight: 600; font-size: 14px;"></div>
+                            </div>
+                            <div style="background: #f8f9fa; padding: 12px; border-radius: 8px;">
+                                <div style="color: #666; font-size: 12px; margin-bottom: 4px;">Método de Pago</div>
+                                <div id="modal-venta-metodo-pago" style="font-weight: 600; font-size: 14px;"></div>
+                            </div>
+                        </div>
+
+                        <!-- Resumen Pago Efectivo -->
+                        <div id="modal-venta-resumen-pago"
+                            style="display: none; background: #ecfdf5; border: 1px solid #10b981; border-radius: 8px; padding: 12px; margin-bottom: 20px;">
+                            <div style="display: flex; gap: 30px;">
+                                <div>
+                                    <span style="color: #065f46; font-size: 13px;">Pagó con:</span>
+                                    <span id="modal-venta-pago-con"
+                                        style="font-weight: 700; font-size: 16px; color: #065f46; margin-left: 8px;"></span>
                                 </div>
-                                <div class="info-item">
-                                    <strong style="color: #666; font-size: 13px;">Cliente:</strong>
-                                    <p id="modal-venta-cliente" style="margin: 5px 0 0 0; font-size: 15px;"></p>
-                                </div>
-                                <div class="info-item">
-                                    <strong style="color: #666; font-size: 13px;">Vendedor:</strong>
-                                    <p id="modal-venta-vendedor" style="margin: 5px 0 0 0; font-size: 15px;"></p>
-                                </div>
-                                <div class="info-item">
-                                    <strong style="color: #666; font-size: 13px;">Total:</strong>
-                                    <p id="modal-venta-total"
-                                        style="margin: 5px 0 0 0; font-size: 15px; font-weight: 600; color: #28a745;">
-                                    </p>
+                                <div>
+                                    <span style="color: #065f46; font-size: 13px;">Vuelto:</span>
+                                    <span id="modal-venta-vuelto"
+                                        style="font-weight: 700; font-size: 16px; color: #065f46; margin-left: 8px;"></span>
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Productos -->
                         <h4 style="margin-bottom: 15px; color: #333; font-size: 16px;">Productos Vendidos</h4>
                         <div class="table-container">
                             <table class="data-table">
@@ -2151,26 +2188,26 @@
                                 </thead>
                                 <tbody id="modal-venta-productos">
                                 </tbody>
-                                <tfoot>
-                                    <tr>
-                                        <td colspan="4">
-                                            <div class="pagination-controls"
-                                                style="text-align: right; padding: 10px 0;">
-                                                <span id="modal-venta-page-info" style="margin-right: 15px;">Página 1 de
-                                                    1</span>
-                                                <button class="btn-outline" id="modal-venta-prev-page"
-                                                    onclick="modalVentaPrevPage()" disabled>
-                                                    <i class="fas fa-arrow-left"></i>
-                                                </button>
-                                                <button class="btn-outline" id="modal-venta-next-page"
-                                                    onclick="modalVentaNextPage()" disabled>
-                                                    <i class="fas fa-arrow-right"></i>
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </tfoot>
                             </table>
+                        </div>
+
+                        <!-- Totales -->
+                        <div style="margin-top: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                            <div style="display: flex; justify-content: flex-end; gap: 20px; margin-bottom: 8px;">
+                                <span style="color: #666;">Subtotal:</span>
+                                <span id="modal-venta-subtotal" style="font-weight: 500;"></span>
+                            </div>
+                            <div id="modal-venta-descuento-container"
+                                style="display: none; justify-content: flex-end; gap: 20px; margin-bottom: 8px;">
+                                <span style="color: #dc3545;">Descuento:</span>
+                                <span id="modal-venta-descuento" style="color: #dc3545; font-weight: 500;"></span>
+                            </div>
+                            <div
+                                style="display: flex; justify-content: flex-end; gap: 20px; padding-top: 8px; border-top: 1px solid #dee2e6;">
+                                <span style="font-weight: 700; font-size: 18px; color: #0f172a;">Total:</span>
+                                <span id="modal-venta-total"
+                                    style="font-weight: 700; font-size: 18px; color: #28a745;"></span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -2954,7 +2991,8 @@
 
         <!-- Modal de Detalle de Compra -->
         <div id="purchase-detail-modal" class="modal">
-            <div class="modal-content modal-large" style="max-width: 1100px; height: 90vh; max-height: 95vh; overflow: hidden; display: flex; flex-direction: column;">
+            <div class="modal-content modal-large"
+                style="max-width: 1100px; height: 90vh; max-height: 95vh; overflow: hidden; display: flex; flex-direction: column;">
                 <span class="close-modal" onclick="cerrarModalDetalleCompra()">&times;</span>
                 <h3 style="margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
                     <i class="fas fa-receipt"></i> Detalle de Compra <span id="modal-compra-id"
@@ -2992,12 +3030,16 @@
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
                         <div style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
                             <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">Monto a Pagar</div>
-                            <div id="modal-compra-monto-pagar" style="font-size: 20px; font-weight: 700; color: #0f172a;">$0</div>
+                            <div id="modal-compra-monto-pagar"
+                                style="font-size: 20px; font-weight: 700; color: #0f172a;">$0</div>
                         </div>
-                        <div id="modal-compra-card-pendiente" style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
+                        <div id="modal-compra-card-pendiente"
+                            style="border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px;">
                             <div style="font-size: 12px; color: #64748b; margin-bottom: 6px;">Monto Pendiente</div>
-                            <div id="modal-compra-monto-pendiente" style="font-size: 20px; font-weight: 700; color: #d32f2f;">$0</div>
-                            <div id="modal-compra-vence-el" style="font-size: 11px; color: #d32f2f; margin-top: 4px; display: none;">
+                            <div id="modal-compra-monto-pendiente"
+                                style="font-size: 20px; font-weight: 700; color: #d32f2f;">$0</div>
+                            <div id="modal-compra-vence-el"
+                                style="font-size: 11px; color: #d32f2f; margin-top: 4px; display: none;">
                                 <i class="fas fa-calendar-alt" style="margin-right: 4px;"></i>
                                 Vence el: <span id="modal-compra-vence-fecha"></span>
                             </div>
@@ -3072,43 +3114,57 @@
                     <h3 style="margin: 0; font-size: 18px;">
                         <i class="fas fa-hand-holding-usd" style="color: #2563eb;"></i> Registrar Pago
                     </h3>
-                    <button class="modal-close" onclick="document.getElementById('pago-compra-modal').style.display='none'">
+                    <button class="modal-close"
+                        onclick="document.getElementById('pago-compra-modal').style.display='none'">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
-                
+
                 <div class="modal-body" style="padding: 20px 25px;">
                     <form id="form-pagar-compra">
                         <input type="hidden" id="pago-compra-id">
-                        
+
                         <div class="form-group" style="margin-bottom: 20px;">
-                            <label for="pago-compra-monto" style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Monto a Pagar</label>
+                            <label for="pago-compra-monto"
+                                style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Monto
+                                a Pagar</label>
                             <div style="position: relative;">
-                                <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; color: #64748b; font-weight: bold;">$</span>
-                                <input type="number" id="pago-compra-monto" step="0.01" min="0" required style="width: 100%; padding: 10px 14px 10px 32px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border 0.3s; color: #334155;">
+                                <span
+                                    style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; color: #64748b; font-weight: bold;">$</span>
+                                <input type="number" id="pago-compra-monto" step="0.01" min="0" required
+                                    style="width: 100%; padding: 10px 14px 10px 32px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border 0.3s; color: #334155;">
                             </div>
                         </div>
 
                         <div class="form-group" style="margin-bottom: 20px;">
-                            <label for="pago-compra-metodo" style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Método de Pago</label>
-                            <select id="pago-compra-metodo" required style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; background-color: white; color: #334155; transition: border 0.3s;">
+                            <label for="pago-compra-metodo"
+                                style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Método
+                                de Pago</label>
+                            <select id="pago-compra-metodo" required
+                                style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; background-color: white; color: #334155; transition: border 0.3s;">
                                 <option value="">Seleccionar método</option>
                                 <!-- Llenado dinámicamente -->
                             </select>
                         </div>
 
                         <div class="form-group" style="margin-bottom: 20px;">
-                            <label for="pago-compra-fecha" style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Fecha del Pago</label>
-                            <input type="date" id="pago-compra-fecha" required style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; background-color: white; color: #334155; transition: border 0.3s;">
+                            <label for="pago-compra-fecha"
+                                style="font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px; display:block;">Fecha
+                                del Pago</label>
+                            <input type="date" id="pago-compra-fecha" required
+                                style="width: 100%; padding: 10px 14px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; background-color: white; color: #334155; transition: border 0.3s;">
                         </div>
 
-                        <div id="pago-compra-error" class="error-message" style="display: none; text-align: center; margin-bottom: 15px;"></div>
+                        <div id="pago-compra-error" class="error-message"
+                            style="display: none; text-align: center; margin-bottom: 15px;"></div>
                     </form>
                 </div>
-                
+
                 <div class="modal-footer" style="padding: 15px 25px; gap: 10px;">
-                    <button type="button" class="btn-outline" onclick="document.getElementById('pago-compra-modal').style.display='none'">Cancelar</button>
-                    <button type="button" id="btn-confirmar-pago-compra" class="btn-primary" style="background-color: #2563eb; border-color: #2563eb;">
+                    <button type="button" class="btn-outline"
+                        onclick="document.getElementById('pago-compra-modal').style.display='none'">Cancelar</button>
+                    <button type="button" id="btn-confirmar-pago-compra" class="btn-primary"
+                        style="background-color: #2563eb; border-color: #2563eb;">
                         <i class="fas fa-check" style="margin-right: 5px;"></i> Confirmar Pago
                     </button>
                 </div>
@@ -3271,6 +3327,26 @@
         <script src="js/informes.js"></script>
         <script src="js/stock.js"></script>
         <script src="js/cliente.js"></script>
+
+        <!-- Modal Ticket de Venta - FUERA DE CUALQUIER SECTION -->
+        <div id="modal-ticket-overlay" style="display: none;">
+            <div
+                style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 99999;">
+                <div
+                    style="background: white; padding: 30px; border-radius: 15px; text-align: center; max-width: 400px; box-shadow: 0 10px 40px rgba(0,0,0,0.5);">
+                    <h3 style="margin: 0 0 20px 0; color: #333;"><i class="fas fa-print"
+                            style="color: #667eea; margin-right: 10px;"></i>¿Desea imprimir ticket?</h3>
+                    <p style="color: #666; margin-bottom: 25px;">La venta se registró exitosamente.</p>
+                    <div style="display: flex; gap: 15px; justify-content: center;">
+                        <button id="btn-generar-ticket"
+                            style="padding: 12px 25px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">Sí,
+                            generar PDF</button>
+                        <button id="btn-cerrar-ticket"
+                            style="padding: 12px 25px; background: #6c757d; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">No</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
 </body>
 

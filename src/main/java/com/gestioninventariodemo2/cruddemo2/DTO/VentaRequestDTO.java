@@ -22,4 +22,11 @@ public class VentaRequestDTO {
     private String nroTransaccion; // Opcional para Tarjeta/Transferencia
     private String tipoTarjeta; // Opcional: 'Débito' o 'Crédito'
     private String ultimosDigitos; // Opcional: últimos 4 dígitos
+
+    // Descuento
+    private Double descuento;
+    private String tipoDescuento; // "$" o "%"
+
+    // Datos para cálculo de vuelto (solo efectivo)
+    private Double montoPagado;
 }
