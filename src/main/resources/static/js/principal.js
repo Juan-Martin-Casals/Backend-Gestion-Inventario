@@ -1274,4 +1274,547 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // ============================================================
+    // NUEVO DASHBOARD PRINCIPAL (5 KPIs + Gráficos)
+    // ============================================================
+
+    // Referencias DOM para el nuevo dashboard
+    const dashboardFecha = document.getElementById('dashboard-fecha');
+    const btnRefreshDashboard = document.getElementById('btn-refresh-dashboard');
+
+    // KPIs
+    const kpiIngresos = document.getElementById('kpi-ingresos');
+    const kpiEgresos = document.getElementById('kpi-egresos');
+    const kpiGanancia = document.getElementById('kpi-ganancia');
+    const kpiStockBajo = document.getElementById('kpi-stock-bajo');
+    const kpiAgotados = document.getElementById('kpi-agotados');
+
+    // Comparación vs ayer
+    const kpiIngresosCompare = document.getElementById('kpi-ingresos-compare');
+    const kpiEgresosCompare = document.getElementById('kpi-egresos-compare');
+    const kpiGananciaCompare = document.getElementById('kpi-ganancia-compare');
+
+    // Tabla de problemas
+    const tablaProductosProblema = document.getElementById('tabla-productos-problema');
+    const countStockBajoTabla = document.getElementById('count-stock-bajo-tabla');
+    const countAgotadosTabla = document.getElementById('count-agotados-tabla');
+
+    // Charts (referencias canvas)
+    let chartVentasCompras = null;
+    let chartMetodosPago = null;
+    let chartEstadoStock = null;
+
+    // Variables para datos históricos (ayer)
+    let kpisAyer = { ingresos: 0, egresos: 0, ganancia: 0 };
+
+    // Función para formatear fecha YYYY-MM-DD
+    function formatDateForApi(date) {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    // Función para calcular porcentaje de cambio
+    function calculateChange(current, previous) {
+        if (!previous || previous === 0) return { value: 0, direction: 'neutral' };
+        const change = ((current - previous) / previous) * 100;
+        return {
+            value: Math.abs(change).toFixed(1),
+            direction: change >= 0 ? 'up' : 'down'
+        };
+    }
+
+    // Función para renderizar comparación con Ayer
+    function renderCompare(elementId, change) {
+        const el = document.getElementById(elementId);
+        if (!el) return;
+
+        if (change.direction === 'neutral') {
+            el.innerHTML = '<span style="color: #999;">-</span>';
+        } else if (change.direction === 'up') {
+            el.innerHTML = `<span style="color: #28a745;"><i class="fas fa-caret-up"></i> ${change.value}%</span> vs. ayer`;
+        } else {
+            el.innerHTML = `<span style="color: #dc3545;"><i class="fas fa-caret-down"></i> ${change.value}%</span> vs. ayer`;
+        }
+    }
+
+    // Cargar KPIs de HOY y de AYER para comparación
+    async function loadDashboardKPIs() {
+        const today = new Date();
+        const yesterday = new Date(today);
+        yesterday.setDate(yesterday.getDate() - 1);
+
+        const fechaHoy = formatDateForApi(today);
+        const fechaAyer = formatDateForApi(yesterday);
+
+        // Actualizar fecha en UI (con mayúsculas)
+        if (dashboardFecha) {
+            const fechaFormateada = today.toLocaleDateString('es-AR', {
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric'
+            });
+            // Convertir primera letra a mayúscula
+            dashboardFecha.textContent = fechaFormateada.charAt(0).toUpperCase() + fechaFormateada.slice(1);
+        }
+
+        try {
+            // KPIs de Hoy
+            const [resHoy, resAyer] = await Promise.all([
+                fetch(`/api/informes/kpis?inicio=${fechaHoy}&fin=${fechaHoy}`),
+                fetch(`/api/informes/kpis?inicio=${fechaAyer}&fin=${fechaAyer}`)
+            ]);
+
+            const dataHoy = resHoy.ok ? await resHoy.json() : { totalVentas: 0, totalCompras: 0, ganancia: 0, productosStockBajo: 0 };
+            const dataAyer = resAyer.ok ? await resAyer.json() : { totalVentas: 0, totalCompras: 0, ganancia: 0 };
+
+            kpisAyer = {
+                ingresos: dataAyer.totalVentas || 0,
+                egresos: dataAyer.totalCompras || 0,
+                ganancia: dataAyer.ganancia || 0
+            };
+
+            // Renderizar tarjetas
+            if (kpiIngresos) {
+                kpiIngresos.textContent = `$${(dataHoy.totalVentas || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+            }
+            if (kpiEgresos) {
+                kpiEgresos.textContent = `$${(dataHoy.totalCompras || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+            }
+            if (kpiGanancia) {
+                const ganancia = dataHoy.ganancia || 0;
+                kpiGanancia.textContent = `$${ganancia.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+                // Color de ganancia según sea positiva o negativa
+                kpiGanancia.style.color = ganancia >= 0 ? '#28a745' : '#dc3545';
+            }
+            if (kpiStockBajo) {
+                kpiStockBajo.textContent = dataHoy.productosStockBajo || 0;
+            }
+            if (kpiAgotados) {
+                // Obtener agotados separately
+                const resAgotados = await fetch('/api/informes/agotados?page=0&size=1');
+                const agotadosData = resAgotados.ok ? await resAgotados.json() : { totalElements: 0 };
+                kpiAgotados.textContent = agotadosData.totalElements || 0;
+            }
+
+            // Renderizar comparaciones
+            const ingresosChange = calculateChange(dataHoy.totalVentas || 0, kpisAyer.ingresos);
+            const egresosChange = calculateChange(dataHoy.totalCompras || 0, kpisAyer.egresos);
+            const gananciaChange = calculateChange(dataHoy.ganancia || 0, kpisAyer.ganancia);
+
+            renderCompare('kpi-ingresos-compare', ingresosChange);
+            renderCompare('kpi-egresos-compare', egresosChange);
+            renderCompare('kpi-ganancia-compare', gananciaChange);
+
+        } catch (error) {
+            console.error('Error cargando KPIs:', error);
+        }
+    }
+
+    // Cargar gráfico de barras (7 días de ingresos vs egresos)
+    async function loadChartVentasCompras() {
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 6);
+
+        const fechaInicio = formatDateForApi(startDate);
+        const fechaFin = formatDateForApi(today);
+
+        try {
+            const response = await fetch(`/api/informes/ventas-compras-diarias?inicio=${fechaInicio}&fin=${fechaFin}`);
+            if (!response.ok) throw new Error('Error fetching data');
+
+            const data = await response.json();
+
+            const labels = data.map(d => {
+                // Evitar timezone: parsear manualmente
+                const fechaStr = d.fecha;
+                const [anio, mes, dia] = fechaStr.split('-').map(Number);
+                const date = new Date(anio, mes - 1, dia);
+                
+                // Formato: "Mar 14"
+                const diaCorto = date.toLocaleDateString('es-AR', { weekday: 'short' });
+                const numeroDia = date.getDate();
+                const label = diaCorto.charAt(0).toUpperCase() + diaCorto.slice(1) + ' ' + numeroDia;
+                
+                return label;
+            });
+
+            const ventas = data.map(d => d.ventas || 0);
+            const compras = data.map(d => d.compras || 0);
+
+            const ctx = document.getElementById('chart-ventas-compras');
+            if (!ctx) return;
+
+            // Destruir chart anterior si existe
+            if (chartVentasCompras) {
+                chartVentasCompras.destroy();
+            }
+
+            chartVentasCompras = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Ingresos',
+                            data: ventas,
+                            backgroundColor: '#28a745',
+                            borderColor: '#28a745',
+                            borderWidth: 1
+                        },
+                        {
+                            label: 'Egresos',
+                            data: compras,
+                            backgroundColor: '#dc3545',
+                            borderColor: '#dc3545',
+                            borderWidth: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': $' + context.raw.toLocaleString('es-AR');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString('es-AR');
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+        } catch (error) {
+            console.error('Error cargando gráfico ventas/compras:', error);
+        }
+    }
+
+    // Cargar gráfico de métodos de pago
+    async function loadChartMetodosPago() {
+        const loadingEl = document.getElementById('metodos-pago-loading');
+        if (loadingEl) loadingEl.style.display = 'block';
+
+        const today = new Date();
+        const startDate = new Date(today);
+        startDate.setDate(startDate.getDate() - 30); // Último mes
+
+        const fechaInicio = formatDateForApi(startDate);
+        const fechaFin = formatDateForApi(today);
+
+        try {
+            const response = await fetch(`/api/informes/metodos-pago?inicio=${fechaInicio}&fin=${fechaFin}`);
+            if (!response.ok) throw new Error('Error fetching data');
+
+            const data = await response.json();
+
+            if (loadingEl) loadingEl.style.display = 'none';
+
+            const ctx = document.getElementById('chart-metodos-pago');
+            if (!ctx || !data || data.length === 0) {
+                if (loadingEl) loadingEl.innerHTML = 'No hay datos';
+                return;
+            }
+
+            const labels = data.map(d => d.nombre);
+            const values = data.map(d => d.cantidad);
+
+            // Colores para los métodos de pago
+            const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d', '#17a2b8'];
+
+            // Destruir chart anterior
+            if (chartMetodosPago) {
+                chartMetodosPago.destroy();
+            }
+
+            chartMetodosPago = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: values,
+                        backgroundColor: colors.slice(0, values.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = values.reduce((a, b) => a + b, 0);
+                                    const percentage = ((context.raw / total) * 100).toFixed(1);
+                                    return context.label + ': ' + context.raw + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+        } catch (error) {
+            console.error('Error cargando gráfico métodos de pago:', error);
+            if (loadingEl) loadingEl.innerHTML = 'Error al cargar';
+        }
+    }
+
+    // Cargar gráfico de estado del stock
+    async function loadChartEstadoStock() {
+        try {
+            const response = await fetch('/api/informes/estado-stock');
+            if (!response.ok) throw new Error('Error fetching data');
+
+            const data = await response.json();
+
+            const ctx = document.getElementById('chart-estado-stock');
+            if (!ctx) return;
+
+            if (chartEstadoStock) {
+                chartEstadoStock.destroy();
+            }
+
+            chartEstadoStock = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Óptimo', 'Bajo', 'Agotado'],
+                    datasets: [{
+                        data: [data.optimo || 0, data.bajo || 0, data.agotado || 0],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const total = (data.optimo || 0) + (data.bajo || 0) + (data.agotado || 0);
+                                    const percentage = total > 0 ? ((context.raw / total) * 100).toFixed(1) : 0;
+                                    return context.label + ': ' + context.raw + ' (' + percentage + '%)';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+        } catch (error) {
+            console.error('Error cargando gráfico estado stock:', error);
+        }
+    }
+
+    // Cargar tabla de productos con problemas
+    async function loadTablaProductosProblema() {
+        try {
+            // Cargar stock bajo y agotados
+            const [resBajo, resAgotado] = await Promise.all([
+                fetch('/api/informes/solo-stock-bajo?page=0&size=10'),
+                fetch('/api/informes/agotados?page=0&size=10')
+            ]);
+
+            const bajoData = resBajo.ok ? await resBajo.json() : { content: [] };
+            const agotadoData = resAgotado.ok ? await resAgotado.json() : { content: [] };
+
+            const productosBajo = bajoData.content || [];
+            const productosAgotados = agotadoData.content || [];
+
+            // Actualizar contadores
+            if (countStockBajoTabla) countStockBajoTabla.textContent = bajoData.totalElements || 0;
+            if (countAgotadosTabla) countAgotadosTabla.textContent = agotadoData.totalElements || 0;
+
+            if (!tablaProductosProblema) return;
+
+            // Combinar y limitar a 10 items
+            const problemas = [
+                ...productosAgotados.map(p => ({ ...p, estado: 'Agotado' })),
+                ...productosBajo.map(p => ({ ...p, estado: 'Bajo' }))
+            ].slice(0, 10);
+
+            if (problemas.length === 0) {
+                tablaProductosProblema.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #28a745;">No hay productos con problemas</td></tr>';
+                return;
+            }
+
+            tablaProductosProblema.innerHTML = problemas.map(p => {
+                const estadoClass = p.estado === 'Agotado' ? 'empty' : 'low';
+                return `
+                    <tr>
+                        <td>${p.nombre || '-'}</td>
+                        <td class="col-num"><span class="stock-badge ${estadoClass}">${p.stock || 0}</span></td>
+                        <td class="col-num">${p.stockMinimo || 0}</td>
+                        <td><span class="stock-badge ${estadoClass}">${p.estado}</span></td>
+                    </tr>
+                `;
+            }).join('');
+
+        } catch (error) {
+            console.error('Error cargando tabla problemas:', error);
+            if (tablaProductosProblema) {
+                tablaProductosProblema.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #dc3545;">Error al cargar</td></tr>';
+            }
+        }
+    }
+
+    // Función principal para cargar todo el dashboard
+    async function loadNewDashboard() {
+        await loadDashboardKPIs();
+        await loadChartVentasCompras();
+        await loadChartMetodosPago();
+        await loadChartEstadoStock();
+        await loadTablaProductosProblema();
+    }
+
+    // Botón refresh
+    if (btnRefreshDashboard) {
+        btnRefreshDashboard.addEventListener('click', async () => {
+            const icon = btnRefreshDashboard.querySelector('i');
+            if (icon) {
+                icon.classList.add('fa-spin');
+            }
+
+            await loadNewDashboard();
+
+            if (icon) {
+                setTimeout(() => icon.classList.remove('fa-spin'), 500);
+            }
+        });
+    }
+
+    // Botones para ver tablas de stock bajo y agotados (redirección a secciones)
+    const btnVerStockBajo = document.getElementById('btn-ver-stock-bajo');
+    const btnVerAgotados = document.getElementById('btn-ver-agotados');
+
+    if (btnVerStockBajo) {
+        btnVerStockBajo.addEventListener('click', () => {
+            // Navegar a la sección de productos
+            document.querySelectorAll('.sidebar-menu a').forEach(l => l.classList.remove('active'));
+            const link = document.querySelector('[data-section="productos"]');
+            if (link) {
+                link.classList.add('active');
+                document.getElementById('section-title').textContent = 'Gestión de Stock';
+                document.getElementById('section-icon').className = 'fas fa-box';
+                sections.forEach(s => s.style.display = 'none');
+                const productosSection = document.getElementById('productos-section');
+                if (productosSection) {
+                    productosSection.style.display = 'block';
+                    // Cargar subsección de lista de productos
+                    if (typeof window.loadProducts === 'function') {
+                        window.loadProducts();
+                    }
+                    if (typeof window.showProductSubsection === 'function') {
+                        window.showProductSubsection('productos-list');
+                    }
+                }
+            }
+        });
+    }
+
+    if (btnVerAgotados) {
+        btnVerAgotados.addEventListener('click', () => {
+            // Similar a above, pero navegar a productos
+            document.querySelectorAll('.sidebar-menu a').forEach(l => l.classList.remove('active'));
+            const link = document.querySelector('[data-section="productos"]');
+            if (link) {
+                link.classList.add('active');
+                document.getElementById('section-title').textContent = 'Gestión de Stock';
+                document.getElementById('section-icon').className = 'fas fa-box';
+                sections.forEach(s => s.style.display = 'none');
+                const productosSection = document.getElementById('productos-section');
+                if (productosSection) {
+                    productosSection.style.display = 'block';
+                    if (typeof window.loadProducts === 'function') {
+                        window.loadProducts();
+                    }
+                    if (typeof window.showProductSubsection === 'function') {
+                        window.showProductSubsection('productos-list');
+                    }
+                }
+            }
+        });
+    }
+
+    // Cargar el nuevo dashboard al inicio (si estamos en admin.html con el nuevo diseño)
+    if (document.getElementById('dashboard-fecha')) {
+        loadNewDashboard();
+    }
+
+    // Exportar función global para ser llamada desde admin.js
+    window.loadPrincipalData = function() {
+        loadNewDashboard();
+    };
+
+    // Función para navegar a Gestión de Stock cuando se hace clic en las tarjetas Stock Bajo o Agotados
+    window.navigateToStockManagement = function(estado) {
+        // Remover active de todos los links
+        document.querySelectorAll('.sidebar-menu a').forEach(l => l.classList.remove('active'));
+
+        // Encontrar y activar el link de productos
+        const productosLink = document.querySelector('[data-section="productos"]');
+        if (productosLink) {
+            productosLink.classList.add('active');
+        }
+
+        // Actualizar título del header
+        const sectionTitle = document.getElementById('section-title');
+        const sectionIcon = document.getElementById('section-icon');
+        if (sectionTitle) sectionTitle.textContent = 'Gestión de Stock';
+        if (sectionIcon) sectionIcon.className = 'fas fa-box';
+
+        // Ocultar todas las secciones y mostrar la de productos
+        document.querySelectorAll('.spa-section').forEach(section => {
+            section.style.display = 'none';
+        });
+        const productosSection = document.getElementById('productos-section');
+        if (productosSection) {
+            productosSection.style.display = 'block';
+        }
+
+        // Si se pasó un estado específico para filtrar, usar la función de productos.js
+        if (estado && typeof window.filtrarPorEstado === 'function') {
+            window.filtrarPorEstado(estado);
+        } else if (typeof window.loadProducts === 'function') {
+            // Cargar los productos normalmente
+            window.loadProducts();
+        }
+
+        // Mostrar la subsección de lista de productos
+        if (typeof window.showProductSubsection === 'function') {
+            window.showProductSubsection('productos-list');
+        }
+    };
+
 });

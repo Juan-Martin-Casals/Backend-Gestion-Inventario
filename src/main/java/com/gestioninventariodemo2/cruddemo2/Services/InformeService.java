@@ -21,7 +21,9 @@ import com.gestioninventariodemo2.cruddemo2.DTO.VentasComprasDiariasDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.InformeResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ResumenStockDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.StockTablaDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.MetodoPagoUsoDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.Stock;
+import com.gestioninventariodemo2.cruddemo2.Repository.CobroRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.CompraRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.StockRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.VentaRepository;
@@ -41,6 +43,7 @@ public class InformeService {
         private final VentaRepository ventaRepository;
         private final CompraRepository compraRepository;
         private final StockRepository stockRepository;
+        private final CobroRepository cobroRepository;
 
         public InformeResponseDTO generarInforme(LocalDate inicio, LocalDate fin) {
                 LocalDateTime start = inicio.atStartOfDay();
@@ -83,8 +86,8 @@ public class InformeService {
                         String emailNom = "-";
                         String telNom = "-";
                         if (prod.getProductoProveedores() != null && !prod.getProductoProveedores().isEmpty()) {
-                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor prov =
-                                        prod.getProductoProveedores().get(0).getProveedor();
+                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor prov = prod
+                                                .getProductoProveedores().get(0).getProveedor();
                                 if (prov != null) {
                                         proveedorNom = prov.getNombre();
                                         emailNom = prov.getEmail() != null ? prov.getEmail() : "-";
@@ -94,42 +97,45 @@ public class InformeService {
 
                         Double precioCosto = 0.0;
                         if (prod.getDetalleCompras() != null && !prod.getDetalleCompras().isEmpty()) {
-                                com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra ultimoDetalle =
-                                        prod.getDetalleCompras().stream()
+                                com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra ultimoDetalle = prod
+                                                .getDetalleCompras().stream()
                                                 .max(java.util.Comparator.comparing(
-                                                        com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra::getIdDetalleCompra))
+                                                                com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra::getIdDetalleCompra))
                                                 .orElse(null);
                                 if (ultimoDetalle != null) {
                                         precioCosto = ultimoDetalle.getPrecioUnitario();
                                         if (proveedorNom.equals("Sin Proveedor") &&
-                                                ultimoDetalle.getCompra() != null &&
-                                                ultimoDetalle.getCompra().getProveedor() != null) {
-                                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor provCompra =
-                                                        ultimoDetalle.getCompra().getProveedor();
+                                                        ultimoDetalle.getCompra() != null &&
+                                                        ultimoDetalle.getCompra().getProveedor() != null) {
+                                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor provCompra = ultimoDetalle
+                                                                .getCompra().getProveedor();
                                                 proveedorNom = provCompra.getNombre();
                                                 emailNom = provCompra.getEmail() != null ? provCompra.getEmail() : "-";
-                                                telNom = provCompra.getTelefono() != null ? provCompra.getTelefono() : "-";
+                                                telNom = provCompra.getTelefono() != null ? provCompra.getTelefono()
+                                                                : "-";
                                         }
                                 }
                         }
 
                         return StockTablaDTO.builder()
-                                .id(prod.getIdProducto())
-                                .nombre(prod.getNombre())
-                                .categoria(prod.getCategoria() != null ? prod.getCategoria().getNombre() : "Sin categoría")
-                                .descripcion(prod.getDescripcion())
-                                .precio(prod.getPrecio())
-                                .stock(stock.getStockActual())
-                                .stockMinimo(stock.getStockMinimo())
-                                .proveedor(proveedorNom)
-                                .email(emailNom)
-                                .telefono(telNom)
-                                .precioCosto(precioCosto)
-                                .build();
+                                        .id(prod.getIdProducto())
+                                        .nombre(prod.getNombre())
+                                        .categoria(prod.getCategoria() != null ? prod.getCategoria().getNombre()
+                                                        : "Sin categoría")
+                                        .descripcion(prod.getDescripcion())
+                                        .precio(prod.getPrecio())
+                                        .stock(stock.getStockActual())
+                                        .stockMinimo(stock.getStockMinimo())
+                                        .proveedor(proveedorNom)
+                                        .email(emailNom)
+                                        .telefono(telNom)
+                                        .precioCosto(precioCosto)
+                                        .build();
                 });
         }
 
-        // Solo stock bajo real (0 < stockActual < stockMinimo), para el modal del dashboard
+        // Solo stock bajo real (0 < stockActual < stockMinimo), para el modal del
+        // dashboard
         public Page<StockTablaDTO> obtenerSoloStockBajo(Pageable pageable) {
                 String estadoActivo = "ACTIVO";
                 Page<Stock> stocksBajos = stockRepository.findSoloStockBajo(estadoActivo, pageable);
@@ -141,8 +147,8 @@ public class InformeService {
                         String emailNom = "-";
                         String telNom = "-";
                         if (prod.getProductoProveedores() != null && !prod.getProductoProveedores().isEmpty()) {
-                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor prov =
-                                        prod.getProductoProveedores().get(0).getProveedor();
+                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor prov = prod
+                                                .getProductoProveedores().get(0).getProveedor();
                                 if (prov != null) {
                                         proveedorNom = prov.getNombre();
                                         emailNom = prov.getEmail() != null ? prov.getEmail() : "-";
@@ -153,37 +159,38 @@ public class InformeService {
                         // Resolves precio de costo desde el último DetalleCompra
                         Double precioCosto = 0.0;
                         if (prod.getDetalleCompras() != null && !prod.getDetalleCompras().isEmpty()) {
-                                com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra ultimoDetalle =
-                                        prod.getDetalleCompras().stream()
+                                com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra ultimoDetalle = prod
+                                                .getDetalleCompras().stream()
                                                 .max(java.util.Comparator.comparing(
-                                                        com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra::getIdDetalleCompra))
+                                                                com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra::getIdDetalleCompra))
                                                 .orElse(null);
                                 if (ultimoDetalle != null) {
                                         precioCosto = ultimoDetalle.getPrecioUnitario();
                                         // Fallback: proveedor desde la compra si no hay relación directa
                                         if (proveedorNom.equals("Sin Proveedor") &&
-                                                ultimoDetalle.getCompra() != null &&
-                                                ultimoDetalle.getCompra().getProveedor() != null) {
-                                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor provCompra =
-                                                        ultimoDetalle.getCompra().getProveedor();
+                                                        ultimoDetalle.getCompra() != null &&
+                                                        ultimoDetalle.getCompra().getProveedor() != null) {
+                                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor provCompra = ultimoDetalle
+                                                                .getCompra().getProveedor();
                                                 proveedorNom = provCompra.getNombre();
                                                 emailNom = provCompra.getEmail() != null ? provCompra.getEmail() : "-";
-                                                telNom = provCompra.getTelefono() != null ? provCompra.getTelefono() : "-";
+                                                telNom = provCompra.getTelefono() != null ? provCompra.getTelefono()
+                                                                : "-";
                                         }
                                 }
                         }
 
                         return StockTablaDTO.builder()
-                                .id(prod.getIdProducto())
-                                .nombre(prod.getNombre())
-                                .descripcion(prod.getDescripcion())
-                                .stock(stock.getStockActual())
-                                .stockMinimo(stock.getStockMinimo())
-                                .proveedor(proveedorNom)
-                                .email(emailNom)
-                                .telefono(telNom)
-                                .precioCosto(precioCosto)
-                                .build();
+                                        .id(prod.getIdProducto())
+                                        .nombre(prod.getNombre())
+                                        .descripcion(prod.getDescripcion())
+                                        .stock(stock.getStockActual())
+                                        .stockMinimo(stock.getStockMinimo())
+                                        .proveedor(proveedorNom)
+                                        .email(emailNom)
+                                        .telefono(telNom)
+                                        .precioCosto(precioCosto)
+                                        .build();
                 });
         }
 
@@ -281,7 +288,7 @@ public class InformeService {
         public List<VentasComprasDiariasDTO> obtenerVentasComprasDiarias(LocalDate inicio, LocalDate fin) {
                 LocalDateTime start = inicio.atStartOfDay();
                 LocalDateTime end = fin.atTime(LocalTime.MAX);
-                
+
                 // Obtener ventas agrupadas por día
                 List<Object[]> ventasPorDia = ventaRepository.sumVentasPorDia(start, end);
                 Map<LocalDate, Double> ventasMap = new HashMap<>();
@@ -368,52 +375,74 @@ public class InformeService {
                                 .build();
         }
 
-    public org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO> obtenerProductosAgotados(org.springframework.data.domain.Pageable pageable) {
-        String estadoActivo = "ACTIVO";
-        org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.Model.Stock> agotados = stockRepository.findAgotadosActivos(estadoActivo, pageable);
+        public org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO> obtenerProductosAgotados(
+                        org.springframework.data.domain.Pageable pageable) {
+                String estadoActivo = "ACTIVO";
+                org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.Model.Stock> agotados = stockRepository
+                                .findAgotadosActivos(estadoActivo, pageable);
 
-        return agotados.map(stock -> {
-            com.gestioninventariodemo2.cruddemo2.Model.Producto prod = stock.getProducto();
-            
-            String proveedorNom = "Sin Proveedor";
-            String emailNom = "-";
-            String telNom = "-";
-            if (prod.getProductoProveedores() != null && !prod.getProductoProveedores().isEmpty()) {
-                com.gestioninventariodemo2.cruddemo2.Model.Proveedor prov = prod.getProductoProveedores().get(0).getProveedor();
-                if (prov != null) {
-                    proveedorNom = prov.getNombre();
-                    emailNom = prov.getEmail() != null ? prov.getEmail() : "-";
-                    telNom = prov.getTelefono() != null ? prov.getTelefono() : "-";
-                }
-            }
+                return agotados.map(stock -> {
+                        com.gestioninventariodemo2.cruddemo2.Model.Producto prod = stock.getProducto();
 
-            Double precioCosto = 0.0;
-            if (prod.getDetalleCompras() != null && !prod.getDetalleCompras().isEmpty()) {
-                com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra ultimoDetalle = prod.getDetalleCompras().stream()
-                        .max(java.util.Comparator.comparing(com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra::getIdDetalleCompra))
-                        .orElse(null);
-                
-                if (ultimoDetalle != null) {
-                    precioCosto = ultimoDetalle.getPrecioUnitario();
-                    
-                    if (proveedorNom.equals("Sin Proveedor") && ultimoDetalle.getCompra() != null && ultimoDetalle.getCompra().getProveedor() != null) {
-                        com.gestioninventariodemo2.cruddemo2.Model.Proveedor provCompra = ultimoDetalle.getCompra().getProveedor();
-                        proveedorNom = provCompra.getNombre();
-                        emailNom = provCompra.getEmail() != null ? provCompra.getEmail() : "-";
-                        telNom = provCompra.getTelefono() != null ? provCompra.getTelefono() : "-";
-                    }
-                }
-            }
+                        String proveedorNom = "Sin Proveedor";
+                        String emailNom = "-";
+                        String telNom = "-";
+                        if (prod.getProductoProveedores() != null && !prod.getProductoProveedores().isEmpty()) {
+                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor prov = prod
+                                                .getProductoProveedores().get(0).getProveedor();
+                                if (prov != null) {
+                                        proveedorNom = prov.getNombre();
+                                        emailNom = prov.getEmail() != null ? prov.getEmail() : "-";
+                                        telNom = prov.getTelefono() != null ? prov.getTelefono() : "-";
+                                }
+                        }
 
-            return com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO.builder()
-                .nombre(prod.getNombre())
-                .descripcion(prod.getDescripcion())
-                .proveedor(proveedorNom)
-                .email(emailNom)
-                .telefono(telNom)
-                .precioCosto(precioCosto)
-                .build();
-        });
-    }
+                        Double precioCosto = 0.0;
+                        if (prod.getDetalleCompras() != null && !prod.getDetalleCompras().isEmpty()) {
+                                com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra ultimoDetalle = prod
+                                                .getDetalleCompras().stream()
+                                                .max(java.util.Comparator.comparing(
+                                                                com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra::getIdDetalleCompra))
+                                                .orElse(null);
+
+                                if (ultimoDetalle != null) {
+                                        precioCosto = ultimoDetalle.getPrecioUnitario();
+
+                                        if (proveedorNom.equals("Sin Proveedor") && ultimoDetalle.getCompra() != null
+                                                        && ultimoDetalle.getCompra().getProveedor() != null) {
+                                                com.gestioninventariodemo2.cruddemo2.Model.Proveedor provCompra = ultimoDetalle
+                                                                .getCompra().getProveedor();
+                                                proveedorNom = provCompra.getNombre();
+                                                emailNom = provCompra.getEmail() != null ? provCompra.getEmail() : "-";
+                                                telNom = provCompra.getTelefono() != null ? provCompra.getTelefono()
+                                                                : "-";
+                                        }
+                                }
+                        }
+
+                        return com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO.builder()
+                                        .nombre(prod.getNombre())
+                                        .descripcion(prod.getDescripcion())
+                                        .proveedor(proveedorNom)
+                                        .email(emailNom)
+                                        .telefono(telNom)
+                                        .precioCosto(precioCosto)
+                                        .build();
+                });
+        }
+
+        public List<MetodoPagoUsoDTO> obtenerMetodosPagoMasUtilizados(LocalDate inicio, LocalDate fin) {
+                LocalDateTime start = inicio.atStartOfDay();
+                LocalDateTime end = fin.atTime(LocalTime.MAX);
+
+                List<Object[]> resultados = cobroRepository.obtenerTotalPorMetodoPagoEntreFechas(start, end);
+
+                return resultados.stream()
+                                .map(row -> MetodoPagoUsoDTO.builder()
+                                                .nombre((String) row[0])
+                                                .cantidad(((Number) row[2]).longValue())
+                                                .build())
+                                .collect(Collectors.toList());
+        }
 
 }

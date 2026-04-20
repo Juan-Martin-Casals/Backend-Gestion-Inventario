@@ -26,6 +26,7 @@ import com.gestioninventariodemo2.cruddemo2.DTO.StockTablaDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.TopProductoDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.VentasComprasDiariasDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.MetodoPagoUsoDTO;
 import com.gestioninventariodemo2.cruddemo2.Services.InformeService;
 import com.gestioninventariodemo2.cruddemo2.Services.InformePdfService;
 
@@ -129,9 +130,19 @@ public class InformeController {
     }
 
     @GetMapping("/agotados")
-    public ResponseEntity<org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO>> getProductosAgotados(org.springframework.data.domain.Pageable pageable) {
-        org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO> agotados = informeService.obtenerProductosAgotados(pageable);
+    public ResponseEntity<org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO>> getProductosAgotados(
+            org.springframework.data.domain.Pageable pageable) {
+        org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO> agotados = informeService
+                .obtenerProductosAgotados(pageable);
         return ResponseEntity.ok(agotados);
+    }
+
+    @GetMapping("/metodos-pago")
+    public ResponseEntity<List<MetodoPagoUsoDTO>> getMetodosPago(
+            @RequestParam LocalDate inicio,
+            @RequestParam LocalDate fin) {
+        List<MetodoPagoUsoDTO> metodosPago = informeService.obtenerMetodosPagoMasUtilizados(inicio, fin);
+        return ResponseEntity.ok(metodosPago);
     }
 
 }

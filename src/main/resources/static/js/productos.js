@@ -85,8 +85,8 @@ document.addEventListener('DOMContentLoaded', function () {
     let currentPage = 0;
     let totalPages = 1;
     const itemsPerPage = 10;
-    let sortField = 'nombre'; // Campo de ordenamiento inicial
-    let sortDirection = 'asc'; // Dirección inicial (A → Z)
+    let sortField = 'estadoStock'; // Campo de ordenamiento inicial (prioridad: Agotado → Bajo → Óptimo)
+    let sortDirection = 'asc'; // Dirección inicial
 
     // --- Estado de Categorías ---
     let todasLasCategorias = [];
@@ -95,13 +95,30 @@ document.addEventListener('DOMContentLoaded', function () {
     let todosLosProductos = []; // Cache de todos los productos
     let productosBuscados = null; // Productos filtrados por búsqueda
     let searchTimeout = null; // Timer para búsqueda con debounce
+    let isLoadingProducts = false; // Guard contra llamadas concurrentes
+
+    // --- Estado de Filtros ---
+    const filterStockEstado = document.getElementById('filter-stock-estado');
+    const filterCategoria = document.getElementById('filter-categoria');
+    const filterProveedor = document.getElementById('filter-proveedor');
+    let filtroStockEstado = 'todos'; // 'todos', 'agotado', 'bajo', 'optimo'
+    let filtroCategoria = 'todos';
+    let filtroProveedor = 'todos';
 
 
     // ===============================
     // FUNCIÓN PARA CARGAR PRODUCTOS (FINAL)
     // ===============================
     async function loadProducts() {
-        if (!productTableBody || !mainContent) return;
+        if (!productTableBody || !mainContent) {
+            return;
+        }
+
+        // Guard contra llamadas concurrentes
+        if (isLoadingProducts) {
+            return;
+        }
+        isLoadingProducts = true;
 
         // 1. GUARDAR scroll y preparar animación (Fade Out)
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
@@ -123,7 +140,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const pageData = await response.json();
             todosLosProductos = pageData.content; // Guardar TODOS los productos
 
+            // Poblar los dropdowns de filtro con datos reales
+            poblarDropdownsFiltro();
+
             // Si hay una búsqueda activa, reaplicarla con los nuevos datos
+            let productosParaFiltrar = todosLosProductos;
             if (productSearchInputElement && productSearchInputElement.value.trim() !== '') {
                 const textoBusqueda = removeAccents(productSearchInputElement.value.toLowerCase().trim());
                 productosBuscados = todosLosProductos.filter(producto => {
@@ -137,10 +158,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         removeAccents(producto.proveedorNombre.toLowerCase()).includes(textoBusqueda);
                     return coincideNombre || coincideCategoria || coincideDescripcion || coincideProveedor;
                 });
+                productosParaFiltrar = productosBuscados;
             }
 
             // 3. Aplicar sorting y filtros en el frontend
-            const productosAMostrar = aplicarFiltros();
+            const productosAMostrar = aplicarFiltros(productosParaFiltrar);
             const productosSorted = clientSideSort(productosAMostrar);
 
             // 4. Calcular paginación en frontend
@@ -157,6 +179,9 @@ document.addEventListener('DOMContentLoaded', function () {
             updatePaginationControls();
             updateSortIndicators(); // Actualizar indicadores visuales
 
+            // 6. Actualizar color de columna Stock según filtro
+            actualizarColorColumnaStock();
+
             requestAnimationFrame(() => {
                 // Restaurar scroll
                 window.scrollTo(0, scrollPosition);
@@ -168,25 +193,118 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Error al cargar los productos:', error);
             productTableBody.innerHTML = `<tr><td colspan="6">Error al cargar productos.</td></tr>`;
             productTableBody.classList.remove('loading');
+        } finally {
+            isLoadingProducts = false;
         }
     }
 
     window.loadProducts = loadProducts;
 
     // ===============================
+    // FUNCIÓN PARA POBLAR DROPDOWNS DE FILTRO
+    // ===============================
+    function poblarDropdownsFiltro() {
+        // Poblar dropdown de Categorías
+        if (filterCategoria && todasLasCategorias.length > 0) {
+            const valorActual = filterCategoria.value;
+            filterCategoria.innerHTML = '<option value="todos">🏷️ Categoría: Todas</option>';
+            const categoriasOrdenadas = [...todasLasCategorias].sort((a, b) =>
+                a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' })
+            );
+            categoriasOrdenadas.forEach(c => {
+                const option = document.createElement('option');
+                option.value = c.nombre;
+                option.textContent = c.nombre;
+                filterCategoria.appendChild(option);
+            });
+            filterCategoria.value = valorActual; // Restaurar selección
+        }
+
+        // Poblar dropdown de Proveedores (desde los productos cargados)
+        if (filterProveedor && todosLosProductos.length > 0) {
+            const valorActual = filterProveedor.value;
+            filterProveedor.innerHTML = '<option value="todos">🚚 Proveedor: Todos</option>';
+
+            // Extraer proveedores únicos (incluyendo los de otrosProveedores)
+            const proveedoresSet = new Set();
+            let haySinProveedor = false;
+            todosLosProductos.forEach(p => {
+                if (p.proveedorNombre) {
+                    proveedoresSet.add(p.proveedorNombre);
+                } else {
+                    haySinProveedor = true;
+                }
+                if (p.otrosProveedores) {
+                    p.otrosProveedores.forEach(nombre => proveedoresSet.add(nombre));
+                }
+            });
+
+            // Opción "Sin proveedor"
+            if (haySinProveedor) {
+                const optSin = document.createElement('option');
+                optSin.value = 'sin-proveedor';
+                optSin.textContent = '— Sin proveedor';
+                filterProveedor.appendChild(optSin);
+            }
+
+            // Proveedores ordenados alfabéticamente
+            const proveedoresOrdenados = [...proveedoresSet].sort((a, b) =>
+                a.localeCompare(b, 'es', { sensitivity: 'base' })
+            );
+            proveedoresOrdenados.forEach(nombre => {
+                const option = document.createElement('option');
+                option.value = nombre;
+                option.textContent = nombre;
+                filterProveedor.appendChild(option);
+            });
+            filterProveedor.value = valorActual; // Restaurar selección
+        }
+    }
+
+    // ===============================
     // FUNCIONES AUXILIARES PARA FILTROS Y SORTING
     // ===============================
 
     /**
-     * Aplica filtros de búsqueda sobre los productos
+     * Aplica filtros de búsqueda y estado de stock sobre los productos
      */
-    function aplicarFiltros() {
-        // Si hay búsqueda activa, usar productos filtrados
-        if (productosBuscados && productosBuscados.length >= 0) {
-            return productosBuscados;
+    function aplicarFiltros(productos) {
+        let resultado = productos || todosLosProductos;
+
+        if (!resultado) {
+            return [];
         }
-        // Si no, retornar todos
-        return todosLosProductos;
+
+        // Filtro 1: Estado de stock
+        const filtroToEstado = {
+            'agotado': 'AGOTADO',
+            'bajo': 'BAJO',
+            'optimo': 'BUENO'
+        };
+        if (filtroStockEstado !== 'todos' && filtroToEstado[filtroStockEstado]) {
+            const estadoBuscado = filtroToEstado[filtroStockEstado];
+            resultado = resultado.filter(p => p.estadoStock === estadoBuscado);
+        }
+
+        // Filtro 2: Categoría
+        if (filtroCategoria !== 'todos') {
+            resultado = resultado.filter(p =>
+                p.categoria && p.categoria.toLowerCase() === filtroCategoria.toLowerCase()
+            );
+        }
+
+        // Filtro 3: Proveedor
+        if (filtroProveedor !== 'todos') {
+            if (filtroProveedor === 'sin-proveedor') {
+                resultado = resultado.filter(p => !p.proveedorNombre);
+            } else {
+                resultado = resultado.filter(p =>
+                    p.proveedorNombre && p.proveedorNombre.toLowerCase() === filtroProveedor.toLowerCase()
+                );
+            }
+        }
+
+        return resultado;
     }
 
     /**
@@ -194,6 +312,21 @@ document.addEventListener('DOMContentLoaded', function () {
      */
     function clientSideSort(productos) {
         if (!sortField || productos.length === 0) return productos;
+
+        // Ordenamiento especial por estado de stock (AGOTADO → BAJO → BUENO)
+        if (sortField === 'estadoStock') {
+            const prioridad = { 'AGOTADO': 0, 'BAJO': 1, 'BUENO': 2 };
+            const sorted = [...productos].sort((a, b) => {
+                const aP = prioridad[a.estadoStock] ?? 3;
+                const bP = prioridad[b.estadoStock] ?? 3;
+                if (aP !== bP) {
+                    return sortDirection === 'asc' ? aP - bP : bP - aP;
+                }
+                // Desempate por nombre
+                return (a.nombre || '').localeCompare(b.nombre || '', 'es', { sensitivity: 'base' });
+            });
+            return sorted;
+        }
 
         // Mapear nombres de campo del HTML a nombres de campo del DTO
         const fieldMap = {
@@ -254,6 +387,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateSortIndicators() {
+        // Actualizar encabezados de tabla
         const headers = document.querySelectorAll('#productos-section .data-table th[data-sort-by]');
         headers.forEach(th => {
             th.classList.remove('sort-asc', 'sort-desc');
@@ -271,6 +405,46 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
         });
+
+        // Actualizar botones de ordenamiento en la barra de filtros
+        const sortButtons = document.querySelectorAll('#productos-section [id^="sort-btn-"]');
+        sortButtons.forEach(btn => {
+            const field = btn.getAttribute('data-sort-field');
+            const icon = btn.querySelector('i');
+
+            if (field === sortField) {
+                // Botón activo
+                btn.style.background = '#e8f0fe';
+                btn.style.borderColor = '#4285f4';
+                btn.style.color = '#1a73e8';
+                btn.style.fontWeight = '600';
+                if (icon) {
+                    icon.className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
+                }
+            } else {
+                // Botón inactivo
+                btn.style.background = 'white';
+                btn.style.borderColor = '#ddd';
+                btn.style.color = '#333';
+                btn.style.fontWeight = 'normal';
+                if (icon) {
+                    icon.className = 'fas fa-sort';
+                }
+            }
+        });
+    }
+
+    function actualizarColorColumnaStock() {
+        const thStock = document.getElementById('th-stock');
+        if (!thStock) return;
+
+        thStock.classList.remove('sort-asc', 'sort-desc');
+        thStock.style.backgroundColor = '';
+        thStock.style.color = '';
+
+        if (filtroStockEstado !== 'todos') {
+            thStock.classList.add('sort-asc');
+        }
     }
 
     // ===============================
@@ -287,6 +461,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const response = await fetch(`${API_CATEGORIAS_URL}/select`);
             if (!response.ok) throw new Error('Error al cargar categorías');
             todasLasCategorias = await response.json();
+            poblarDropdownsFiltro(); // Actualizar dropdown de categorías
         } catch (error) {
             console.error(error);
             categorySearchInput.placeholder = "Error al cargar categorías";
@@ -1140,11 +1315,102 @@ document.addEventListener('DOMContentLoaded', function () {
     // LISTENERS Y EJECUCIÓN INICIAL
     // ===============================
 
-    // LISTENERS DE ORDENAMIENTO
-    const sortableHeaders = document.querySelectorAll('#productos-section .data-table th[data-sort-by]');
-    sortableHeaders.forEach(th => {
-        th.addEventListener('click', handleSortClick);
-    });
+    // LISTENERS DE ORDENAMIENTO (solo botones en la barra de filtros)
+
+    // Event listeners para botones de ordenamiento en la barra de filtros
+    const sortBtnNombre = document.getElementById('sort-btn-nombre');
+    const sortBtnPrecio = document.getElementById('sort-btn-precio');
+
+    function handleSortButtonClick(field) {
+        if (sortField === field) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortField = field;
+            sortDirection = 'asc';
+        }
+        currentPage = 0;
+        loadProducts();
+    }
+
+    if (sortBtnNombre) {
+        sortBtnNombre.addEventListener('click', () => handleSortButtonClick('nombre'));
+    }
+    if (sortBtnPrecio) {
+        sortBtnPrecio.addEventListener('click', () => handleSortButtonClick('precio'));
+    }
+
+    // ==========================================================
+    // EXPORTAR A PDF
+    // ==========================================================
+    const btnExportarPdf = document.getElementById('btn-exportar-inventario-pdf');
+    if (btnExportarPdf) {
+        btnExportarPdf.addEventListener('click', async () => {
+            try {
+                // Deshabilitar botón y mostrar carga
+                const originalText = btnExportarPdf.innerHTML;
+                btnExportarPdf.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
+                btnExportarPdf.disabled = true;
+
+                // Construir descripción de filtros
+                let filtrosDesc = [];
+                if (filterStockEstado && filterStockEstado.value !== 'todos') {
+                    filtrosDesc.push(`Estado: ${filterStockEstado.options[filterStockEstado.selectedIndex].text.replace(/^[^\w]*/, '')}`);
+                }
+                if (filterCategoria && filterCategoria.value !== 'todos') {
+                    filtrosDesc.push(`Categoría: ${filterCategoria.value}`);
+                }
+                if (filterProveedor && filterProveedor.value !== 'todos') {
+                    filtrosDesc.push(`Proveedor: ${filterProveedor.options[filterProveedor.selectedIndex].text.replace(/^[^\w]*\s*/, '')}`);
+                }
+                if (productSearchInputElement && productSearchInputElement.value.trim() !== '') {
+                    filtrosDesc.push(`Búsqueda: "${productSearchInputElement.value.trim()}"`);
+                }
+                const filtrosAplicados = filtrosDesc.length > 0 ? filtrosDesc.join(' | ') : 'Todos';
+
+                // Obtener los productos que se están mostrando actualmente (paginados o no, en este caso mandamos todos los filtrados)
+                // Utilizamos `productosBuscados` si hay búsqueda, si no `todosLosProductos`, y pasamos por `aplicarFiltros` y `clientSideSort`
+                let productosBase = (productSearchInputElement && productSearchInputElement.value.trim() !== '') ? productosBuscados : todosLosProductos;
+                const productosFiltrados = aplicarFiltros(productosBase || []);
+                const productosOrdenados = clientSideSort(productosFiltrados);
+
+                const payload = {
+                    productos: productosOrdenados,
+                    filtrosAplicados: filtrosAplicados
+                };
+
+                const response = await fetch('/api/productos/inventario/exportar-pdf', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al generar el PDF');
+                }
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
+                a.download = `reporte_inventario_${fecha}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+
+            } catch (error) {
+                console.error('Error al exportar a PDF:', error);
+                alert('No se pudo generar el reporte PDF.');
+            } finally {
+                // Restaurar botón
+                btnExportarPdf.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar a PDF';
+                btnExportarPdf.disabled = false;
+            }
+        });
+    }
 
     // ==========================================================
     // FILTRO POR BÚSQUEDA
@@ -1173,24 +1439,58 @@ document.addEventListener('DOMContentLoaded', function () {
         loadProducts(); // Recargar con paginación correcta
     }
 
-    function aplicarFiltros() {
-        let productosResultado = todosLosProductos;
-
-        // Aplicar filtro de búsqueda si existe
-        if (productosBuscados !== null) {
-            productosResultado = productosBuscados;
-        }
-
-        return productosResultado;
-    }
+    // NOTA: aplicarFiltros ya está definida arriba con la lógica completa de filtrado por estado de stock.
+    // No redefinir aquí para evitar sobreescribirla.
 
     function limpiarBusqueda() {
         if (productSearchInputElement) {
             productSearchInputElement.value = '';
         }
         productosBuscados = null;
-        currentPage = 0; // Resetear a primera página
-        loadProducts(); // Recargar con paginación
+
+        // Limpiar todos los filtros
+        if (filterStockEstado) {
+            filterStockEstado.value = 'todos';
+            filtroStockEstado = 'todos';
+        }
+        if (filterCategoria) {
+            filterCategoria.value = 'todos';
+            filtroCategoria = 'todos';
+        }
+        if (filterProveedor) {
+            filterProveedor.value = 'todos';
+            filtroProveedor = 'todos';
+        }
+
+        // Restaurar ordenamiento por defecto (estado de stock)
+        sortField = 'estadoStock';
+        sortDirection = 'asc';
+
+        currentPage = 0;
+        loadProducts();
+    }
+
+    // Event listeners para los filtros
+    if (filterStockEstado) {
+        filterStockEstado.addEventListener('change', (e) => {
+            filtroStockEstado = e.target.value;
+            currentPage = 0;
+            loadProducts();
+        });
+    }
+    if (filterCategoria) {
+        filterCategoria.addEventListener('change', (e) => {
+            filtroCategoria = e.target.value;
+            currentPage = 0;
+            loadProducts();
+        });
+    }
+    if (filterProveedor) {
+        filterProveedor.addEventListener('change', (e) => {
+            filtroProveedor = e.target.value;
+            currentPage = 0;
+            loadProducts();
+        });
     }
 
     // Event listeners para búsqueda en tiempo real con debounce
@@ -1322,6 +1622,29 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnLimpiarFormulario) {
         btnLimpiarFormulario.addEventListener('click', limpiarFormularioProducto);
     }
+
+    // ==========================================================
+    // FILTRO POR ESTADO DE STOCK (Dropdown)
+    // ==========================================================
+    window.filtrarPorEstado = function(valor) {
+        filtroStockEstado = valor;
+        if (filterStockEstado) {
+            filterStockEstado.value = valor;
+        }
+        
+        // Resetear otros filtros
+        filtroCategoria = 'todos';
+        if (filterCategoria) filterCategoria.value = 'todos';
+        filtroProveedor = 'todos';
+        if (filterProveedor) filterProveedor.value = 'todos';
+
+        // Asegurar que el ordenamiento sea por estado de stock
+        sortField = 'estadoStock';
+        sortDirection = 'asc';
+        
+        currentPage = 0;
+        loadProducts();
+    };
 
     // ==========================================================
     // CARGA INICIAL

@@ -18,6 +18,11 @@ import com.gestioninventariodemo2.cruddemo2.DTO.ProductoInventarioDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoSelectDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.PdfReportRequestDTO;
+import com.gestioninventariodemo2.cruddemo2.Services.PdfReportService;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+
 import com.gestioninventariodemo2.cruddemo2.Model.Producto;
 import com.gestioninventariodemo2.cruddemo2.Services.ProductoService;
 
@@ -30,6 +35,20 @@ import lombok.RequiredArgsConstructor;
 public class ProductoController {
 
     private final ProductoService productoService;
+    private final PdfReportService pdfReportService;
+
+    @PostMapping("/inventario/exportar-pdf")
+    public ResponseEntity<byte[]> exportarInventarioPdf(@RequestBody PdfReportRequestDTO request) {
+        byte[] pdfBytes = pdfReportService.generarReporteInventarioPdf(request);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "reporte_inventario.pdf");
+        
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(pdfBytes);
+    }
 
     @PostMapping
     public ResponseEntity<Producto> crearProducto(@RequestBody ProductoRequestDTO dto) {
