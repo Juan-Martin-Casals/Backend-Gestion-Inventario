@@ -838,7 +838,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <tr>
                         <td>${item.nombreProducto}</td>
                         <td class="col-num"><input type="number" class="inline-edit-input" id="inline-cantidad-venta-${index}" value="${item.cantidad}" min="1"></td>
-                        <td class="col-num"><input type="text" class="inline-edit-input" id="inline-precio-venta-${index}" value="${formatoMoneda.format(item.precioVenta)}"></td>
+                        <td class="col-num">$${formatoMoneda.format(item.precioVenta)}</td>
                         <td class="col-num">$${formatoMoneda.format(subtotal)}</td>
                         <td>
                             <button type="button" class="btn-icon btn-save-detalle btn-guardar-venta-inline" data-index="${index}" title="Guardar">
@@ -926,26 +926,14 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function guardarVentaEdicionInline(index) {
-        // Obtener valores de los inputs
         const cantidadInput = document.getElementById(`inline-cantidad-venta-${index}`);
-        const precioInput = document.getElementById(`inline-precio-venta-${index}`);
 
-        if (!cantidadInput || !precioInput) return;
+        if (!cantidadInput) return;
 
         const nuevaCantidad = parseInt(cantidadInput.value);
-        const precioTexto = precioInput.value.replace(/\$/g, '').replace(/\./g, '').replace(',', '.');
-        const nuevoPrecio = parseFloat(precioTexto);
 
-        // Validaciones
         if (isNaN(nuevaCantidad) || nuevaCantidad <= 0) {
             errorDetalleGeneral.textContent = 'La cantidad debe ser un número entero mayor a 0.';
-            errorDetalleGeneral.className = 'form-message error';
-            errorDetalleGeneral.style.display = 'block';
-            return;
-        }
-
-        if (isNaN(nuevoPrecio) || nuevoPrecio <= 0) {
-            errorDetalleGeneral.textContent = 'El precio debe ser un número válido mayor a 0.';
             errorDetalleGeneral.className = 'form-message error';
             errorDetalleGeneral.style.display = 'block';
             return;
@@ -964,14 +952,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Limpiar error previo si la validación pasó
         errorDetalleGeneral.textContent = '';
         errorDetalleGeneral.style.display = 'none';
         errorDetalleGeneral.className = 'form-message';
 
-        // Actualizar el item
         detallesVenta[index].cantidad = nuevaCantidad;
-        detallesVenta[index].precioVenta = nuevoPrecio;
 
         // Salir del modo edición
         editIndexVenta = -1;

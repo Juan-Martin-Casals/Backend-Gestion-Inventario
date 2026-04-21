@@ -64,7 +64,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (sectionTitle) sectionTitle.textContent = 'Caja';
                     if (sectionIcon) sectionIcon.className = sectionIcons['caja'];
                     if (typeof window.showCajaSubsection === 'function') window.showCajaSubsection('caja-operaciones');
-                    alert('Debes abrir la caja antes de registrar una venta.');
                     return;
                 }
 

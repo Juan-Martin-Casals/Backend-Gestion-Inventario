@@ -1944,6 +1944,15 @@ body {
     opacity: 0;
 }
 
+#tabla-historial-caja-body {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#tabla-historial-caja-body.loading {
+    opacity: 0;
+}
+
 #modal-stock-bajo .table-container {
     min-height: 480px;
 }

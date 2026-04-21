@@ -1121,7 +1121,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 editCategoryHiddenInput.value = '';
             }
         });
-        editCategorySearchInput.addEventListener('focus', () => {
+        editCategorySearchInput.addEventListener('click', () => {
+            // Toggle: si el dropdown ya está visible, cerrarlo
+            if (editCategoryResultsContainer && editCategoryResultsContainer.style.display === 'block') {
+                editCategoryResultsContainer.style.display = 'none';
+                return;
+            }
             const query = removeAccents(editCategorySearchInput.value.toLowerCase());
             const categoriasFiltradas = todasLasCategorias.filter(c =>
                 removeAccents(c.nombre.toLowerCase()).includes(query)

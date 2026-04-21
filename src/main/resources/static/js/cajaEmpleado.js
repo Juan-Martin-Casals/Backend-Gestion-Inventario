@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 saldoAnteriorGlobal = data.saldoAnterior || 0.0;
 
                 spanSaldoAnterior.textContent = formatter.format(saldoAnteriorGlobal);
-                inputMontoInicial.value = saldoAnteriorGlobal.toFixed(2);
+                inputMontoInicial.value = Math.round(saldoAnteriorGlobal);
 
                 panelApertura.style.display = 'block';
                 if (tituloApertura) tituloApertura.style.display = 'block';
@@ -235,11 +235,24 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Bloquear caracteres no válidos en monto inicial (solo enteros positivos)
+    if (inputMontoInicial) {
+        inputMontoInicial.addEventListener('keydown', (e) => {
+            if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+    }
+
     if (btnAbrirCaja) {
         btnAbrirCaja.addEventListener('click', async () => {
             const montoInicial = parseFloat(inputMontoInicial.value);
-            if (isNaN(montoInicial) || montoInicial < 0) {
-                showError('Por favor, ingresa un monto físico válido.');
+            if (isNaN(montoInicial) || montoInicial <= 0) {
+                showError('El monto es inválido.');
+                return;
+            }
+            if (!Number.isInteger(montoInicial)) {
+                showError('El monto debe ser un número entero, sin decimales.');
                 return;
             }
 

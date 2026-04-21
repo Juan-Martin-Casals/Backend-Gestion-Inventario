@@ -330,63 +330,6 @@ document.addEventListener('DOMContentLoaded', function () {
         const direccionError = document.getElementById('errorDireccion');
         const cuitError = document.getElementById('errorCuit');
 
-        // Validación en tiempo real para nombre duplicado
-        let nombreTimeout;
-        if (nombreInput && nombreError) {
-            nombreInput.addEventListener('blur', async function () {
-                const nombre = nombreInput.value.trim();
-                if (nombre) {
-                    clearTimeout(nombreTimeout);
-                    nombreTimeout = setTimeout(async () => {
-                        try {
-                            const response = await fetch(`${API_PROVEEDORES_URL}/existe/nombre/${encodeURIComponent(nombre)}`);
-                            const existe = await response.json();
-                            if (existe) {
-                                nombreError.textContent = 'Ya existe un proveedor con ese nombre';
-                            } else {
-                                nombreError.textContent = '';
-                            }
-                        } catch (error) {
-                            console.error('Error al verificar nombre:', error);
-                        }
-                    }, 500);
-                } else {
-                    nombreError.textContent = '';
-                }
-            });
-        }
-
-        // Validación en tiempo real para email duplicado
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        let emailTimeout;
-        if (emailInput && emailError) {
-            emailInput.addEventListener('blur', async function () {
-                const email = emailInput.value.trim();
-                if (email) {
-                    // Si el formato es inválido, no consultar el backend
-                    if (!emailRegex.test(email)) return;
-                    clearTimeout(emailTimeout);
-                    emailTimeout = setTimeout(async () => {
-                        try {
-                            const response = await fetch(`${API_PROVEEDORES_URL}/existe/email/${encodeURIComponent(email)}`);
-                            const existe = await response.json();
-                            if (existe) {
-                                emailError.textContent = 'Ya existe un proveedor con ese email';
-                            } else {
-                                // Solo limpiar si no hay ya un error de formato visible
-                                if (!emailError.textContent.includes('formato')) {
-                                    emailError.textContent = '';
-                                }
-                            }
-                        } catch (error) {
-                            console.error('Error al verificar email:', error);
-                        }
-                    }, 500);
-                } else {
-                    emailError.textContent = '';
-                }
-            });
-        }
 
         proveedorForm.addEventListener('submit', async function (event) {
             event.preventDefault();
@@ -404,13 +347,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const productosIds = [];
 
             if (!nombre) { nombreError.textContent = 'El nombre del proveedor es obligatorio'; isValid = false; }
-            if (!telefono) { telefonoError.textContent = 'El telefono del proveedor es obligatorio'; isValid = false; }
+            if (!telefono) { telefonoError.textContent = 'El teléfono del proveedor es obligatorio'; isValid = false; }
+            else if (telefono.length < 6) { telefonoError.textContent = 'El teléfono debe tener al menos 6 caracteres'; isValid = false; }
             if (!email) { emailError.textContent = 'El email del proveedor es obligatorio'; isValid = false; }
             else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
                 emailError.textContent = 'El formato del email no es válido';
                 isValid = false;
             }
-            if (!direccion) { direccionError.textContent = 'La direccion del proveedor es obligatoria'; isValid = false; }
+            if (!direccion) { direccionError.textContent = 'La dirección del proveedor es obligatoria'; isValid = false; }
             if (!cuit) { cuitError.textContent = 'El CUIT es obligatorio'; isValid = false; }
             else if (!cuit.match(/^\d{2}-\d{8}-\d{1}$/)) {
                 cuitError.textContent = 'El formato de CUIT debe ser XX-XXXXXXXX-X';
@@ -421,6 +365,32 @@ document.addEventListener('DOMContentLoaded', function () {
                 generalMessage.textContent = "Debe completar todos los campos obligatorios.";
                 generalMessage.classList.add('error');
                 return;
+            }
+
+            // Verificar nombre y email duplicados en el servidor
+            try {
+                const [nombreRes, emailRes] = await Promise.all([
+                    fetch(`${API_PROVEEDORES_URL}/existe/nombre/${encodeURIComponent(nombre)}`),
+                    fetch(`${API_PROVEEDORES_URL}/existe/email/${encodeURIComponent(email)}`)
+                ]);
+                const nombreExiste = await nombreRes.json();
+                const emailExiste = await emailRes.json();
+
+                if (nombreExiste) {
+                    nombreError.textContent = 'Ya existe un proveedor con ese nombre';
+                    isValid = false;
+                }
+                if (emailExiste) {
+                    emailError.textContent = 'Ya existe un proveedor con ese email';
+                    isValid = false;
+                }
+                if (!isValid) {
+                    generalMessage.textContent = "Corrija los errores antes de continuar.";
+                    generalMessage.classList.add('error');
+                    return;
+                }
+            } catch (error) {
+                console.error('Error al verificar duplicados:', error);
             }
 
             const proveedorDTO = { nombre, telefono, email, direccion, cuit, productosIds };
@@ -496,16 +466,20 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Tab Switching ---
     document.querySelectorAll('.edit-prov-tab').forEach(tab => {
         tab.addEventListener('click', function () {
-            // Deactivate all tabs
+            // Deactivate all tabs - pill style
             document.querySelectorAll('.edit-prov-tab').forEach(t => {
                 t.classList.remove('active');
                 t.style.color = '#64748b';
-                t.style.borderBottomColor = 'transparent';
+                t.style.background = 'transparent';
+                t.style.border = '1px solid transparent';
+                t.style.borderBottom = 'none';
             });
-            // Activate clicked
+            // Activate clicked - pill style
             this.classList.add('active');
-            this.style.color = '#2563eb';
-            this.style.borderBottomColor = '#2563eb';
+            this.style.color = '#1e293b';
+            this.style.background = 'white';
+            this.style.border = '1px solid #e2e8f0';
+            this.style.borderBottom = '2px solid white';
 
             // Hide all tab contents
             document.querySelectorAll('.edit-prov-tab-content').forEach(c => c.style.display = 'none');
@@ -533,6 +507,13 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!tbody) return;
         tbody.innerHTML = '';
 
+        // Actualizar contadores
+        const totalCount = (editProductosProveedorActual || []).length;
+        const countBadge = document.getElementById('edit-prov-productos-count');
+        const tabBadge = document.getElementById('edit-prov-tab-productos-badge');
+        if (countBadge) countBadge.textContent = totalCount;
+        if (tabBadge) tabBadge.textContent = totalCount;
+
         let filtered = editProductosProveedorActual || [];
         if (editProductosSearchTerm) {
             filtered = filtered.filter(p => {
@@ -542,22 +523,42 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (filtered.length === 0) {
+            const icon = editProductosSearchTerm ? 'fa-search' : 'fa-box-open';
             const msg = editProductosSearchTerm
                 ? 'No hay coincidencias con tu búsqueda.'
                 : 'No hay productos asociados a este proveedor.';
-            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: #64748b;">${msg}</td></tr>`;
+            const hint = editProductosSearchTerm
+                ? 'Intentá con otro término de búsqueda.'
+                : 'Usá el buscador de arriba para vincular productos.';
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 40px 20px;">
+                <i class="fas ${icon}" style="font-size: 32px; color: #cbd5e1; margin-bottom: 12px; display: block;"></i>
+                <div style="font-size: 14px; font-weight: 600; color: #64748b; margin-bottom: 4px;">${msg}</div>
+                <div style="font-size: 12px; color: #94a3b8;">${hint}</div>
+            </td></tr>`;
             return;
         }
 
-        filtered.forEach(prod => {
+        filtered.forEach((prod, index) => {
             const costoFormat = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(prod.ultimoCosto || 0);
+            const bgColor = index % 2 === 0 ? 'white' : '#fafbfc';
             const row = `
-                <tr>
-                    <td>${prod.nombreProducto || 'N/A'}</td>
-                    <td>${costoFormat}</td>
-                    <td style="text-align: center;">
+                <tr style="background: ${bgColor}; transition: background 0.15s;" onmouseenter="this.style.background='#f0f9ff'" onmouseleave="this.style.background='${bgColor}'">
+                    <td style="padding: 12px 20px; font-size: 14px; font-weight: 500; color: #1e293b; border-bottom: 1px solid #f1f5f9;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #f1f5f9; border-radius: 8px; flex-shrink: 0;">
+                                <i class="fas fa-cube" style="color: #64748b; font-size: 13px;"></i>
+                            </span>
+                            ${prod.nombreProducto || 'N/A'}
+                        </div>
+                    </td>
+                    <td style="padding: 12px 20px; text-align: right; border-bottom: 1px solid #f1f5f9;">
+                        <span style="font-size: 14px; font-weight: 600; color: #059669; background: #f0fdf4; padding: 4px 10px; border-radius: 6px; border: 1px solid #bbf7d0;">${costoFormat}</span>
+                    </td>
+                    <td style="padding: 12px 20px; text-align: center; border-bottom: 1px solid #f1f5f9;">
                         <button class="btn-icon btn-unlink-producto" data-id="${prod.idProducto}" title="Desvincular producto"
-                            style="color: #ef4444; font-size: 16px;">
+                            style="color: #ef4444; font-size: 14px; padding: 6px 10px; border-radius: 8px; border: 1px solid #fecaca; background: #fef2f2; cursor: pointer; transition: all 0.2s;"
+                            onmouseenter="this.style.background='#fee2e2'; this.style.borderColor='#f87171'"
+                            onmouseleave="this.style.background='#fef2f2'; this.style.borderColor='#fecaca'">
                             <i class="fas fa-unlink"></i>
                         </button>
                     </td>
@@ -587,23 +588,21 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!addProductoDropdown) return;
         addProductoDropdown.innerHTML = '';
 
-        if (!query || query.length < 1) {
-            addProductoDropdown.style.display = 'none';
-            return;
-        }
-
         // IDs ya vinculados
         const linkedIds = new Set((editProductosProveedorActual || []).map(p => p.idProducto));
 
-        // Filtrar: no vinculados + coincide con búsqueda
-        const normalizedQuery = normalizeText(query);
-        const results = allProductosDisponibles.filter(p => {
+        // Filtrar: no vinculados + coincide con búsqueda (si hay query)
+        let results = allProductosDisponibles.filter(p => {
             if (linkedIds.has(p.idProducto)) return false;
-            return normalizeText(p.nombreProducto || '').includes(normalizedQuery);
-        }).slice(0, 10); // Max 10 resultados
+            if (query && query.length > 0) {
+                const normalizedQuery = normalizeText(query);
+                return normalizeText(p.nombreProducto || '').includes(normalizedQuery);
+            }
+            return true; // Sin query, mostrar todos los no vinculados
+        });
 
         if (results.length === 0) {
-            addProductoDropdown.innerHTML = '<div style="padding: 12px 16px; color: #94a3b8; font-size: 13px;">No se encontraron productos disponibles.</div>';
+            addProductoDropdown.innerHTML = '<div style="padding: 12px 16px; color: #94a3b8; font-size: 13px; text-align: center;"><i class="fas fa-check-circle" style="margin-right: 6px;"></i>Todos los productos ya están vinculados.</div>';
             addProductoDropdown.style.display = 'block';
             return;
         }
@@ -618,7 +617,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <span style="font-size: 14px; color: #334155;">${prod.nombreProducto}</span>
                 <span style="font-size: 12px; color: #64748b;">${costoText}</span>
             `;
-            item.addEventListener('mouseenter', () => item.style.background = '#f1f5f9');
+            item.addEventListener('mouseenter', () => item.style.background = '#eef2ff');
             item.addEventListener('mouseleave', () => item.style.background = 'white');
             item.addEventListener('click', () => linkProductoToProveedor(prod));
             addProductoDropdown.appendChild(item);
@@ -682,9 +681,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }, 250);
         });
         addProductoSearch.addEventListener('focus', () => {
-            if (addProductoSearch.value.trim().length > 0) {
-                renderAddProductoDropdown(addProductoSearch.value.trim());
-            }
+            // Mostrar todos los productos disponibles al hacer clic/focus
+            renderAddProductoDropdown(addProductoSearch.value.trim());
         });
     }
 
@@ -789,6 +787,10 @@ document.addEventListener('DOMContentLoaded', function () {
         editEmailInput.value = data.email;
         editDireccionInput.value = data.direccion;
         editCuitInput.value = data.cuit || '';
+
+        // Mostrar nombre del proveedor en el header
+        const headerName = document.getElementById('edit-prov-header-name');
+        if (headerName) headerName.textContent = data.nombre || '';
 
         // Populate product catalog
         editProductosProveedorActual = data.productos || [];
@@ -1065,6 +1067,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!telefono) {
                 document.getElementById('errorEditTelefono').textContent = 'El teléfono es obligatorio';
                 isValid = false;
+            } else if (telefono.length < 6) {
+                document.getElementById('errorEditTelefono').textContent = 'El teléfono debe tener al menos 6 caracteres';
+                isValid = false;
             }
 
             if (!email) {
@@ -1128,6 +1133,138 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error al actualizar proveedor:', error);
                 editGeneralMessage.textContent = `Error: ${error.message}`;
                 editGeneralMessage.classList.add('error');
+            }
+        });
+    }
+
+    // ==========================================================
+    // VALIDACIONES EN TIEMPO REAL - FORMULARIO DE EDICIÓN
+    // ==========================================================
+    const emailRegexEdit = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    // Nombre: obligatorio + duplicado (excluyendo el actual)
+    if (editNombreInput) {
+        let editNombreTimeout;
+        editNombreInput.addEventListener('blur', async function () {
+            const errorEl = document.getElementById('errorEditNombre');
+            const nombre = editNombreInput.value.trim();
+            if (!nombre) {
+                if (errorEl) errorEl.textContent = 'El nombre es obligatorio';
+                return;
+            }
+            if (proveedorActualEditando && nombre === proveedorActualEditando.nombre) {
+                if (errorEl) errorEl.textContent = '';
+                return;
+            }
+            clearTimeout(editNombreTimeout);
+            editNombreTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`${API_PROVEEDORES_URL}/existe/nombre/${encodeURIComponent(nombre)}`);
+                    const existe = await response.json();
+                    if (existe) {
+                        if (errorEl) errorEl.textContent = 'Ya existe un proveedor con ese nombre';
+                    } else {
+                        if (errorEl) errorEl.textContent = '';
+                    }
+                } catch (error) {
+                    console.error('Error al verificar nombre (edit):', error);
+                }
+            }, 500);
+        });
+        editNombreInput.addEventListener('input', function () {
+            const errorEl = document.getElementById('errorEditNombre');
+            if (!editNombreInput.value.trim()) {
+                if (errorEl) errorEl.textContent = 'El nombre es obligatorio';
+            } else if (errorEl && errorEl.textContent === 'El nombre es obligatorio') {
+                errorEl.textContent = '';
+            }
+        });
+    }
+
+    // Teléfono: obligatorio + min length
+    if (editTelefonoInput) {
+        editTelefonoInput.addEventListener('blur', function () {
+            const errorEl = document.getElementById('errorEditTelefono');
+            const tel = editTelefonoInput.value.trim();
+            if (!tel) {
+                if (errorEl) errorEl.textContent = 'El teléfono es obligatorio';
+            } else if (tel.length < 6) {
+                if (errorEl) errorEl.textContent = 'El teléfono debe tener al menos 6 caracteres';
+            } else {
+                if (errorEl) errorEl.textContent = '';
+            }
+        });
+    }
+
+    // Email: formato + duplicado (excluyendo el actual)
+    if (editEmailInput) {
+        let editEmailTimeout;
+        editEmailInput.addEventListener('blur', async function () {
+            const errorEl = document.getElementById('errorEditEmail');
+            const email = editEmailInput.value.trim();
+            if (!email) {
+                if (errorEl) errorEl.textContent = 'El email es obligatorio';
+                return;
+            }
+            if (!emailRegexEdit.test(email)) {
+                if (errorEl) errorEl.textContent = 'El formato del email no es válido';
+                return;
+            }
+            if (proveedorActualEditando && email === proveedorActualEditando.email) {
+                if (errorEl) errorEl.textContent = '';
+                return;
+            }
+            clearTimeout(editEmailTimeout);
+            editEmailTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`${API_PROVEEDORES_URL}/existe/email/${encodeURIComponent(email)}`);
+                    const existe = await response.json();
+                    if (existe) {
+                        if (errorEl) errorEl.textContent = 'Ya existe un proveedor con ese email';
+                    } else {
+                        if (errorEl) errorEl.textContent = '';
+                    }
+                } catch (error) {
+                    console.error('Error al verificar email (edit):', error);
+                }
+            }, 500);
+        });
+        editEmailInput.addEventListener('input', function () {
+            const errorEl = document.getElementById('errorEditEmail');
+            const email = editEmailInput.value.trim();
+            if (email && !emailRegexEdit.test(email)) {
+                if (errorEl) errorEl.textContent = 'El formato del email no es válido';
+            } else if (!email) {
+                if (errorEl) errorEl.textContent = 'El email es obligatorio';
+            } else {
+                if (errorEl) errorEl.textContent = '';
+            }
+        });
+    }
+
+    // Dirección: obligatorio
+    if (editDireccionInput) {
+        editDireccionInput.addEventListener('blur', function () {
+            const errorEl = document.getElementById('errorEditDireccion');
+            if (!editDireccionInput.value.trim()) {
+                if (errorEl) errorEl.textContent = 'La dirección es obligatoria';
+            } else {
+                if (errorEl) errorEl.textContent = '';
+            }
+        });
+    }
+
+    // CUIT: obligatorio + formato
+    if (editCuitInput) {
+        editCuitInput.addEventListener('blur', function () {
+            const errorEl = document.getElementById('errorEditCuit');
+            const cuit = editCuitInput.value.trim();
+            if (!cuit) {
+                if (errorEl) errorEl.textContent = 'El CUIT es obligatorio';
+            } else if (!cuit.match(/^\d{2}-\d{8}-\d{1}$/)) {
+                if (errorEl) errorEl.textContent = 'El formato de CUIT debe ser XX-XXXXXXXX-X';
+            } else {
+                if (errorEl) errorEl.textContent = '';
             }
         });
     }
@@ -1287,20 +1424,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnLimpiarProveedor = document.getElementById('btn-limpiar-proveedor');
 
     function limpiarFormularioProveedor() {
-        // Limpiar campos de texto
+        // Limpiar todos los campos de texto
         if (nombreInput) nombreInput.value = '';
         if (telefonoInput) telefonoInput.value = '';
         if (emailInput) emailInput.value = '';
         if (direccionInput) direccionInput.value = '';
+        if (cuitInput) cuitInput.value = '';
 
-        // Limpiar multi-select
-
-
-        // Limpiar mensajes de error
+        // Limpiar todos los mensajes de error
         if (nombreError) nombreError.textContent = '';
         if (telefonoError) telefonoError.textContent = '';
         if (emailError) emailError.textContent = '';
         if (direccionError) direccionError.textContent = '';
+        const cuitErrorEl = document.getElementById('errorCuit');
+        if (cuitErrorEl) cuitErrorEl.textContent = '';
         if (generalMessage) {
             generalMessage.textContent = '';
             generalMessage.className = 'form-message';

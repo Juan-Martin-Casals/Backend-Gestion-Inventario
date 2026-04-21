@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 saldoAnteriorGlobal = data.saldoAnterior || 0.0;
 
                 spanSaldoAnterior.textContent = formatter.format(saldoAnteriorGlobal);
-                inputMontoInicial.value = saldoAnteriorGlobal.toFixed(2);
+                inputMontoInicial.value = Math.round(saldoAnteriorGlobal);
 
                 panelApertura.style.display = 'block';
                 if (tituloApertura) tituloApertura.style.display = 'block';
@@ -235,11 +235,24 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // Bloquear caracteres no válidos en monto inicial (solo enteros positivos)
+    if (inputMontoInicial) {
+        inputMontoInicial.addEventListener('keydown', (e) => {
+            if (['e', 'E', '+', '-', '.', ','].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+    }
+
     if (btnAbrirCaja) {
         btnAbrirCaja.addEventListener('click', async () => {
             const montoInicial = parseFloat(inputMontoInicial.value);
-            if (isNaN(montoInicial) || montoInicial < 0) {
-                showError('Por favor, ingresa un monto físico válido.');
+            if (isNaN(montoInicial) || montoInicial <= 0) {
+                showError('El monto es inválido.');
+                return;
+            }
+            if (!Number.isInteger(montoInicial)) {
+                showError('El monto debe ser un número entero, sin decimales.');
                 return;
             }
 
@@ -814,6 +827,103 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
     // HISTORIAL DE SESIONES
     // ==========================================
+    let todasLasSesiones = [];
+
+    function normH(str) {
+        return (str || '').toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+    }
+
+    function fmtFecha(fechaStr) {
+        if (!fechaStr) return '-';
+        const d = new Date(fechaStr);
+        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+
+    function renderHistorialRows(sesiones, offset) {
+        const tbody = document.getElementById('tabla-historial-caja-body');
+        if (!tbody) return;
+
+        if (!sesiones.length) {
+            tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">No hay sesiones registradas</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = sesiones.map((sesion, index) => {
+            const estadoBadge = sesion.estado === 'ABIERTA'
+                ? '<span style="background: #dcfce7; color: #16a34a; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">ABIERTA</span>'
+                : '<span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">CERRADA</span>';
+
+            let difHtml = '-';
+            if (sesion.diferencia !== null && sesion.diferencia !== undefined) {
+                if (Math.abs(sesion.diferencia) < 0.01) {
+                    difHtml = '<span style="color: #16a34a; font-weight: 600;">$0,00</span>';
+                } else if (sesion.diferencia > 0) {
+                    difHtml = `<span style="color: #16a34a; font-weight: 600;">+${formatter.format(sesion.diferencia)}</span>`;
+                } else {
+                    difHtml = `<span style="color: #dc3545; font-weight: 600;">${formatter.format(sesion.diferencia)}</span>`;
+                }
+            }
+
+            let obs = [];
+            const obsApertura = (sesion.observacionesApertura || '').trim();
+            if (obsApertura) obs.push(obsApertura);
+            const obsMatch = (sesion.observacionesCierre || '').match(/Obs=(.+)$/);
+            const obsCierre = obsMatch ? obsMatch[1].trim() : '';
+            if (obsCierre) obs.push(obsCierre);
+
+            let obsHtml = '';
+            if (obs.length > 0) {
+                const obsText = obs.join(' | ');
+                const obsDisplay = obsText.length > 40 ? obsText.substring(0, 40) + '...' : obsText;
+                obsHtml = `<span title="${obsText}">${obsDisplay}</span>`;
+            } else {
+                obsHtml = '<span style="color: #94a3b8; font-style: italic;">No hay ninguna observacion</span>';
+            }
+
+            return `
+                <tr>
+                    <td>${offset + index + 1}</td>
+                    <td>${fmtFecha(sesion.fechaApertura)}</td>
+                    <td>${fmtFecha(sesion.fechaCierre)}</td>
+                    <td>${sesion.duracion || '-'}</td>
+                    <td>${sesion.operador || '-'}</td>
+                    <td style="font-weight: 600; text-align: right;">${sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '-'}</td>
+                    <td style="font-weight: 600; text-align: right;">${sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : '-'}</td>
+                    <td style="text-align: right;">${difHtml}</td>
+                    <td>${estadoBadge}</td>
+                    <td>${obsHtml}</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function filtrarYRenderHistorial(page) {
+        const texto = normH(historialBusqueda?.value || '');
+        const PAGE_SIZE = 10;
+
+        const filtradas = texto
+            ? todasLasSesiones.filter(s => {
+                const rawCierre = s.observacionesCierre || '';
+                const obsMatch = rawCierre.match(/Obs=(.+)$/);
+                const campos = normH([s.operador, s.estado, s.observacionesApertura, obsMatch ? obsMatch[1] : '', s.duracion].join(' '));
+                return campos.includes(texto);
+            })
+            : todasLasSesiones;
+
+        historialTotalPages = Math.max(Math.ceil(filtradas.length / PAGE_SIZE), 1);
+        historialCurrentPage = Math.min(page, historialTotalPages - 1);
+
+        const pageInfo = document.getElementById('historial-caja-page-info');
+        if (pageInfo) pageInfo.textContent = `Página ${historialCurrentPage + 1} de ${historialTotalPages}`;
+        const prevBtn = document.getElementById('historial-caja-prev');
+        const nextBtn = document.getElementById('historial-caja-next');
+        if (prevBtn) prevBtn.disabled = historialCurrentPage === 0;
+        if (nextBtn) nextBtn.disabled = historialCurrentPage + 1 >= historialTotalPages;
+
+        const offset = historialCurrentPage * PAGE_SIZE;
+        renderHistorialRows(filtradas.slice(offset, offset + PAGE_SIZE), offset);
+    }
+
     async function cargarOperadores() {
         if (!historialFiltroOperador) return;
         try {
@@ -836,18 +946,17 @@ document.addEventListener('DOMContentLoaded', function () {
         const tbody = document.getElementById('tabla-historial-caja-body');
         if (!tbody) return;
 
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Cargando historial...</td></tr>';
+        tbody.classList.add('loading');
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
-            const params = new URLSearchParams({ page, size: 10, sort: 'fechaApertura,desc' });
-            const busqueda = historialBusqueda?.value?.trim();
+            const params = new URLSearchParams({ page: 0, size: 1000, sort: 'fechaApertura,desc' });
             const fechaDesde = historialFechaDesde?.value;
             const fechaHasta = historialFechaHasta?.value;
             const estado = historialFiltroEstado?.value;
             const operadorId = historialFiltroOperador?.value;
             const soloDiferencias = btnHistorialDiferencias?.dataset.active === 'true';
 
-            if (busqueda) params.append('busqueda', busqueda);
             if (fechaDesde) params.append('fechaDesde', fechaDesde + 'T00:00:00');
             if (fechaHasta) params.append('fechaHasta', fechaHasta + 'T23:59:59');
             if (estado) params.append('estado', estado);
@@ -858,105 +967,47 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!response.ok) throw new Error('Error al obtener historial');
 
             const data = await response.json();
-            historialCurrentPage = data.number;
-            historialTotalPages = data.totalPages;
+            todasLasSesiones = data.content || [];
 
-            const pageInfo = document.getElementById('historial-caja-page-info');
-            if (pageInfo) pageInfo.textContent = `Página ${historialCurrentPage + 1} de ${Math.max(historialTotalPages, 1)}`;
-
-            const prevBtn = document.getElementById('historial-caja-prev');
-            const nextBtn = document.getElementById('historial-caja-next');
-            if (prevBtn) prevBtn.disabled = historialCurrentPage === 0;
-            if (nextBtn) nextBtn.disabled = historialCurrentPage + 1 >= historialTotalPages;
-
-            if (!data.content || data.content.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 30px; color: #94a3b8;">No hay sesiones registradas</td></tr>';
-                return;
-            }
-
-            tbody.innerHTML = data.content.map((sesion, index) => {
-                const numero = (historialCurrentPage * 10) + index + 1;
-
-                // Formatear fechas
-                const fmtFecha = (fechaStr) => {
-                    if (!fechaStr) return '-';
-                    const d = new Date(fechaStr);
-                    const dia = String(d.getDate()).padStart(2, '0');
-                    const mes = String(d.getMonth() + 1).padStart(2, '0');
-                    const anio = d.getFullYear();
-                    const hora = String(d.getHours()).padStart(2, '0');
-                    const min = String(d.getMinutes()).padStart(2, '0');
-                    return `${dia}/${mes}/${anio} ${hora}:${min}`;
-                };
-
-                // Badge de estado
-                let estadoBadge = '';
-                if (sesion.estado === 'ABIERTA') {
-                    estadoBadge = '<span style="background: #dcfce7; color: #16a34a; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">ABIERTA</span>';
-                } else {
-                    estadoBadge = '<span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">CERRADA</span>';
-                }
-
-                // Diferencia
-                let difHtml = '-';
-                if (sesion.diferencia !== null && sesion.diferencia !== undefined) {
-                    if (Math.abs(sesion.diferencia) < 0.01) {
-                        difHtml = '<span style="color: #16a34a; font-weight: 600;">$0,00</span>';
-                    } else if (sesion.diferencia > 0) {
-                        difHtml = `<span style="color: #16a34a; font-weight: 600;">+${formatter.format(sesion.diferencia)}</span>`;
-                    } else {
-                        difHtml = `<span style="color: #dc3545; font-weight: 600;">${formatter.format(sesion.diferencia)}</span>`;
-                    }
-                }
-
-                // Observaciones (combinar apertura + cierre)
-                let obs = [];
-                const obsApertura = (sesion.observacionesApertura || '').trim();
-                if (obsApertura) obs.push(obsApertura);
-
-                const rawCierre = sesion.observacionesCierre || '';
-                const obsMatch = rawCierre.match(/Obs=(.+)$/);
-                const obsCierre = obsMatch ? obsMatch[1].trim() : '';
-                if (obsCierre) obs.push(obsCierre);
-
-                let obsHtml = '';
-                if (obs.length > 0) {
-                    const obsText = obs.join(' | ');
-                    const obsDisplay = obsText.length > 40 ? obsText.substring(0, 40) + '...' : obsText;
-                    obsHtml = `<span title="${obsText}">${obsDisplay}</span>`;
-                } else {
-                    obsHtml = '<span style="color: #94a3b8; font-style: italic;">No hay ninguna observacion</span>';
-                }
-
-                return `
-                    <tr>
-                        <td>${numero}</td>
-                        <td>${fmtFecha(sesion.fechaApertura)}</td>
-                        <td>${fmtFecha(sesion.fechaCierre)}</td>
-                        <td>${sesion.duracion || '-'}</td>
-                        <td>${sesion.operador || '-'}</td>
-                        <td style="font-weight: 600;">${sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '-'}</td>
-                        <td style="font-weight: 600;">${sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : '-'}</td>
-                        <td>${difHtml}</td>
-                        <td>${estadoBadge}</td>
-                        <td>${obsHtml}</td>
-                    </tr>
-                `;
-            }).join('');
+            filtrarYRenderHistorial(page);
+            requestAnimationFrame(() => tbody.classList.remove('loading'));
 
         } catch (error) {
             console.error('Error cargando historial de sesiones:', error);
             tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 30px; color: #dc3545;">Error al cargar historial</td></tr>';
+            requestAnimationFrame(() => tbody.classList.remove('loading'));
         }
     }
 
-    // Listeners de filtros
-    if (historialBtnBuscar) {
-        historialBtnBuscar.addEventListener('click', () => cargarHistorialSesiones(0));
+    const historialFiltroError = document.getElementById('historial-caja-filtro-error');
+
+    function mostrarErrorHistorial(msg) {
+        if (!historialFiltroError) return;
+        historialFiltroError.textContent = msg;
+        historialFiltroError.style.display = 'block';
+        setTimeout(() => { historialFiltroError.style.display = 'none'; }, 4000);
     }
+
+    function validarFechasHistorial() {
+        const desde = historialFechaDesde?.value;
+        const hasta = historialFechaHasta?.value;
+        if (desde && hasta && desde > hasta) {
+            mostrarErrorHistorial('La fecha de inicio no puede ser mayor que la fecha de fin');
+            return false;
+        }
+        if (historialFiltroError) historialFiltroError.style.display = 'none';
+        return true;
+    }
+
+    // Búsqueda en tiempo real (sin llamada al servidor)
     if (historialBusqueda) {
-        historialBusqueda.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') cargarHistorialSesiones(0);
+        historialBusqueda.addEventListener('input', () => filtrarYRenderHistorial(0));
+    }
+
+    // Lupa: aplica filtros de fecha (requiere fetch al servidor)
+    if (historialBtnBuscar) {
+        historialBtnBuscar.addEventListener('click', () => {
+            if (validarFechasHistorial()) cargarHistorialSesiones(0);
         });
     }
 
@@ -984,6 +1035,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (historialFechaHasta) historialFechaHasta.value = '';
             if (historialFiltroEstado) historialFiltroEstado.value = '';
             if (historialFiltroOperador) historialFiltroOperador.value = '';
+            if (historialFiltroError) historialFiltroError.style.display = 'none';
             if (btnHistorialDiferencias) {
                 btnHistorialDiferencias.dataset.active = 'false';
                 btnHistorialDiferencias.style.background = 'white';
@@ -994,22 +1046,25 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Paginación del historial
+    if (historialFiltroEstado) {
+        historialFiltroEstado.addEventListener('change', () => cargarHistorialSesiones(0));
+    }
+    if (historialFiltroOperador) {
+        historialFiltroOperador.addEventListener('change', () => cargarHistorialSesiones(0));
+    }
+
+    // Paginación local (sin re-fetch)
     const histPrev = document.getElementById('historial-caja-prev');
     const histNext = document.getElementById('historial-caja-next');
 
     if (histPrev) {
         histPrev.addEventListener('click', () => {
-            if (historialCurrentPage > 0) {
-                cargarHistorialSesiones(historialCurrentPage - 1);
-            }
+            if (historialCurrentPage > 0) filtrarYRenderHistorial(historialCurrentPage - 1);
         });
     }
     if (histNext) {
         histNext.addEventListener('click', () => {
-            if (historialCurrentPage + 1 < historialTotalPages) {
-                cargarHistorialSesiones(historialCurrentPage + 1);
-            }
+            if (historialCurrentPage + 1 < historialTotalPages) filtrarYRenderHistorial(historialCurrentPage + 1);
         });
     }
 });
