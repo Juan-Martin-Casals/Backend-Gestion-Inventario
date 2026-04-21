@@ -61,6 +61,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const telefonoInput = document.getElementById('proveedorTelefono');
     const emailInput = document.getElementById('proveedorEmail');
     const direccionInput = document.getElementById('proveedorDireccion');
+    const cuitInput = document.getElementById('proveedorCuit');
     const generalMessage = document.getElementById('form-general-message-proveedor');
 
 
@@ -76,6 +77,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const editTelefonoInput = document.getElementById('editProveedorTelefono');
     const editEmailInput = document.getElementById('editProveedorEmail');
     const editDireccionInput = document.getElementById('editProveedorDireccion');
+    const editCuitInput = document.getElementById('editProveedorCuit');
     const editGeneralMessage = document.getElementById('form-general-message-edit-proveedor');
 
 
@@ -182,35 +184,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const MAX_PRODUCTOS_TABLA = 3;
 
         proveedores.forEach(proveedor => {
-            // Truncar lista de productos si hay más de MAX_PRODUCTOS_TABLA
-            let productosDisplay = 'Sin productos asignados';
-
-            if (proveedor.productos && proveedor.productos.length > 0) {
-                // Función para truncar nombres largos
-                const truncarNombre = (nombre, maxLength = 50) => {
-                    if (nombre.length > maxLength) {
-                        return nombre.substring(0, maxLength) + '...';
-                    }
-                    return nombre;
-                };
-
-                const nombresProductos = proveedor.productos.map(p => truncarNombre(p.nombreProducto));
-
-                if (nombresProductos.length <= MAX_PRODUCTOS_TABLA) {
-                    productosDisplay = nombresProductos.join(', ');
-                } else {
-                    const primeros = nombresProductos.slice(0, MAX_PRODUCTOS_TABLA).join(', ');
-                    const restantes = nombresProductos.length - MAX_PRODUCTOS_TABLA;
-                    productosDisplay = `${primeros} <span style="color: #666; font-style: italic;">y ${restantes} más...</span>`;
-                }
-            }
-
             const row = `
                 <tr>
                     <td>${proveedor.nombre || 'N/A'}</td>
-                    <td>${proveedor.email || 'N/A'}</td>
+                    <td>${proveedor.cuit || 'N/A'}</td>
                     <td>${proveedor.telefono || 'N/A'}</td>
-                    <td>${productosDisplay}</td>
+                    <td>${proveedor.email || 'N/A'}</td>
                     <td>${proveedor.direccion || 'N/A'}</td>
                     <td>
                         <button class="btn-icon btn-view-proveedor" data-id="${proveedor.id}" title="Ver detalles">
@@ -349,6 +328,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const telefonoError = document.getElementById('errorTelefono');
         const emailError = document.getElementById('errorEmail');
         const direccionError = document.getElementById('errorDireccion');
+        const cuitError = document.getElementById('errorCuit');
 
         // Validación en tiempo real para nombre duplicado
         let nombreTimeout;
@@ -420,6 +400,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const telefono = telefonoInput.value.trim();
             const email = emailInput.value.trim();
             const direccion = direccionInput.value.trim();
+            const cuit = cuitInput.value.trim();
             const productosIds = [];
 
             if (!nombre) { nombreError.textContent = 'El nombre del proveedor es obligatorio'; isValid = false; }
@@ -430,6 +411,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 isValid = false;
             }
             if (!direccion) { direccionError.textContent = 'La direccion del proveedor es obligatoria'; isValid = false; }
+            if (!cuit) { cuitError.textContent = 'El CUIT es obligatorio'; isValid = false; }
+            else if (!cuit.match(/^\d{2}-\d{8}-\d{1}$/)) {
+                cuitError.textContent = 'El formato de CUIT debe ser XX-XXXXXXXX-X';
+                isValid = false;
+            }
 
             if (!isValid) {
                 generalMessage.textContent = "Debe completar todos los campos obligatorios.";
@@ -437,7 +423,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const proveedorDTO = { nombre, telefono, email, direccion, productosIds };
+            const proveedorDTO = { nombre, telefono, email, direccion, cuit, productosIds };
 
             showConfirmationModal("¿Estás seguro de que deseas registrar este proveedor?", async () => {
                 try {
@@ -500,6 +486,301 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // ==========================================================
+    // EDIT MODAL: TABS, PRODUCT CATALOG & UNLINK
+    // ==========================================================
+
+    let editProductosProveedorActual = [];
+    let editProductosSearchTerm = '';
+
+    // --- Tab Switching ---
+    document.querySelectorAll('.edit-prov-tab').forEach(tab => {
+        tab.addEventListener('click', function () {
+            // Deactivate all tabs
+            document.querySelectorAll('.edit-prov-tab').forEach(t => {
+                t.classList.remove('active');
+                t.style.color = '#64748b';
+                t.style.borderBottomColor = 'transparent';
+            });
+            // Activate clicked
+            this.classList.add('active');
+            this.style.color = '#2563eb';
+            this.style.borderBottomColor = '#2563eb';
+
+            // Hide all tab contents
+            document.querySelectorAll('.edit-prov-tab-content').forEach(c => c.style.display = 'none');
+            // Show target
+            const targetId = this.getAttribute('data-tab');
+            const target = document.getElementById(targetId);
+            if (target) target.style.display = 'block';
+
+            // Toggle footers
+            const footerInfo = document.getElementById('edit-prov-footer-info');
+            const footerProductos = document.getElementById('edit-prov-footer-productos');
+            if (targetId === 'edit-prov-tab-info') {
+                if (footerInfo) footerInfo.style.display = '';
+                if (footerProductos) footerProductos.style.display = 'none';
+            } else {
+                if (footerInfo) footerInfo.style.display = 'none';
+                if (footerProductos) footerProductos.style.display = '';
+            }
+        });
+    });
+
+    // --- Render Edit Product Catalog ---
+    function renderEditProductosCatalog() {
+        const tbody = document.getElementById('edit-prov-productos-body');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        let filtered = editProductosProveedorActual || [];
+        if (editProductosSearchTerm) {
+            filtered = filtered.filter(p => {
+                const nombre = normalizeText(p.nombreProducto || '');
+                return nombre.includes(editProductosSearchTerm);
+            });
+        }
+
+        if (filtered.length === 0) {
+            const msg = editProductosSearchTerm
+                ? 'No hay coincidencias con tu búsqueda.'
+                : 'No hay productos asociados a este proveedor.';
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: #64748b;">${msg}</td></tr>`;
+            return;
+        }
+
+        filtered.forEach(prod => {
+            const costoFormat = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(prod.ultimoCosto || 0);
+            const row = `
+                <tr>
+                    <td>${prod.nombreProducto || 'N/A'}</td>
+                    <td>${costoFormat}</td>
+                    <td style="text-align: center;">
+                        <button class="btn-icon btn-unlink-producto" data-id="${prod.idProducto}" title="Desvincular producto"
+                            style="color: #ef4444; font-size: 16px;">
+                            <i class="fas fa-unlink"></i>
+                        </button>
+                    </td>
+                </tr>`;
+            tbody.innerHTML += row;
+        });
+    }
+
+    // --- Add/Link Product: Autocomplete Search ---
+    let allProductosDisponibles = [];
+    const addProductoSearch = document.getElementById('edit-prov-add-producto-search');
+    const addProductoDropdown = document.getElementById('edit-prov-add-producto-dropdown');
+    let addProductoTimeout;
+
+    async function fetchTodosProductos() {
+        try {
+            const res = await fetch(API_PRODUCTOS_URL);
+            if (res.ok) {
+                allProductosDisponibles = await res.json();
+            }
+        } catch (e) {
+            console.error('Error fetching products:', e);
+        }
+    }
+
+    function renderAddProductoDropdown(query) {
+        if (!addProductoDropdown) return;
+        addProductoDropdown.innerHTML = '';
+
+        if (!query || query.length < 1) {
+            addProductoDropdown.style.display = 'none';
+            return;
+        }
+
+        // IDs ya vinculados
+        const linkedIds = new Set((editProductosProveedorActual || []).map(p => p.idProducto));
+
+        // Filtrar: no vinculados + coincide con búsqueda
+        const normalizedQuery = normalizeText(query);
+        const results = allProductosDisponibles.filter(p => {
+            if (linkedIds.has(p.idProducto)) return false;
+            return normalizeText(p.nombreProducto || '').includes(normalizedQuery);
+        }).slice(0, 10); // Max 10 resultados
+
+        if (results.length === 0) {
+            addProductoDropdown.innerHTML = '<div style="padding: 12px 16px; color: #94a3b8; font-size: 13px;">No se encontraron productos disponibles.</div>';
+            addProductoDropdown.style.display = 'block';
+            return;
+        }
+
+        results.forEach(prod => {
+            const costoText = prod.ultimoCosto
+                ? new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(prod.ultimoCosto)
+                : 'Sin costo';
+            const item = document.createElement('div');
+            item.style.cssText = 'padding: 10px 16px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; transition: background 0.15s;';
+            item.innerHTML = `
+                <span style="font-size: 14px; color: #334155;">${prod.nombreProducto}</span>
+                <span style="font-size: 12px; color: #64748b;">${costoText}</span>
+            `;
+            item.addEventListener('mouseenter', () => item.style.background = '#f1f5f9');
+            item.addEventListener('mouseleave', () => item.style.background = 'white');
+            item.addEventListener('click', () => linkProductoToProveedor(prod));
+            addProductoDropdown.appendChild(item);
+        });
+
+        addProductoDropdown.style.display = 'block';
+    }
+
+    async function linkProductoToProveedor(producto) {
+        const proveedorId = editIdInput.value;
+        const msgEl = document.getElementById('edit-prov-productos-message');
+
+        try {
+            const dto = { productosAgregar: [producto.idProducto] };
+            const response = await fetch(`${API_PROVEEDORES_URL}/${proveedorId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dto)
+            });
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'Error al vincular');
+            }
+
+            // Agregar al array local y re-render
+            editProductosProveedorActual.push({
+                idProducto: producto.idProducto,
+                nombreProducto: producto.nombreProducto,
+                ultimoCosto: producto.ultimoCosto || 0
+            });
+            renderEditProductosCatalog();
+
+            // Limpiar búsqueda y dropdown
+            if (addProductoSearch) addProductoSearch.value = '';
+            if (addProductoDropdown) addProductoDropdown.style.display = 'none';
+
+            if (msgEl) {
+                msgEl.textContent = `"${producto.nombreProducto}" vinculado exitosamente.`;
+                msgEl.className = 'form-message success';
+                setTimeout(() => { msgEl.textContent = ''; msgEl.className = 'form-message'; }, 3000);
+            }
+
+            // Refrescar tabla principal
+            loadProveedores();
+            document.dispatchEvent(new Event('proveedoresActualizados'));
+
+        } catch (error) {
+            console.error('Error al vincular producto:', error);
+            if (msgEl) {
+                msgEl.textContent = `Error: ${error.message}`;
+                msgEl.className = 'form-message error';
+            }
+        }
+    }
+
+    if (addProductoSearch) {
+        addProductoSearch.addEventListener('input', (e) => {
+            clearTimeout(addProductoTimeout);
+            addProductoTimeout = setTimeout(() => {
+                renderAddProductoDropdown(e.target.value.trim());
+            }, 250);
+        });
+        addProductoSearch.addEventListener('focus', () => {
+            if (addProductoSearch.value.trim().length > 0) {
+                renderAddProductoDropdown(addProductoSearch.value.trim());
+            }
+        });
+    }
+
+    // Cerrar dropdown al hacer clic fuera
+    document.addEventListener('click', (e) => {
+        if (addProductoDropdown && !addProductoDropdown.contains(e.target) && e.target !== addProductoSearch) {
+            addProductoDropdown.style.display = 'none';
+        }
+    });
+
+    // --- Search in Edit Product Catalog ---
+    const editProvProductosSearch = document.getElementById('edit-prov-productos-search');
+    let editProvSearchTimeout;
+    if (editProvProductosSearch) {
+        editProvProductosSearch.addEventListener('input', (e) => {
+            clearTimeout(editProvSearchTimeout);
+            editProvSearchTimeout = setTimeout(() => {
+                editProductosSearchTerm = normalizeText(e.target.value.trim());
+                renderEditProductosCatalog();
+            }, 200);
+        });
+    }
+
+    // --- Unlink Product Handler ---
+    const editProvProductosBody = document.getElementById('edit-prov-productos-body');
+    if (editProvProductosBody) {
+        editProvProductosBody.addEventListener('click', async function (e) {
+            const unlinkBtn = e.target.closest('.btn-unlink-producto');
+            if (!unlinkBtn) return;
+
+            const productoId = parseInt(unlinkBtn.dataset.id);
+            const productoNombre = unlinkBtn.closest('tr').cells[0].textContent;
+            const proveedorId = editIdInput.value;
+
+            // Confirmation
+            const deleteModal = document.getElementById('delete-confirm-modal');
+            const deleteModalMessage = document.getElementById('delete-modal-message');
+            const cancelBtn = document.getElementById('cancel-delete-btn');
+            const confirmBtn = document.getElementById('confirm-delete-btn');
+
+            deleteModalMessage.textContent = `¿Estás seguro de que deseas desvincular "${productoNombre}" de este proveedor?`;
+            deleteModal.style.display = 'flex';
+
+            const escHandler = (ev) => { if (ev.key === 'Escape') closeUnlinkModal(); };
+            document.addEventListener('keydown', escHandler);
+
+            function closeUnlinkModal() {
+                deleteModal.style.display = 'none';
+                cancelBtn.onclick = null;
+                confirmBtn.onclick = null;
+                document.removeEventListener('keydown', escHandler);
+            }
+
+            cancelBtn.onclick = closeUnlinkModal;
+
+            confirmBtn.onclick = async () => {
+                closeUnlinkModal();
+                const msgEl = document.getElementById('edit-prov-productos-message');
+                try {
+                    const dto = { productosQuitar: [productoId] };
+                    const response = await fetch(`${API_PROVEEDORES_URL}/${proveedorId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(dto)
+                    });
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        throw new Error(errorText || 'Error al desvincular');
+                    }
+
+                    // Remove from local array and re-render
+                    editProductosProveedorActual = editProductosProveedorActual.filter(p => p.idProducto !== productoId);
+                    renderEditProductosCatalog();
+
+                    if (msgEl) {
+                        msgEl.textContent = `"${productoNombre}" desvinculado exitosamente.`;
+                        msgEl.className = 'form-message success';
+                        setTimeout(() => { msgEl.textContent = ''; msgEl.className = 'form-message'; }, 3000);
+                    }
+
+                    // Refresh main table
+                    loadProveedores();
+                    document.dispatchEvent(new Event('proveedoresActualizados'));
+
+                } catch (error) {
+                    console.error('Error al desvincular producto:', error);
+                    if (msgEl) {
+                        msgEl.textContent = `Error: ${error.message}`;
+                        msgEl.className = 'form-message error';
+                    }
+                }
+            };
+        });
+    }
+
+    // --- Open Edit Modal (with tabs reset) ---
     function openEditModal(data) {
         proveedorActualEditando = data;
         editIdInput.value = data.id;
@@ -507,6 +788,30 @@ document.addEventListener('DOMContentLoaded', function () {
         editTelefonoInput.value = data.telefono;
         editEmailInput.value = data.email;
         editDireccionInput.value = data.direccion;
+        editCuitInput.value = data.cuit || '';
+
+        // Populate product catalog
+        editProductosProveedorActual = data.productos || [];
+        editProductosSearchTerm = '';
+        if (editProvProductosSearch) editProvProductosSearch.value = '';
+        if (addProductoSearch) addProductoSearch.value = '';
+        if (addProductoDropdown) addProductoDropdown.style.display = 'none';
+        renderEditProductosCatalog();
+        fetchTodosProductos(); // Pre-cargar productos para el autocompletado
+
+        // Reset to Tab 1
+        document.querySelectorAll('.edit-prov-tab').forEach((t, i) => {
+            t.classList.toggle('active', i === 0);
+            t.style.color = i === 0 ? '#2563eb' : '#64748b';
+            t.style.borderBottomColor = i === 0 ? '#2563eb' : 'transparent';
+        });
+        document.querySelectorAll('.edit-prov-tab-content').forEach((c, i) => {
+            c.style.display = i === 0 ? 'block' : 'none';
+        });
+        const footerInfo = document.getElementById('edit-prov-footer-info');
+        const footerProductos = document.getElementById('edit-prov-footer-productos');
+        if (footerInfo) footerInfo.style.display = '';
+        if (footerProductos) footerProductos.style.display = 'none';
 
         modalOverlay.style.display = 'block';
         window.addEventListener('keydown', handleEditEsc);
@@ -516,11 +821,15 @@ document.addEventListener('DOMContentLoaded', function () {
         modalOverlay.style.display = 'none';
         window.removeEventListener('keydown', handleEditEsc);
         proveedorActualEditando = null;
+        editProductosProveedorActual = [];
+        editProductosSearchTerm = '';
 
         // Limpiar todos los mensajes de error
         document.querySelectorAll('#edit-proveedor-form .error-message').forEach(el => el.textContent = '');
         editGeneralMessage.textContent = '';
         editGeneralMessage.className = 'form-message';
+        const msgEl = document.getElementById('edit-prov-productos-message');
+        if (msgEl) { msgEl.textContent = ''; msgEl.className = 'form-message'; }
     }
 
     // ==========================================================
@@ -612,6 +921,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Llenar datos estáticos
             document.getElementById('detail-proveedor-nombre').textContent = proveedor.nombre || 'N/A';
+            document.getElementById('detail-proveedor-cuit').textContent = proveedor.cuit || 'N/A';
             document.getElementById('detail-proveedor-email').textContent = proveedor.email || 'N/A';
             document.getElementById('detail-proveedor-telefono').textContent = proveedor.telefono || 'N/A';
             document.getElementById('detail-proveedor-direccion').textContent = proveedor.direccion || 'N/A';
@@ -742,6 +1052,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const telefono = editTelefonoInput.value.trim();
             const email = editEmailInput.value.trim();
             const direccion = editDireccionInput.value.trim();
+            const cuit = editCuitInput.value.trim();
 
             // 3. Validar campos
             let isValid = true;
@@ -768,6 +1079,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('errorEditDireccion').textContent = 'La dirección es obligatoria';
                 isValid = false;
             }
+            
+            if (!cuit) {
+                document.getElementById('errorEditCuit').textContent = 'El CUIT es obligatorio';
+                isValid = false;
+            } else if (!cuit.match(/^\d{2}-\d{8}-\d{1}$/)) {
+                document.getElementById('errorEditCuit').textContent = 'El formato de CUIT debe ser XX-XXXXXXXX-X';
+                isValid = false;
+            }
 
             if (!isValid) {
                 editGeneralMessage.textContent = 'Por favor complete todos los campos correctamente';
@@ -781,6 +1100,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 telefono: telefono,
                 email: email,
                 direccion: direccion,
+                cuit: cuit,
                 productosAgregar: [],
                 productosQuitar: []
             };
@@ -849,6 +1169,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (proveedor.nombre?.toLowerCase().includes(query)) return true;
                 if (proveedor.email?.toLowerCase().includes(query)) return true;
                 if (proveedor.telefono?.toLowerCase().includes(query)) return true;
+                if (proveedor.direccion?.toLowerCase().includes(query)) return true;
                 if (proveedor.productos && proveedor.productos.some(p =>
                     p.nombreProducto?.toLowerCase().includes(query)
                 )) return true;

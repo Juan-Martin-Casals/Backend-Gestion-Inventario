@@ -34,14 +34,14 @@ public class ProveedorService {
     public ProveedorResponseDTO registrarProveedor(ProveedorRequestDTO dto) {
         // VALIDACIÓN 1: Verificar nombre duplicado PRIMERO
         if (dto.getNombre() != null && !dto.getNombre().isBlank()) {
-            if (proveedorRepository.existsByNombreIgnoreCase(dto.getNombre())) {
+            if (proveedorRepository.existsByNombreIgnoreCaseAndEstado(dto.getNombre(), "ACTIVO")) {
                 throw new IllegalArgumentException("Ya existe un proveedor registrado con ese nombre");
             }
         }
 
         // VALIDACIÓN 2: Verificar email duplicado SEGUNDO
         if (dto.getEmail() != null && !dto.getEmail().isBlank()) {
-            if (proveedorRepository.existsByEmail(dto.getEmail())) {
+            if (proveedorRepository.existsByEmailAndEstado(dto.getEmail(), "ACTIVO")) {
                 throw new IllegalArgumentException("Ya existe un proveedor registrado con ese email");
             }
         }
@@ -64,6 +64,8 @@ public class ProveedorService {
                 .telefono(dto.getTelefono())
                 .email(dto.getEmail())
                 .direccion(dto.getDireccion())
+                .cuit(dto.getCuit())
+                .estado("ACTIVO")
                 .build();
 
         proveedor.setProductoProveedor(new ArrayList<>());
@@ -93,7 +95,7 @@ public class ProveedorService {
     public Page<ProveedorResponseDTO> listarProveedores(Pageable pageable) {
 
         // 1. Obtenemos la página del repositorio
-        Page<Proveedor> paginaProveedores = proveedorRepository.findAll(pageable);
+        Page<Proveedor> paginaProveedores = proveedorRepository.findAllByEstado("ACTIVO", pageable);
 
         // 2. Mapeamos la página a DTO usando el método que ya tenías
         return paginaProveedores.map(this::mapToDTO);
@@ -101,7 +103,7 @@ public class ProveedorService {
 
     @Transactional(readOnly = true)
     public List<ProveedorResponseDTO> listarTodosProveedores() {
-        return proveedorRepository.findAll().stream()
+        return proveedorRepository.findAllByEstado("ACTIVO").stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }
@@ -120,6 +122,8 @@ public class ProveedorService {
             proveedor.setEmail(dto.getEmail());
         if (dto.getDireccion() != null)
             proveedor.setDireccion(dto.getDireccion());
+        if (dto.getCuit() != null)
+            proveedor.setCuit(dto.getCuit());
 
         // 🔹 Agregar productos
         if (dto.getProductosAgregar() != null) {
@@ -149,11 +153,20 @@ public class ProveedorService {
         return mapToDTO(actualizado);
     }
 
-    @Transactional
+    @Transactional(noRollbackFor = {IllegalArgumentException.class})
     public void eliminarProveedor(Long id) {
         Proveedor proveedor = proveedorRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Proveedor no encontrado con id: " + id));
-        proveedorRepository.delete(proveedor);
+        
+        boolean tieneCompras = proveedor.getCompras() != null && !proveedor.getCompras().isEmpty();
+        boolean tieneProductos = proveedor.getProductoProveedor() != null && !proveedor.getProductoProveedor().isEmpty();
+
+        if (tieneCompras || tieneProductos) {
+            proveedor.setEstado("INACTIVO");
+            proveedorRepository.save(proveedor);
+        } else {
+            proveedorRepository.delete(proveedor);
+        }
     }
 
     public ProveedorResponseDTO mapToDTO(Proveedor proveedor) {
@@ -166,15 +179,7 @@ public class ProveedorService {
                         stockActual = producto.getStocks().get(0).getStockActual();
                     }
 
-                    double ultimoCosto = 0.0;
-                    if (producto.getDetalleCompras() != null && !producto.getDetalleCompras().isEmpty()) {
-                        com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra ultimoDetalle = producto.getDetalleCompras().stream()
-                                .max(java.util.Comparator.comparing(com.gestioninventariodemo2.cruddemo2.Model.DetalleCompra::getIdDetalleCompra))
-                                .orElse(null);
-                        if (ultimoDetalle != null) {
-                            ultimoCosto = ultimoDetalle.getPrecioUnitario();
-                        }
-                    }
+                    double ultimoCosto = pp.getPrecioCosto() != null ? pp.getPrecioCosto() : 0.0;
 
                     double margen = 0.0;
                     if (ultimoCosto > 0) {
@@ -201,6 +206,7 @@ public class ProveedorService {
                 .telefono(proveedor.getTelefono())
                 .email(proveedor.getEmail())
                 .direccion(proveedor.getDireccion())
+                .cuit(proveedor.getCuit())
                 .productos(productosDTO)
                 .build();
     }
@@ -214,11 +220,11 @@ public class ProveedorService {
 
     @Transactional(readOnly = true)
     public boolean existeNombre(String nombre) {
-        return proveedorRepository.existsByNombreIgnoreCase(nombre);
+        return proveedorRepository.existsByNombreIgnoreCaseAndEstado(nombre, "ACTIVO");
     }
 
     @Transactional(readOnly = true)
     public boolean existeEmail(String email) {
-        return proveedorRepository.existsByEmail(email);
+        return proveedorRepository.existsByEmailAndEstado(email, "ACTIVO");
     }
 }

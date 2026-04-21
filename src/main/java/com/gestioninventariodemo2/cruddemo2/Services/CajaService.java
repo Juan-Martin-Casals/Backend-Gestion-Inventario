@@ -5,6 +5,7 @@ import com.gestioninventariodemo2.cruddemo2.DTO.CajaResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.CierreCajaRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.CajaDetalleDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.DesgloseCobroDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.HistorialSesionDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.SesionCaja;
 import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
 import com.gestioninventariodemo2.cruddemo2.Repository.SesionCajaRepository;
@@ -15,11 +16,15 @@ import com.gestioninventariodemo2.cruddemo2.Repository.CobroRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.PagoRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -208,5 +213,68 @@ public class CajaService {
                 .observacionesCierre(caja.getObservacionesCierre())
                 .estado(caja.getEstado())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> obtenerOperadores() {
+        return sesionCajaRepository.findDistinctOperadores().stream()
+                .sorted((a, b) -> a.getNombre().compareToIgnoreCase(b.getNombre()))
+                .map(u -> {
+                    Map<String, Object> m = new LinkedHashMap<>();
+                    m.put("id", u.getIdUsuario());
+                    m.put("nombre", u.getNombre() + " " + u.getApellido());
+                    return m;
+                })
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<HistorialSesionDTO> obtenerHistorialSesiones(
+            LocalDateTime fechaDesde, LocalDateTime fechaHasta,
+            String estado, Long operadorId, boolean soloDiferencias, String busqueda,
+            org.springframework.data.domain.Pageable pageable) {
+        String busquedaParam = (busqueda != null && !busqueda.isBlank())
+                ? "%" + busqueda.toLowerCase() + "%"
+                : null;
+        String estadoParam = (estado != null && !estado.isBlank()) ? estado : null;
+        org.springframework.data.domain.Page<SesionCaja> sesiones = soloDiferencias
+                ? sesionCajaRepository.findFilteredConDiferencias(fechaDesde, fechaHasta, estadoParam, operadorId, busquedaParam, pageable)
+                : sesionCajaRepository.findFiltered(fechaDesde, fechaHasta, estadoParam, operadorId, busquedaParam, pageable);
+
+        return sesiones.map(sesion -> {
+            String operador = sesion.getUsuario().getNombre() + " " + sesion.getUsuario().getApellido();
+
+            // Calcular duración
+            String duracion = "-";
+            if (sesion.getFechaApertura() != null && sesion.getFechaCierre() != null) {
+                java.time.Duration dur = java.time.Duration.between(sesion.getFechaApertura(),
+                        sesion.getFechaCierre());
+                long horas = dur.toHours();
+                long minutos = dur.toMinutesPart();
+                duracion = horas + "h " + minutos + "m";
+            }
+
+            // Calcular diferencia (solo si la sesión está cerrada y tiene monto final)
+            Double diferencia = null;
+            if ("CERRADA".equals(sesion.getEstado()) && sesion.getMontoFinalReal() != null) {
+                // Diferencia = montoFinalReal - montoInicial
+                // (simplificado: comparamos efectivo real vs lo que inició)
+                diferencia = sesion.getMontoFinalReal() - sesion.getMontoInicialReal();
+            }
+
+            return HistorialSesionDTO.builder()
+                    .idSesion(sesion.getIdSesion())
+                    .operador(operador)
+                    .fechaApertura(sesion.getFechaApertura())
+                    .fechaCierre(sesion.getFechaCierre())
+                    .montoInicial(sesion.getMontoInicialReal())
+                    .montoFinalReal(sesion.getMontoFinalReal())
+                    .estado(sesion.getEstado())
+                    .duracion(duracion)
+                    .diferencia(diferencia)
+                    .observacionesApertura(sesion.getObservacionesApertura())
+                    .observacionesCierre(sesion.getObservacionesCierre())
+                    .build();
+        });
     }
 }

@@ -135,8 +135,22 @@ public class ProductoService {
                     String proveedorNombre = null;
                     int totalProveedores = productoProveedorRepository.countByProducto(p);
                     List<DetalleCompra> compras = detalleCompraRepository.findByProductoOrderByCompraFechaDesc(p);
-                    if (!compras.isEmpty() && compras.get(0).getCompra() != null && compras.get(0).getCompra().getProveedor() != null) {
-                        proveedorNombre = compras.get(0).getCompra().getProveedor().getNombre();
+                    if (!compras.isEmpty() && compras.get(0).getCompra() != null
+                            && compras.get(0).getCompra().getProveedor() != null) {
+                        // Verificar que el proveedor siga vinculado al producto
+                        Long provId = compras.get(0).getCompra().getProveedor().getIdProveedor();
+                        boolean sigueVinculado = p.getProductoProveedores() != null &&
+                                p.getProductoProveedores().stream()
+                                        .anyMatch(pp -> pp.getProveedor().getIdProveedor().equals(provId));
+                        if (sigueVinculado) {
+                            proveedorNombre = compras.get(0).getCompra().getProveedor().getNombre();
+                        }
+                    }
+
+                    // Fallback: si no hay compras, usar el primer proveedor vinculado manualmente
+                    if (proveedorNombre == null && p.getProductoProveedores() != null
+                            && !p.getProductoProveedores().isEmpty()) {
+                        proveedorNombre = p.getProductoProveedores().get(0).getProveedor().getNombre();
                     }
 
                     // Obtener nombres de los demás proveedores para el popover
@@ -167,7 +181,7 @@ public class ProductoService {
     }
 
     @Transactional(readOnly = true)
-    public List<ProductoSelectDTO> listarProductosSelect() {
+    public List<ProductoSelectDTO> listarProductosSelect(Long idProveedor) {
         return productoRepository.findAllByEstado("ACTIVO")
                 .stream()
                 .map(p -> {
@@ -178,9 +192,24 @@ public class ProductoService {
                     }
 
                     Double ultimoCosto = null;
-                    List<DetalleCompra> compras = detalleCompraRepository.findByProductoOrderByCompraFechaDesc(p);
-                    if (!compras.isEmpty()) {
-                        ultimoCosto = compras.get(0).getPrecioUnitario();
+                    if (idProveedor != null) {
+                        // Buscar el precioCosto en el enlace con este proveedor
+                        if (p.getProductoProveedores() != null) {
+                            for (com.gestioninventariodemo2.cruddemo2.Model.ProductoProveedor pp : p
+                                    .getProductoProveedores()) {
+                                if (pp.getProveedor() != null
+                                        && pp.getProveedor().getIdProveedor().equals(idProveedor)) {
+                                    ultimoCosto = pp.getPrecioCosto();
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        // Comportamiento global
+                        List<DetalleCompra> compras = detalleCompraRepository.findByProductoOrderByCompraFechaDesc(p);
+                        if (!compras.isEmpty()) {
+                            ultimoCosto = compras.get(0).getPrecioUnitario();
+                        }
                     }
 
                     return ProductoSelectDTO.builder()
@@ -196,7 +225,7 @@ public class ProductoService {
 
     @Transactional(readOnly = true)
     public List<ProductoSelectDTO> listarProductosSelectPorProveedor(Long idProveedor) {
-        // Si no se proporciona un ID, devolvemos una lista vacía.
+        // Mantenemos este para no romper usos existentes
         if (idProveedor == null) {
             return Collections.emptyList();
         }
@@ -357,8 +386,21 @@ public class ProductoService {
                         String proveedorNombre = null;
                         int totalProveedores = productoProveedorRepository.countByProducto(p);
                         List<DetalleCompra> compras = detalleCompraRepository.findByProductoOrderByCompraFechaDesc(p);
-                        if (!compras.isEmpty() && compras.get(0).getCompra() != null && compras.get(0).getCompra().getProveedor() != null) {
-                            proveedorNombre = compras.get(0).getCompra().getProveedor().getNombre();
+                        if (!compras.isEmpty() && compras.get(0).getCompra() != null
+                                && compras.get(0).getCompra().getProveedor() != null) {
+                            Long provId = compras.get(0).getCompra().getProveedor().getIdProveedor();
+                            boolean sigueVinculado = p.getProductoProveedores() != null &&
+                                    p.getProductoProveedores().stream()
+                                            .anyMatch(pp -> pp.getProveedor().getIdProveedor().equals(provId));
+                            if (sigueVinculado) {
+                                proveedorNombre = compras.get(0).getCompra().getProveedor().getNombre();
+                            }
+                        }
+
+                        // Fallback: si no hay compras, usar el primer proveedor vinculado manualmente
+                        if (proveedorNombre == null && p.getProductoProveedores() != null
+                                && !p.getProductoProveedores().isEmpty()) {
+                            proveedorNombre = p.getProductoProveedores().get(0).getProveedor().getNombre();
                         }
 
                         // Obtener nombres de los demás proveedores para el popover
@@ -447,12 +489,35 @@ public class ProductoService {
                     estadoStock = "BUENO";
                 }
 
-                // Obtener información del proveedor
+                // Obtener información del proveedor, teléfono y último costo unitario
                 String proveedorNombre = null;
+                String proveedorTelefono = null;
+                Double precioCosto = null;
+
                 int totalProveedores = productoProveedorRepository.countByProducto(p);
                 List<DetalleCompra> compras = detalleCompraRepository.findByProductoOrderByCompraFechaDesc(p);
-                if (!compras.isEmpty() && compras.get(0).getCompra() != null && compras.get(0).getCompra().getProveedor() != null) {
-                    proveedorNombre = compras.get(0).getCompra().getProveedor().getNombre();
+
+                if (!compras.isEmpty()) {
+                    DetalleCompra ultima = compras.get(0);
+                    precioCosto = ultima.getPrecioUnitario(); // Último costo unitario
+
+                    if (ultima.getCompra() != null && ultima.getCompra().getProveedor() != null) {
+                        Long provId = ultima.getCompra().getProveedor().getIdProveedor();
+                        boolean sigueVinculado = p.getProductoProveedores() != null &&
+                                p.getProductoProveedores().stream()
+                                        .anyMatch(pp -> pp.getProveedor().getIdProveedor().equals(provId));
+                        if (sigueVinculado) {
+                            proveedorNombre = ultima.getCompra().getProveedor().getNombre();
+                            proveedorTelefono = ultima.getCompra().getProveedor().getTelefono();
+                        }
+                    }
+                }
+
+                // Fallback: si no hay compras, usar el primer proveedor vinculado manualmente
+                if (proveedorNombre == null && p.getProductoProveedores() != null
+                        && !p.getProductoProveedores().isEmpty()) {
+                    proveedorNombre = p.getProductoProveedores().get(0).getProveedor().getNombre();
+                    proveedorTelefono = p.getProductoProveedores().get(0).getProveedor().getTelefono();
                 }
 
                 // Obtener nombres de los demás proveedores para el popover
@@ -478,6 +543,8 @@ public class ProductoService {
                         .stockMaximo(stockMax)
                         .estadoStock(estadoStock)
                         .proveedorNombre(proveedorNombre)
+                        .proveedorTelefono(proveedorTelefono)
+                        .precioCosto(precioCosto)
                         .totalProveedores(totalProveedores)
                         .otrosProveedores(otrosProveedores)
                         .build();
@@ -525,7 +592,8 @@ public class ProductoService {
         Producto producto = productoRepository.findById(idProducto)
                 .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado con id: " + idProducto));
 
-        List<com.gestioninventariodemo2.cruddemo2.Model.ProductoProveedor> relaciones = producto.getProductoProveedores();
+        List<com.gestioninventariodemo2.cruddemo2.Model.ProductoProveedor> relaciones = producto
+                .getProductoProveedores();
         if (relaciones == null || relaciones.isEmpty()) {
             return Collections.emptyList();
         }
@@ -550,19 +618,19 @@ public class ProductoService {
             }
 
             return new Object[] {
-                ProveedorProductoDetalleDTO.builder()
-                    .idProveedor(prov.getIdProveedor())
-                    .nombre(prov.getNombre())
-                    .telefono(prov.getTelefono())
-                    .email(prov.getEmail())
-                    .ultimoCosto(ultimoCosto)
-                    .build(),
-                ordenCompra
+                    ProveedorProductoDetalleDTO.builder()
+                            .idProveedor(prov.getIdProveedor())
+                            .nombre(prov.getNombre())
+                            .telefono(prov.getTelefono())
+                            .email(prov.getEmail())
+                            .ultimoCosto(ultimoCosto)
+                            .build(),
+                    ordenCompra
             };
         })
-        .sorted((a, b) -> Integer.compare((int) a[1], (int) b[1]))
-        .map(arr -> (ProveedorProductoDetalleDTO) arr[0])
-        .collect(Collectors.toList());
+                .sorted((a, b) -> Integer.compare((int) a[1], (int) b[1]))
+                .map(arr -> (ProveedorProductoDetalleDTO) arr[0])
+                .collect(Collectors.toList());
     }
 
 }

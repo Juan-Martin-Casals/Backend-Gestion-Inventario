@@ -122,6 +122,12 @@ document.addEventListener('DOMContentLoaded', function () {
                     window.showClientesSubsection(subsectionId);
                 }
             }
+            // Manejo de Subsecciones (Caja)
+            else if (sectionId === 'caja' && subsectionId) {
+                if (typeof window.showCajaSubsection === 'function') {
+                    window.showCajaSubsection(subsectionId);
+                }
+            }
 
             // ACTUALIZACIÓN: Agregar los casos que faltan
             if (sectionId === 'principal' && typeof window.loadPrincipalData === 'function') {

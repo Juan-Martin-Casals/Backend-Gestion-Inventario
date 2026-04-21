@@ -18,6 +18,7 @@ public class ProveedorResponseDTO {
     private String telefono;
     private String email;
     private String direccion;
+    private String cuit;
     private List<ProductoSimpleDTO> productos;
 
 }

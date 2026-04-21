@@ -40,11 +40,19 @@ public class Proveedor {
     @Column(name = "Direccion")
     private String direccion;
 
+    @Column(name = "Cuit")
+    private String cuit;
+
+    @Column(name = "estado")
+    @Builder.Default
+    private String estado = "ACTIVO";
 
     @OneToMany(mappedBy = "proveedor", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Compra>compras = new ArrayList<>();
 
     @OneToMany(mappedBy = "proveedor", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<ProductoProveedor>productoProveedor = new ArrayList<>();
 
 

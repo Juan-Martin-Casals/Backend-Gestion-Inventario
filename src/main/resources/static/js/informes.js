@@ -1,11 +1,10 @@
-// informes.js - Dashboard de Informes
+// informes.js - Dashboard de Informes (Rediseñado)
 document.addEventListener('DOMContentLoaded', () => {
     const informesSection = document.getElementById('informes-section');
     if (!informesSection) return;
 
-    // Variables globales para los gráficos
+    // Variable global para el gráfico
     let ventasComprasChart = null;
-    let estadoStockChart = null;
 
     // Fechas por defecto: mes actual
     const hoy = new Date();
@@ -42,6 +41,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const buscarBtn = document.getElementById('buscar-filtros');
     const limpiarBtn = document.getElementById('limpiar-filtros');
     const periodoTexto = document.getElementById('periodo-texto');
+
+    // Botones rápidos
+    const filtroHoy = document.getElementById('filtro-hoy');
+    const filtroMes = document.getElementById('filtro-mes');
+    const filtroAnio = document.getElementById('filtro-anio');
 
     // Inicializar fechas por defecto
     fechaInicioInput.value = formatFechaInput(primerDiaMes);
@@ -84,6 +88,14 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     };
 
+    // Actualizar botón rápido activo
+    const setActiveQuickFilter = (activeBtn) => {
+        [filtroHoy, filtroMes, filtroAnio].forEach(btn => {
+            if (btn) btn.classList.remove('active');
+        });
+        if (activeBtn) activeBtn.classList.add('active');
+    };
+
     // Cargar datos al entrar a la sección
     const cargarDashboard = async () => {
         const inicio = fechaInicioInput.value;
@@ -102,15 +114,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarKPIs(inicio, fin),
                 cargarGraficoVentasCompras(inicio, fin),
                 cargarTopProductos(inicio, fin),
-                cargarEstadoStock()
+                cargarTopRentables(inicio, fin),
+                cargarTopProveedores(inicio, fin)
             ]);
         } catch (error) {
             console.error('Error al cargar dashboard:', error);
-            alert('Error al cargar los datos del dashboard');
         }
     };
 
-    // 1. Cargar KPIs
+    // 1. Cargar KPIs (3 tarjetas: Valor Inventario, Ganancia Proyectada, Ventas del Período)
     const cargarKPIs = async (inicio, fin) => {
         try {
             const response = await fetch(`/api/informes/kpis?inicio=${inicio}&fin=${fin}`);
@@ -118,19 +130,31 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
 
-            // Actualizar valores en las tarjetas
-            document.getElementById('kpi-ventas').textContent = `$${formatNumber(data.totalVentas || 0)}`;
-            document.getElementById('kpi-compras').textContent = `$${formatNumber(data.totalCompras || 0)}`;
-            document.getElementById('kpi-ganancia').textContent = `$${formatNumber(data.ganancia || 0)}`;
-            document.getElementById('kpi-stock-bajo').textContent = data.productosStockBajo || 0;
+            // Valor del Inventario
+            document.getElementById('kpi-valor-inventario').textContent = `$${formatNumber(data.valorInventario || 0)}`;
 
-            // Cambiar color de ganancia según sea positiva o negativa
-            const gananciaEl = document.getElementById('kpi-ganancia');
-            if (data.ganancia >= 0) {
-                gananciaEl.style.color = '#28a745';
+            // Ganancia Proyectada
+            const gananciaProyEl = document.getElementById('kpi-ganancia-proyectada');
+            gananciaProyEl.textContent = `$${formatNumber(data.gananciaProyectada || 0)}`;
+            if (data.gananciaProyectada >= 0) {
+                gananciaProyEl.style.color = '#28a745';
             } else {
-                gananciaEl.style.color = '#dc3545';
+                gananciaProyEl.style.color = '#dc3545';
             }
+
+            // Ganancia Real
+            const gananciaRealEl = document.getElementById('kpi-ganancia-real');
+            if (gananciaRealEl) {
+                gananciaRealEl.textContent = `$${formatNumber(data.gananciaReal || 0)}`;
+                if (data.gananciaReal >= 0) {
+                    gananciaRealEl.style.color = '#10b981';
+                } else {
+                    gananciaRealEl.style.color = '#dc3545';
+                }
+            }
+
+            // Ventas del Período
+            document.getElementById('kpi-ventas-periodo').textContent = `$${formatNumber(data.totalVentas || 0)}`;
 
         } catch (error) {
             console.error('Error al cargar KPIs:', error);
@@ -145,17 +169,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
 
-            // Preparar datos para el gráfico
             const labels = data.map(item => formatFechaDisplay(item.fecha));
             const ventasData = data.map(item => item.ventas || 0);
             const comprasData = data.map(item => item.compras || 0);
 
-            // Destruir gráfico anterior si existe
             if (ventasComprasChart) {
                 ventasComprasChart.destroy();
             }
 
-            // Crear nuevo gráfico
+            const maxValor = Math.max(...ventasData, ...comprasData, 0);
+            const chartSuggestedMax = maxValor > 0 ? maxValor * 1.05 : 1000;
+
             const ctx = document.getElementById('ventas-compras-chart').getContext('2d');
             ventasComprasChart = new Chart(ctx, {
                 type: 'line',
@@ -183,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 options: {
                     responsive: true,
                     maintainAspectRatio: true,
-                    aspectRatio: 2.5,
+                    aspectRatio: 3.5,
                     plugins: {
                         legend: {
                             display: true,
@@ -202,10 +226,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     scales: {
                         y: {
                             beginAtZero: true,
+                            suggestedMax: chartSuggestedMax,
+                            grid: {
+                                color: '#f1f3f5',
+                                drawBorder: false,
+                            },
                             ticks: {
+                                maxTicksLimit: 8,
                                 callback: function (value) {
                                     return '$' + formatNumber(value);
                                 }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: true,
+                                color: '#f8f9fa',
+                                drawBorder: false,
                             }
                         }
                     }
@@ -217,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 3. Cargar Top 5 Productos
+    // 3. Cargar Top 5 Productos Más Vendidos
     const cargarTopProductos = async (inicio, fin) => {
         try {
             const response = await fetch(`/api/informes/top-productos?inicio=${inicio}&fin=${fin}&limit=5`);
@@ -229,8 +266,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
-                            No hay datos para mostrar en este período
+                        <td colspan="3" style="text-align: center; padding: 20px; color: #999;">
+                            No hay datos para este período
                         </td>
                     </tr>
                 `;
@@ -241,7 +278,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 <tr>
                     <td><strong>${index + 1}</strong></td>
                     <td>${producto.nombreProducto}</td>
-                    <td>${producto.cantidad} uds</td>
                     <td>$${formatNumber(producto.totalVentas)}</td>
                 </tr>
             `).join('');
@@ -249,6 +285,47 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error al cargar top productos:', error);
             document.getElementById('top-productos-body').innerHTML = `
+                <tr>
+                    <td colspan="3" style="text-align: center; padding: 20px; color: #dc3545;">
+                        Error al cargar datos
+                    </td>
+                </tr>
+            `;
+        }
+    };
+
+    // 4. Cargar Top 5 Productos Más Rentables
+    const cargarTopRentables = async (inicio, fin) => {
+        try {
+            const response = await fetch(`/api/informes/top-rentables?inicio=${inicio}&fin=${fin}&limit=5`);
+            if (!response.ok) throw new Error('Error al obtener top rentables');
+
+            const data = await response.json();
+            const tbody = document.getElementById('top-rentables-body');
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
+                            No hay datos para este período
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = data.map((producto, index) => `
+                <tr>
+                    <td><strong>${index + 1}</strong></td>
+                    <td>${producto.nombreProducto}</td>
+                    <td>$${formatNumber(producto.margenUnitario)}</td>
+                    <td class="ganancia-positiva">$${formatNumber(producto.gananciaTotal)}</td>
+                </tr>
+            `).join('');
+
+        } catch (error) {
+            console.error('Error al cargar top rentables:', error);
+            document.getElementById('top-rentables-body').innerHTML = `
                 <tr>
                     <td colspan="4" style="text-align: center; padding: 20px; color: #dc3545;">
                         Error al cargar datos
@@ -258,92 +335,88 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // 4. Cargar Gráfico de Dona (Estado Stock)
-    const cargarEstadoStock = async () => {
+    // 5. Cargar Top 5 Proveedores
+    const cargarTopProveedores = async (inicio, fin) => {
         try {
-            const response = await fetch('/api/informes/estado-stock');
-            if (!response.ok) throw new Error('Error al obtener estado de stock');
+            const response = await fetch(`/api/informes/top-proveedores?inicio=${inicio}&fin=${fin}&limit=5`);
+            if (!response.ok) throw new Error('Error al obtener top proveedores');
 
             const data = await response.json();
+            const tbody = document.getElementById('top-proveedores-body');
 
-            const total = (data.optimo || 0) + (data.bajo || 0) + (data.agotado || 0);
-
-            // Destruir gráfico anterior si existe
-            if (estadoStockChart) {
-                estadoStockChart.destroy();
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
+                            No hay datos para este período
+                        </td>
+                    </tr>
+                `;
+                return;
             }
 
-            // Crear nuevo gráfico
-            const ctx = document.getElementById('estado-stock-chart').getContext('2d');
-            estadoStockChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Óptimo', 'Bajo', 'Agotado'],
-                    datasets: [{
-                        data: [data.optimo || 0, data.bajo || 0, data.agotado || 0],
-                        backgroundColor: [
-                            '#28a745',  // Verde para óptimo
-                            '#ffc107',  // Amarillo para bajo
-                            '#dc3545'   // Rojo para agotado
-                        ],
-                        borderWidth: 2,
-                        borderColor: '#fff'
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function (context) {
-                                    const value = context.parsed;
-                                    const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
-                                    return context.label + ': ' + value + ' (' + percentage + '%)';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-
-            // Actualizar leyenda
-            const leyenda = document.getElementById('stock-leyenda');
-            const porcentajeOptimo = total > 0 ? ((data.optimo / total) * 100).toFixed(1) : 0;
-            const porcentajeBajo = total > 0 ? ((data.bajo / total) * 100).toFixed(1) : 0;
-            const porcentajeAgotado = total > 0 ? ((data.agotado / total) * 100).toFixed(1) : 0;
-
-            leyenda.innerHTML = `
-                <div style="display: inline-block; margin: 0 15px;">
-                    <span style="display: inline-block; width: 12px; height: 12px; background: #28a745; border-radius: 50%; margin-right: 5px;"></span>
-                    <strong>Óptimo:</strong> ${data.optimo} (${porcentajeOptimo}%)
-                </div>
-                <div style="display: inline-block; margin: 0 15px;">
-                    <span style="display: inline-block; width: 12px; height: 12px; background: #ffc107; border-radius: 50%; margin-right: 5px;"></span>
-                    <strong>Bajo:</strong> ${data.bajo} (${porcentajeBajo}%)
-                </div>
-                <div style="display: inline-block; margin: 0 15px;">
-                    <span style="display: inline-block; width: 12px; height: 12px; background: #dc3545; border-radius: 50%; margin-right: 5px;"></span>
-                    <strong>Agotado:</strong> ${data.agotado} (${porcentajeAgotado}%)
-                </div>
-            `;
+            tbody.innerHTML = data.map((proveedor, index) => `
+                <tr>
+                    <td><strong>${index + 1}</strong></td>
+                    <td>${proveedor.nombreProveedor}</td>
+                    <td>${proveedor.cantidadCompras}</td>
+                    <td>$${formatNumber(proveedor.totalComprado)}</td>
+                </tr>
+            `).join('');
 
         } catch (error) {
-            console.error('Error al cargar estado de stock:', error);
+            console.error('Error al cargar top proveedores:', error);
+            document.getElementById('top-proveedores-body').innerHTML = `
+                <tr>
+                    <td colspan="4" style="text-align: center; padding: 20px; color: #dc3545;">
+                        Error al cargar datos
+                    </td>
+                </tr>
+            `;
         }
     };
 
     // Event Listeners
-    buscarBtn.addEventListener('click', cargarDashboard);
+    buscarBtn.addEventListener('click', () => {
+        setActiveQuickFilter(null);
+        cargarDashboard();
+    });
 
     limpiarBtn.addEventListener('click', () => {
         fechaInicioInput.value = formatFechaInput(primerDiaMes);
         fechaFinInput.value = formatFechaInput(hoy);
+        setActiveQuickFilter(filtroMes);
         cargarDashboard();
     });
+
+    // Botones rápidos de fecha
+    if (filtroHoy) {
+        filtroHoy.addEventListener('click', () => {
+            fechaInicioInput.value = formatFechaInput(hoy);
+            fechaFinInput.value = formatFechaInput(hoy);
+            setActiveQuickFilter(filtroHoy);
+            cargarDashboard();
+        });
+    }
+
+    if (filtroMes) {
+        filtroMes.addEventListener('click', () => {
+            fechaInicioInput.value = formatFechaInput(primerDiaMes);
+            fechaFinInput.value = formatFechaInput(hoy);
+            setActiveQuickFilter(filtroMes);
+            cargarDashboard();
+        });
+    }
+
+    if (filtroAnio) {
+        filtroAnio.addEventListener('click', () => {
+            const primerDiaAnio = new Date(hoy.getFullYear(), 0, 1);
+            fechaInicioInput.value = formatFechaInput(primerDiaAnio);
+            fechaFinInput.value = formatFechaInput(hoy);
+            setActiveQuickFilter(filtroAnio);
+            cargarDashboard();
+        });
+    }
 
     // Event Listener para Exportar PDF
     const exportarPdfBtn = document.getElementById('exportar-pdf');
@@ -357,9 +430,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             try {
-                // Deshabilitar el botón mientras se genera el PDF
                 exportarPdfBtn.disabled = true;
-                exportarPdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando PDF...';
+                exportarPdfBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generando...';
 
                 const response = await fetch(`/api/informes/exportar-pdf?inicio=${inicio}&fin=${fin}`);
 
@@ -367,20 +439,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     throw new Error('Error al generar el PDF');
                 }
 
-                // Convertir la respuesta en un Blob
                 const blob = await response.blob();
-
-                // Crear URL temporal para el blob
                 const url = window.URL.createObjectURL(blob);
-
-                // Crear enlace temporal para descargar
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = `Informe_Completo_${inicio}_${fin}.pdf`;
                 document.body.appendChild(a);
                 a.click();
-
-                // Limpiar
                 window.URL.revokeObjectURL(url);
                 document.body.removeChild(a);
 
@@ -388,7 +453,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 console.error('Error al exportar PDF:', error);
                 alert('❌ Error al generar el PDF. Por favor intenta nuevamente.');
             } finally {
-                // Restaurar el botón
                 exportarPdfBtn.disabled = false;
                 exportarPdfBtn.innerHTML = '<i class="fas fa-file-pdf"></i> Exportar PDF';
             }

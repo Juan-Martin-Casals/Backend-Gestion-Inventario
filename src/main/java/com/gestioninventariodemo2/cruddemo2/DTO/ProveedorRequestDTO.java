@@ -17,6 +17,7 @@ public class ProveedorRequestDTO {
     private String telefono;
     private String email;
     private String direccion;
+    private String cuit;
     private List<Long> productosIds;
 
 }

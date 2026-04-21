@@ -89,6 +89,24 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
     Double sumTotalVentasEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
     @Query(value = """
+            SELECT COALESCE(SUM(dv.cantidad * COALESCE(ultimo_costo.precio, 0)), 0)
+            FROM detalle_venta dv
+            JOIN ventas v ON dv.id_venta = v.id_venta
+            JOIN productos p ON dv.id_producto = p.id_producto
+            LEFT JOIN LATERAL (
+                SELECT dc.precio_unitario AS precio
+                FROM detalle_compra dc
+                JOIN compras c ON dc.id_compra = c.id_compra
+                WHERE dc.id_producto = p.id_producto 
+                  AND c.fecha <= v.fecha
+                ORDER BY c.fecha DESC
+                LIMIT 1
+            ) ultimo_costo ON true
+            WHERE v.fecha BETWEEN :inicio AND :fin
+            """, nativeQuery = true)
+    Double calcularCostoBienesVendidos(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+    @Query(value = """
             SELECT DATE(v.fecha) as fecha, COALESCE(SUM(v.total), 0) as total
             FROM ventas v
             WHERE v.fecha BETWEEN CAST(:inicio AS DATE) AND CAST(:fin AS DATE)
@@ -104,7 +122,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
             JOIN ventas v ON dv.id_venta = v.id_venta
             WHERE v.fecha BETWEEN :inicio AND :fin
             GROUP BY p.id_producto, p.nombre
-            ORDER BY cantidad DESC
+            ORDER BY total DESC
             LIMIT :limit
             """, nativeQuery = true)
     List<Object[]> findTopProductos(
@@ -117,4 +135,32 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
 
     // Ventas de un cliente específico
     List<Venta> findByClienteIdClienteOrderByFechaDesc(Long idCliente);
+
+    // Top N productos más rentables en un rango
+    // Calcula ganancia como (precio_venta - último_costo_compra) × cantidad vendida
+    @Query(value = """
+            SELECT p.nombre,
+                   COALESCE(p.precio - ultimo_costo.precio, 0) AS margen_unitario,
+                   SUM(dv.cantidad) AS cantidad_vendida,
+                   COALESCE(SUM(dv.cantidad * (p.precio - ultimo_costo.precio)), 0) AS ganancia_total
+            FROM detalle_venta dv
+            JOIN productos p ON dv.id_producto = p.id_producto
+            JOIN ventas v ON dv.id_venta = v.id_venta
+            LEFT JOIN LATERAL (
+                SELECT dc.precio_unitario AS precio
+                FROM detalle_compra dc
+                JOIN compras c ON dc.id_compra = c.id_compra
+                WHERE dc.id_producto = p.id_producto
+                ORDER BY c.fecha DESC
+                LIMIT 1
+            ) ultimo_costo ON true
+            WHERE v.fecha BETWEEN :inicio AND :fin
+            GROUP BY p.id_producto, p.nombre, p.precio, ultimo_costo.precio
+            ORDER BY ganancia_total DESC
+            LIMIT :limit
+            """, nativeQuery = true)
+    List<Object[]> findTopProductosRentables(
+            @Param("inicio") LocalDateTime inicio,
+            @Param("fin") LocalDateTime fin,
+            @Param("limit") Integer limit);
 }

@@ -1,5 +1,6 @@
 package com.gestioninventariodemo2.cruddemo2.Model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -32,5 +33,7 @@ public class ProductoProveedor {
     @JoinColumn(name = "idProveedor")
     private Proveedor proveedor;
 
+    @Column(name = "precio_costo")
+    private Double precioCosto;
 
 }

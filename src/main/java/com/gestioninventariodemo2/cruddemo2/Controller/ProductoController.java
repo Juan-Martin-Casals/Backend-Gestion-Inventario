@@ -73,8 +73,8 @@ public class ProductoController {
     }
 
     @GetMapping("/select")
-    public ResponseEntity<List<ProductoSelectDTO>> listarProductosSelect() {
-        List<ProductoSelectDTO> productos = productoService.listarProductosSelect();
+    public ResponseEntity<List<ProductoSelectDTO>> listarProductosSelect(@org.springframework.web.bind.annotation.RequestParam(required = false) Long idProveedor) {
+        List<ProductoSelectDTO> productos = productoService.listarProductosSelect(idProveedor);
         return ResponseEntity.ok(productos);
     }
 

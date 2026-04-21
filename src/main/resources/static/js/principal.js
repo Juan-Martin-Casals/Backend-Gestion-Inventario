@@ -1285,14 +1285,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // KPIs
     const kpiIngresos = document.getElementById('kpi-ingresos');
     const kpiEgresos = document.getElementById('kpi-egresos');
-    const kpiGanancia = document.getElementById('kpi-ganancia');
     const kpiStockBajo = document.getElementById('kpi-stock-bajo');
     const kpiAgotados = document.getElementById('kpi-agotados');
 
     // Comparación vs ayer
     const kpiIngresosCompare = document.getElementById('kpi-ingresos-compare');
     const kpiEgresosCompare = document.getElementById('kpi-egresos-compare');
-    const kpiGananciaCompare = document.getElementById('kpi-ganancia-compare');
 
     // Tabla de problemas
     const tablaProductosProblema = document.getElementById('tabla-productos-problema');
@@ -1305,7 +1303,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let chartEstadoStock = null;
 
     // Variables para datos históricos (ayer)
-    let kpisAyer = { ingresos: 0, egresos: 0, ganancia: 0 };
+    let kpisAyer = { ingresos: 0, egresos: 0, saldoCaja: 0 };
 
     // Función para formatear fecha YYYY-MM-DD
     function formatDateForApi(date) {
@@ -1364,13 +1362,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 fetch(`/api/informes/kpis?inicio=${fechaAyer}&fin=${fechaAyer}`)
             ]);
 
-            const dataHoy = resHoy.ok ? await resHoy.json() : { totalVentas: 0, totalCompras: 0, ganancia: 0, productosStockBajo: 0 };
-            const dataAyer = resAyer.ok ? await resAyer.json() : { totalVentas: 0, totalCompras: 0, ganancia: 0 };
+            const dataHoy = resHoy.ok ? await resHoy.json() : { totalVentas: 0, totalCompras: 0, saldoCaja: 0, productosStockBajo: 0 };
+            const dataAyer = resAyer.ok ? await resAyer.json() : { totalVentas: 0, totalCompras: 0, saldoCaja: 0 };
 
             kpisAyer = {
                 ingresos: dataAyer.totalVentas || 0,
                 egresos: dataAyer.totalCompras || 0,
-                ganancia: dataAyer.ganancia || 0
+                saldoCaja: dataAyer.saldoCaja || 0
             };
 
             // Renderizar tarjetas
@@ -1379,12 +1377,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             if (kpiEgresos) {
                 kpiEgresos.textContent = `$${(dataHoy.totalCompras || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
-            }
-            if (kpiGanancia) {
-                const ganancia = dataHoy.ganancia || 0;
-                kpiGanancia.textContent = `$${ganancia.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
-                // Color de ganancia según sea positiva o negativa
-                kpiGanancia.style.color = ganancia >= 0 ? '#28a745' : '#dc3545';
             }
             if (kpiStockBajo) {
                 kpiStockBajo.textContent = dataHoy.productosStockBajo || 0;
@@ -1399,11 +1391,9 @@ document.addEventListener('DOMContentLoaded', function () {
             // Renderizar comparaciones
             const ingresosChange = calculateChange(dataHoy.totalVentas || 0, kpisAyer.ingresos);
             const egresosChange = calculateChange(dataHoy.totalCompras || 0, kpisAyer.egresos);
-            const gananciaChange = calculateChange(dataHoy.ganancia || 0, kpisAyer.ganancia);
 
             renderCompare('kpi-ingresos-compare', ingresosChange);
             renderCompare('kpi-egresos-compare', egresosChange);
-            renderCompare('kpi-ganancia-compare', gananciaChange);
 
         } catch (error) {
             console.error('Error cargando KPIs:', error);
@@ -1507,16 +1497,29 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Cargar gráfico de métodos de pago
-    async function loadChartMetodosPago() {
+    async function loadChartMetodosPago(periodo = '30dias') {
         const loadingEl = document.getElementById('metodos-pago-loading');
         if (loadingEl) loadingEl.style.display = 'block';
 
         const today = new Date();
-        const startDate = new Date(today);
-        startDate.setDate(startDate.getDate() - 30); // Último mes
+        let startDate = new Date(today);
+        let endDate = new Date(today);
+
+        if (periodo === 'hoy') {
+            startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        } else if (periodo === '7dias') {
+            startDate.setDate(today.getDate() - 7);
+        } else if (periodo === '30dias') {
+            startDate.setDate(today.getDate() - 30);
+        } else if (periodo === 'esteMes') {
+            startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        } else if (periodo === 'mesPasado') {
+            startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            endDate = new Date(today.getFullYear(), today.getMonth(), 0);
+        }
 
         const fechaInicio = formatDateForApi(startDate);
-        const fechaFin = formatDateForApi(today);
+        const fechaFin = formatDateForApi(endDate);
 
         try {
             const response = await fetch(`/api/informes/metodos-pago?inicio=${fechaInicio}&fin=${fechaFin}`);
@@ -1693,7 +1696,8 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadNewDashboard() {
         await loadDashboardKPIs();
         await loadChartVentasCompras();
-        await loadChartMetodosPago();
+        const metodosFiltroValue = document.getElementById('metodos-pago-filtro') ? document.getElementById('metodos-pago-filtro').value : '30dias';
+        await loadChartMetodosPago(metodosFiltroValue);
         await loadChartEstadoStock();
         await loadTablaProductosProblema();
     }
@@ -1711,6 +1715,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (icon) {
                 setTimeout(() => icon.classList.remove('fa-spin'), 500);
             }
+        });
+    }
+
+    // Filtro gráfico métodos de pago
+    const metodosPagoFiltro = document.getElementById('metodos-pago-filtro');
+    if (metodosPagoFiltro) {
+        metodosPagoFiltro.addEventListener('change', (e) => {
+            loadChartMetodosPago(e.target.value);
         });
     }
 

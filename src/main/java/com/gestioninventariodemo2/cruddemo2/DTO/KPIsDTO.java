@@ -16,4 +16,7 @@ public class KPIsDTO {
     private Integer productosStockBajo;
     private Long cantidadVentas;
     private Long productosVendidos;
+    private Double valorInventario;
+    private Double gananciaProyectada;
+    private Double gananciaReal;
 }

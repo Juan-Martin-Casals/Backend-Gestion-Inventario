@@ -183,9 +183,12 @@ document.addEventListener('DOMContentLoaded', function () {
     async function fetchAllProductosParaCompra() {
         if (!productoSearchInput) return;
         todosLosProductos = [];
+        
+        const idProveedorStr = proveedorHiddenInput ? proveedorHiddenInput.value : '';
+        const urlReq = idProveedorStr ? `${API_PRODUCTOS_URL_SELECT_ALL}?idProveedor=${idProveedorStr}` : API_PRODUCTOS_URL_SELECT_ALL;
 
         try {
-            const response = await fetch(API_PRODUCTOS_URL_SELECT_ALL);
+            const response = await fetch(urlReq);
             if (!response.ok) throw new Error('No se pudieron cargar los productos');
             todosLosProductos = await response.json();
 
@@ -207,7 +210,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let proveedorSelectedIndex = -1;
     let productoSelectedIndex = -1;
 
-function getResultItems(container) {
+    function getResultItems(container) {
         const items = container.querySelectorAll('.product-result-item');
         return Array.from(items).filter(item => !item.textContent.includes('No se encontraron'));
     }
@@ -1553,7 +1556,7 @@ function getResultItems(container) {
             }
 
             const estadoClass = pago.estado === 'PAGADO' ? 'style="color: #2e7d32; font-weight: 600;"' : 'style="color: #d32f2f; font-weight: 600;"';
-            
+
             html += `<tr style="border-bottom: 1px solid #dee2e6;">`;
             html += `<td style="padding: 10px;">${fechaStr}</td>`;
             html += `<td style="padding: 10px;">${pago.metodoPago || 'N/A'}</td>`;

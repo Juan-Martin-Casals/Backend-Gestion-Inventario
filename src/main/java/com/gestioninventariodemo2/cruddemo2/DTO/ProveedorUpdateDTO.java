@@ -17,6 +17,7 @@ public class ProveedorUpdateDTO {
     private String telefono;
     private String email;
     private String direccion;
+    private String cuit;
     private List<Long> productosAgregar; 
     private List<Long> productosQuitar; 
 

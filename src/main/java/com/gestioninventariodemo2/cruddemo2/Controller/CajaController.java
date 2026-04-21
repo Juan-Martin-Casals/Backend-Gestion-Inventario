@@ -4,11 +4,14 @@ import com.gestioninventariodemo2.cruddemo2.DTO.AperturaCajaRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.CajaResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.Services.CajaService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -60,5 +63,23 @@ public class CajaController {
             error.put("error", e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
         }
+    }
+
+    @GetMapping("/historial")
+    public ResponseEntity<org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.DTO.HistorialSesionDTO>> getHistorial(
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime fechaDesde,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime fechaHasta,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) Long operadorId,
+            @RequestParam(defaultValue = "false") boolean soloDiferencias,
+            @RequestParam(required = false) String busqueda,
+            org.springframework.data.domain.Pageable pageable) {
+        return ResponseEntity.ok(cajaService.obtenerHistorialSesiones(
+                fechaDesde, fechaHasta, estado, operadorId, soloDiferencias, busqueda, pageable));
+    }
+
+    @GetMapping("/historial/operadores")
+    public ResponseEntity<List<Map<String, Object>>> getOperadores() {
+        return ResponseEntity.ok(cajaService.obtenerOperadores());
     }
 }

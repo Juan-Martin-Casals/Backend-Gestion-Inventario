@@ -40,8 +40,10 @@ public class ProductoInventarioDTO {
     // Estado calculado del stock
     private String estadoStock; // "BUENO", "BAJO", "AGOTADO"
 
-    // Información del proveedor
+    // Información del proveedor y costo
     private String proveedorNombre; // Nombre del último proveedor
+    private String proveedorTelefono; // Teléfono del último proveedor
+    private Double precioCosto;     // Último precio de costo unitario
     private int totalProveedores;   // Cantidad total de proveedores distintos
     private List<String> otrosProveedores; // Nombres de los demás proveedores (para popover)
 }

@@ -27,6 +27,8 @@ import com.gestioninventariodemo2.cruddemo2.DTO.TopProductoDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.VentasComprasDiariasDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.AgotadoDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.MetodoPagoUsoDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.TopRentableDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.TopProveedorDTO;
 import com.gestioninventariodemo2.cruddemo2.Services.InformeService;
 import com.gestioninventariodemo2.cruddemo2.Services.InformePdfService;
 
@@ -143,6 +145,24 @@ public class InformeController {
             @RequestParam LocalDate fin) {
         List<MetodoPagoUsoDTO> metodosPago = informeService.obtenerMetodosPagoMasUtilizados(inicio, fin);
         return ResponseEntity.ok(metodosPago);
+    }
+
+    @GetMapping("/top-rentables")
+    public ResponseEntity<List<TopRentableDTO>> getTopRentables(
+            @RequestParam LocalDate inicio,
+            @RequestParam LocalDate fin,
+            @RequestParam(defaultValue = "5") Integer limit) {
+        List<TopRentableDTO> topRentables = informeService.obtenerTopRentables(inicio, fin, limit);
+        return ResponseEntity.ok(topRentables);
+    }
+
+    @GetMapping("/top-proveedores")
+    public ResponseEntity<List<TopProveedorDTO>> getTopProveedores(
+            @RequestParam LocalDate inicio,
+            @RequestParam LocalDate fin,
+            @RequestParam(defaultValue = "5") Integer limit) {
+        List<TopProveedorDTO> topProveedores = informeService.obtenerTopProveedores(inicio, fin, limit);
+        return ResponseEntity.ok(topProveedores);
     }
 
 }

@@ -140,15 +140,24 @@ public class CompraService {
             stockDelProducto.setStockActual(stockNuevo);
             stockRepository.save(stockDelProducto); // Guarda el stock actualizado en 'Stock'
 
-            // --- 4. ASOCIACIÓN ORGÁNICA: Vincular Producto y Proveedor si no existe la relación ---
+            // --- 4. ASOCIACIÓN ORGÁNICA: Vincular Producto y Proveedor + actualizar precio de costo ---
             boolean yaExiste = productoProveedorRepository.existsByProductoIdProductoAndProveedorIdProveedor(
                     productoDB.getIdProducto(), proveedor.getIdProveedor());
             if (!yaExiste) {
                 ProductoProveedor nuevaRelacion = ProductoProveedor.builder()
                         .producto(productoDB)
                         .proveedor(proveedor)
+                        .precioCosto(detalleDto.getPrecioUnitario())
                         .build();
                 productoProveedorRepository.save(nuevaRelacion);
+            } else {
+                // Actualizar el precio de costo del vínculo existente
+                productoProveedorRepository.findByProductoIdProductoAndProveedorIdProveedor(
+                        productoDB.getIdProducto(), proveedor.getIdProveedor())
+                        .ifPresent(pp -> {
+                            pp.setPrecioCosto(detalleDto.getPrecioUnitario());
+                            productoProveedorRepository.save(pp);
+                        });
             }
         }
 

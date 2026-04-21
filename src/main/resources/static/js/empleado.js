@@ -10,7 +10,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const sectionIcons = {
         'principal': 'fas fa-home',
         'ventas': 'fas fa-shopping-cart',
-        'stock': 'fas fa-box'
+        'caja': 'fas fa-cash-register',
+        'productos': 'fas fa-box',
+        'clientes': 'fas fa-address-book'
     };
 
     // Mostrar sección y ocultar las demás
@@ -50,14 +52,52 @@ document.addEventListener('DOMContentLoaded', function () {
             // Actualizar título del header con el texto del link
             if (sectionTitle) sectionTitle.textContent = this.textContent.trim();
 
-            // Subsecciones de Ventas
             if (sectionId === 'ventas') {
                 const targetSubsection = subsectionId || localStorage.getItem('lastSubsectionEmpleado') || 'ventas-create';
+
+                if (targetSubsection === 'ventas-create' && typeof window.isCajaAbierta === 'function' && !window.isCajaAbierta()) {
+                    // Caja cerrada: redirigir a Caja
+                    sidebarLinks.forEach(l => l.classList.remove('active'));
+                    const cajaLink = document.querySelector('.sidebar-menu a[data-section="caja"]');
+                    if (cajaLink) cajaLink.classList.add('active');
+                    showSection('caja');
+                    if (sectionTitle) sectionTitle.textContent = 'Caja';
+                    if (sectionIcon) sectionIcon.className = sectionIcons['caja'];
+                    if (typeof window.showCajaSubsection === 'function') window.showCajaSubsection('caja-operaciones');
+                    alert('Debes abrir la caja antes de registrar una venta.');
+                    return;
+                }
+
                 if (typeof window.showVentasSubsection === 'function') {
                     window.showVentasSubsection(targetSubsection);
                 }
                 if (subsectionId) localStorage.setItem('lastSubsectionEmpleado', subsectionId);
                 if (typeof window.cargarDatosVentas === 'function') window.cargarDatosVentas();
+            }
+
+            if (sectionId === 'caja') {
+                if (typeof window.showCajaSubsection === 'function') {
+                    window.showCajaSubsection('caja-operaciones');
+                }
+            }
+
+            if (sectionId === 'productos') {
+                if (typeof window.showProductSubsection === 'function') {
+                    window.showProductSubsection('productos-list');
+                } else if (typeof window.loadProducts === 'function') {
+                    window.loadProducts();
+                }
+            }
+
+            if (sectionId === 'clientes') {
+                const targetSubsection = subsectionId || 'clientes-list';
+                if (typeof window.showClientesSubsection === 'function') {
+                    window.showClientesSubsection(targetSubsection);
+                }
+            }
+
+            if (sectionId === 'principal') {
+                if (typeof window.loadPrincipalData === 'function') window.loadPrincipalData();
             }
 
             localStorage.setItem('lastSectionEmpleado', sectionId);

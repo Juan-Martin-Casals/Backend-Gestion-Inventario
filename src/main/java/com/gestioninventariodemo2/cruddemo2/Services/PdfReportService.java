@@ -47,7 +47,7 @@ public class PdfReportService {
             pdf.addEventHandler(PdfDocumentEvent.END_PAGE, new PageEvent());
 
             // 1. Encabezado de la librería
-            Paragraph titulo = new Paragraph("Librería Don Bosco - Reporte de Inventario")
+            Paragraph titulo = new Paragraph("Librería - Reporte de Inventario")
                     .setBold()
                     .setFontSize(18)
                     .setTextAlignment(TextAlignment.CENTER)
@@ -64,34 +64,33 @@ public class PdfReportService {
                     .setMarginBottom(15);
             document.add(subtitulo);
 
-            // 3. Tabla: Nombre, Categoría, Stock Actual, Stock Mínimo, Proveedor
-            float[] columnWidths = {3, 2, 1.5f, 1.5f, 2};
+            // 3. Tabla: Nombre, Categoría, Stock Actual, Stock Mínimo, Proveedor (con tel), Precio Costo Unitario
+            float[] columnWidths = {2.5f, 2, 1.2f, 1.2f, 1.8f, 1.3f};
             Table table = new Table(UnitValue.createPercentArray(columnWidths))
                                 .useAllAvailableWidth();
 
             // Asegurar que los encabezados se repitan
-            // En iText7 esto se logra automáticamente al definir encabezados de tabla, 
-            // pero podemos asegurarlo con setSkipFirstHeader y addHeaderCell
+            // En iText7 esto se logra automáticamente al definir encabezados de tabla
             
             // Colores
             DeviceRgb headerGray = new DeviceRgb(230, 230, 230);
             
             // Construir encabezados
-            String[] headers = {"Nombre", "Categoría", "Stock Actual", "Stock Mínimo", "Proveedor"};
+            String[] headers = {"Nombre", "Categoría", "Stock Actual", "Stock Mín.", "Proveedor / Tel.", "Costo Uni."};
             for (String h : headers) {
                 Cell headerCell = new Cell()
-                        .add(new Paragraph(h).setBold().setFontSize(10))
+                        .add(new Paragraph(h).setBold().setFontSize(9))
                         .setBackgroundColor(headerGray)
                         .setTextAlignment(TextAlignment.CENTER)
                         .setVerticalAlignment(VerticalAlignment.MIDDLE)
-                        .setPadding(5);
+                        .setPadding(4);
                 table.addHeaderCell(headerCell);
             }
 
             // Filas
             List<ProductoInventarioDTO> list = request.getProductos();
             if (list == null || list.isEmpty()) {
-                Cell emptyCell = new Cell(1, 5)
+                Cell emptyCell = new Cell(1, 6)
                         .add(new Paragraph("No se encontraron productos con los filtros seleccionados."))
                         .setTextAlignment(TextAlignment.CENTER)
                         .setPadding(10);
@@ -99,17 +98,25 @@ public class PdfReportService {
             } else {
                 for (ProductoInventarioDTO p : list) {
                     // Nombre
-                    table.addCell(new Cell().add(new Paragraph(p.getNombre() != null ? p.getNombre() : "-").setFontSize(9)).setPadding(4));
+                    table.addCell(new Cell().add(new Paragraph(p.getNombre() != null ? p.getNombre() : "-").setFontSize(8)).setPadding(3));
                     // Categoría
-                    table.addCell(new Cell().add(new Paragraph(p.getCategoria() != null ? p.getCategoria() : "-").setFontSize(9)).setPadding(4));
+                    table.addCell(new Cell().add(new Paragraph(p.getCategoria() != null ? p.getCategoria() : "-").setFontSize(8)).setPadding(3));
                     // Stock Actual (Centrado)
-                    table.addCell(new Cell().add(new Paragraph(String.valueOf(p.getStockActual())).setFontSize(9))
-                            .setTextAlignment(TextAlignment.CENTER).setPadding(4));
+                    table.addCell(new Cell().add(new Paragraph(String.valueOf(p.getStockActual())).setFontSize(8))
+                            .setTextAlignment(TextAlignment.CENTER).setPadding(3));
                     // Stock Mínimo (Centrado)
-                    table.addCell(new Cell().add(new Paragraph(String.valueOf(p.getStockMinimo())).setFontSize(9))
-                            .setTextAlignment(TextAlignment.CENTER).setPadding(4));
-                    // Proveedor
-                    table.addCell(new Cell().add(new Paragraph(p.getProveedorNombre() != null ? p.getProveedorNombre() : "-").setFontSize(9)).setPadding(4));
+                    table.addCell(new Cell().add(new Paragraph(String.valueOf(p.getStockMinimo())).setFontSize(8))
+                            .setTextAlignment(TextAlignment.CENTER).setPadding(3));
+                    // Proveedor / Teléfono
+                    String prov = p.getProveedorNombre() != null ? p.getProveedorNombre() : "-";
+                    if (p.getProveedorTelefono() != null && !p.getProveedorTelefono().isBlank()) {
+                        prov += "\nTel: " + p.getProveedorTelefono();
+                    }
+                    table.addCell(new Cell().add(new Paragraph(prov).setFontSize(8)).setPadding(3));
+                    // Precio Costo Unitario (Alineado a la derecha)
+                    String costo = p.getPrecioCosto() != null ? String.format("$%.2f", p.getPrecioCosto()) : "-";
+                    table.addCell(new Cell().add(new Paragraph(costo).setFontSize(8))
+                            .setTextAlignment(TextAlignment.RIGHT).setPadding(3));
                 }
             }
 

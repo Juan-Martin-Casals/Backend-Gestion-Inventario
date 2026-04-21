@@ -196,4 +196,19 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
                         @Param("inicio") LocalDateTime inicio,
                         @Param("fin") LocalDateTime fin,
                         @Param("limit") Integer limit);
+
+        // Top N proveedores por monto total comprado en un rango
+        @Query(value = """
+                        SELECT prov.nombre, SUM(c.total) as total_comprado, COUNT(c.id_compra) as cantidad_compras
+                        FROM compras c
+                        JOIN proveedor prov ON c.id_proveedor = prov.id_proveedor
+                        WHERE c.fecha BETWEEN :inicio AND :fin
+                        GROUP BY prov.id_proveedor, prov.nombre
+                        ORDER BY total_comprado DESC
+                        LIMIT :limit
+                        """, nativeQuery = true)
+        List<Object[]> findTopProveedores(
+                        @Param("inicio") LocalDateTime inicio,
+                        @Param("fin") LocalDateTime fin,
+                        @Param("limit") Integer limit);
 }

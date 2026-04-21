@@ -63,4 +63,25 @@ public interface StockRepository extends JpaRepository<Stock, Long> {
     @Query("SELECT s FROM Stock s WHERE s.producto.estado = :estado AND s.stockActual > 0 AND s.stockActual < s.stockMinimo ORDER BY s.stockActual ASC")
     Page<Stock> findSoloStockBajo(String estado, Pageable pageable);
 
+    // Valor del inventario a precio de costo (último precio de compra por producto)
+    @Query(value = """
+            SELECT COALESCE(SUM(s.stock_actual * COALESCE(ultimo_costo.precio, 0)), 0)
+            FROM stock s
+            JOIN productos p ON s.id_producto = p.id_producto
+            LEFT JOIN LATERAL (
+                SELECT dc.precio_unitario AS precio
+                FROM detalle_compra dc
+                JOIN compras c ON dc.id_compra = c.id_compra
+                WHERE dc.id_producto = p.id_producto
+                ORDER BY c.fecha DESC
+                LIMIT 1
+            ) ultimo_costo ON true
+            WHERE p.estado = 'ACTIVO'
+            """, nativeQuery = true)
+    Double calcularValorInventarioCosto();
+
+    // Valor del inventario a precio de venta
+    @Query("SELECT COALESCE(SUM(s.stockActual * s.producto.precio), 0) FROM Stock s WHERE s.producto.estado = 'ACTIVO'")
+    Double calcularValorInventarioVenta();
+
 }

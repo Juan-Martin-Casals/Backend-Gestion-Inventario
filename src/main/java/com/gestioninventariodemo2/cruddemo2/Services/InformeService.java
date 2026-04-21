@@ -17,6 +17,8 @@ import com.gestioninventariodemo2.cruddemo2.DTO.EstadoStockDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.InformeDashboardDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.KPIsDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.TopProductoDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.TopProveedorDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.TopRentableDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.VentasComprasDiariasDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.InformeResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ResumenStockDTO;
@@ -275,6 +277,19 @@ public class InformeService {
                 if (productosVendidos == null)
                         productosVendidos = 0L;
 
+                // Valor del inventario
+                Double valorInventarioCosto = stockRepository.calcularValorInventarioCosto();
+                if (valorInventarioCosto == null) valorInventarioCosto = 0.0;
+
+                Double valorInventarioVenta = stockRepository.calcularValorInventarioVenta();
+                if (valorInventarioVenta == null) valorInventarioVenta = 0.0;
+
+                Double gananciaProyectada = valorInventarioVenta - valorInventarioCosto;
+
+                Double costoBienesVendidos = ventaRepository.calcularCostoBienesVendidos(start, end);
+                if (costoBienesVendidos == null) costoBienesVendidos = 0.0;
+                Double gananciaReal = totalVentas - costoBienesVendidos;
+
                 return KPIsDTO.builder()
                                 .totalVentas(totalVentas)
                                 .totalCompras(totalCompras)
@@ -282,6 +297,9 @@ public class InformeService {
                                 .productosStockBajo(productosStockBajo)
                                 .cantidadVentas(cantidadVentas)
                                 .productosVendidos(productosVendidos)
+                                .valorInventario(valorInventarioCosto)
+                                .gananciaProyectada(gananciaProyectada)
+                                .gananciaReal(gananciaReal)
                                 .build();
         }
 
@@ -441,6 +459,35 @@ public class InformeService {
                                 .map(row -> MetodoPagoUsoDTO.builder()
                                                 .nombre((String) row[0])
                                                 .cantidad(((Number) row[2]).longValue())
+                                                .build())
+                                .collect(Collectors.toList());
+        }
+
+        public List<TopRentableDTO> obtenerTopRentables(LocalDate inicio, LocalDate fin, Integer limit) {
+                LocalDateTime start = inicio.atStartOfDay();
+                LocalDateTime end = fin.atTime(LocalTime.MAX);
+                List<Object[]> top = ventaRepository.findTopProductosRentables(start, end, limit != null ? limit : 5);
+
+                return top.stream()
+                                .map(row -> TopRentableDTO.builder()
+                                                .nombreProducto((String) row[0])
+                                                .margenUnitario(row[1] != null ? ((Number) row[1]).doubleValue() : 0.0)
+                                                .cantidadVendida(((Number) row[2]).intValue())
+                                                .gananciaTotal(row[3] != null ? ((Number) row[3]).doubleValue() : 0.0)
+                                                .build())
+                                .collect(Collectors.toList());
+        }
+
+        public List<TopProveedorDTO> obtenerTopProveedores(LocalDate inicio, LocalDate fin, Integer limit) {
+                LocalDateTime start = inicio.atStartOfDay();
+                LocalDateTime end = fin.atTime(LocalTime.MAX);
+                List<Object[]> top = compraRepository.findTopProveedores(start, end, limit != null ? limit : 5);
+
+                return top.stream()
+                                .map(row -> TopProveedorDTO.builder()
+                                                .nombreProveedor((String) row[0])
+                                                .totalComprado(((Number) row[1]).doubleValue())
+                                                .cantidadCompras(((Number) row[2]).longValue())
                                                 .build())
                                 .collect(Collectors.toList());
         }
