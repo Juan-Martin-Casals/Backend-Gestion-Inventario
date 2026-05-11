@@ -13,7 +13,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import jakarta.validation.Valid;
 
 import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorResponseDTO;
@@ -30,7 +33,7 @@ public class ProveedorController {
     private final ProveedorService proveedorService;
 
     @PostMapping
-    public ResponseEntity<ProveedorResponseDTO> registrarProveedor(@RequestBody ProveedorRequestDTO dto) {
+    public ResponseEntity<ProveedorResponseDTO> registrarProveedor(@Valid @RequestBody ProveedorRequestDTO dto) {
         // 1. Llama al servicio y guarda el resultado directamente en una variable del
         // tipo correcto.
         ProveedorResponseDTO responseDTO = proveedorService.registrarProveedor(dto);
@@ -40,8 +43,10 @@ public class ProveedorController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<ProveedorResponseDTO>> listarProveedores(Pageable pageable) { // Spring inyecta Pageable
-        Page<ProveedorResponseDTO> proveedores = proveedorService.listarProveedores(pageable);
+    public ResponseEntity<Page<ProveedorResponseDTO>> listarProveedores(
+            Pageable pageable,
+            @RequestParam(required = false) Boolean conCompras) {
+        Page<ProveedorResponseDTO> proveedores = proveedorService.listarProveedores(pageable, conCompras);
         return ResponseEntity.ok(proveedores);
     }
 
@@ -53,7 +58,7 @@ public class ProveedorController {
 
     @PutMapping("/{id}")
     public ResponseEntity<ProveedorResponseDTO> actualizarProveedor(@PathVariable Long id,
-            @RequestBody ProveedorUpdateDTO dto) {
+            @Valid @RequestBody ProveedorUpdateDTO dto) {
 
         ProveedorResponseDTO actualizado = proveedorService.actualizarProveedor(id, dto);
         return ResponseEntity.ok(actualizado);

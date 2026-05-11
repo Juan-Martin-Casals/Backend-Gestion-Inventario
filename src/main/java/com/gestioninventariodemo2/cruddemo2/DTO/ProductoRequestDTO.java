@@ -1,5 +1,6 @@
 package com.gestioninventariodemo2.cruddemo2.DTO;
 
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -11,8 +12,10 @@ import lombok.NoArgsConstructor;
 @Builder
 public class ProductoRequestDTO {
 
+    @Size(max = 150)
     private String nombre;
     private Long idCategoria;
+    @Size(max = 650)
     private String descripcion;
 
     private int stockMinimo;

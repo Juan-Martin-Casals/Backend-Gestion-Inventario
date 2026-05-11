@@ -32,4 +32,17 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Page<Usuario> buscarUsuariosActivos(@Param("estado") String estado,
             @Param("search") String search,
             Pageable pageable);
+
+    // Búsqueda con filtro opcional por rol
+    @Query("SELECT u FROM Usuario u WHERE u.estado = :estado " +
+            "AND (:search IS NULL OR :search = '' OR " +
+                "LOWER(u.nombre) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+                "LOWER(u.apellido) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+                "LOWER(u.email) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+                "LOWER(u.rol.descripcion) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+            "AND (:idRol IS NULL OR u.rol.idRol = :idRol)")
+    Page<Usuario> buscarUsuariosFiltrados(@Param("estado") String estado,
+            @Param("search") String search,
+            @Param("idRol") Long idRol,
+            Pageable pageable);
 }

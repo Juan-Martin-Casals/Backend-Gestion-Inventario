@@ -294,40 +294,24 @@ public class ProductoService {
                 .build();
     }
 
-    @Transactional(noRollbackFor = { IllegalArgumentException.class })
-    public void eliminarProducto(Long id) {
+    @Transactional
+    public boolean eliminarProducto(Long id) {
 
         Producto producto = productoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Producto no encontrado con id: " + id));
 
-        // Validamos el uso en TODAS las tablas
         boolean usadoEnVenta = detalleVentaRepository.existsByProductoIdProducto(id);
         boolean usadoEnCompra = detalleCompraRepository.existsByProductoIdProducto(id);
         boolean asociadoAProveedor = productoProveedorRepository.existsByProductoIdProducto(id);
-
-        // --- ¡LA LÍNEA QUE FALTABA! ---
         boolean tieneStockAsociado = stockRepository.existsByProductoIdProducto(id);
 
-        // -----------------------------------------------------------
-
-        // ¡AÑADIMOS EL NUEVO CHEQUEO AL IF!
         if (usadoEnVenta || usadoEnCompra || asociadoAProveedor || tieneStockAsociado) {
-            // CASO 1: ÉXITO LÓGICO (Soft Delete)
-            // (Si está en uso O SIQUIERA TIENE UN REGISTRO DE STOCK)
             producto.setEstado("INACTIVO");
             productoRepository.save(producto);
-
-            throw new IllegalArgumentException(
-                    "El producto se marcó como INACTIVO (Está asociado a ventas/compras/proveedores o stock).");
-
+            return true;
         } else {
-            // CASO 2: BORRADO FÍSICO
-            // (Solo si no tiene ventas, ni compras, ni proveedores, NI stock)
-            try {
-                productoRepository.deleteById(id);
-            } catch (Exception e) {
-                throw new RuntimeException("Error inesperado al borrar el producto físicamente.", e);
-            }
+            productoRepository.deleteById(id);
+            return false;
         }
     }
 
@@ -550,6 +534,101 @@ public class ProductoService {
                         .build();
             });
         }
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProductoInventarioDTO> obtenerInventarioParaPdf(
+            String estadoStock, String categoria, String proveedor,
+            String busqueda, String sortField, String sortDirection) {
+
+        List<Producto> productos = productoRepository.findAllByEstado("ACTIVO");
+
+        List<ProductoInventarioDTO> dtos = productos.stream().map(p -> {
+            int stockActual = 0, stockMin = 0, stockMax = 0;
+            if (p.getStocks() != null && !p.getStocks().isEmpty()) {
+                Stock s = p.getStocks().get(0);
+                stockActual = s.getStockActual();
+                stockMin = s.getStockMinimo();
+                stockMax = s.getStockMaximo();
+            }
+            String estado = stockActual == 0 ? "AGOTADO" : (stockActual < stockMin ? "BAJO" : "BUENO");
+
+            String provNombre = null, provTelefono = null;
+            Double precioCosto = null;
+            List<DetalleCompra> compras = detalleCompraRepository.findByProductoOrderByCompraFechaDesc(p);
+            if (!compras.isEmpty()) {
+                DetalleCompra ultima = compras.get(0);
+                precioCosto = ultima.getPrecioUnitario();
+                if (ultima.getCompra() != null && ultima.getCompra().getProveedor() != null) {
+                    Long provId = ultima.getCompra().getProveedor().getIdProveedor();
+                    boolean vinculado = p.getProductoProveedores() != null &&
+                            p.getProductoProveedores().stream()
+                                    .anyMatch(pp -> pp.getProveedor().getIdProveedor().equals(provId));
+                    if (vinculado) {
+                        provNombre = ultima.getCompra().getProveedor().getNombre();
+                        provTelefono = ultima.getCompra().getProveedor().getTelefono();
+                    }
+                }
+            }
+            if (provNombre == null && p.getProductoProveedores() != null && !p.getProductoProveedores().isEmpty()) {
+                provNombre = p.getProductoProveedores().get(0).getProveedor().getNombre();
+                provTelefono = p.getProductoProveedores().get(0).getProveedor().getTelefono();
+            }
+
+            return ProductoInventarioDTO.builder()
+                    .idProducto(p.getIdProducto())
+                    .nombre(p.getNombre())
+                    .categoria(p.getCategoria() != null ? p.getCategoria().getNombre() : "Sin categoría")
+                    .precio(p.getPrecio())
+                    .stockActual(stockActual).stockMinimo(stockMin).stockMaximo(stockMax)
+                    .estadoStock(estado)
+                    .proveedorNombre(provNombre).proveedorTelefono(provTelefono)
+                    .precioCosto(precioCosto)
+                    .build();
+        }).collect(Collectors.toList());
+
+        // Filtros
+        if (estadoStock != null && !estadoStock.equals("todos")) {
+            java.util.Map<String, String> estadoMap = java.util.Map.of(
+                "agotado", "AGOTADO", "bajo", "BAJO", "optimo", "BUENO");
+            String estadoBuscado = estadoMap.getOrDefault(estadoStock.toLowerCase(), estadoStock.toUpperCase());
+            dtos = dtos.stream().filter(d -> estadoBuscado.equals(d.getEstadoStock())).collect(Collectors.toList());
+        }
+        if (categoria != null && !categoria.equals("todos")) {
+            dtos = dtos.stream().filter(d -> categoria.equalsIgnoreCase(d.getCategoria())).collect(Collectors.toList());
+        }
+        if (proveedor != null && !proveedor.equals("todos")) {
+            if ("sin-proveedor".equals(proveedor)) {
+                dtos = dtos.stream().filter(d -> d.getProveedorNombre() == null).collect(Collectors.toList());
+            } else {
+                dtos = dtos.stream().filter(d -> proveedor.equalsIgnoreCase(d.getProveedorNombre())).collect(Collectors.toList());
+            }
+        }
+        if (busqueda != null && !busqueda.isBlank()) {
+            String term = busqueda.toLowerCase();
+            dtos = dtos.stream().filter(d -> d.getNombre() != null && d.getNombre().toLowerCase().contains(term)).collect(Collectors.toList());
+        }
+
+        // Ordenamiento
+        if (sortField != null && !sortField.isBlank()) {
+            boolean desc = "desc".equalsIgnoreCase(sortDirection);
+            java.util.Comparator<ProductoInventarioDTO> comp = switch (sortField) {
+                case "estadoStock" -> {
+                    java.util.Map<String, Integer> prio = java.util.Map.of("AGOTADO", 0, "BAJO", 1, "BUENO", 2);
+                    yield java.util.Comparator.comparingInt(d -> prio.getOrDefault(d.getEstadoStock(), 3));
+                }
+                case "stock", "stockActual" -> java.util.Comparator.comparingInt(ProductoInventarioDTO::getStockActual);
+                case "stockMinimo"          -> java.util.Comparator.comparingInt(ProductoInventarioDTO::getStockMinimo);
+                case "precio"               -> java.util.Comparator.comparingDouble(ProductoInventarioDTO::getPrecio);
+                case "categoria"            -> java.util.Comparator.comparing(d -> d.getCategoria() != null ? d.getCategoria() : "");
+                case "proveedorNombre"      -> java.util.Comparator.comparing(d -> d.getProveedorNombre() != null ? d.getProveedorNombre() : "zzz");
+                default                     -> java.util.Comparator.comparing(d -> d.getNombre() != null ? d.getNombre() : "");
+            };
+            if (desc) comp = comp.reversed();
+            dtos.sort(comp);
+        }
+
+        return dtos;
     }
 
     public ProductoResponseDTO mapToDTO(Producto producto) {

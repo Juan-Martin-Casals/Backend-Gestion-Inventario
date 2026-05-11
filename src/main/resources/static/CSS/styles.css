@@ -823,6 +823,34 @@ body {
     border-color: #007bff;
 }
 
+/* Compras / Proveedores / Ventas / Clientes - botones de ordenamiento (estado activo) */
+#compras-sort-fecha.active,
+#compras-sort-total.active,
+#proveedor-sort-nombre.active,
+#ventas-sort-fecha.active,
+#ventas-sort-total.active,
+#clientes-sort-apellido.active,
+#clientes-sort-nombre.active,
+#user-sort-apellido.active,
+#user-sort-nombre.active {
+    background: #e7f1ff !important;
+    border-color: #007bff !important;
+    color: #0056b3 !important;
+}
+
+#compras-sort-fecha .sort-arrow,
+#compras-sort-total .sort-arrow,
+#proveedor-sort-nombre .sort-arrow,
+#ventas-sort-fecha .sort-arrow,
+#ventas-sort-total .sort-arrow,
+#clientes-sort-apellido .sort-arrow,
+#clientes-sort-nombre .sort-arrow,
+#user-sort-apellido .sort-arrow,
+#user-sort-nombre .sort-arrow {
+    font-size: 12px;
+    opacity: 0.7;
+}
+
 /* Low Stock Section */
 .low-stock-section {
     background: #fff;
@@ -1949,6 +1977,11 @@ body {
     transition: opacity 0.2s ease-in-out;
 }
 
+#tabla-historial-caja-body {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
 #tabla-historial-caja-body.loading {
     opacity: 0;
 }
@@ -2612,7 +2645,11 @@ body {
 
 .price-highlight {
     font-size: 20px !important;
-    color: #28a745 !important;
+    font-weight: 700 !important;
+}
+
+.cost-highlight {
+    font-size: 20px !important;
     font-weight: 700 !important;
 }
 

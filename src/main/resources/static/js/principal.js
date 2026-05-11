@@ -1529,9 +1529,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (loadingEl) loadingEl.style.display = 'none';
 
+            // Destruir chart anterior siempre, antes de evaluar datos
+            if (chartMetodosPago) {
+                chartMetodosPago.destroy();
+                chartMetodosPago = null;
+            }
+
             const ctx = document.getElementById('chart-metodos-pago');
             if (!ctx || !data || data.length === 0) {
-                if (loadingEl) loadingEl.innerHTML = 'No hay datos';
+                if (loadingEl) {
+                    loadingEl.style.display = 'block';
+                    loadingEl.innerHTML = 'Sin datos para el período seleccionado';
+                }
                 return;
             }
 
@@ -1540,11 +1549,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Colores para los métodos de pago
             const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d', '#17a2b8'];
-
-            // Destruir chart anterior
-            if (chartMetodosPago) {
-                chartMetodosPago.destroy();
-            }
 
             chartMetodosPago = new Chart(ctx, {
                 type: 'doughnut',

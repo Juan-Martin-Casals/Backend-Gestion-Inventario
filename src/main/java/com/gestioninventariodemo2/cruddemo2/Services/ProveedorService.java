@@ -6,8 +6,10 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.criteria.Predicate;
 
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoSimpleDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProveedorRequestDTO;
@@ -92,12 +94,24 @@ public class ProveedorService {
     }
 
     @Transactional(readOnly = true)
-    public Page<ProveedorResponseDTO> listarProveedores(Pageable pageable) {
+    public Page<ProveedorResponseDTO> listarProveedores(Pageable pageable, Boolean conCompras) {
 
-        // 1. Obtenemos la página del repositorio
-        Page<Proveedor> paginaProveedores = proveedorRepository.findAllByEstado("ACTIVO", pageable);
+        Specification<Proveedor> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+            predicates.add(cb.equal(root.get("estado"), "ACTIVO"));
 
-        // 2. Mapeamos la página a DTO usando el método que ya tenías
+            if (conCompras != null) {
+                if (conCompras) {
+                    predicates.add(cb.greaterThan(cb.size(root.get("compras")), 0));
+                } else {
+                    predicates.add(cb.equal(cb.size(root.get("compras")), 0));
+                }
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        Page<Proveedor> paginaProveedores = proveedorRepository.findAll(spec, pageable);
         return paginaProveedores.map(this::mapToDTO);
     }
 

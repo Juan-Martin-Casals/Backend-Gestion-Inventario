@@ -29,6 +29,20 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    let currentSectionId = 'principal';
+    let currentSubsectionId = null;
+
+    function clearSection(sectionId) {
+        const section = document.getElementById(`${sectionId}-section`);
+        if (!section) return;
+        section.querySelectorAll('form').forEach(f => f.reset());
+        section.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        section.querySelectorAll('.form-message').forEach(el => {
+            el.textContent = '';
+            el.className = 'form-message';
+        });
+    }
+
     // Función para mostrar una sección y ocultar las demás
     function showSection(sectionId) {
         sections.forEach(section => {
@@ -61,12 +75,24 @@ document.addEventListener('DOMContentLoaded', function () {
 
             e.preventDefault();
 
+            // Cerrar submenús que no contienen el link clickeado
+            document.querySelectorAll('.sidebar-menu li.open').forEach(openLi => {
+                if (!openLi.contains(this)) openLi.classList.remove('open');
+            });
+
             // Remover active de todos los links (incluyendo submenús)
             document.querySelectorAll('.sidebar-menu a').forEach(l => l.classList.remove('active'));
             this.classList.add('active');
 
             const sectionId = this.getAttribute('data-section');
             const subsectionId = this.getAttribute('data-subsection');
+
+            // Limpiar formularios al cambiar de sección o subsección
+            if (sectionId !== currentSectionId || subsectionId !== currentSubsectionId) {
+                clearSection(currentSectionId);
+                currentSectionId = sectionId;
+                currentSubsectionId = subsectionId;
+            }
 
             showSection(sectionId);
 

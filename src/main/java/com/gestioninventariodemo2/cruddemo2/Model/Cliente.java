@@ -9,6 +9,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -26,22 +27,28 @@ public class Cliente {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idCliente;
 
-    @Column(name = "nombre")
+    @Size(max = 70)
+    @Column(name = "nombre", length = 70)
     private String nombre;
 
-    @Column(name = "apellido")
+    @Size(max = 70)
+    @Column(name = "apellido", length = 70)
     private String apellido;
 
-    @Column(name = "dni")
+    @Size(max = 10)
+    @Column(name = "dni", length = 10)
     private String dni;
 
-    @Column(name = "telefono")
+    @Size(max = 20)
+    @Column(name = "telefono", length = 20)
     private String telefono;
 
-    @Column(name = "direccion")
+    @Size(max = 200)
+    @Column(name = "direccion", length = 200)
     private String direccion;
 
-    @Column(name = "email")
+    @Size(max = 255)
+    @Column(name = "email", length = 255)
     private String email;
 
     @Builder.Default

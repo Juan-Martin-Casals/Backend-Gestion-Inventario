@@ -136,6 +136,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const historialTableHeaders = document.querySelectorAll('#compras-section .data-table th[data-sort-by]');
     const mainContent = document.querySelector('.main-content');
     const comprasSearchInput = document.getElementById('compras-search-input');
+    const filtroEstado = document.getElementById('compras-filtro-estado');
+    const filtroProveedor = document.getElementById('compras-filtro-proveedor');
+    const btnSortFecha = document.getElementById('compras-sort-fecha');
+    const btnSortTotal = document.getElementById('compras-sort-total');
+    const sortButtons = [btnSortFecha, btnSortTotal].filter(Boolean);
 
     let historialCurrentPage = 0;
     let historialTotalPages = 1;
@@ -174,10 +179,24 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!response.ok) throw new Error('Error al cargar proveedores');
             todosLosProveedores = await response.json();
             console.log("Proveedores actualizados en Compras:", todosLosProveedores.length);
+            poblarDropdownFiltroProveedor();
         } catch (error) {
             console.error(error);
             proveedorSearchInput.placeholder = "Error al cargar proveedores";
         }
+    }
+
+    function poblarDropdownFiltroProveedor() {
+        if (!filtroProveedor || !todosLosProveedores) return;
+        const seleccionado = filtroProveedor.value;
+        filtroProveedor.innerHTML = '<option value="">🚚 Proveedor: Todos</option>';
+        todosLosProveedores.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.nombre;
+            filtroProveedor.appendChild(opt);
+        });
+        if (seleccionado) filtroProveedor.value = seleccionado;
     }
 
     async function fetchAllProductosParaCompra() {
@@ -828,7 +847,15 @@ document.addEventListener('DOMContentLoaded', function () {
             const finVal = fechaFinEl ? fechaFinEl.value : '';
             const fechaParam = (inicioVal && finVal) ? `&inicio=${inicioVal}&fin=${finVal}` : '';
 
-            const url = `${API_COMPRAS_URL}?page=${historialCurrentPage}&size=${historialItemsPerPage}${sortParam}${searchParam}${fechaParam}`;
+            // Filtro por estado de pago
+            const estadoVal = filtroEstado ? filtroEstado.value : '';
+            const estadoParam = estadoVal ? `&estadoPago=${estadoVal}` : '';
+
+            // Filtro por proveedor
+            const proveedorVal = filtroProveedor ? filtroProveedor.value : '';
+            const proveedorParam = proveedorVal ? `&proveedorId=${proveedorVal}` : '';
+
+            const url = `${API_COMPRAS_URL}?page=${historialCurrentPage}&size=${historialItemsPerPage}${sortParam}${searchParam}${fechaParam}${estadoParam}${proveedorParam}`;
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
             const pageData = await response.json();
@@ -948,9 +975,40 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (icon) icon.className = `sort-icon fas fa-sort-${historialSortDirection === 'asc' ? 'up' : 'down'}`;
             }
         });
+        updateSortButtonsState();
+    }
+
+    function updateSortButtonsState() {
+        sortButtons.forEach(btn => {
+            const field = btn.getAttribute('data-sort-field');
+            const arrow = btn.querySelector('.sort-arrow');
+            if (field === historialSortField) {
+                btn.classList.add('active');
+                if (arrow) {
+                    arrow.className = `fas fa-sort-${historialSortDirection === 'asc' ? 'up' : 'down'} sort-arrow`;
+                }
+            } else {
+                btn.classList.remove('active');
+                if (arrow) arrow.className = 'fas fa-sort sort-arrow';
+            }
+        });
+    }
+
+    function handleSortBtnClick(field) {
+        if (historialSortField === field) {
+            historialSortDirection = historialSortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            historialSortField = field;
+            historialSortDirection = 'desc';
+        }
+        historialCurrentPage = 0;
+        loadComprasHistorial();
     }
 
     historialTableHeaders.forEach(header => { header.addEventListener('click', handleHistorialSortClick); });
+    sortButtons.forEach(btn => {
+        btn.addEventListener('click', () => handleSortBtnClick(btn.getAttribute('data-sort-field')));
+    });
 
     // ==========================================================
     // FUNCIÓN LIMPIAR FORMULARIO
@@ -1199,6 +1257,14 @@ document.addEventListener('DOMContentLoaded', function () {
         // Limpiar búsqueda
         if (comprasSearchInput) comprasSearchInput.value = '';
 
+        // Limpiar filtros adicionales
+        if (filtroEstado) filtroEstado.value = '';
+        if (filtroProveedor) filtroProveedor.value = '';
+
+        // Restaurar ordenamiento por defecto: compra más reciente
+        historialSortField = 'fecha';
+        historialSortDirection = 'desc';
+
         // Limpiar errores de filtro
         ocultarErrorFiltro();
 
@@ -1261,6 +1327,20 @@ document.addEventListener('DOMContentLoaded', function () {
             comprasSearchTimeout = setTimeout(() => {
                 filtrarComprasPorBusqueda();
             }, 300);
+        });
+    }
+
+    if (filtroEstado) {
+        filtroEstado.addEventListener('change', () => {
+            historialCurrentPage = 0;
+            loadComprasHistorial();
+        });
+    }
+
+    if (filtroProveedor) {
+        filtroProveedor.addEventListener('change', () => {
+            historialCurrentPage = 0;
+            loadComprasHistorial();
         });
     }
 

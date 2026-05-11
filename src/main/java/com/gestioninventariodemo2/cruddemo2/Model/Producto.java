@@ -13,6 +13,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -30,10 +31,12 @@ public class Producto {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idProducto;
 
-    @Column(name = "Nombre")
+    @Size(max = 150)
+    @Column(name = "Nombre", length = 150)
     private String nombre;
 
-    @Column(name = "descripción")
+    @Size(max = 650)
+    @Column(name = "descripción", length = 650)
     private String descripcion;
 
     @ManyToOne(fetch = FetchType.EAGER)

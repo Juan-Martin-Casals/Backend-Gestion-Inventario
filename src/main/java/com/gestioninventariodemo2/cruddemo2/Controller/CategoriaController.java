@@ -19,6 +19,7 @@ import com.gestioninventariodemo2.cruddemo2.DTO.CategoriaSelectDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.Categoria;
 import com.gestioninventariodemo2.cruddemo2.Services.CategoriaService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -32,9 +33,13 @@ public class CategoriaController {
      * Crear nueva categoría (usado por el modal)
      */
     @PostMapping
-    public ResponseEntity<Categoria> crearCategoria(@RequestBody CategoriaRequestDTO dto) {
-        Categoria nuevaCategoria = categoriaService.crearCategoria(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(nuevaCategoria);
+    public ResponseEntity<?> crearCategoria(@Valid @RequestBody CategoriaRequestDTO dto) {
+        try {
+            Categoria nuevaCategoria = categoriaService.crearCategoria(dto);
+            return ResponseEntity.status(HttpStatus.CREATED).body(nuevaCategoria);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     /**
@@ -57,7 +62,7 @@ public class CategoriaController {
      * Actualizar una categoría existente
      */
     @PutMapping("/{id}")
-    public ResponseEntity<?> actualizarCategoria(@PathVariable Long id, @RequestBody CategoriaRequestDTO dto) {
+    public ResponseEntity<?> actualizarCategoria(@PathVariable Long id, @Valid @RequestBody CategoriaRequestDTO dto) {
         try {
             Categoria categoriaActualizada = categoriaService.actualizarCategoria(id, dto);
             return ResponseEntity.ok(categoriaActualizada);

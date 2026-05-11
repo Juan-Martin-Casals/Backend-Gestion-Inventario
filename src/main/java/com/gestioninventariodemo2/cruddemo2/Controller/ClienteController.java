@@ -16,6 +16,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 
+import jakarta.validation.Valid;
 import com.gestioninventariodemo2.cruddemo2.DTO.ClienteRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ClienteResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ClienteSelectDTO;
@@ -31,7 +32,7 @@ public class ClienteController {
     private final ClienteService clienteService;
 
     @PostMapping
-    public ResponseEntity<Cliente> crearCliente(@RequestBody ClienteRequestDTO dto) {
+    public ResponseEntity<Cliente> crearCliente(@Valid @RequestBody ClienteRequestDTO dto) {
         // Las validaciones (DNI duplicado, etc.) se manejan en el servicio
         // y se capturan por el GlobalExceptionHandler
         Cliente nuevoCliente = clienteService.crearCliente(dto);
@@ -65,8 +66,8 @@ public class ClienteController {
 
     @PutMapping("/{id}")
     public ResponseEntity<Cliente> actualizarCliente(
-            @PathVariable Long id, 
-            @RequestBody ClienteRequestDTO dto) {
+            @PathVariable Long id,
+            @Valid @RequestBody ClienteRequestDTO dto) {
         Cliente clienteActualizado = clienteService.actualizarCliente(id, dto);
         return ResponseEntity.ok(clienteActualizado);
     }

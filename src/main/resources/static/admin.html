@@ -368,12 +368,12 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="crearClienteNombre">Nombre</label>
-                                    <input type="text" id="crearClienteNombre" placeholder="Juan">
+                                    <input type="text" id="crearClienteNombre" placeholder="Juan" maxlength="70">
                                     <div class="error-message" id="errorCrearClienteNombre"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="crearClienteApellido">Apellido</label>
-                                    <input type="text" id="crearClienteApellido" placeholder="García">
+                                    <input type="text" id="crearClienteApellido" placeholder="García" maxlength="70">
                                     <div class="error-message" id="errorCrearClienteApellido"></div>
                                 </div>
                             </div>
@@ -381,12 +381,12 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="crearClienteDNI">DNI</label>
-                                    <input type="text" id="crearClienteDNI" placeholder="36222999">
+                                    <input type="text" id="crearClienteDNI" placeholder="36.222.999" maxlength="10">
                                     <div class="error-message" id="errorCrearClienteDNI"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="crearClienteTelefono">Teléfono</label>
-                                    <input type="tel" id="crearClienteTelefono" placeholder="+54 11 4321 9876">
+                                    <input type="tel" id="crearClienteTelefono" placeholder="+54 11 4321 9876" maxlength="20">
                                     <div class="error-message" id="errorCrearClienteTelefono"></div>
                                 </div>
                             </div>
@@ -395,12 +395,12 @@
                                 <div class="form-group">
                                     <label for="crearClienteDireccion">Dirección</label>
                                     <input type="text" id="crearClienteDireccion"
-                                        placeholder="Argentina, Santa Fe, Santa Fe, Aristóbulo del Valle 1234">
+                                        placeholder="Argentina, Santa Fe, Santa Fe, Aristóbulo del Valle 1234" maxlength="200">
                                     <div class="error-message" id="errorCrearClienteDireccion"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="crearClienteEmail">Email</label>
-                                    <input type="email" id="crearClienteEmail" placeholder="ejemplo@mail.com">
+                                    <input type="email" id="crearClienteEmail" placeholder="ejemplo@mail.com" maxlength="255">
                                     <div class="error-message" id="errorCrearClienteEmail"></div>
                                 </div>
                             </div>
@@ -427,23 +427,45 @@
                         <p>Historial de clientes</p>
 
                         <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
-                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-                                <div style="flex: 1; min-width: 300px;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <!-- Búsqueda -->
+                                <div style="flex: 1; min-width: 200px; max-width: 50%;">
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
                                         <input type="text"
                                             placeholder="Buscar por nombre, apellido, DNI, teléfono, email..."
                                             id="clientes-search-input"
-                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                            style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                                     </div>
                                 </div>
-                                <div style="display: flex; gap: 10px;">
-                                    <button type="button" class="btn-outline" id="clientes-btn-limpiar"
-                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
-                                        <i class="fas fa-eraser"></i> Limpiar
-                                    </button>
-                                </div>
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                <!-- Botón ordenamiento por Apellido -->
+                                <button type="button" id="clientes-sort-apellido" data-sort-field="apellido"
+                                    style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
+                                    Apellido <i class="fas fa-sort sort-arrow"></i>
+                                </button>
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                <!-- Botón ordenamiento por Nombre -->
+                                <button type="button" id="clientes-sort-nombre" data-sort-field="nombre"
+                                    style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
+                                    Nombre <i class="fas fa-sort sort-arrow"></i>
+                                </button>
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                <!-- Botón Limpiar -->
+                                <button type="button" class="btn-outline" id="clientes-btn-limpiar"
+                                    style="padding: 8px 14px; font-size: 13px; white-space: nowrap;">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
                             </div>
                         </div>
 
@@ -451,10 +473,10 @@
                             <table class="data-table" id="tabla-clientes">
                                 <thead>
                                     <tr>
-                                        <th data-sort-by="nombre">Nombre <i class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="apellido">Apellido <i class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="telefono">Teléfono <i class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="email">Email <i class="sort-icon fas fa-sort"></i></th>
+                                        <th>Nombre</th>
+                                        <th>Apellido</th>
+                                        <th>Teléfono</th>
+                                        <th>Email</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -550,36 +572,36 @@
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label>Nombre:</label>
-                                        <input type="text" id="edit-cliente-nombre">
+                                        <input type="text" id="edit-cliente-nombre" maxlength="70">
                                         <div class="error-message" id="error-edit-cliente-nombre"></div>
                                     </div>
                                     <div class="form-group">
                                         <label>Apellido:</label>
-                                        <input type="text" id="edit-cliente-apellido">
+                                        <input type="text" id="edit-cliente-apellido" maxlength="70">
                                         <div class="error-message" id="error-edit-cliente-apellido"></div>
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label>DNI:</label>
-                                        <input type="text" id="edit-cliente-dni">
+                                        <input type="text" id="edit-cliente-dni" maxlength="10">
                                         <div class="error-message" id="error-edit-cliente-dni"></div>
                                     </div>
                                     <div class="form-group">
                                         <label>Teléfono:</label>
-                                        <input type="text" id="edit-cliente-telefono">
+                                        <input type="text" id="edit-cliente-telefono" maxlength="20">
                                         <div class="error-message" id="error-edit-cliente-telefono"></div>
                                     </div>
                                 </div>
                                 <div class="form-row">
                                     <div class="form-group">
                                         <label>Email:</label>
-                                        <input type="email" id="edit-cliente-email">
+                                        <input type="email" id="edit-cliente-email" maxlength="255">
                                         <div class="error-message" id="error-edit-cliente-email"></div>
                                     </div>
                                     <div class="form-group">
                                         <label>Dirección:</label>
-                                        <input type="text" id="edit-cliente-direccion">
+                                        <input type="text" id="edit-cliente-direccion" maxlength="200">
                                         <div class="error-message" id="error-edit-cliente-direccion"></div>
                                     </div>
                                 </div>
@@ -638,7 +660,7 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="product-name">Nombre del Producto</label>
-                                    <input type="text" id="product-name" name="nombre"
+                                    <input type="text" id="product-name" name="nombre" maxlength="150"
                                         placeholder="Ingrese el nombre del producto">
                                     <div class="error-message" id="name-error"></div>
                                 </div>
@@ -659,7 +681,7 @@
                             </div>
                             <div class="form-group">
                                 <label for="product-description">Descripción</label>
-                                <textarea id="product-description" name="descripcion"
+                                <textarea id="product-description" name="descripcion" maxlength="650"
                                     placeholder="Descripción del producto"></textarea>
                                 <div class="error-message" id="description-error"></div>
                             </div>
@@ -708,7 +730,7 @@
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
                                         <input type="text"
-                                            placeholder="Buscar por nombre, categoría, descripcion o proveedor..."
+                                            placeholder="Buscar por nombre, categoría o proveedor..."
                                             id="product-search-input"
                                             style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                                     </div>
@@ -831,9 +853,13 @@
                                             <label>Categoría:</label>
                                             <span id="detail-categoria"></span>
                                         </div>
-                                        <div class="detail-item full-width">
+                                        <div class="detail-item">
                                             <label>Descripción:</label>
                                             <span id="detail-descripcion"></span>
+                                        </div>
+                                        <div class="detail-item">
+                                            <label>Fecha de Creación:</label>
+                                            <span id="detail-fecha"></span>
                                         </div>
                                     </div>
                                 </div>
@@ -849,8 +875,13 @@
                                             <span id="detail-precio" class="price-highlight"></span>
                                         </div>
                                         <div class="detail-item">
-                                            <label>Fecha de Creación:</label>
-                                            <span id="detail-fecha"></span>
+                                            <label>Menor Precio de Costo:</label>
+                                            <span id="detail-costo-minimo" class="cost-highlight"></span>
+                                        </div>
+                                        <div class="detail-item full-width">
+                                            <span style="font-size: 11px; color: #94a3b8; font-style: italic;">
+                                                <i class="fas fa-info-circle"></i> Para ver todos los costos por proveedor, consultá la tabla <strong>Proveedores Asociados</strong>.
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -932,7 +963,7 @@
 
                             <div class="form-group">
                                 <label for="edit-product-name">Nombre del Producto</label>
-                                <input type="text" id="edit-product-name" placeholder="Nombre del producto">
+                                <input type="text" id="edit-product-name" maxlength="150" placeholder="Nombre del producto">
                                 <div class="error-message" id="edit-name-error"></div>
                             </div>
 
@@ -948,7 +979,7 @@
 
                             <div class="form-group">
                                 <label for="edit-product-description">Descripción</label>
-                                <textarea id="edit-product-description" rows="3"
+                                <textarea id="edit-product-description" rows="3" maxlength="650"
                                     placeholder="Descripción del producto"></textarea>
                                 <div class="error-message" id="edit-description-error"></div>
                             </div>
@@ -999,7 +1030,7 @@
                         <form id="add-categoria-form">
                             <div class="form-group">
                                 <label for="addCategoriaNombre">Nombre de la Categoría</label>
-                                <input type="text" id="addCategoriaNombre" style="padding: 12px;">
+                                <input type="text" id="addCategoriaNombre" maxlength="50" style="padding: 12px;">
                                 <div class="error-message" id="errorAddCategoriaNombre"></div>
                             </div>
 
@@ -1241,13 +1272,13 @@
                                 <div class="form-group">
                                     <label for="proveedorNombre">Nombre del Proveedor</label>
                                     <input type="text" id="proveedorNombre" name="nombre"
-                                        placeholder="Nombre proveedor">
+                                        placeholder="Nombre proveedor" maxlength="150">
                                     <div class="error-message" id="errorNombre"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="proveedorTelefono">Teléfono</label>
                                     <input type="text" id="proveedorTelefono" name="telefono"
-                                        placeholder="+54 11 4321 9876">
+                                        placeholder="+54 11 4321 9876" maxlength="20">
                                     <div class="error-message" id="errorTelefono"></div>
                                 </div>
                             </div>
@@ -1255,13 +1286,13 @@
                                 <div class="form-group">
                                     <label for="proveedorEmail">Email</label>
                                     <input type="email" id="proveedorEmail" name="email"
-                                        placeholder="email@ejemplo.com">
+                                        placeholder="email@ejemplo.com" maxlength="255">
                                     <div class="error-message" id="errorEmail"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="proveedorDireccion">Dirección</label>
                                     <input type="text" id="proveedorDireccion" name="direccion"
-                                        placeholder="Argentina, Santa Fe, Santa Fe, Aristóbulo del Valle 1234">
+                                        placeholder="Argentina, Santa Fe, Santa Fe, Aristóbulo del Valle 1234" maxlength="200">
                                     <div class="error-message" id="errorDireccion"></div>
                                 </div>
                             </div>
@@ -1269,7 +1300,7 @@
                                 <div class="form-group" style="flex: 0 0 calc(50% - 5px);">
                                     <label for="proveedorCuit">CUIT</label>
                                     <input type="text" id="proveedorCuit" name="cuit" placeholder="20-12345678-9"
-                                        pattern="\d{2}-\d{8}-\d{1}">
+                                        pattern="\d{2}-\d{8}-\d{1}" maxlength="13">
                                     <div class="error-message" id="errorCuit"></div>
                                 </div>
                             </div>
@@ -1295,28 +1326,49 @@
                     <div class="table-section">
                         <h4>Proveedores Registrados</h4>
 
-                        <!-- Búsqueda de Proveedores -->
+                        <!-- Búsqueda y Filtros de Proveedores (estilo unificado con Compras) -->
                         <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
-                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                 <!-- Búsqueda -->
-                                <div style="flex: 1; min-width: 300px;">
+                                <div style="flex: 2; min-width: 200px;">
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
                                         <input type="text"
                                             placeholder="Buscar por nombre, email, teléfono o producto..."
                                             id="proveedor-search-input"
-                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                            style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                                     </div>
                                 </div>
 
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                <!-- Botón de ordenamiento por Nombre -->
+                                <button type="button" id="proveedor-sort-nombre" data-sort-field="nombre"
+                                    style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
+                                    Nombre <i class="fas fa-sort sort-arrow"></i>
+                                </button>
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                <!-- Filtro Compras -->
+                                <select id="proveedor-filtro-compras"
+                                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; flex: 1; min-width: 160px;">
+                                    <option value="">📋 Compras: Todos</option>
+                                    <option value="con">✅ Con compras</option>
+                                    <option value="sin">⛔ Sin compras</option>
+                                </select>
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
                                 <!-- Botón Limpiar -->
-                                <div style="display: flex; gap: 10px;">
-                                    <button type="button" class="btn-outline" id="proveedor-clear-search"
-                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
-                                        <i class="fas fa-eraser"></i> Limpiar
-                                    </button>
-                                </div>
+                                <button type="button" class="btn-outline" id="proveedor-clear-search"
+                                    style="padding: 8px 14px; font-size: 13px; white-space: nowrap;">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
                             </div>
                             <!-- Mensaje de error para búsqueda -->
                             <div id="proveedor-search-error" class="error-message"
@@ -1328,16 +1380,11 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th data-sort-by="nombre" class="sortable">Nombre <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="cuit" class="sortable">CUIT <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="telefono" class="sortable">Teléfono <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="email" class="sortable">Email <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="direccion" class="sortable">Dirección <i
-                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Nombre</th>
+                                        <th>CUIT</th>
+                                        <th>Teléfono</th>
+                                        <th>Email</th>
+                                        <th>Dirección</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -1562,72 +1609,90 @@
                     <div class="table-section">
                         <h4>Compras Registradas</h4>
 
-                        <!-- Búsqueda y Filtros -->
+                        <!-- Búsqueda y Filtros (todos en una sola línea, fondo gris con separadores) -->
                         <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
-                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                 <!-- Búsqueda -->
-                                <div style="flex: 1; min-width: 300px;">
+                                <div style="flex: 2; min-width: 200px;">
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
                                         <input type="text" placeholder="Buscar por proveedor o producto..."
                                             id="compras-search-input"
-                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                            style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                                     </div>
                                 </div>
 
                                 <!-- Separador visual -->
-                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
 
-                                <!-- Filtros de Fecha -->
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-calendar-alt" style="color: #667eea;"></i>
-                                    <input type="date" id="compras-fecha-inicio"
-                                        style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
-                                    <span style="color: #666;">→</span>
-                                    <input type="date" id="compras-fecha-fin"
-                                        style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
-                                </div>
+                                <!-- Botones de ordenamiento -->
+                                <button type="button" id="compras-sort-fecha" data-sort-field="fecha"
+                                    style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
+                                    Fecha <i class="fas fa-sort sort-arrow"></i>
+                                </button>
+                                <button type="button" id="compras-sort-total" data-sort-field="total"
+                                    style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
+                                    Total <i class="fas fa-sort sort-arrow"></i>
+                                </button>
 
                                 <!-- Separador visual -->
-                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                <!-- Filtros -->
+                                <select id="compras-filtro-estado"
+                                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; flex: 1; min-width: 130px;">
+                                    <option value="">💳 Estado: Todos</option>
+                                    <option value="PENDIENTE">⏳ Pendiente</option>
+                                    <option value="PAGADO">✅ Pagado</option>
+                                </select>
+                                <select id="compras-filtro-proveedor"
+                                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; flex: 1; min-width: 130px;">
+                                    <option value="">🚚 Proveedor: Todos</option>
+                                </select>
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                <!-- Filtros de Fecha -->
+                                <i class="fas fa-calendar-alt" style="color: #667eea;"></i>
+                                <input type="date" id="compras-fecha-inicio"
+                                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
+                                <span style="color: #666;">→</span>
+                                <input type="date" id="compras-fecha-fin"
+                                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
 
                                 <!-- Botones de Acción -->
-                                <div style="display: flex; gap: 10px;">
-                                    <button type="button" class="btn-primary" id="compras-btn-filtrar"
-                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
-                                        <i class="fas fa-search"></i> Buscar
-                                    </button>
-                                    <button type="button" class="btn-outline" id="compras-btn-limpiar-filtro"
-                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
-                                        <i class="fas fa-eraser"></i> Limpiar
-                                    </button>
-                                    <button type="button" class="btn-primary" id="compras-btn-exportar-pdf"
-                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
-                                        <i class="fas fa-file-pdf"></i> PDF
-                                    </button>
-                                </div>
+                                <button type="button" class="btn-primary" id="compras-btn-filtrar"
+                                    style="padding: 8px 14px; font-size: 13px; white-space: nowrap;">
+                                    <i class="fas fa-search"></i> Buscar
+                                </button>
+                                <button type="button" class="btn-outline" id="compras-btn-limpiar-filtro"
+                                    style="padding: 8px 14px; font-size: 13px; white-space: nowrap;">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                                <button type="button" id="compras-btn-exportar-pdf"
+                                    style="padding: 8px 14px; border: 1px solid #c92a2a; border-radius: 6px; font-size: 13px; background: #fa5252; color: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
+                                    <i class="fas fa-file-pdf"></i> PDF
+                                </button>
                             </div>
+
                             <!-- Mensaje de error para filtros -->
-                            <div id="compras-filtro-error" class="error-message"
-                                style="margin-top: 10px; display: none;"></div>
+                            <div id="compras-filtro-error" class="error-message" style="margin-top: 10px; display: none;"></div>
                         </div>
                         <div class="table-container">
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th data-sort-by="fecha" class="sortable"
-                                            style="width: 12%; white-space: nowrap;">Fecha <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="proveedor.nombre" class="sortable" style="width: 23%;">
-                                            Proveedor <i class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="productos" class="sortable" style="width: 35%;">Productos <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="total" class="sortable"
-                                            style="width: 10%; white-space: nowrap; text-align: right; padding-right: 20px;">
-                                            Total <i class="sort-icon fas fa-sort"></i></th>
-                                        <th style="width: 10%; text-align: center;">Estado</th>
-                                        <th style="width: 10%; text-align: center;">Acciones</th>
+                                        <th>Fecha</th>
+                                        <th>Proveedor</th>
+                                        <th>Productos</th>
+                                        <th>Total</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="compras-historial-tabla-body">
@@ -1709,12 +1774,12 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="user-nombre">Nombre</label>
-                                    <input type="text" id="user-nombre" placeholder="Ingrese el nombre">
+                                    <input type="text" id="user-nombre" placeholder="Ingrese el nombre" maxlength="70">
                                     <div class="error-message" id="error-user-nombre"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="user-apellido">Apellido</label>
-                                    <input type="text" id="user-apellido" placeholder="Ingrese el apellido">
+                                    <input type="text" id="user-apellido" placeholder="Ingrese el apellido" maxlength="70">
                                     <div class="error-message" id="error-user-apellido"></div>
                                 </div>
                             </div>
@@ -1722,7 +1787,7 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="user-email">Email</label>
-                                    <input type="email" id="user-email" placeholder="correo@ejemplo.com">
+                                    <input type="email" id="user-email" placeholder="correo@ejemplo.com" maxlength="255">
                                     <div class="error-message" id="error-user-email"></div>
                                 </div>
                                 <div class="form-group">
@@ -1737,7 +1802,7 @@
                                 <div class="form-group">
                                     <label for="user-password">Contraseña</label>
                                     <div class="password-field-container">
-                                        <input type="password" id="user-password" placeholder="Ingrese la contraseña">
+                                        <input type="password" id="user-password" placeholder="Ingrese la contraseña" maxlength="100">
                                         <button type="button" class="password-toggle-btn" data-target="user-password">
                                             <i class="fas fa-eye"></i>
                                         </button>
@@ -1753,7 +1818,7 @@
                                     <label for="user-confirm-password">Confirmar Contraseña</label>
                                     <div class="password-field-container">
                                         <input type="password" id="user-confirm-password"
-                                            placeholder="Confirme la contraseña">
+                                            placeholder="Confirme la contraseña" maxlength="100">
                                         <button type="button" class="password-toggle-btn"
                                             data-target="user-confirm-password">
                                             <i class="fas fa-eye"></i>
@@ -1785,27 +1850,55 @@
                     <div class="table-section">
                         <h4>Usuarios Registrados</h4>
 
-                        <!-- Búsqueda de Usuarios -->
+                        <!-- Búsqueda y Filtros de Usuarios -->
                         <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
-                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                 <!-- Búsqueda -->
-                                <div style="flex: 1; min-width: 300px;">
+                                <div style="flex: 1; min-width: 180px; max-width: 440px;">
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
                                         <input type="text" placeholder="Buscar por nombre, apellido, email o rol..."
                                             id="user-search-input"
-                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                            style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                                     </div>
                                 </div>
 
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                <!-- Botón ordenamiento por Apellido -->
+                                <button type="button" id="user-sort-apellido" data-sort-field="apellido"
+                                    style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
+                                    Apellido <i class="fas fa-sort sort-arrow"></i>
+                                </button>
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                <!-- Botón ordenamiento por Nombre -->
+                                <button type="button" id="user-sort-nombre" data-sort-field="nombre"
+                                    style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
+                                    Nombre <i class="fas fa-sort sort-arrow"></i>
+                                </button>
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                <!-- Filtro por Rol -->
+                                <select id="user-filtro-rol"
+                                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; width: 155px; flex-shrink: 0;">
+                                    <option value="">👥 Rol: Todos</option>
+                                </select>
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
                                 <!-- Botón Limpiar -->
-                                <div style="display: flex; gap: 10px;">
-                                    <button type="button" class="btn-outline" id="user-clear-search"
-                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
-                                        <i class="fas fa-eraser"></i> Limpiar
-                                    </button>
-                                </div>
+                                <button type="button" class="btn-outline" id="user-clear-search"
+                                    style="padding: 8px 14px; font-size: 13px; white-space: nowrap;">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
                             </div>
                             <!-- Mensaje de error para búsqueda -->
                             <div id="user-search-error" class="error-message" style="margin-top: 10px; display: none;">
@@ -1816,14 +1909,10 @@
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th data-sort-by="nombre" class="sortable">Nombre <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="apellido" class="sortable">Apellido <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="email" class="sortable">Email <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="rol.idRol" class="sortable">Rol <i
-                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Nombre</th>
+                                        <th>Apellido</th>
+                                        <th>Email</th>
+                                        <th>Rol</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -1860,19 +1949,19 @@
 
                             <div class="form-group">
                                 <label for="editUsuarioNombre">Nombre</label>
-                                <input type="text" id="editUsuarioNombre" placeholder="Nombre del usuario">
+                                <input type="text" id="editUsuarioNombre" placeholder="Nombre del usuario" maxlength="70">
                                 <div class="error-message" id="errorEditUsuarioNombre"></div>
                             </div>
 
                             <div class="form-group">
                                 <label for="editUsuarioApellido">Apellido</label>
-                                <input type="text" id="editUsuarioApellido" placeholder="Apellido del usuario">
+                                <input type="text" id="editUsuarioApellido" placeholder="Apellido del usuario" maxlength="70">
                                 <div class="error-message" id="errorEditUsuarioApellido"></div>
                             </div>
 
                             <div class="form-group">
                                 <label for="editUsuarioEmail">Email</label>
-                                <input type="email" id="editUsuarioEmail" placeholder="correo@ejemplo.com">
+                                <input type="email" id="editUsuarioEmail" placeholder="correo@ejemplo.com" maxlength="255">
                                 <div class="error-message" id="errorEditUsuarioEmail"></div>
                             </div>
 
@@ -2097,51 +2186,74 @@
                         <h4>Ventas Registradas</h4>
                         <p>Historial de ventas realizadas</p>
 
-                        <!-- Búsqueda y Filtros -->
+                        <!-- Búsqueda y Filtros (estilo unificado con Compras) -->
                         <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
-                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                 <!-- Búsqueda -->
-                                <div style="flex: 1; min-width: 300px;">
+                                <div style="flex: 2; min-width: 200px;">
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
                                         <input type="text" placeholder="Buscar por cliente, producto o vendedor..."
                                             id="ventas-search-input"
-                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                            style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                                     </div>
                                 </div>
 
                                 <!-- Separador visual -->
-                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
 
-                                <!-- Filtros de Fecha -->
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <i class="fas fa-calendar-alt" style="color: #667eea;"></i>
-                                    <input type="date" id="ventas-fecha-inicio"
-                                        style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
-                                    <span style="color: #666;">→</span>
-                                    <input type="date" id="ventas-fecha-fin"
-                                        style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
-                                </div>
+                                <!-- Botones de ordenamiento -->
+                                <button type="button" id="ventas-sort-fecha" data-sort-field="fecha"
+                                    style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
+                                    Fecha <i class="fas fa-sort sort-arrow"></i>
+                                </button>
+                                <button type="button" id="ventas-sort-total" data-sort-field="total"
+                                    style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
+                                    Total <i class="fas fa-sort sort-arrow"></i>
+                                </button>
 
                                 <!-- Separador visual -->
-                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                <!-- Filtro Vendedor -->
+                                <select id="ventas-filtro-vendedor"
+                                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; flex: 1; min-width: 160px;">
+                                    <option value="">👤 Vendedor: Todos</option>
+                                </select>
+                                <!-- Filtro Método de Pago -->
+                                <select id="ventas-filtro-metodo-pago"
+                                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; flex: 1; min-width: 160px;">
+                                    <option value="">💳 Método: Todos</option>
+                                </select>
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                <!-- Filtros de Fecha -->
+                                <i class="fas fa-calendar-alt" style="color: #667eea;"></i>
+                                <input type="date" id="ventas-fecha-inicio"
+                                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
+                                <span style="color: #666;">→</span>
+                                <input type="date" id="ventas-fecha-fin"
+                                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
 
                                 <!-- Botones de Acción -->
-                                <div style="display: flex; gap: 10px;">
-                                    <button type="button" class="btn-primary" id="ventas-btn-filtrar"
-                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
-                                        <i class="fas fa-search"></i> Buscar
-                                    </button>
-                                    <button type="button" class="btn-outline" id="ventas-btn-limpiar-filtro"
-                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
-                                        <i class="fas fa-eraser"></i> Limpiar
-                                    </button>
-                                    <button type="button" class="btn-primary" id="ventas-btn-exportar-pdf"
-                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
-                                        <i class="fas fa-file-pdf"></i> PDF
-                                    </button>
-                                </div>
+                                <button type="button" class="btn-primary" id="ventas-btn-filtrar"
+                                    style="padding: 8px 14px; font-size: 13px; white-space: nowrap;">
+                                    <i class="fas fa-search"></i> Buscar
+                                </button>
+                                <button type="button" class="btn-outline" id="ventas-btn-limpiar-filtro"
+                                    style="padding: 8px 14px; font-size: 13px; white-space: nowrap;">
+                                    <i class="fas fa-eraser"></i> Limpiar
+                                </button>
+                                <button type="button" id="ventas-btn-exportar-pdf"
+                                    style="padding: 8px 14px; border: 1px solid #c92a2a; border-radius: 6px; font-size: 13px; background: #fa5252; color: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
+                                    <i class="fas fa-file-pdf"></i> PDF
+                                </button>
                             </div>
                             <!-- Mensaje de error para filtros -->
                             <div id="ventas-filtro-error" class="error-message"
@@ -2151,15 +2263,11 @@
                             <table class="data-table" id="tabla-ventas">
                                 <thead>
                                     <tr>
-                                        <th data-sort-by="fecha" class="sortable">Fecha <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="cliente.nombre" class="sortable">Cliente <i
-                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th>Fecha</th>
+                                        <th>Cliente</th>
                                         <th>Producto</th>
-                                        <th data-sort-by="total" class="sortable col-num">Total <i
-                                                class="sort-icon fas fa-sort"></i></th>
-                                        <th data-sort-by="vendedor.nombre" class="sortable">Vendedor <i
-                                                class="sort-icon fas fa-sort"></i></th>
+                                        <th class="col-num">Total</th>
+                                        <th>Vendedor</th>
                                         <th>Método de Pago</th>
                                         <th>Acciones</th>
                                     </tr>
@@ -2938,42 +3046,42 @@
 
                         <!-- Búsqueda y Filtros Historial -->
                         <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
-                            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap; width: 100%;">
                                 <!-- Búsqueda -->
-                                <div style="flex: 1; min-width: 220px;">
+                                <div style="flex: 1; min-width: 180px;">
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
                                         <input type="text" placeholder="Buscar por operador..." id="historial-busqueda"
-                                            style="width: 100%; padding: 10px 12px 10px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; background: white;">
+                                            style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                                     </div>
                                 </div>
 
                                 <!-- Separador -->
-                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
 
                                 <!-- Filtros de Fecha -->
-                                <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="display: flex; align-items: center; gap: 8px;">
                                     <i class="fas fa-calendar-alt" style="color: #667eea;"></i>
                                     <input type="date" id="historial-fecha-desde"
-                                        style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
+                                        style="padding: 8px 12px; font-size: 13px; border: 1px solid #ddd; border-radius: 6px; background: white;">
                                     <span style="color: #666;">→</span>
                                     <input type="date" id="historial-fecha-hasta"
-                                        style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white;">
+                                        style="padding: 8px 12px; font-size: 13px; border: 1px solid #ddd; border-radius: 6px; background: white;">
                                 </div>
 
                                 <!-- Separador -->
-                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
 
                                 <!-- Operador -->
                                 <select id="historial-filtro-operador"
-                                    style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white; min-width: 160px; cursor: pointer;">
+                                    style="padding: 8px 12px; font-size: 13px; border: 1px solid #ddd; border-radius: 6px; background: white; width: 175px; flex-shrink: 0; cursor: pointer;">
                                     <option value="">Todos los operadores</option>
                                 </select>
 
                                 <!-- Estado -->
                                 <select id="historial-filtro-estado"
-                                    style="padding: 10px 12px; font-size: 14px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer;">
+                                    style="padding: 8px 12px; font-size: 13px; border: 1px solid #ddd; border-radius: 6px; background: white; width: 150px; flex-shrink: 0; cursor: pointer;">
                                     <option value="">Todos los estados</option>
                                     <option value="ABIERTA">Abierta</option>
                                     <option value="CERRADA">Cerrada</option>
@@ -2981,21 +3089,21 @@
 
                                 <!-- Con diferencias -->
                                 <button id="btn-historial-diferencias" data-active="false"
-                                    style="padding: 10px 16px; font-size: 14px; white-space: nowrap; border: 1px solid #ddd; border-radius: 6px; background: white; color: #495057; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s;">
+                                    style="padding: 8px 14px; font-size: 13px; white-space: nowrap; border: 1px solid #ddd; border-radius: 6px; background: white; color: #495057; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
                                     <i class="fas fa-not-equal"></i> Con diferencias
                                 </button>
 
                                 <!-- Separador -->
-                                <div style="height: 35px; width: 1px; background: #dee2e6;"></div>
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
 
                                 <!-- Botones -->
-                                <div style="display: flex; gap: 10px;">
+                                <div style="display: flex; gap: 8px;">
                                     <button type="button" class="btn-primary" id="historial-btn-buscar"
-                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        style="padding: 8px 14px; font-size: 13px; white-space: nowrap;">
                                         <i class="fas fa-search"></i> Buscar
                                     </button>
                                     <button type="button" class="btn-outline" id="btn-historial-limpiar"
-                                        style="padding: 10px 16px; font-size: 14px; white-space: nowrap;">
+                                        style="padding: 8px 14px; font-size: 13px; white-space: nowrap;">
                                         <i class="fas fa-eraser"></i> Limpiar
                                     </button>
                                 </div>
@@ -3121,12 +3229,12 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="editProveedorNombre">Nombre del Proveedor</label>
-                                    <input type="text" id="editProveedorNombre" placeholder="Nombre del proveedor">
+                                    <input type="text" id="editProveedorNombre" placeholder="Nombre del proveedor" maxlength="150">
                                     <div class="error-message" id="errorEditNombre"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="editProveedorTelefono">Teléfono</label>
-                                    <input type="text" id="editProveedorTelefono" placeholder="123456789">
+                                    <input type="text" id="editProveedorTelefono" placeholder="123456789" maxlength="20">
                                     <div class="error-message" id="errorEditTelefono"></div>
                                 </div>
                             </div>
@@ -3134,12 +3242,12 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="editProveedorEmail">Email</label>
-                                    <input type="email" id="editProveedorEmail" placeholder="email@ejemplo.com">
+                                    <input type="email" id="editProveedorEmail" placeholder="email@ejemplo.com" maxlength="255">
                                     <div class="error-message" id="errorEditEmail"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="editProveedorDireccion">Dirección</label>
-                                    <input type="text" id="editProveedorDireccion" placeholder="Dirección completa">
+                                    <input type="text" id="editProveedorDireccion" placeholder="Dirección completa" maxlength="200">
                                     <div class="error-message" id="errorEditDireccion"></div>
                                 </div>
                             </div>
@@ -3148,7 +3256,7 @@
                                 <div class="form-group" style="flex: 0 0 calc(50% - 5px);">
                                     <label for="editProveedorCuit">CUIT</label>
                                     <input type="text" id="editProveedorCuit" placeholder="20-12345678-9"
-                                        pattern="\d{2}-\d{8}-\d{1}">
+                                        pattern="\d{2}-\d{8}-\d{1}" maxlength="13">
                                     <div class="error-message" id="errorEditCuit"></div>
                                 </div>
                             </div>

@@ -71,17 +71,18 @@ public class UsuarioService {
 
     // LISTAR A LOS USARIOS AL FRONT OCULTANDO SU ID Y CONTRASEÑA
     @Transactional(readOnly = true)
-    public Page<UsuarioResponseDTO> obtenerTodosLosUsuarios(Pageable pageable, String search) {
-
-        Page<Usuario> paginaUsuarios;
-
-        if (search != null && !search.trim().isEmpty()) {
-            paginaUsuarios = usuarioRepository.buscarUsuariosActivos("ACTIVO", search.trim(), pageable);
-        } else {
-            paginaUsuarios = usuarioRepository.findAllByEstado("ACTIVO", pageable);
-        }
-
+    public Page<UsuarioResponseDTO> obtenerTodosLosUsuarios(Pageable pageable, String search, Long idRol) {
+        String searchTrim = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+        Page<Usuario> paginaUsuarios = usuarioRepository.buscarUsuariosFiltrados("ACTIVO", searchTrim, idRol, pageable);
         return paginaUsuarios.map(this::toResponseDTO);
+    }
+
+    // LISTAR USUARIOS ACTIVOS PARA DROPDOWNS (id, nombre, apellido)
+    @Transactional(readOnly = true)
+    public List<UsuarioResponseDTO> listarUsuariosSelect() {
+        return usuarioRepository.findAllByEstado("ACTIVO").stream()
+                .map(this::toResponseDTO)
+                .toList();
     }
 
     // ACTUALIZAR USUARIO

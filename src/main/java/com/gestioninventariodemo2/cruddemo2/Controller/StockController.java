@@ -10,6 +10,7 @@ import com.gestioninventariodemo2.cruddemo2.DTO.ProductoResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.StockTablaDTO;
 import com.gestioninventariodemo2.cruddemo2.Services.ProductoService;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
@@ -42,7 +43,7 @@ public class StockController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ProductoActualizadoDTO> editarProducto(@PathVariable Long id,@RequestBody ActualizarProductoDTO dto){
+    public ResponseEntity<ProductoActualizadoDTO> editarProducto(@PathVariable Long id, @Valid @RequestBody ActualizarProductoDTO dto){
         ProductoActualizadoDTO productoActualizado= productoService.editarProducto(id, dto);
         return ResponseEntity.ok(productoActualizado);
     }

@@ -11,6 +11,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -28,19 +29,24 @@ public class Proveedor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idProveedor;
 
-    @Column(name = "Nombre")
+    @Size(max = 150)
+    @Column(name = "Nombre", length = 150)
     private String nombre;
 
-    @Column(name = "Telefono")
+    @Size(max = 20)
+    @Column(name = "Telefono", length = 20)
     private String telefono;
 
-    @Column(name = "Email")
+    @Size(max = 255)
+    @Column(name = "Email", length = 255)
     private String email;
 
-    @Column(name = "Direccion")
+    @Size(max = 200)
+    @Column(name = "Direccion", length = 200)
     private String direccion;
 
-    @Column(name = "Cuit")
+    @Size(max = 13)
+    @Column(name = "Cuit", length = 13)
     private String cuit;
 
     @Column(name = "estado")

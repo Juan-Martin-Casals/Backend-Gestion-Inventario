@@ -15,6 +15,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -32,16 +33,19 @@ public class Usuario implements UserDetails{
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idUsuario;
 
-    @Column(name = "nombre", nullable= false)
+    @Size(max = 70)
+    @Column(name = "nombre", nullable = false, length = 70)
     private String nombre;
 
-    @Column(name = "apellido", nullable = false)
+    @Size(max = 70)
+    @Column(name = "apellido", nullable = false, length = 70)
     private String apellido;
 
-    @Column(name = "email", unique = true, nullable = false)
+    @Size(max = 255)
+    @Column(name = "email", unique = true, nullable = false, length = 255)
     private String email;
 
-    @Column(name = "contrasena", nullable = false)
+    @Column(name = "contrasena", nullable = false, length = 255)
     private String contrasena;
 
     @Column(name = "estado")

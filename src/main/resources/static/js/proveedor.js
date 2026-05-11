@@ -52,6 +52,8 @@ document.addEventListener('DOMContentLoaded', function () {
     // SELECTORES DE ORDENAMIENTO
     // ===============================
     const tableHeaders = document.querySelectorAll('#proveedores-section .data-table th[data-sort-by]');
+    const btnSortNombre = document.getElementById('proveedor-sort-nombre');
+    const filtroCompras = document.getElementById('proveedor-filtro-compras');
 
     // ===============================
     // SELECTORES - FORMULARIO DE REGISTRO
@@ -111,13 +113,88 @@ document.addEventListener('DOMContentLoaded', function () {
             const sanitized = pasted.replace(/[^0-9+ ]/g, '');
             const start = this.selectionStart;
             const end = this.selectionEnd;
-            this.value = this.value.slice(0, start) + sanitized + this.value.slice(end);
-            this.selectionStart = this.selectionEnd = start + sanitized.length;
+            const maxLen = parseInt(this.getAttribute('maxlength')) || Infinity;
+            const newValue = (this.value.slice(0, start) + sanitized + this.value.slice(end)).slice(0, maxLen);
+            this.value = newValue;
+            const cursor = Math.min(start + sanitized.length, maxLen);
+            this.selectionStart = this.selectionEnd = cursor;
+            this.dispatchEvent(new Event('input'));
         });
     }
 
     restrictTelefonoInput(telefonoInput);
     restrictTelefonoInput(editTelefonoInput);
+
+    // ===============================
+    // RESTRICCIÓN Y AUTO-FORMATO CUIT (XX-XXXXXXXX-X)
+    // ===============================
+    function formatCuit(digits) {
+        if (digits.length <= 2) return digits;
+        if (digits.length <= 10) return digits.slice(0, 2) + '-' + digits.slice(2);
+        return digits.slice(0, 2) + '-' + digits.slice(2, 10) + '-' + digits.slice(10, 11);
+    }
+
+    function restrictCuitInput(input) {
+        if (!input) return;
+        input.addEventListener('keydown', function (e) {
+            if (e.ctrlKey || e.metaKey) return;
+            const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+            if (allowed.includes(e.key)) return;
+            if (!/^\d$/.test(e.key)) e.preventDefault();
+        });
+        input.addEventListener('input', function () {
+            const pos = this.selectionStart;
+            const digitsBeforeCursor = this.value.slice(0, pos).replace(/\D/g, '').length;
+            const digits = this.value.replace(/\D/g, '').slice(0, 11);
+            const formatted = formatCuit(digits);
+            this.value = formatted;
+            let count = 0;
+            let newPos = formatted.length;
+            for (let i = 0; i < formatted.length; i++) {
+                if (/\d/.test(formatted[i])) count++;
+                if (count === digitsBeforeCursor) { newPos = i + 1; break; }
+            }
+            this.selectionStart = this.selectionEnd = newPos;
+        });
+        input.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData).getData('text');
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const beforeDigits = this.value.slice(0, start).replace(/\D/g, '');
+            const afterDigits = this.value.slice(end).replace(/\D/g, '');
+            const newDigits = (beforeDigits + pasted.replace(/\D/g, '') + afterDigits).slice(0, 11);
+            this.value = formatCuit(newDigits);
+            this.dispatchEvent(new Event('input'));
+        });
+    }
+
+    restrictCuitInput(cuitInput);
+    restrictCuitInput(editCuitInput);
+
+    // ===============================
+    // LÍMITES DE CARACTERES EN TIEMPO REAL
+    // ===============================
+    function bindLimit(input, errorEl, max) {
+        if (!input || !errorEl) return;
+        input.addEventListener('input', () => {
+            if (input.value.length >= max) {
+                errorEl.textContent = `Límite de ${max} caracteres alcanzado`;
+            } else if (errorEl.textContent.startsWith('Límite de')) {
+                errorEl.textContent = '';
+            }
+        });
+    }
+
+    bindLimit(nombreInput,    document.getElementById('errorNombre'),    150);
+    bindLimit(telefonoInput,  document.getElementById('errorTelefono'),  20);
+    bindLimit(emailInput,     document.getElementById('errorEmail'),     255);
+    bindLimit(direccionInput, document.getElementById('errorDireccion'), 200);
+
+    bindLimit(editNombreInput,    document.getElementById('errorEditNombre'),    150);
+    bindLimit(editTelefonoInput,  document.getElementById('errorEditTelefono'),  20);
+    bindLimit(editEmailInput,     document.getElementById('errorEditEmail'),     255);
+    bindLimit(editDireccionInput, document.getElementById('errorEditDireccion'), 200);
 
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS (TABLA Y PAGINACIÓN)
@@ -143,7 +220,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Luego, cargar la página actual para mostrar
             const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
-            const url = `${API_PROVEEDORES_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}`;
+            const comprasVal = filtroCompras ? filtroCompras.value : '';
+            const comprasParam = comprasVal ? `&conCompras=${comprasVal === 'con'}` : '';
+            const url = `${API_PROVEEDORES_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}${comprasParam}`;
 
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
@@ -256,39 +335,29 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    function handleSortClick(event) {
-        event.preventDefault();
-        event.currentTarget.blur();
-        const th = event.currentTarget;
-        const newSortField = th.getAttribute('data-sort-by');
-        if (!newSortField) return;
-
-        if (sortField === newSortField) {
-            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            sortField = newSortField;
-            sortDirection = 'asc';
-        }
+    function handleSortBtnNombre() {
+        sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        sortField = 'nombre';
         currentPage = 0;
         loadProveedores();
     }
 
     function updateSortIndicators() {
-        tableHeaders.forEach(th => {
-            th.classList.remove('sort-asc', 'sort-desc');
-            const icon = th.querySelector('.sort-icon');
-            if (icon) icon.className = 'sort-icon fas fa-sort';
-
-            if (th.getAttribute('data-sort-by') === sortField) {
-                th.classList.add(`sort-${sortDirection}`);
-                if (icon) icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
-            }
-        });
+        if (!btnSortNombre) return;
+        const arrow = btnSortNombre.querySelector('.sort-arrow');
+        if (arrow) {
+            arrow.className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} sort-arrow`;
+        }
+        btnSortNombre.classList.add('active');
     }
 
-    tableHeaders.forEach(header => {
-        header.addEventListener('click', handleSortClick);
-    });
+    if (btnSortNombre) btnSortNombre.addEventListener('click', handleSortBtnNombre);
+    if (filtroCompras) {
+        filtroCompras.addEventListener('change', () => {
+            currentPage = 0;
+            loadProveedores();
+        });
+    }
 
     // ==========================================================
     // LÓGICA DEL MULTI-SELECT
@@ -1366,6 +1435,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
             searchInput.value = '';
             proveedoresFiltrados = null;
+
+            // Restaurar filtros y ordenamiento por defecto
+            if (filtroCompras) filtroCompras.value = '';
+            sortField = 'nombre';
+            sortDirection = 'asc';
+            currentPage = 0;
 
             // Recargar la página actual con paginación
             loadProveedores();

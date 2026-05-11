@@ -42,10 +42,21 @@ public class VentaController {
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaVenta);
     }
 
-    // MÉTODO MODIFICADO PARA PAGINACIÓN
+    // MÉTODO MODIFICADO PARA PAGINACIÓN + FILTROS
     @GetMapping
-    public ResponseEntity<Page<VentaResponseDTO>> listarVentas(Pageable pageable) {
-        Page<VentaResponseDTO> ventas = ventaService.listarVentas(pageable);
+    public ResponseEntity<Page<VentaResponseDTO>> listarVentas(
+            Pageable pageable,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) String inicio,
+            @RequestParam(required = false) String fin,
+            @RequestParam(required = false) Long vendedorId,
+            @RequestParam(required = false) Long metodoPagoId) {
+
+        LocalDate fechaInicio = (inicio != null && !inicio.isEmpty()) ? LocalDate.parse(inicio) : null;
+        LocalDate fechaFin = (fin != null && !fin.isEmpty()) ? LocalDate.parse(fin) : null;
+
+        Page<VentaResponseDTO> ventas = ventaService.listarVentas(
+                pageable, search, fechaInicio, fechaFin, vendedorId, metodoPagoId);
         return ResponseEntity.ok(ventas);
     }
 

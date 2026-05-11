@@ -5,13 +5,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.gestioninventariodemo2.cruddemo2.DTO.InformeResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.Venta;
 
-public interface VentaRepository extends JpaRepository<Venta, Long> {
+public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecificationExecutor<Venta> {
 
     @Query("""
             SELECT new com.gestioninventariodemo2.cruddemo2.DTO.InformeResponseDTO(

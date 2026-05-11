@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.web.bind.annotation.RequestParam;
 
+import jakarta.validation.Valid;
 import com.gestioninventariodemo2.cruddemo2.DTO.UsuarioRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.UsuarioResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.Services.UsuarioService;
@@ -31,7 +32,7 @@ public class UsuarioController {
 
     // CREAR USUARIO
     @PostMapping
-    public ResponseEntity<UsuarioResponseDTO> crearUsuario(@RequestBody UsuarioRequestDTO dto) {
+    public ResponseEntity<UsuarioResponseDTO> crearUsuario(@Valid @RequestBody UsuarioRequestDTO dto) {
         UsuarioResponseDTO nuevoUsuario = usuarioService.crearUsuario(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevoUsuario);
     }
@@ -39,16 +40,23 @@ public class UsuarioController {
     @GetMapping
     public ResponseEntity<Page<UsuarioResponseDTO>> obtenerTodos(
             Pageable pageable,
-            @RequestParam(required = false) String search) {
-        Page<UsuarioResponseDTO> usuarios = usuarioService.obtenerTodosLosUsuarios(pageable, search);
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Long idRol) {
+        Page<UsuarioResponseDTO> usuarios = usuarioService.obtenerTodosLosUsuarios(pageable, search, idRol);
         return ResponseEntity.ok(usuarios);
+    }
+
+    // LISTAR USUARIOS ACTIVOS (para dropdowns/selects)
+    @GetMapping("/select")
+    public ResponseEntity<java.util.List<UsuarioResponseDTO>> listarUsuariosSelect() {
+        return ResponseEntity.ok(usuarioService.listarUsuariosSelect());
     }
 
     // ACTUALIZAR USUARIO
     @PutMapping("/{id}")
     public ResponseEntity<UsuarioResponseDTO> actualizarUsuario(
             @PathVariable Long id,
-            @RequestBody UsuarioRequestDTO dto) {
+            @Valid @RequestBody UsuarioRequestDTO dto) {
         try {
             UsuarioResponseDTO actualizado = usuarioService.actualizarUsuario(id, dto);
             return ResponseEntity.ok(actualizado);

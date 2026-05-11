@@ -897,7 +897,13 @@ document.addEventListener('DOMContentLoaded', function () {
         }).join('');
     }
 
-    function filtrarYRenderHistorial(page) {
+    async function filtrarYRenderHistorial(page) {
+        const tbody = document.getElementById('tabla-historial-caja-body');
+        if (tbody) {
+            tbody.classList.add('loading');
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
         const texto = normH(historialBusqueda?.value || '');
         const PAGE_SIZE = 10;
 
@@ -922,6 +928,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const offset = historialCurrentPage * PAGE_SIZE;
         renderHistorialRows(filtradas.slice(offset, offset + PAGE_SIZE), offset);
+
+        requestAnimationFrame(() => { if (tbody) tbody.classList.remove('loading'); });
     }
 
     async function cargarOperadores() {

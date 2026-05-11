@@ -8,9 +8,19 @@ import java.time.LocalTime;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.Subquery;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import com.gestioninventariodemo2.cruddemo2.Model.Cobro;
+import com.gestioninventariodemo2.cruddemo2.Model.DetalleVenta;
 
 import com.gestioninventariodemo2.cruddemo2.DTO.DetalleVentaRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoVentaDTO;
@@ -147,9 +157,53 @@ public class VentaService {
     }
 
     public Page<VentaResponseDTO> listarVentas(Pageable pageable) {
-        // Usa findAll(Pageable) y luego mapea la Page<Venta> a Page<VentaResponseDTO>
-        return ventaRepository.findAll(pageable)
-                .map(this::mapToVentaDTO);
+        // Mantener firma original (sin filtros) — delega al método con filtros nulos
+        return listarVentas(pageable, null, null, null, null, null);
+    }
+
+    public Page<VentaResponseDTO> listarVentas(Pageable pageable, String search, LocalDate fechaInicio,
+            LocalDate fechaFin, Long vendedorId, Long metodoPagoId) {
+
+        boolean hasSearch = search != null && !search.trim().isEmpty();
+        boolean hasDates = fechaInicio != null && fechaFin != null;
+        final LocalDateTime start = hasDates ? fechaInicio.atStartOfDay() : null;
+        final LocalDateTime end = hasDates ? fechaFin.atTime(LocalTime.MAX) : null;
+        final String searchFinal = search;
+
+        Specification<Venta> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (hasSearch) {
+                String like = "%" + searchFinal.toLowerCase() + "%";
+                Join<Venta, DetalleVenta> dv = root.join("detalleVentas", JoinType.LEFT);
+                Predicate match = cb.or(
+                        cb.like(cb.lower(root.get("cliente").get("nombre")), like),
+                        cb.like(cb.lower(root.get("cliente").get("apellido")), like),
+                        cb.like(cb.lower(root.get("usuario").get("nombre")), like),
+                        cb.like(cb.lower(root.get("usuario").get("apellido")), like),
+                        cb.like(cb.lower(dv.get("producto").get("nombre")), like));
+                predicates.add(match);
+                query.distinct(true);
+            }
+            if (hasDates) {
+                predicates.add(cb.between(root.get("fecha"), start, end));
+            }
+            if (vendedorId != null) {
+                predicates.add(cb.equal(root.get("usuario").get("idUsuario"), vendedorId));
+            }
+            if (metodoPagoId != null) {
+                Subquery<Long> sub = query.subquery(Long.class);
+                Root<Cobro> cobroRoot = sub.from(Cobro.class);
+                sub.select(cobroRoot.get("idCobro"))
+                        .where(cb.and(
+                                cb.equal(cobroRoot.get("venta"), root),
+                                cb.equal(cobroRoot.get("metodoPago").get("idMetodoPago"), metodoPagoId)));
+                predicates.add(cb.exists(sub));
+            }
+            return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return ventaRepository.findAll(spec, pageable).map(this::mapToVentaDTO);
     }
 
     public List<VentaResponseDTO> listarTodasLasVentas() {

@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoInventarioDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoRequestDTO;
+import java.util.List;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoSelectDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.PdfReportRequestDTO;
@@ -27,6 +28,7 @@ import com.gestioninventariodemo2.cruddemo2.Model.Producto;
 import com.gestioninventariodemo2.cruddemo2.Services.ProductoService;
 
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
@@ -39,19 +41,24 @@ public class ProductoController {
 
     @PostMapping("/inventario/exportar-pdf")
     public ResponseEntity<byte[]> exportarInventarioPdf(@RequestBody PdfReportRequestDTO request) {
-        byte[] pdfBytes = pdfReportService.generarReporteInventarioPdf(request);
+        List<ProductoInventarioDTO> productos = productoService.obtenerInventarioParaPdf(
+                request.getEstadoStock(), request.getCategoria(), request.getProveedor(),
+                request.getBusqueda(), request.getSortField(), request.getSortDirection());
+
+        byte[] pdfBytes = pdfReportService.generarReporteInventarioPdf(
+                productos, request.getFiltrosAplicados(), request.getSortDescripcion());
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_PDF);
         headers.setContentDispositionFormData("attachment", "reporte_inventario.pdf");
-        
+
         return ResponseEntity.ok()
                 .headers(headers)
                 .body(pdfBytes);
     }
 
     @PostMapping
-    public ResponseEntity<Producto> crearProducto(@RequestBody ProductoRequestDTO dto) {
+    public ResponseEntity<Producto> crearProducto(@Valid @RequestBody ProductoRequestDTO dto) {
         Producto nuevo = productoService.crearProducto(dto);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);
     }
@@ -94,32 +101,17 @@ public class ProductoController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> eliminarProducto(@PathVariable Long id) { // <-- Cambiado a ResponseEntity<String>
+    public ResponseEntity<String> eliminarProducto(@PathVariable Long id) {
         try {
-            // 1. Intentamos ejecutar el borrado
-            productoService.eliminarProducto(id);
-
-            // 2. Si NO lanzó excepción, fue un BORRADO FÍSICO exitoso
-            // Devolvemos 204 No Content (sin cuerpo)
-            return ResponseEntity.noContent().build();
-
-        } catch (IllegalArgumentException ex) {
-            // 3. ¡ES UN BORRADO LÓGICO EXITOSO!
-            // Capturamos la excepción que nosotros mismos lanzamos
-            if (ex.getMessage().contains("INACTIVO")) {
-                // Devolvemos 200 OK con el mensaje de éxito
-                return ResponseEntity.ok(ex.getMessage());
+            boolean softDelete = productoService.eliminarProducto(id);
+            if (softDelete) {
+                return ResponseEntity.ok("El producto se marcó como INACTIVO.");
             } else {
-                // Es un error de validación diferente
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+                return ResponseEntity.noContent().build();
             }
-
         } catch (EntityNotFoundException ex) {
-            // 4. Si el producto no existía (desde el findById)
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
-
         } catch (Exception ex) {
-            // 5. Cualquier otro error 500 inesperado
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body("Error inesperado en el servidor: " + ex.getMessage());
         }

@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const itemsPerPage = 8;
 
     // Estado de ordenamiento
-    let sortField = 'nombre';
+    let sortField = 'apellido';
     let sortDirection = 'asc';
 
     // Referencias a la UI principal
@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnNextPage = document.getElementById('clientes-next-page');
     const inputSearch = document.getElementById('clientes-search-input');
     const btnClearSearch = document.getElementById('clientes-btn-limpiar');
+    const btnSortApellido = document.getElementById('clientes-sort-apellido');
+    const btnSortNombre = document.getElementById('clientes-sort-nombre');
 
     // Modales y formularios
     const detailModal = document.getElementById('cliente-detail-modal');
@@ -41,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // CARGA DE DATOS (una sola vez desde la API)
     // ==========================================
     async function fetchAllClientes() {
-        const response = await fetch(`${API_CLIENTES_URL}/all?page=0&size=10000&sort=nombre,asc`);
+        const response = await fetch(`${API_CLIENTES_URL}/all?page=0&size=10000&sort=apellido,asc`);
         if (!response.ok) throw new Error('Error al obtener clientes');
         const data = await response.json();
         allClientes = data.content || [];
@@ -160,47 +162,46 @@ document.addEventListener('DOMContentLoaded', function () {
     // ORDENAMIENTO LOCAL
     // ==========================================
     function sortClientes() {
+        const tiebreaker = sortField === 'apellido' ? 'nombre' : 'apellido';
         filteredClientes.sort((a, b) => {
             const valA = quitarAcentos(a[sortField] || '');
             const valB = quitarAcentos(b[sortField] || '');
             if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
             if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-            return 0;
+            const tieA = quitarAcentos(a[tiebreaker] || '');
+            const tieB = quitarAcentos(b[tiebreaker] || '');
+            return tieA < tieB ? -1 : tieA > tieB ? 1 : 0;
         });
     }
 
     function updateSortIndicators() {
-        const table = document.getElementById('tabla-clientes');
-        if (!table) return;
-        table.querySelectorAll('th[data-sort-by]').forEach(th => {
-            th.classList.remove('sort-asc', 'sort-desc');
-            const icon = th.querySelector('.sort-icon');
-            if (icon) icon.className = 'sort-icon fas fa-sort';
-
-            if (th.dataset.sortBy === sortField) {
-                th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
-                if (icon) icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
-            }
+        [btnSortApellido, btnSortNombre].forEach(btn => {
+            if (!btn) return;
+            btn.classList.remove('active');
+            const arrow = btn.querySelector('.sort-arrow');
+            if (arrow) arrow.className = 'fas fa-sort sort-arrow';
         });
+        const activeBtn = sortField === 'apellido' ? btnSortApellido : btnSortNombre;
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+            const arrow = activeBtn.querySelector('.sort-arrow');
+            if (arrow) arrow.className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} sort-arrow`;
+        }
     }
 
-    // Registrar clics en headers ordenables
-    const clienteTable = document.getElementById('tabla-clientes');
-    if (clienteTable) {
-        clienteTable.querySelectorAll('th[data-sort-by]').forEach(th => {
-            th.addEventListener('click', () => {
-                const field = th.dataset.sortBy;
-                if (sortField === field) {
-                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                } else {
-                    sortField = field;
-                    sortDirection = 'asc';
-                }
-                currentPage = 0;
-                loadClientes();
-            });
-        });
+    function handleSortBtn(field) {
+        if (sortField === field) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortField = field;
+            sortDirection = 'asc';
+        }
+        currentPage = 0;
+        loadClientes();
     }
+
+    if (btnSortApellido) btnSortApellido.addEventListener('click', () => handleSortBtn('apellido'));
+    if (btnSortNombre)   btnSortNombre.addEventListener('click', () => handleSortBtn('nombre'));
 
     // ==========================================
     // EVENTOS DE NAVEGACION Y BUSQUEDA
@@ -537,6 +538,109 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Exponer globalmente
     window.showClientesSubsection = showSubsection;
+
+    // ===============================
+    // RESTRICCIÓN DE CAMPO TELÉFONO
+    // ===============================
+    function restrictTelefonoInput(input) {
+        if (!input) return;
+        input.addEventListener('input', function () {
+            this.value = this.value.replace(/[^0-9+ ]/g, '');
+        });
+        input.addEventListener('keydown', function (e) {
+            if (e.ctrlKey || e.metaKey) return;
+            const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End', ' '];
+            if (allowed.includes(e.key)) return;
+            if (!/^[0-9+]$/.test(e.key)) e.preventDefault();
+        });
+        input.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData).getData('text');
+            const sanitized = pasted.replace(/[^0-9+ ]/g, '');
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const maxLen = parseInt(this.getAttribute('maxlength')) || Infinity;
+            const newValue = (this.value.slice(0, start) + sanitized + this.value.slice(end)).slice(0, maxLen);
+            this.value = newValue;
+            const cursor = Math.min(start + sanitized.length, maxLen);
+            this.selectionStart = this.selectionEnd = cursor;
+            this.dispatchEvent(new Event('input'));
+        });
+    }
+
+    // ===============================
+    // RESTRICCIÓN Y AUTO-FORMATO DNI (XX.XXX.XXX)
+    // ===============================
+    function formatDni(digits) {
+        digits = digits.slice(0, 8);
+        if (digits.length <= 3) return digits;
+        if (digits.length <= 6) return digits.slice(0, -3) + '.' + digits.slice(-3);
+        return digits.slice(0, -6) + '.' + digits.slice(-6, -3) + '.' + digits.slice(-3);
+    }
+
+    function restrictDniInput(input) {
+        if (!input) return;
+        input.addEventListener('keydown', function (e) {
+            if (e.ctrlKey || e.metaKey) return;
+            const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+            if (allowed.includes(e.key)) return;
+            if (!/^\d$/.test(e.key)) e.preventDefault();
+        });
+        input.addEventListener('input', function () {
+            const pos = this.selectionStart;
+            const digitsBeforeCursor = this.value.slice(0, pos).replace(/\D/g, '').length;
+            const digits = this.value.replace(/\D/g, '').slice(0, 9);
+            const formatted = formatDni(digits);
+            this.value = formatted;
+            let count = 0, newPos = formatted.length;
+            for (let i = 0; i < formatted.length; i++) {
+                if (/\d/.test(formatted[i])) count++;
+                if (count === digitsBeforeCursor) { newPos = i + 1; break; }
+            }
+            this.selectionStart = this.selectionEnd = newPos;
+        });
+        input.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData).getData('text');
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const beforeDigits = this.value.slice(0, start).replace(/\D/g, '');
+            const afterDigits = this.value.slice(end).replace(/\D/g, '');
+            const newDigits = (beforeDigits + pasted.replace(/\D/g, '') + afterDigits).slice(0, 9);
+            this.value = formatDni(newDigits);
+            this.dispatchEvent(new Event('input'));
+        });
+    }
+
+    // ===============================
+    // LÍMITES DE CARACTERES EN TIEMPO REAL
+    // ===============================
+    function bindLimit(input, errorEl, max) {
+        if (!input || !errorEl) return;
+        input.addEventListener('input', () => {
+            if (input.value.length >= max) {
+                errorEl.textContent = `Límite de ${max} caracteres alcanzado`;
+            } else if (errorEl.textContent.startsWith('Límite de')) {
+                errorEl.textContent = '';
+            }
+        });
+    }
+
+    restrictTelefonoInput(document.getElementById('crearClienteTelefono'));
+    restrictDniInput(document.getElementById('crearClienteDNI'));
+    bindLimit(document.getElementById('crearClienteNombre'),    document.getElementById('errorCrearClienteNombre'),    70);
+    bindLimit(document.getElementById('crearClienteApellido'),  document.getElementById('errorCrearClienteApellido'),  70);
+    bindLimit(document.getElementById('crearClienteTelefono'),  document.getElementById('errorCrearClienteTelefono'),  20);
+    bindLimit(document.getElementById('crearClienteDireccion'), document.getElementById('errorCrearClienteDireccion'), 200);
+    bindLimit(document.getElementById('crearClienteEmail'),     document.getElementById('errorCrearClienteEmail'),     255);
+
+    restrictTelefonoInput(document.getElementById('edit-cliente-telefono'));
+    restrictDniInput(document.getElementById('edit-cliente-dni'));
+    bindLimit(document.getElementById('edit-cliente-nombre'),    document.getElementById('error-edit-cliente-nombre'),    70);
+    bindLimit(document.getElementById('edit-cliente-apellido'),  document.getElementById('error-edit-cliente-apellido'),  70);
+    bindLimit(document.getElementById('edit-cliente-telefono'),  document.getElementById('error-edit-cliente-telefono'),  20);
+    bindLimit(document.getElementById('edit-cliente-direccion'), document.getElementById('error-edit-cliente-direccion'), 200);
+    bindLimit(document.getElementById('edit-cliente-email'),     document.getElementById('error-edit-cliente-email'),     255);
 
     // ===============================
     // LÓGICA DEL FORMULARIO DE REGISTRO

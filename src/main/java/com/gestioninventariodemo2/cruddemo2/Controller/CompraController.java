@@ -59,7 +59,9 @@ public class CompraController {
             @RequestParam(required = false) String sort,
             @RequestParam(required = false) String search,
             @RequestParam(required = false) String inicio,
-            @RequestParam(required = false) String fin) {
+            @RequestParam(required = false) String fin,
+            @RequestParam(required = false) String estadoPago,
+            @RequestParam(required = false) Long proveedorId) {
 
         // Detectar campos de ordenamiento custom (productos, costoUnitario)
         String customSort = null;
@@ -78,7 +80,7 @@ public class CompraController {
         LocalDate fechaFin = fin != null && !fin.isEmpty() ? LocalDate.parse(fin) : null;
 
         Page<CompraResponseDTO> compras = compraService.listarTodasLasCompras(
-                pageable, customSort, customDirection, search, fechaInicio, fechaFin);
+                pageable, customSort, customDirection, search, fechaInicio, fechaFin, estadoPago, proveedorId);
         return ResponseEntity.ok(compras);
     }
 

@@ -289,8 +289,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const ventasPrevPageBtn = document.getElementById('ventas-prev-page');
     const ventasNextPageBtn = document.getElementById('ventas-next-page');
     const mainContent = document.querySelector('.main-content');
-    const ventasTableHeaders = document.querySelectorAll('#ventas-section .data-table th[data-sort-by]');
-
     // ===============================
     // ESTADO GLOBAL
     // ===============================
@@ -312,16 +310,18 @@ document.addEventListener('DOMContentLoaded', function () {
     let previousClienteNombre = '';
     let productosStockDesactualizado = false; // flag: recarga stock antes de la próxima búsqueda
 
-    // --- Variables para búsqueda y filtrado ---
-    let todasLasVentas = [];
-    let ventasFiltradas = [];
-    let modoFiltradoLocal = false;
+    // --- Variables para búsqueda y filtrado (todo server-side) ---
     const ventasSearchInput = document.getElementById('ventas-search-input');
     const ventasFechaInicio = document.getElementById('ventas-fecha-inicio');
     const ventasFechaFin = document.getElementById('ventas-fecha-fin');
     const ventasBtnFiltrar = document.getElementById('ventas-btn-filtrar');
     const ventasBtnLimpiar = document.getElementById('ventas-btn-limpiar-filtro');
     const ventasFiltroError = document.getElementById('ventas-filtro-error');
+    const btnSortFecha = document.getElementById('ventas-sort-fecha');
+    const btnSortTotal = document.getElementById('ventas-sort-total');
+    const filtroVendedor = document.getElementById('ventas-filtro-vendedor');
+    const filtroMetodoPago = document.getElementById('ventas-filtro-metodo-pago');
+    const sortButtons = [btnSortFecha, btnSortTotal].filter(Boolean);
 
     // Función helper para mostrar mensajes de error inline
     function mostrarErrorFiltroVentas(mensaje) {
@@ -349,20 +349,27 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadVentas(page = 0) {
         if (!ventaTableBody || !mainContent) return;
 
-        modoFiltradoLocal = false;
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
         ventaTableBody.classList.add('loading');
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
-            // Mapear campos del frontend a campos reales de la entidad JPA
-            const sortFieldMap = {
-                'vendedor.nombre': 'usuario.nombre',
-                'cliente.nombre': 'cliente.nombre'
-            };
-            const sortFieldBackend = sortFieldMap[ventasSortField] || ventasSortField;
-            const sortParam = `${sortFieldBackend},${ventasSortDirection}`;
-            const url = `${API_VENTAS_URL}?page=${page}&size=${pageSizeVentas}&sort=${sortParam}`;
+            const sortParam = `&sort=${ventasSortField},${ventasSortDirection}`;
+
+            const searchText = ventasSearchInput ? ventasSearchInput.value.trim() : '';
+            const searchParam = searchText ? `&search=${encodeURIComponent(searchText)}` : '';
+
+            const inicioVal = ventasFechaInicio ? ventasFechaInicio.value : '';
+            const finVal = ventasFechaFin ? ventasFechaFin.value : '';
+            const fechaParam = (inicioVal && finVal) ? `&inicio=${inicioVal}&fin=${finVal}` : '';
+
+            const vendedorVal = filtroVendedor ? filtroVendedor.value : '';
+            const vendedorParam = vendedorVal ? `&vendedorId=${vendedorVal}` : '';
+
+            const metodoVal = filtroMetodoPago ? filtroMetodoPago.value : '';
+            const metodoParam = metodoVal ? `&metodoPagoId=${metodoVal}` : '';
+
+            const url = `${API_VENTAS_URL}?page=${page}&size=${pageSizeVentas}${sortParam}${searchParam}${fechaParam}${vendedorParam}${metodoParam}`;
 
             const response = await fetch(url);
             if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
@@ -383,7 +390,7 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('Error al cargar las ventas:', error);
             if (ventaTableBody) {
-                ventaTableBody.innerHTML = `<tr><td colspan="4">Error al cargar el historial de ventas.</td></tr>`;
+                ventaTableBody.innerHTML = `<tr><td colspan="7">Error al cargar el historial de ventas.</td></tr>`;
             }
             currentPageVentas = 0;
             totalPagesVentas = 0;
@@ -1150,8 +1157,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 loadVentas(currentPageVentas);
                 // Recargar productos para reflejar el stock actualizado
                 productosStockDesactualizado = true;
-                // Recargar todas las ventas para mantener la búsqueda actualizada
-                cargarTodasLasVentas();
                 // Notificar al dashboard para que actualice los datos de hoy
                 document.dispatchEvent(new Event('ventaRegistrada'));
 
@@ -1376,146 +1381,82 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateVentasSortIndicators() {
-        ventasTableHeaders.forEach(th => {
-            th.classList.remove('sort-asc', 'sort-desc');
-            const icon = th.querySelector('.sort-icon');
-            if (icon) icon.className = 'sort-icon fas fa-sort';
-
-            if (th.getAttribute('data-sort-by') === ventasSortField) {
-                th.classList.add(`sort-${ventasSortDirection}`);
-                if (icon) icon.className = `sort-icon fas fa-sort-${ventasSortDirection === 'asc' ? 'up' : 'down'}`;
+        sortButtons.forEach(btn => {
+            const field = btn.getAttribute('data-sort-field');
+            const arrow = btn.querySelector('.sort-arrow');
+            if (field === ventasSortField) {
+                btn.classList.add('active');
+                if (arrow) arrow.className = `fas fa-sort-${ventasSortDirection === 'asc' ? 'up' : 'down'} sort-arrow`;
+            } else {
+                btn.classList.remove('active');
+                if (arrow) arrow.className = 'fas fa-sort sort-arrow';
             }
         });
     }
 
-    function handleVentasSortClick(event) {
-        event.preventDefault();
-        event.currentTarget.blur();
-        const th = event.currentTarget;
-        const newSortField = th.getAttribute('data-sort-by');
-        if (!newSortField) return;
-
-        if (ventasSortField === newSortField) {
+    function handleSortBtnClick(field) {
+        if (ventasSortField === field) {
             ventasSortDirection = ventasSortDirection === 'asc' ? 'desc' : 'asc';
         } else {
-            ventasSortField = newSortField;
-            ventasSortDirection = 'asc';
+            ventasSortField = field;
+            ventasSortDirection = 'desc';
         }
-
-        if (modoFiltradoLocal) {
-            currentPageVentas = 0;
-            ordenarVentasFiltradas();
-            renderVentasFiltradas();
-        } else {
-            currentPageVentas = 0;
-            loadVentas(0);
-        }
-    }
-
-    function ordenarVentasFiltradas() {
-        ventasFiltradas.sort((a, b) => {
-            let valorA, valorB;
-
-            switch (ventasSortField) {
-                case 'fecha':
-                    valorA = new Date(a.fecha);
-                    valorB = new Date(b.fecha);
-                    break;
-                case 'cliente.nombre':
-                    valorA = (a.nombreCliente || '').toLowerCase();
-                    valorB = (b.nombreCliente || '').toLowerCase();
-                    break;
-                case 'total':
-                    valorA = a.total;
-                    valorB = b.total;
-                    break;
-                case 'vendedor.nombre':
-                    valorA = (a.nombreVendedor || '').toLowerCase();
-                    valorB = (b.nombreVendedor || '').toLowerCase();
-                    break;
-                default:
-                    return 0;
-            }
-
-            if (valorA < valorB) return ventasSortDirection === 'asc' ? -1 : 1;
-            if (valorA > valorB) return ventasSortDirection === 'asc' ? 1 : -1;
-            return 0;
-        });
-
-        updateVentasSortIndicators();
+        currentPageVentas = 0;
+        loadVentas(0);
     }
 
     function handleVentasPrevPage() {
-        if (currentPageVentas > 0) {
-            if (modoFiltradoLocal) {
-                currentPageVentas--;
-                renderVentasFiltradas();
-            } else {
-                loadVentas(currentPageVentas - 1);
-            }
-        }
+        if (currentPageVentas > 0) loadVentas(currentPageVentas - 1);
     }
 
     function handleVentasNextPage() {
-        if (currentPageVentas < totalPagesVentas - 1) {
-            if (modoFiltradoLocal) {
-                currentPageVentas++;
-                renderVentasFiltradas();
-            } else {
-                loadVentas(currentPageVentas + 1);
-            }
-        }
+        if (currentPageVentas < totalPagesVentas - 1) loadVentas(currentPageVentas + 1);
     }
 
     // ==========================================================
     // BÚSQUEDA Y FILTRADO DE VENTAS
     // ==========================================================
-
-    // Helper para normalizar texto: quita acentos/tildes y pasa a minúsculas
-    function normalizarTexto(texto) {
-        return (texto || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    }
-
-    async function cargarTodasLasVentas() {
+    // Cargar opciones de los dropdowns dinámicamente
+    async function cargarFiltroVendedores() {
+        if (!filtroVendedor) return;
         try {
-            const response = await fetch(`${API_VENTAS_URL}/all`);
-            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-            todasLasVentas = await response.json();
-            ventasFiltradas = [...todasLasVentas];
-        } catch (error) {
-            console.error('Error al cargar todas las ventas:', error);
-            todasLasVentas = [];
-            ventasFiltradas = [];
+            const response = await fetch('/api/usuarios/select');
+            if (!response.ok) return;
+            const usuarios = await response.json();
+            const seleccionado = filtroVendedor.value;
+            filtroVendedor.innerHTML = '<option value="">👤 Vendedor: Todos</option>';
+            usuarios.forEach(u => {
+                const opt = document.createElement('option');
+                opt.value = u.id;
+                opt.textContent = `${u.nombre} ${u.apellido || ''}`.trim();
+                filtroVendedor.appendChild(opt);
+            });
+            if (seleccionado) filtroVendedor.value = seleccionado;
+        } catch (e) {
+            console.error('Error al cargar vendedores:', e);
         }
     }
 
-    function aplicarFiltrosVentas() {
-        modoFiltradoLocal = true;
-        const textoBusqueda = normalizarTexto(ventasSearchInput ? ventasSearchInput.value : '');
-
-        ventasFiltradas = todasLasVentas.filter(venta => {
-            // Filtro por búsqueda (cliente, producto o vendedor)
-            if (textoBusqueda) {
-                const cliente = normalizarTexto(venta.nombreCliente);
-                const vendedor = normalizarTexto(venta.nombreVendedor);
-                const productos = venta.productos || [];
-                const tieneProducto = productos.some(p =>
-                    normalizarTexto(p.nombreProducto).includes(textoBusqueda)
-                );
-
-                if (!cliente.includes(textoBusqueda) &&
-                    !tieneProducto &&
-                    !vendedor.includes(textoBusqueda)) {
-                    return false;
-                }
-            }
-
-            return true;
-        });
-
-        currentPageVentas = 0;
-        ordenarVentasFiltradas();
-        renderVentasFiltradas();
+    async function cargarFiltroMetodosPago() {
+        if (!filtroMetodoPago) return;
+        try {
+            const response = await fetch('/api/metodos-pago/activos');
+            if (!response.ok) return;
+            const metodos = await response.json();
+            const seleccionado = filtroMetodoPago.value;
+            filtroMetodoPago.innerHTML = '<option value="">💳 Método: Todos</option>';
+            metodos
+                .filter(m => !m.nombre.includes('('))
+                .forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id ?? m.idMetodoPago;
+                    opt.textContent = m.nombre;
+                    filtroMetodoPago.appendChild(opt);
+                });
+            if (seleccionado) filtroMetodoPago.value = seleccionado;
+        } catch (e) {
+            console.error('Error al cargar métodos de pago:', e);
+        }
     }
 
     async function filtrarVentasPorFecha() {
@@ -1527,77 +1468,27 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        const fechaInicioDate = new Date(inicio);
-        const fechaFinDate = new Date(fin);
-
-        if (fechaInicioDate > fechaFinDate) {
+        if (new Date(inicio) > new Date(fin)) {
             mostrarErrorFiltroVentas('La fecha de inicio no puede ser mayor que la fecha de fin');
             return;
         }
 
         ocultarErrorFiltroVentas();
-        modoFiltradoLocal = true;
-
-        const textoBusqueda = normalizarTexto(ventasSearchInput ? ventasSearchInput.value : '');
-
-        ventasFiltradas = todasLasVentas.filter(venta => {
-            if (!venta.fecha) return false;
-
-            const fechaVenta = new Date(venta.fecha);
-            const dentroRango = fechaVenta >= fechaInicioDate && fechaVenta <= fechaFinDate;
-
-            if (!dentroRango) return false;
-
-            // Aplicar búsqueda si existe
-            if (textoBusqueda) {
-                const cliente = normalizarTexto(venta.nombreCliente);
-                const productos = venta.productos || [];
-                const tieneProducto = productos.some(p =>
-                    normalizarTexto(p.nombreProducto).includes(textoBusqueda)
-                );
-
-                return cliente.includes(textoBusqueda) || tieneProducto;
-            }
-
-            return true;
-        });
-
         currentPageVentas = 0;
-        ordenarVentasFiltradas();
-        renderVentasFiltradas();
+        loadVentas(0);
     }
 
     function limpiarFiltrosVentas() {
         if (ventasSearchInput) ventasSearchInput.value = '';
         if (ventasFechaInicio) ventasFechaInicio.value = '';
         if (ventasFechaFin) ventasFechaFin.value = '';
+        if (filtroVendedor) filtroVendedor.value = '';
+        if (filtroMetodoPago) filtroMetodoPago.value = '';
+        ventasSortField = 'fecha';
+        ventasSortDirection = 'desc';
         ocultarErrorFiltroVentas();
-
-        modoFiltradoLocal = false;
         currentPageVentas = 0;
         loadVentas(0);
-    }
-
-    function renderVentasFiltradas() {
-        if (!ventaTableBody) return;
-
-        ventaTableBody.classList.add('loading');
-
-        setTimeout(() => {
-            // Paginar resultados filtrados localmente
-            totalPagesVentas = Math.ceil(ventasFiltradas.length / pageSizeVentas);
-            if (totalPagesVentas === 0) totalPagesVentas = 1;
-            if (currentPageVentas >= totalPagesVentas) currentPageVentas = totalPagesVentas - 1;
-
-            const startIndex = currentPageVentas * pageSizeVentas;
-            const endIndex = startIndex + pageSizeVentas;
-            const ventasPagina = ventasFiltradas.slice(startIndex, endIndex);
-
-            renderVentasTable(ventasPagina);
-            updateVentasPaginationControls();
-            updateVentasSortIndicators();
-            ventaTableBody.classList.remove('loading');
-        }, 100);
     }
 
     async function exportarVentasPdf() {
@@ -1802,9 +1693,15 @@ document.addEventListener('DOMContentLoaded', function () {
     if (ventasNextPageBtn) {
         ventasNextPageBtn.addEventListener('click', handleVentasNextPage);
     }
-    ventasTableHeaders.forEach(header => {
-        header.addEventListener('click', handleVentasSortClick);
+    sortButtons.forEach(btn => {
+        btn.addEventListener('click', () => handleSortBtnClick(btn.getAttribute('data-sort-field')));
     });
+    if (filtroVendedor) {
+        filtroVendedor.addEventListener('change', () => { currentPageVentas = 0; loadVentas(0); });
+    }
+    if (filtroMetodoPago) {
+        filtroMetodoPago.addEventListener('change', () => { currentPageVentas = 0; loadVentas(0); });
+    }
 
     // ==========================================================
     // CARGA INICIAL Y EXPOSICIÓN DE FUNCIONES (MODIFICADO)
@@ -1817,22 +1714,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (ventasBtnLimpiar) {
         ventasBtnLimpiar.addEventListener('click', limpiarFiltrosVentas);
     }
+    let ventasSearchTimeout;
     if (ventasSearchInput) {
-        ventasSearchInput.addEventListener('input', async function () {
-            const texto = ventasSearchInput.value.trim();
-            const hayFiltroFecha = (ventasFechaInicio && ventasFechaInicio.value) || (ventasFechaFin && ventasFechaFin.value);
-
-            if (!texto && !hayFiltroFecha) {
-                // Sin texto ni fechas: volver a la vista paginada del backend
+        ventasSearchInput.addEventListener('input', function () {
+            clearTimeout(ventasSearchTimeout);
+            ventasSearchTimeout = setTimeout(() => {
                 currentPageVentas = 0;
                 loadVentas(0);
-            } else {
-                // Si todasLasVentas está vacía, recargar antes de filtrar
-                if (todasLasVentas.length === 0) {
-                    await cargarTodasLasVentas();
-                }
-                aplicarFiltrosVentas();
-            }
+            }, 300);
         });
     }
     // Ocultar error cuando el usuario modifica las fechas
@@ -1851,8 +1740,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // 1. Carga inicial estándar
     loadProductosParaSelect();
     loadClientesParaVenta();
+    cargarFiltroVendedores();
+    cargarFiltroMetodosPago();
     loadVentas();
-    cargarTodasLasVentas(); // Cargar todas las ventas para búsqueda/filtrado
     renderDetalleTemporal();
 
     // --- NUEVO: Exponer la función para que admin.js pueda llamarla al cambiar de pestaña ---

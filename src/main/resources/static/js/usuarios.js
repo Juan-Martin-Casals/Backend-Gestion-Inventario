@@ -46,11 +46,13 @@ document.addEventListener('DOMContentLoaded', function () {
     let usuariosFiltrados = null; // Para guardar resultados filtrados
 
     // ===============================
-    // ¡NUEVO! ESTADO Y SELECTORES DE ORDENAMIENTO
+    // ESTADO Y SELECTORES DE ORDENAMIENTO
     // ===============================
-    let sortField = 'nombre'; // Campo de ordenamiento inicial
-    let sortDirection = 'asc'; // Dirección inicial
-    const userTableHeaders = document.querySelectorAll('#usuarios-section .data-table th[data-sort-by]');
+    let sortField = 'apellido';
+    let sortDirection = 'asc';
+    const btnSortApellido = document.getElementById('user-sort-apellido');
+    const btnSortNombre   = document.getElementById('user-sort-nombre');
+    const selectFiltroRol = document.getElementById('user-filtro-rol');
 
 
     // ===============================
@@ -79,6 +81,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const editGeneralMessage = document.getElementById('form-general-message-edit-usuario');
 
 
+    // ===============================
+    // LÍMITES DE CARACTERES EN TIEMPO REAL
+    // ===============================
+    function bindLimit(input, errorEl, max) {
+        if (!input || !errorEl) return;
+        input.addEventListener('input', () => {
+            if (input.value.length >= max) {
+                errorEl.textContent = `Límite de ${max} caracteres alcanzado`;
+            } else if (errorEl.textContent.startsWith('Límite de')) {
+                errorEl.textContent = '';
+            }
+        });
+    }
+
+    bindLimit(nombreInput,         document.getElementById('error-user-nombre'),          70);
+    bindLimit(apellidoInput,       document.getElementById('error-user-apellido'),         70);
+    bindLimit(emailInput,          document.getElementById('error-user-email'),            255);
+    bindLimit(passwordInput,       document.getElementById('error-user-password'),         100);
+    bindLimit(confirmPasswordInput,document.getElementById('error-user-confirm-password'), 100);
+
+    bindLimit(editNombreInput,   document.getElementById('errorEditUsuarioNombre'),   70);
+    bindLimit(editApellidoInput, document.getElementById('errorEditUsuarioApellido'), 70);
+    bindLimit(editEmailInput,    document.getElementById('errorEditUsuarioEmail'),    255);
+
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS (TABLA Y ROLES)
     // ==========================================================
@@ -92,21 +118,31 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!response.ok) throw new Error('Error al cargar roles.');
             allRoles = await response.json(); // <-- Esto trae [{"idRol": 1, "descripcion": "ADMIN"}, ...]
 
+            const rolesOrdenados = [...allRoles].sort((a, b) =>
+                a.descripcion.localeCompare(b.descripcion)
+            );
+
             if (rolSelect) {
                 rolSelect.innerHTML = '<option value="">Selecciona rol</option>';
-
-                // Ordenar alfabéticamente y capitalizar
-                const rolesOrdenados = [...allRoles].sort((a, b) =>
-                    a.descripcion.localeCompare(b.descripcion)
-                );
-
                 rolesOrdenados.forEach(rol => {
                     const option = document.createElement('option');
                     option.value = rol.idRol;
-                    // Capitalizar primera letra
                     const desc = rol.descripcion.toLowerCase();
                     option.textContent = desc.charAt(0).toUpperCase() + desc.slice(1);
                     rolSelect.appendChild(option);
+                });
+            }
+
+            if (selectFiltroRol) {
+                const opcionTodos = selectFiltroRol.querySelector('option[value=""]');
+                selectFiltroRol.innerHTML = '';
+                if (opcionTodos) selectFiltroRol.appendChild(opcionTodos);
+                rolesOrdenados.forEach(rol => {
+                    const option = document.createElement('option');
+                    option.value = rol.idRol;
+                    const desc = rol.descripcion.toLowerCase();
+                    option.textContent = desc.charAt(0).toUpperCase() + desc.slice(1);
+                    selectFiltroRol.appendChild(option);
                 });
             }
         } catch (error) {
@@ -132,7 +168,8 @@ document.addEventListener('DOMContentLoaded', function () {
             // 2. Construir URL con paginación, ordenamiento y búsqueda
             const sortParam = sortField ? `&sort=${sortField},${sortDirection}` : '';
             const searchParam = searchInput && searchInput.value.trim() ? `&search=${encodeURIComponent(searchInput.value.trim())}` : '';
-            const url = `${API_USUARIOS_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}${searchParam}`;
+            const rolParam = selectFiltroRol && selectFiltroRol.value ? `&idRol=${selectFiltroRol.value}` : '';
+            const url = `${API_USUARIOS_URL}?page=${currentPage}&size=${itemsPerPage}${sortParam}${searchParam}${rolParam}`;
 
             const response = await fetch(url);
             if (!response.ok) {
@@ -236,43 +273,30 @@ document.addEventListener('DOMContentLoaded', function () {
     // ¡NUEVO! LÓGICA DE ORDENAMIENTO
     // ===============================================
 
-    function handleSortClick(event) {
-        event.preventDefault();
-        event.currentTarget.blur();
-
-        const th = event.currentTarget;
-        const newSortField = th.getAttribute('data-sort-by');
-
-        if (!newSortField) return;
-
-        if (sortField === newSortField) {
+    function handleSortBtn(field) {
+        if (sortField === field) {
             sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
         } else {
-            sortField = newSortField;
+            sortField = field;
             sortDirection = 'asc';
         }
-
         currentPage = 0;
         loadUsuarios();
     }
 
     function updateSortIndicators() {
-        userTableHeaders.forEach(th => {
-            th.classList.remove('sort-asc', 'sort-desc');
-
-            const icon = th.querySelector('.sort-icon');
-            if (icon) {
-                icon.className = 'sort-icon fas fa-sort';
-            }
-
-            if (th.getAttribute('data-sort-by') === sortField) {
-                th.classList.add(`sort-${sortDirection}`);
-
-                if (icon) {
-                    icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
-                }
-            }
+        [btnSortApellido, btnSortNombre].forEach(btn => {
+            if (!btn) return;
+            btn.classList.remove('active');
+            const arrow = btn.querySelector('.sort-arrow');
+            if (arrow) arrow.className = 'fas fa-sort sort-arrow';
         });
+        const activeBtn = sortField === 'apellido' ? btnSortApellido : btnSortNombre;
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+            const arrow = activeBtn.querySelector('.sort-arrow');
+            if (arrow) arrow.className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} sort-arrow`;
+        }
     }
 
 
@@ -743,6 +767,9 @@ document.addEventListener('DOMContentLoaded', function () {
     if (clearSearchBtn) {
         clearSearchBtn.addEventListener('click', () => {
             if (searchInput) searchInput.value = '';
+            if (selectFiltroRol) selectFiltroRol.value = '';
+            sortField = 'apellido';
+            sortDirection = 'asc';
             currentPage = 0;
             loadUsuarios();
         });
@@ -752,10 +779,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // CARGA INICIAL
     // ===============================
 
-    // ¡NUEVO! Asignar eventos de clic a las cabeceras
-    userTableHeaders.forEach(header => {
-        header.addEventListener('click', handleSortClick);
-    });
+    if (btnSortApellido) btnSortApellido.addEventListener('click', () => handleSortBtn('apellido'));
+    if (btnSortNombre)   btnSortNombre.addEventListener('click', () => handleSortBtn('nombre'));
+    if (selectFiltroRol) selectFiltroRol.addEventListener('change', () => { currentPage = 0; loadUsuarios(); });
 
     // ===============================
     // LÓGICA DE SUBSECCIONES

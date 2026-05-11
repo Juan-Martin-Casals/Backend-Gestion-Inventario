@@ -7,12 +7,13 @@ import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import com.gestioninventariodemo2.cruddemo2.Model.Compra;
 
-public interface CompraRepository extends JpaRepository<Compra, Long> {
+public interface CompraRepository extends JpaRepository<Compra, Long>, JpaSpecificationExecutor<Compra> {
 
         // ==========================================================
         // QUERIES PARA DASHBOARD DE INFORMES

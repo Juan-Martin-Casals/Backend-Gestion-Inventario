@@ -76,6 +76,55 @@ document.addEventListener('DOMContentLoaded', function () {
     let deleteProductId = null;  // Variable para guardar el ID del producto a eliminar
 
     // ===============================
+    // VALIDACIÓN EN TIEMPO REAL
+    // ===============================
+    nameInput.addEventListener('input', () => {
+        if (nameInput.value.length >= 150) {
+            nameError.textContent = 'Límite de 150 caracteres alcanzado';
+        } else {
+            nameError.textContent = '';
+        }
+    });
+
+    descriptionInput.addEventListener('input', () => {
+        if (descriptionInput.value.length >= 650) {
+            descriptionError.textContent = 'Límite de 650 caracteres alcanzado';
+        } else {
+            descriptionError.textContent = '';
+        }
+    });
+
+    editNameInput.addEventListener('input', () => {
+        const editNameError = document.getElementById('edit-name-error');
+        if (editNameInput.value.length >= 150) {
+            editNameError.textContent = 'Límite de 150 caracteres alcanzado';
+        } else {
+            editNameError.textContent = '';
+        }
+    });
+
+    editDescriptionInput.addEventListener('input', () => {
+        const editDescError = document.getElementById('edit-description-error');
+        if (editDescriptionInput.value.length >= 650) {
+            editDescError.textContent = 'Límite de 650 caracteres alcanzado';
+        } else {
+            editDescError.textContent = '';
+        }
+    });
+
+    const addCategoriaNombreInput = document.getElementById('addCategoriaNombre');
+    if (addCategoriaNombreInput) {
+        addCategoriaNombreInput.addEventListener('input', () => {
+            const errorEl = document.getElementById('errorAddCategoriaNombre');
+            if (addCategoriaNombreInput.value.length >= 50) {
+                errorEl.textContent = 'Límite de 50 caracteres alcanzado';
+            } else {
+                errorEl.textContent = '';
+            }
+        });
+    }
+
+    // ===============================
     // URLs DE LA API Y ESTADO
     // ===============================
     const API_PRODUCTOS_URL = '/api/productos';
@@ -791,8 +840,10 @@ document.addEventListener('DOMContentLoaded', function () {
             // 3. Validaciones
             let isValid = true;
             if (!nombre) { nameError.textContent = 'El nombre del producto es obligatorio'; isValid = false; }
+            else if (nombre.length > 150) { nameError.textContent = 'Máximo 150 caracteres'; isValid = false; }
             if (!idCategoria) { categoryError.textContent = 'Debe seleccionar una categoría'; isValid = false; }
             if (!descripcion) { descriptionError.textContent = 'La descripcion del producto es obligatoria'; isValid = false; }
+            else if (descripcion.length > 650) { descriptionError.textContent = 'Máximo 650 caracteres'; isValid = false; }
             if (isNaN(stockMinimo) || stockMinimo < 0) { stockMinError.textContent = 'Debe ser un número positivo.'; isValid = false; }
             if (isNaN(stockMaximo) || stockMaximo <= 0) { stockMaxError.textContent = 'Debe ser un número mayor a 0.'; isValid = false; }
             // Validar relación entre stock mínimo y máximo (solo si ambos son números válidos)
@@ -972,11 +1023,21 @@ document.addEventListener('DOMContentLoaded', function () {
             // Cargar proveedores asociados
             const proveedoresBody = document.getElementById('detail-proveedores-body');
             proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
+            document.getElementById('detail-costo-minimo').textContent = '...';
 
             try {
                 const provResponse = await fetch(`${API_PRODUCTOS_URL}/${productId}/proveedores`, { cache: 'no-store' });
                 if (provResponse.ok) {
                     const proveedores = await provResponse.json();
+                    const costoMinimoEl = document.getElementById('detail-costo-minimo');
+                    const costos = proveedores.map(p => p.ultimoCosto).filter(c => c != null);
+                    if (costos.length > 0) {
+                        const min = Math.min(...costos);
+                        costoMinimoEl.textContent = '$' + min.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                    } else {
+                        costoMinimoEl.textContent = 'Sin datos';
+                    }
+
                     if (proveedores.length === 0) {
                         proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">Sin proveedores asociados</td></tr>';
                     } else {
@@ -1258,8 +1319,10 @@ document.addEventListener('DOMContentLoaded', function () {
             // Validaciones
             let isValid = true;
             if (!nombre) { document.getElementById('edit-name-error').textContent = 'El nombre es obligatorio'; isValid = false; }
+            else if (nombre.length > 150) { document.getElementById('edit-name-error').textContent = 'Máximo 150 caracteres'; isValid = false; }
             if (!idCategoria) { document.getElementById('edit-category-error').textContent = 'Debe seleccionar una categoría'; isValid = false; }
             if (!descripcion) { document.getElementById('edit-description-error').textContent = 'La descripción es obligatoria'; isValid = false; }
+            else if (descripcion.length > 650) { document.getElementById('edit-description-error').textContent = 'Máximo 650 caracteres'; isValid = false; }
             if (isNaN(precio) || precio < 0) { document.getElementById('edit-price-error').textContent = 'El precio debe ser un número válido'; isValid = false; }
             if (isNaN(stockMinimo) || stockMinimo < 0) { document.getElementById('edit-stock-min-error').textContent = 'El stock mínimo debe ser un número válido'; isValid = false; }
             if (isNaN(stockMaximo) || stockMaximo < 0) { document.getElementById('edit-stock-max-error').textContent = 'El stock máximo debe ser un número válido'; isValid = false; }
@@ -1372,15 +1435,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 const filtrosAplicados = filtrosDesc.length > 0 ? filtrosDesc.join(' | ') : 'Todos';
 
-                // Obtener los productos que se están mostrando actualmente (paginados o no, en este caso mandamos todos los filtrados)
-                // Utilizamos `productosBuscados` si hay búsqueda, si no `todosLosProductos`, y pasamos por `aplicarFiltros` y `clientSideSort`
-                let productosBase = (productSearchInputElement && productSearchInputElement.value.trim() !== '') ? productosBuscados : todosLosProductos;
-                const productosFiltrados = aplicarFiltros(productosBase || []);
-                const productosOrdenados = clientSideSort(productosFiltrados);
+                const sortLabels = { estadoStock: 'Estado', nombre: 'Nombre', stock: 'Stock Actual', stockMinimo: 'Stock Mínimo', categoria: 'Categoría', proveedorNombre: 'Proveedor', precio: 'Precio' };
+                const sortDescripcion = sortField ? `Ordenado por: ${sortLabels[sortField] || sortField} (${sortDirection === 'asc' ? 'ascendente' : 'descendente'})` : '';
 
                 const payload = {
-                    productos: productosOrdenados,
-                    filtrosAplicados: filtrosAplicados
+                    estadoStock: filtroStockEstado,
+                    categoria: filtroCategoria,
+                    proveedor: filtroProveedor,
+                    busqueda: productSearchInputElement?.value.trim() || '',
+                    sortField: sortField || '',
+                    sortDirection: sortDirection || 'asc',
+                    filtrosAplicados: filtrosAplicados,
+                    sortDescripcion: sortDescripcion
                 };
 
                 const response = await fetch('/api/productos/inventario/exportar-pdf', {
@@ -1400,7 +1466,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const a = document.createElement('a');
                 a.href = url;
                 const fecha = new Date().toLocaleDateString('es-AR').replace(/\//g, '-');
-                a.download = `reporte_inventario_${fecha}.pdf`;
+                const partsFiltro = [];
+                if (filtroStockEstado !== 'todos') partsFiltro.push(filtroStockEstado);
+                if (filtroCategoria !== 'todos') partsFiltro.push(filtroCategoria.replace(/\s+/g, '_'));
+                if (filtroProveedor !== 'todos' && filtroProveedor !== 'sin-proveedor') partsFiltro.push(filtroProveedor.replace(/\s+/g, '_'));
+                else if (filtroProveedor === 'sin-proveedor') partsFiltro.push('sin_proveedor');
+                if (productSearchInputElement?.value.trim()) partsFiltro.push(productSearchInputElement.value.trim().replace(/\s+/g, '_'));
+                const sufijo = partsFiltro.length > 0 ? `_${partsFiltro.join('-')}` : '';
+                a.download = `reporte_inventario_${fecha}${sufijo}.pdf`;
                 document.body.appendChild(a);
                 a.click();
                 a.remove();

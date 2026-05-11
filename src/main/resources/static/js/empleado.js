@@ -15,6 +15,20 @@ document.addEventListener('DOMContentLoaded', function () {
         'clientes': 'fas fa-address-book'
     };
 
+    let currentSectionId = 'principal';
+    let currentSubsectionId = null;
+
+    function clearSection(sectionId) {
+        const section = document.getElementById(`${sectionId}-section`);
+        if (!section) return;
+        section.querySelectorAll('form').forEach(f => f.reset());
+        section.querySelectorAll('.error-message').forEach(el => el.textContent = '');
+        section.querySelectorAll('.form-message').forEach(el => {
+            el.textContent = '';
+            el.className = 'form-message';
+        });
+    }
+
     // Mostrar sección y ocultar las demás
     function showSection(sectionId) {
         sections.forEach(s => s.style.display = 'none');
@@ -40,12 +54,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
             e.preventDefault();
 
+            // Cerrar submenús que no contienen el link clickeado
+            document.querySelectorAll('.sidebar-menu li.open').forEach(openLi => {
+                if (!openLi.contains(this)) openLi.classList.remove('open');
+            });
+
+            // Limpiar formularios al cambiar de sección o subsección
+            const sectionId = this.getAttribute('data-section');
+            const subsectionId = this.getAttribute('data-subsection');
+            if (sectionId !== currentSectionId || subsectionId !== currentSubsectionId) {
+                clearSection(currentSectionId);
+                currentSectionId = sectionId;
+                currentSubsectionId = subsectionId;
+            }
+
             // Marcar activo: quitar de todos y poner en el clickeado
             sidebarLinks.forEach(l => l.classList.remove('active'));
             this.classList.add('active');
-
-            const sectionId = this.getAttribute('data-section');
-            const subsectionId = this.getAttribute('data-subsection');
 
             showSection(sectionId);
 
