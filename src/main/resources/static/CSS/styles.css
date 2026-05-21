@@ -3817,3 +3817,52 @@ body {
     font-weight: 800;
     color: #0f172a;
 }
+
+/* ==============================================================
+   MODAL EDITAR PROVEEDOR - REDISEÑO UI/UX
+   ============================================================== */
+
+/* Premium Form Inputs with Icons (Tab 1) */
+.input-icon-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.input-icon-wrapper i {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 14px;
+    transition: color 0.2s;
+    pointer-events: none;
+}
+
+.input-with-icon {
+    width: 100%;
+    padding: 10px 14px 10px 40px !important;
+}
+
+.input-with-icon:focus + i,
+.input-icon-wrapper input:focus ~ i {
+    color: #6366f1;
+}
+
+/* Espaciado mejorado en el form */
+#edit-proveedor-form .form-row {
+    gap: 24px;
+    margin-bottom: 20px;
+}
+
+#edit-prov-add-producto-dropdown,
+#edit-prov-productos-body {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#edit-prov-add-producto-dropdown.loading,
+#edit-prov-productos-body.loading {
+    opacity: 0.5;
+    pointer-events: none;
+}

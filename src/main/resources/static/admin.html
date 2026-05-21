@@ -3118,11 +3118,19 @@
         <!-- Modal de Edición de Proveedor (Con Pestañas) -->
         <div id="modal-edit-proveedor-overlay" class="modal" style="display: none;">
             <div class="modal-content modal-large"
-                style="width: 95%; max-width: 920px; min-height: 60vh; max-height: 95vh; display: flex; flex-direction: column; border-radius: 16px; overflow: hidden; border: 1px solid #e2e8f0; box-shadow: 0 25px 60px rgba(0,0,0,0.15);">
+                style="position: relative; width: 95%; max-width: 920px; min-height: 80vh; max-height: 95vh; display: flex; flex-direction: column; border-radius: 16px; overflow: visible; border: 1px solid #e2e8f0; box-shadow: 0 25px 60px rgba(0,0,0,0.15);">
+                
+                <!-- Botón de cerrar flotante -->
+                <button id="modal-edit-proveedor-close" class="modal-close"
+                    style="position: absolute; top: -16px; right: -16px; background: white; border: 2px solid #e2e8f0; color: #475569 !important; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1);"
+                    onmouseenter="this.style.background='#ef4444'; this.style.color='white'; this.style.borderColor='#ef4444'; this.style.transform='scale(1.1)';"
+                    onmouseleave="this.style.background='white'; this.style.color='#475569'; this.style.borderColor='#e2e8f0'; this.style.transform='scale(1)';">
+                    <i class="fas fa-times" style="font-size: 16px;"></i>
+                </button>
 
                 <!-- Header profesional -->
                 <div
-                    style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 20px 28px; display: flex; align-items: center; justify-content: space-between;">
+                    style="background: linear-gradient(135deg, #1e293b 0%, #334155 100%); padding: 20px 28px; display: flex; align-items: center; justify-content: space-between; border-radius: 16px 16px 0 0;">
                     <div style="display: flex; align-items: center; gap: 14px;">
                         <div
                             style="width: 42px; height: 42px; background: rgba(255,255,255,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px);">
@@ -3136,12 +3144,6 @@
                                 style="color: rgba(255,255,255,0.6); font-size: 13px; font-weight: 400;"></span>
                         </div>
                     </div>
-                    <button id="modal-edit-proveedor-close" class="modal-close"
-                        style="background: rgba(255,255,255,0.1); border: none; color: white; width: 36px; height: 36px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s;"
-                        onmouseenter="this.style.background='rgba(255,255,255,0.2)'"
-                        onmouseleave="this.style.background='rgba(255,255,255,0.1)'">
-                        <i class="fas fa-times" style="font-size: 14px;"></i>
-                    </button>
                 </div>
 
                 <!-- Tab Bar mejorado -->
@@ -3153,9 +3155,13 @@
                     </button>
                     <button type="button" class="edit-prov-tab" data-tab="edit-prov-tab-productos"
                         style="padding: 10px 22px; border: none; background: transparent; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; border-radius: 10px 10px 0 0; border: 1px solid transparent; border-bottom: none; margin-bottom: -1px; transition: all 0.2s; display: flex; align-items: center; gap: 7px;">
-                        <i class="fas fa-box" style="font-size: 12px;"></i> Catálogo de Productos
+                        <i class="fas fa-box" style="font-size: 12px;"></i> Catálogo
                         <span id="edit-prov-tab-productos-badge"
                             style="display: inline-flex; align-items: center; justify-content: center; min-width: 20px; height: 20px; padding: 0 6px; background: #e2e8f0; color: #475569; font-size: 11px; font-weight: 700; border-radius: 10px;">0</span>
+                    </button>
+                    <button type="button" class="edit-prov-tab" data-tab="edit-prov-tab-vincular"
+                        style="padding: 10px 22px; border: none; background: transparent; font-size: 13px; font-weight: 600; color: #64748b; cursor: pointer; border-radius: 10px 10px 0 0; border: 1px solid transparent; border-bottom: none; margin-bottom: -1px; transition: all 0.2s; display: flex; align-items: center; gap: 7px;">
+                        <i class="fas fa-link" style="font-size: 12px;"></i> Vincular Productos
                     </button>
                 </div>
 
@@ -3169,12 +3175,18 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="editProveedorNombre">Nombre del Proveedor</label>
-                                    <input type="text" id="editProveedorNombre" placeholder="Nombre del proveedor" maxlength="150">
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-building"></i>
+                                        <input type="text" id="editProveedorNombre" placeholder="Nombre del proveedor" maxlength="150" class="input-with-icon">
+                                    </div>
                                     <div class="error-message" id="errorEditNombre"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="editProveedorTelefono">Teléfono</label>
-                                    <input type="text" id="editProveedorTelefono" placeholder="123456789" maxlength="20">
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-phone"></i>
+                                        <input type="text" id="editProveedorTelefono" placeholder="123456789" maxlength="20" class="input-with-icon">
+                                    </div>
                                     <div class="error-message" id="errorEditTelefono"></div>
                                 </div>
                             </div>
@@ -3182,21 +3194,30 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="editProveedorEmail">Email</label>
-                                    <input type="email" id="editProveedorEmail" placeholder="email@ejemplo.com" maxlength="255">
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-envelope"></i>
+                                        <input type="email" id="editProveedorEmail" placeholder="email@ejemplo.com" maxlength="255" class="input-with-icon">
+                                    </div>
                                     <div class="error-message" id="errorEditEmail"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="editProveedorDireccion">Dirección</label>
-                                    <input type="text" id="editProveedorDireccion" placeholder="Dirección completa" maxlength="200">
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <input type="text" id="editProveedorDireccion" placeholder="Dirección completa" maxlength="200" class="input-with-icon">
+                                    </div>
                                     <div class="error-message" id="errorEditDireccion"></div>
                                 </div>
                             </div>
 
                             <div class="form-row">
-                                <div class="form-group" style="flex: 0 0 calc(50% - 5px);">
+                                <div class="form-group" style="flex: 0 0 calc(50% - 12px);">
                                     <label for="editProveedorCuit">CUIT</label>
-                                    <input type="text" id="editProveedorCuit" placeholder="20-12345678-9"
-                                        pattern="\d{2}-\d{8}-\d{1}" maxlength="13">
+                                    <div class="input-icon-wrapper">
+                                        <i class="fas fa-id-card"></i>
+                                        <input type="text" id="editProveedorCuit" placeholder="20-12345678-9"
+                                            pattern="\d{2}-\d{8}-\d{1}" maxlength="13" class="input-with-icon">
+                                    </div>
                                     <div class="error-message" id="errorEditCuit"></div>
                                 </div>
                             </div>
@@ -3208,82 +3229,36 @@
                     <!-- Tab 2: Catálogo de Productos -->
                     <div id="edit-prov-tab-productos" class="edit-prov-tab-content" style="display: none;">
 
-                        <!-- Vincular nuevo producto -->
-                        <div
-                            style="background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); border: 2px solid #a5b4fc; border-radius: 12px; padding: 18px 22px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(99, 102, 241, 0.12);">
-                            <label
-                                style="font-weight: 700; font-size: 14px; color: #3730a3; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                                <span
-                                    style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: linear-gradient(135deg, #6366f1, #4f46e5); border-radius: 8px; box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);">
-                                    <i class="fas fa-plus" style="color: white; font-size: 12px;"></i>
-                                </span>
-                                Vincular nuevo producto
-                            </label>
-                            <div style="position: relative;">
-                                <i class="fas fa-search"
-                                    style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #6366f1; font-size: 14px;"></i>
-                                <i class="fas fa-chevron-down"
-                                    style="position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: #6366f1; font-size: 12px; pointer-events: none;"></i>
-                                <input type="text" id="edit-prov-add-producto-search"
-                                    placeholder="Haz clic o escribí para buscar productos..." autocomplete="off"
-                                    style="width: 100%; padding: 12px 40px 12px 42px; border: 2px solid #a5b4fc; border-radius: 8px; font-size: 14px; background: white; cursor: pointer; transition: border-color 0.2s, box-shadow 0.2s;"
-                                    onfocus="this.style.borderColor='#6366f1'; this.style.boxShadow='0 0 0 3px rgba(99,102,241,0.15)';"
-                                    onblur="this.style.borderColor='#a5b4fc'; this.style.boxShadow='none';">
-                                <!-- Dropdown de resultados -->
-                                <div id="edit-prov-add-producto-dropdown"
-                                    style="display: none; position: absolute; top: calc(100% + 4px); left: 0; right: 0; background: white; border: 2px solid #a5b4fc; border-radius: 10px; max-height: 250px; overflow-y: auto; z-index: 1000; box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Productos vinculados header con contador y buscador -->
+                        <!-- Productos vinculados header con barra de filtros unificada -->
                         <div style="margin-bottom: 16px;">
-                            <div
-                                style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
-                                <div style="display: flex; align-items: center; gap: 10px;">
-                                    <span
-                                        style="display: inline-flex; align-items: center; justify-content: center; width: 28px; height: 28px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 8px; box-shadow: 0 2px 6px rgba(16, 185, 129, 0.3);">
-                                        <i class="fas fa-link" style="color: white; font-size: 11px;"></i>
-                                    </span>
-                                    <h4 style="margin: 0; font-size: 14px; font-weight: 700; color: #1e293b;">Productos
-                                        Vinculados</h4>
-                                    <span id="edit-prov-productos-count"
-                                        style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 8px; background: #f0fdf4; color: #166534; font-size: 12px; font-weight: 700; border-radius: 12px; border: 1px solid #bbf7d0;">
-                                        0
-                                    </span>
-                                </div>
+                            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
+                                <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                                    <i class="fas fa-list" style="color: #64748b;"></i> Productos Vinculados
+                                </h4>
+                                <span id="edit-prov-productos-count"
+                                    style="display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 8px; background: #f1f5f9; color: #475569; font-size: 12px; font-weight: 700; border-radius: 12px; border: 1px solid #e2e8f0;">
+                                    0
+                                </span>
                             </div>
-                            <div style="position: relative;">
-
-                                <input type="text" id="edit-prov-productos-search"
-                                    placeholder="Buscar productos por nombre..."
-                                    style="width: 100%; padding: 10px 14px 10px 40px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; background: #f8fafc; transition: border-color 0.2s, background-color 0.2s;"
-                                    onfocus="this.style.borderColor='#94a3b8'; this.style.background='white';"
-                                    onblur="this.style.borderColor='#e2e8f0'; this.style.background='#f8fafc';">
+                            
+                            <!-- Barra de Filtros Unificada -->
+                            <div class="pdm-productos-actions-bar" style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                <!-- Búsqueda -->
+                                <div class="pdm-search-box" style="flex: 2; min-width: 200px;">
+                                    <i class="fas fa-search pdm-search-icon"></i>
+                                    <input type="text" id="edit-prov-productos-search" placeholder="Buscar productos por nombre..." class="pdm-search-input" style="width: 100%;">
+                                </div>
                             </div>
                         </div>
 
                         <!-- Tabla de productos asociados -->
-                        <div
-                            style="border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 4px rgba(0,0,0,0.04);">
+                        <div style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; background: white;">
                             <table class="data-table" style="margin: 0; border-radius: 0;">
                                 <thead>
-                                    <tr style="background: linear-gradient(135deg, #f8fafc, #f1f5f9);">
-                                        <th
-                                            style="padding: 14px 20px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 2px solid #e2e8f0; text-align: left;">
-                                            <i class="fas fa-box"
-                                                style="margin-right: 6px; color: #94a3b8; font-size: 10px;"></i>Producto
-                                        </th>
-                                        <th
-                                            style="padding: 14px 20px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 2px solid #e2e8f0; text-align: right;">
-                                            <i class="fas fa-dollar-sign"
-                                                style="margin-right: 6px; color: #94a3b8; font-size: 10px;"></i>Precio
-                                            de Costo
-                                        </th>
-                                        <th
-                                            style="padding: 14px 20px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 2px solid #e2e8f0; text-align: center; width: 100px;">
-                                            Acciones
-                                        </th>
+                                    <tr>
+                                        <th style="padding: 12px 16px; text-align: left;">Producto</th>
+                                        <th style="padding: 12px 16px; text-align: right;">Precio de Costo</th>
+                                        <th style="padding: 12px 16px; text-align: center; width: 100px;">Acciones</th>
                                     </tr>
                                 </thead>
                                 <tbody id="edit-prov-productos-body">
@@ -3292,6 +3267,38 @@
                             </table>
                         </div>
                         <p id="edit-prov-productos-message" class="form-message"></p>
+                    </div>
+
+                    <!-- Tab 3: Vincular Productos -->
+                    <div id="edit-prov-tab-vincular" class="edit-prov-tab-content" style="display: none;">
+                        <div style="max-width: 600px; margin: 0 auto; padding-top: 20px;">
+                            <div style="text-align: center; margin-bottom: 24px;">
+                                <div style="width: 48px; height: 48px; background: #e0e7ff; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                                    <i class="fas fa-link" style="color: #4f46e5; font-size: 20px;"></i>
+                                </div>
+                                <h4 style="margin: 0 0 8px; font-size: 18px; color: #1e293b;">Vincular nuevo producto</h4>
+                                <p style="margin: 0; color: #64748b; font-size: 14px;">Buscá en la base de datos general para agregar productos a este proveedor.</p>
+                            </div>
+                            
+                            <div style="position: relative;">
+                                <i class="fas fa-search" style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); color: #6366f1; font-size: 16px;"></i>
+                                <input type="text" id="edit-prov-add-producto-search"
+                                    placeholder="Escribí el nombre del producto..." autocomplete="off"
+                                    style="width: 100%; padding: 16px 20px 16px 48px; border: 2px solid #cbd5e1; border-radius: 12px; font-size: 15px; background: white; cursor: text; transition: all 0.2s; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);"
+                                    onfocus="this.style.borderColor='#6366f1'; this.style.boxShadow='0 0 0 4px rgba(99,102,241,0.15)';"
+                                    onblur="this.style.borderColor='#cbd5e1'; this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.05)';">
+                                <!-- Dropdown de resultados -->
+                                <div id="edit-prov-add-producto-dropdown"
+                                    style="display: none; position: absolute; top: calc(100% + 8px); left: 0; right: 0; background: white; border: 1px solid #cbd5e1; border-radius: 12px; max-height: 300px; overflow-y: auto; z-index: 1000; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);">
+                                </div>
+                            </div>
+
+                            <!-- Área de feedback / toast -->
+                            <div id="vincular-success-toast" style="display: none; margin-top: 24px; padding: 16px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; color: #166534; font-size: 14px; font-weight: 500; align-items: center; gap: 10px;">
+                                <i class="fas fa-check-circle" style="color: #22c55e; font-size: 18px;"></i>
+                                <span id="vincular-success-text">Producto vinculado correctamente.</span>
+                            </div>
+                        </div>
                     </div>
 
                 </div>

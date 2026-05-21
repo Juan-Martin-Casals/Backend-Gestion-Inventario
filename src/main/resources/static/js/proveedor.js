@@ -535,7 +535,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // --- Tab Switching ---
     document.querySelectorAll('.edit-prov-tab').forEach(tab => {
         tab.addEventListener('click', function () {
-            // Deactivate all tabs - pill style
+            // Deactivate all tabs
             document.querySelectorAll('.edit-prov-tab').forEach(t => {
                 t.classList.remove('active');
                 t.style.color = '#64748b';
@@ -543,7 +543,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 t.style.border = '1px solid transparent';
                 t.style.borderBottom = 'none';
             });
-            // Activate clicked - pill style
+            // Activate clicked
             this.classList.add('active');
             this.style.color = '#1e293b';
             this.style.background = 'white';
@@ -624,11 +624,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         <span style="font-size: 14px; font-weight: 600; color: #059669; background: #f0fdf4; padding: 4px 10px; border-radius: 6px; border: 1px solid #bbf7d0;">${costoFormat}</span>
                     </td>
                     <td style="padding: 12px 20px; text-align: center; border-bottom: 1px solid #f1f5f9;">
-                        <button class="btn-icon btn-unlink-producto" data-id="${prod.idProducto}" title="Desvincular producto"
+                        <button class="btn-icon btn-unlink-producto" data-id="${prod.idProducto}" title="Eliminar del proveedor"
                             style="color: #ef4444; font-size: 14px; padding: 6px 10px; border-radius: 8px; border: 1px solid #fecaca; background: #fef2f2; cursor: pointer; transition: all 0.2s;"
                             onmouseenter="this.style.background='#fee2e2'; this.style.borderColor='#f87171'"
                             onmouseleave="this.style.background='#fef2f2'; this.style.borderColor='#fecaca'">
-                            <i class="fas fa-unlink"></i>
+                            <i class="fas fa-trash"></i>
                         </button>
                     </td>
                 </tr>`;
@@ -723,10 +723,13 @@ document.addEventListener('DOMContentLoaded', function () {
             if (addProductoSearch) addProductoSearch.value = '';
             if (addProductoDropdown) addProductoDropdown.style.display = 'none';
 
-            if (msgEl) {
-                msgEl.textContent = `"${producto.nombreProducto}" vinculado exitosamente.`;
-                msgEl.className = 'form-message success';
-                setTimeout(() => { msgEl.textContent = ''; msgEl.className = 'form-message'; }, 3000);
+            // Mostrar toast de éxito en la tab 3
+            const toast = document.getElementById('vincular-success-toast');
+            const toastText = document.getElementById('vincular-success-text');
+            if (toast && toastText) {
+                toastText.textContent = `"${producto.nombreProducto}" vinculado exitosamente.`;
+                toast.style.display = 'flex';
+                setTimeout(() => { toast.style.display = 'none'; }, 3000);
             }
 
             // Refrescar tabla principal
@@ -745,8 +748,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (addProductoSearch) {
         addProductoSearch.addEventListener('input', (e) => {
             clearTimeout(addProductoTimeout);
+            if (addProductoDropdown) addProductoDropdown.classList.add('loading');
             addProductoTimeout = setTimeout(() => {
                 renderAddProductoDropdown(e.target.value.trim());
+                if (addProductoDropdown) addProductoDropdown.classList.remove('loading');
             }, 250);
         });
         addProductoSearch.addEventListener('focus', () => {
@@ -768,9 +773,12 @@ document.addEventListener('DOMContentLoaded', function () {
     if (editProvProductosSearch) {
         editProvProductosSearch.addEventListener('input', (e) => {
             clearTimeout(editProvSearchTimeout);
+            const tbody = document.getElementById('edit-prov-productos-body');
+            if (tbody) tbody.classList.add('loading');
             editProvSearchTimeout = setTimeout(() => {
                 editProductosSearchTerm = normalizeText(e.target.value.trim());
                 renderEditProductosCatalog();
+                if (tbody) tbody.classList.remove('loading');
             }, 200);
         });
     }
@@ -873,8 +881,10 @@ document.addEventListener('DOMContentLoaded', function () {
         // Reset to Tab 1
         document.querySelectorAll('.edit-prov-tab').forEach((t, i) => {
             t.classList.toggle('active', i === 0);
-            t.style.color = i === 0 ? '#2563eb' : '#64748b';
-            t.style.borderBottomColor = i === 0 ? '#2563eb' : 'transparent';
+            t.style.color = i === 0 ? '#1e293b' : '#64748b';
+            t.style.background = i === 0 ? 'white' : 'transparent';
+            t.style.border = i === 0 ? '1px solid #e2e8f0' : '1px solid transparent';
+            t.style.borderBottom = i === 0 ? '2px solid white' : 'none';
         });
         document.querySelectorAll('.edit-prov-tab-content').forEach((c, i) => {
             c.style.display = i === 0 ? 'block' : 'none';
