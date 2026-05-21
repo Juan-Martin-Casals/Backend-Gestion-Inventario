@@ -42,10 +42,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const limpiarBtn = document.getElementById('limpiar-filtros');
     const periodoTexto = document.getElementById('periodo-texto');
 
-    // Botones rápidos
-    const filtroHoy = document.getElementById('filtro-hoy');
-    const filtroMes = document.getElementById('filtro-mes');
-    const filtroAnio = document.getElementById('filtro-anio');
 
     // Inicializar fechas por defecto
     fechaInicioInput.value = formatFechaInput(primerDiaMes);
@@ -88,13 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return true;
     };
 
-    // Actualizar botón rápido activo
-    const setActiveQuickFilter = (activeBtn) => {
-        [filtroHoy, filtroMes, filtroAnio].forEach(btn => {
-            if (btn) btn.classList.remove('active');
-        });
-        if (activeBtn) activeBtn.classList.add('active');
-    };
+
 
     // Cargar datos al entrar a la sección
     const cargarDashboard = async () => {
@@ -114,7 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 cargarKPIs(inicio, fin),
                 cargarGraficoVentasCompras(inicio, fin),
                 cargarTopProductos(inicio, fin),
-                cargarTopRentables(inicio, fin),
                 cargarTopProveedores(inicio, fin)
             ]);
         } catch (error) {
@@ -266,46 +255,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (data.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="3" style="text-align: center; padding: 20px; color: #999;">
-                            No hay datos para este período
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = data.map((producto, index) => `
-                <tr>
-                    <td><strong>${index + 1}</strong></td>
-                    <td>${producto.nombreProducto}</td>
-                    <td>$${formatNumber(producto.totalVentas)}</td>
-                </tr>
-            `).join('');
-
-        } catch (error) {
-            console.error('Error al cargar top productos:', error);
-            document.getElementById('top-productos-body').innerHTML = `
-                <tr>
-                    <td colspan="3" style="text-align: center; padding: 20px; color: #dc3545;">
-                        Error al cargar datos
-                    </td>
-                </tr>
-            `;
-        }
-    };
-
-    // 4. Cargar Top 5 Productos Más Rentables
-    const cargarTopRentables = async (inicio, fin) => {
-        try {
-            const response = await fetch(`/api/informes/top-rentables?inicio=${inicio}&fin=${fin}&limit=5`);
-            if (!response.ok) throw new Error('Error al obtener top rentables');
-
-            const data = await response.json();
-            const tbody = document.getElementById('top-rentables-body');
-
-            if (data.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
                         <td colspan="4" style="text-align: center; padding: 20px; color: #999;">
                             No hay datos para este período
                         </td>
@@ -318,14 +267,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 <tr>
                     <td><strong>${index + 1}</strong></td>
                     <td>${producto.nombreProducto}</td>
-                    <td>$${formatNumber(producto.margenUnitario)}</td>
-                    <td class="ganancia-positiva">$${formatNumber(producto.gananciaTotal)}</td>
+                    <td>${producto.cantidad}</td>
+                    <td>$${formatNumber(producto.totalVentas)}</td>
                 </tr>
             `).join('');
 
         } catch (error) {
-            console.error('Error al cargar top rentables:', error);
-            document.getElementById('top-rentables-body').innerHTML = `
+            console.error('Error al cargar top productos:', error);
+            document.getElementById('top-productos-body').innerHTML = `
                 <tr>
                     <td colspan="4" style="text-align: center; padding: 20px; color: #dc3545;">
                         Error al cargar datos
@@ -334,6 +283,8 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         }
     };
+
+
 
     // 5. Cargar Top 5 Proveedores
     const cargarTopProveedores = async (inicio, fin) => {
@@ -378,45 +329,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Event Listeners
     buscarBtn.addEventListener('click', () => {
-        setActiveQuickFilter(null);
         cargarDashboard();
     });
 
     limpiarBtn.addEventListener('click', () => {
         fechaInicioInput.value = formatFechaInput(primerDiaMes);
         fechaFinInput.value = formatFechaInput(hoy);
-        setActiveQuickFilter(filtroMes);
         cargarDashboard();
     });
-
-    // Botones rápidos de fecha
-    if (filtroHoy) {
-        filtroHoy.addEventListener('click', () => {
-            fechaInicioInput.value = formatFechaInput(hoy);
-            fechaFinInput.value = formatFechaInput(hoy);
-            setActiveQuickFilter(filtroHoy);
-            cargarDashboard();
-        });
-    }
-
-    if (filtroMes) {
-        filtroMes.addEventListener('click', () => {
-            fechaInicioInput.value = formatFechaInput(primerDiaMes);
-            fechaFinInput.value = formatFechaInput(hoy);
-            setActiveQuickFilter(filtroMes);
-            cargarDashboard();
-        });
-    }
-
-    if (filtroAnio) {
-        filtroAnio.addEventListener('click', () => {
-            const primerDiaAnio = new Date(hoy.getFullYear(), 0, 1);
-            fechaInicioInput.value = formatFechaInput(primerDiaAnio);
-            fechaFinInput.value = formatFechaInput(hoy);
-            setActiveQuickFilter(filtroAnio);
-            cargarDashboard();
-        });
-    }
 
     // Event Listener para Exportar PDF
     const exportarPdfBtn = document.getElementById('exportar-pdf');

@@ -390,6 +390,95 @@ document.addEventListener('DOMContentLoaded', function () {
     window.showClientesSubsection = showSubsection;
 
     // ===============================
+    // HELPERS DE VALIDACIÓN DE INPUTS
+    // ===============================
+    function restrictTelefonoInput(input) {
+        if (!input) return;
+        input.addEventListener('input', function () {
+            this.value = this.value.replace(/[^0-9+ ]/g, '');
+        });
+        input.addEventListener('keydown', function (e) {
+            if (e.ctrlKey || e.metaKey) return;
+            const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End', ' '];
+            if (allowed.includes(e.key)) return;
+            if (!/^[0-9+]$/.test(e.key)) e.preventDefault();
+        });
+        input.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData).getData('text');
+            const sanitized = pasted.replace(/[^0-9+ ]/g, '');
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const maxLen = parseInt(this.getAttribute('maxlength')) || Infinity;
+            const newValue = (this.value.slice(0, start) + sanitized + this.value.slice(end)).slice(0, maxLen);
+            this.value = newValue;
+            const cursor = Math.min(start + sanitized.length, maxLen);
+            this.selectionStart = this.selectionEnd = cursor;
+            this.dispatchEvent(new Event('input'));
+        });
+    }
+
+    function formatDni(digits) {
+        digits = digits.slice(0, 8);
+        if (digits.length <= 3) return digits;
+        if (digits.length <= 6) return digits.slice(0, -3) + '.' + digits.slice(-3);
+        return digits.slice(0, -6) + '.' + digits.slice(-6, -3) + '.' + digits.slice(-3);
+    }
+
+    function restrictDniInput(input) {
+        if (!input) return;
+        input.addEventListener('keydown', function (e) {
+            if (e.ctrlKey || e.metaKey) return;
+            const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+            if (allowed.includes(e.key)) return;
+            if (!/^\d$/.test(e.key)) e.preventDefault();
+        });
+        input.addEventListener('input', function () {
+            const pos = this.selectionStart;
+            const digitsBeforeCursor = this.value.slice(0, pos).replace(/\D/g, '').length;
+            const digits = this.value.replace(/\D/g, '').slice(0, 9);
+            const formatted = formatDni(digits);
+            this.value = formatted;
+            let count = 0, newPos = formatted.length;
+            for (let i = 0; i < formatted.length; i++) {
+                if (/\d/.test(formatted[i])) count++;
+                if (count === digitsBeforeCursor) { newPos = i + 1; break; }
+            }
+            this.selectionStart = this.selectionEnd = newPos;
+        });
+        input.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData).getData('text');
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const beforeDigits = this.value.slice(0, start).replace(/\D/g, '');
+            const afterDigits = this.value.slice(end).replace(/\D/g, '');
+            const newDigits = (beforeDigits + pasted.replace(/\D/g, '') + afterDigits).slice(0, 9);
+            this.value = formatDni(newDigits);
+            this.dispatchEvent(new Event('input'));
+        });
+    }
+
+    function bindLimit(input, errorEl, max) {
+        if (!input || !errorEl) return;
+        input.addEventListener('input', () => {
+            if (input.value.length >= max) {
+                errorEl.textContent = `Límite de ${max} caracteres alcanzado`;
+            } else if (errorEl.textContent.startsWith('Límite de')) {
+                errorEl.textContent = '';
+            }
+        });
+    }
+
+    restrictTelefonoInput(document.getElementById('crearClienteTelefono'));
+    restrictDniInput(document.getElementById('crearClienteDNI'));
+    bindLimit(document.getElementById('crearClienteNombre'),    document.getElementById('errorCrearClienteNombre'),    70);
+    bindLimit(document.getElementById('crearClienteApellido'),  document.getElementById('errorCrearClienteApellido'),  70);
+    bindLimit(document.getElementById('crearClienteTelefono'),  document.getElementById('errorCrearClienteTelefono'),  20);
+    bindLimit(document.getElementById('crearClienteDireccion'), document.getElementById('errorCrearClienteDireccion'), 200);
+    bindLimit(document.getElementById('crearClienteEmail'),     document.getElementById('errorCrearClienteEmail'),     255);
+
+    // ===============================
     // LÓGICA DEL FORMULARIO DE REGISTRO
     // ===============================
     const crearClienteForm = document.getElementById('crear-cliente-form');

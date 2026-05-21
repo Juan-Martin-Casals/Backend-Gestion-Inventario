@@ -27,5 +27,6 @@ public class VentaResponseDTO {
     private String metodoPago;
     private Double montoPagado;
     private Double vuelto;
+    private List<CobroResponseDTO> cobros;
 
 }

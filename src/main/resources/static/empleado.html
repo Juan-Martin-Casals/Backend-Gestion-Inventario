@@ -169,36 +169,36 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="crearClienteNombre">Nombre</label>
-                                    <input type="text" id="crearClienteNombre" placeholder="Juan">
+                                    <input type="text" id="crearClienteNombre" placeholder="Juan" maxlength="70">
                                     <div class="error-message" id="errorCrearClienteNombre"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="crearClienteApellido">Apellido</label>
-                                    <input type="text" id="crearClienteApellido" placeholder="García">
+                                    <input type="text" id="crearClienteApellido" placeholder="García" maxlength="70">
                                     <div class="error-message" id="errorCrearClienteApellido"></div>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="crearClienteDNI">DNI</label>
-                                    <input type="text" id="crearClienteDNI" placeholder="36222999">
+                                    <input type="text" id="crearClienteDNI" placeholder="36.222.999" maxlength="10">
                                     <div class="error-message" id="errorCrearClienteDNI"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="crearClienteTelefono">Teléfono</label>
-                                    <input type="tel" id="crearClienteTelefono" placeholder="+54 11 4321 9876">
+                                    <input type="tel" id="crearClienteTelefono" placeholder="+54 11 4321 9876" maxlength="20">
                                     <div class="error-message" id="errorCrearClienteTelefono"></div>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="crearClienteDireccion">Dirección</label>
-                                    <input type="text" id="crearClienteDireccion" placeholder="Argentina, Santa Fe, Santa Fe, Aristóbulo del Valle 1234">
+                                    <input type="text" id="crearClienteDireccion" placeholder="Argentina, Santa Fe, Santa Fe, Aristóbulo del Valle 1234" maxlength="200">
                                     <div class="error-message" id="errorCrearClienteDireccion"></div>
                                 </div>
                                 <div class="form-group">
                                     <label for="crearClienteEmail">Email</label>
-                                    <input type="email" id="crearClienteEmail" placeholder="ejemplo@mail.com">
+                                    <input type="email" id="crearClienteEmail" placeholder="ejemplo@mail.com" maxlength="255">
                                     <div class="error-message" id="errorCrearClienteEmail"></div>
                                 </div>
                             </div>
@@ -460,17 +460,27 @@
                             <div class="dashboard-layout">
                                 <div class="col-left">
                                     <div class="card-modern">
-                                        <h5 class="section-title"><i class="fas fa-info-circle"></i> Información General</h5>
+                                        <h5 class="section-title">
+                                            <i class="fas fa-shopping-cart"></i> Nueva Venta
+                                            <span id="fecha-venta-display" style="margin-left: auto; font-size: 0.82rem; font-weight: normal; color: #888;">
+                                                <i class="fas fa-calendar-day"></i> <span id="fecha-venta-valor">--/--/----</span>
+                                            </span>
+                                        </h5>
+
+                                        <!-- Fila: Buscador Producto + Cliente -->
                                         <div class="form-row">
-                                            <div class="form-group" style="flex: 1;">
-                                                <label for="fecha-venta">Fecha</label>
-                                                <input type="date" id="fecha-venta" readonly style="cursor: not-allowed;">
-                                                <div class="error-message" id="errorFechaVenta"></div>
+                                            <div class="form-group" style="flex: 2; min-width: 0;">
+                                                <label for="product-search">Producto</label>
+                                                <div class="product-search-container">
+                                                    <input type="text" id="product-search" placeholder="Buscar y hacer click para agregar..." class="product-search-input" autocomplete="off">
+                                                    <div id="product-results" class="product-results" style="display: none;"></div>
+                                                </div>
+                                                <div class="error-message" id="errorProducto"></div>
                                             </div>
-                                            <div class="form-group" style="flex: 2;">
+                                            <div class="form-group" style="flex: 1; min-width: 0;">
                                                 <label for="venta-cliente-search">Cliente</label>
                                                 <div class="search-with-add">
-                                                    <input type="text" id="venta-cliente-search" autocomplete="off" placeholder="Buscar cliente por nombre o DNI...">
+                                                    <input type="text" id="venta-cliente-search" autocomplete="off" placeholder="Buscar cliente...">
                                                     <button type="button" id="btn-add-cliente" class="btn-icon btn-add-quick" title="Crear Nuevo Cliente">
                                                         <i class="fas fa-plus"></i>
                                                     </button>
@@ -480,37 +490,16 @@
                                                 <span class="error-message" id="errorVentaCliente"></span>
                                             </div>
                                         </div>
-                                    </div>
 
-                                    <div class="card-modern product-selection">
-                                        <h5 class="section-title"><i class="fas fa-box"></i> Detalle de la Venta</h5>
-                                        <div class="form-row">
-                                            <div class="form-group" style="flex: 3;">
-                                                <label for="product-search">Producto</label>
-                                                <div class="product-search-container">
-                                                    <input type="text" id="product-search" placeholder="Buscar producto por nombre..." class="product-search-input" autocomplete="off">
-                                                    <div id="product-results" class="product-results" style="display: none;"></div>
-                                                </div>
-                                                <div class="error-message" id="errorProducto"></div>
-                                            </div>
-                                            <div class="form-group" style="flex: 1;">
-                                                <label for="cantidad-producto">Cantidad</label>
-                                                <input type="number" id="cantidad-producto" value="1" min="1">
-                                                <div class="error-message" id="errorCantidad"></div>
-                                            </div>
-                                        </div>
-                                        <button type="button" id="btn-agregar-producto" class="btn-primary" style="margin-top: 10px; float: right;">
-                                            <i class="fas fa-plus"></i> Agregar Producto a la Venta
-                                        </button>
                                         <p id="errorStockVenta" class="form-message" style="display: none;"></p>
-                                        <div class="error-message" id="errorDetalleGeneral"></div>
-                                        <div style="clear: both;"></div>
-                                        <div class="table-container" style="margin-top: 20px;">
+
+                                        <div class="table-container" style="margin-top: 16px;">
                                             <table class="data-table">
                                                 <thead>
                                                     <tr>
                                                         <th>Producto</th>
-                                                        <th class="col-num">Cantidad</th>
+                                                        <th class="col-num">Stock</th>
+                                                        <th class="col-num col-qty">Cantidad</th>
                                                         <th class="col-num">Precio Unit.</th>
                                                         <th class="col-num">Subtotal</th>
                                                         <th>Acciones</th>
@@ -523,37 +512,12 @@
                                 </div>
 
                                 <div class="col-right">
-                                    <div class="card-modern payment-card" style="width: 95%; margin: 0 auto; display: flex; flex-direction: column;">
-                                        <h5 class="section-title"><i class="fas fa-wallet"></i> Método de Pago</h5>
-                                        <div class="form-group" style="margin-bottom: 15px;">
-                                            <label for="metodo-pago" style="font-size: 0.85rem; margin-bottom: 4px;">Método de Pago</label>
-                                            <select id="metodo-pago" class="form-control" style="padding: 8px 12px; font-size: 0.9rem;">
-                                                <option value="">Seleccionar método</option>
-                                            </select>
-                                            <div class="error-message" id="errorMetodoPago"></div>
-                                        </div>
-                                        <div id="paga-con-container" style="display: none; margin-bottom: 15px;">
-                                            <label for="paga-con" style="font-size: 0.85rem; margin-bottom: 4px; display: block;">Paga con</label>
-                                            <input type="text" id="paga-con" placeholder="0" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 1rem;">
-                                        </div>
-                                        <div id="vuelto-display" style="display: none; text-align: center; padding: 12px; background: #e8f5e9; border-radius: 8px; margin-bottom: 15px;">
-                                            <span style="font-size: 13px; color: #666;">Vuelto:</span>
-                                            <span id="vuelto-amount" style="font-size: 22px; font-weight: 700; color: #2e7d32;">$0</span>
-                                        </div>
-                                        <div class="form-group" id="tipo-tarjeta-container" style="display: none;">
-                                            <label for="tipo-tarjeta" style="font-size: 0.85rem; margin-bottom: 4px;">Tipo de Tarjeta</label>
-                                            <select id="tipo-tarjeta" class="form-control" style="padding: 8px 12px; font-size: 0.9rem;">
-                                                <option value="">Seleccionar</option>
-                                                <option value="Débito">Débito</option>
-                                                <option value="Crédito">Crédito</option>
-                                            </select>
-                                        </div>
-                                    </div>
+                                    <div class="card-modern" style="width: 95%; margin: 0 auto; display: flex; flex-direction: column;">
+                                        <h5 class="section-title"><i class="fas fa-cash-register"></i> Cobro</h5>
 
-                                    <div class="card-modern summary-card">
-                                        <h5 class="section-title"><i class="fas fa-receipt"></i> Resumen</h5>
-                                        <div class="form-group" style="margin-bottom: 15px;">
-                                            <label for="descuento-venta" style="font-size: 0.85rem; margin-bottom: 4px;">Descuento</label>
+                                        <!-- 1. Descuento -->
+                                        <div class="form-group" style="margin-bottom: 10px;">
+                                            <label for="descuento-venta" style="font-size: 0.85rem; margin-bottom: 4px;">Descuento <span style="color:#999; font-weight:normal;">(opcional)</span></label>
                                             <div style="display: flex; gap: 8px;">
                                                 <input type="number" id="descuento-venta" class="form-control" placeholder="0" min="0" step="0.01" style="flex: 2; padding: 8px 12px; font-size: 0.9rem;">
                                                 <select id="tipo-descuento-venta" class="form-control" style="flex: 1; padding: 8px 12px; font-size: 0.9rem;">
@@ -563,20 +527,69 @@
                                             </div>
                                             <div class="error-message" id="errorDescuento"></div>
                                         </div>
-                                        <div class="total-display-container">
-                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                                <span style="font-size: 0.9rem; color: #666;">Subtotal:</span>
+
+                                        <!-- 2. Subtotal + Total -->
+                                        <div class="total-display-container" style="background: #f8fafc; padding: 12px; border-radius: 8px; margin-bottom: 15px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                                <span style="font-size: 0.9rem; color: #666;">Subtotal</span>
                                                 <span id="subtotal-venta" style="font-size: 0.9rem; color: #666;">$0.00</span>
                                             </div>
-                                            <p id="descuento-aplicado-display" style="font-size: 0.8rem; color: #2e7d32; margin: 8px 0; display: none;">
-                                                <i class="fas fa-arrow-down"></i> Descuento: <span id="monto-descuento-mostrado">-$0.00</span>
-                                            </p>
-                                            <hr style="margin: 10px 0; border: none; border-top: 1px solid #e0e0e0;">
-                                            <h3 id="total-venta">Total: $0.00</h3>
+                                            <div id="descuento-aplicado-display"
+                                                style="font-size: 0.85rem; color: #2e7d32; margin: 4px 0; display: none; justify-content: space-between; align-items: center;">
+                                                <span><i class="fas fa-arrow-down"></i> Descuento</span>
+                                                <span id="monto-descuento-mostrado">-$0.00</span>
+                                            </div>
+                                            <hr style="margin: 8px 0; border: none; border-top: 1px solid #e0e0e0;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                <span style="font-size: 1rem; font-weight: 700; color: #0f172a;">Total</span>
+                                                <span id="total-venta" style="font-size: 1.25rem; font-weight: 700; color: #0f172a;">$0.00</span>
+                                            </div>
                                         </div>
+
+                                        <!-- 3. Fila Agregar Cobro -->
+                                        <div id="venta-cobro-row" style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
+                                            <div class="form-group" style="flex: 2; margin: 0; min-width: 120px;">
+                                                <label for="venta-cobro-metodo" style="font-size: 0.85rem; margin-bottom: 4px;">Método</label>
+                                                <select id="venta-cobro-metodo" class="form-control" style="padding: 6px 10px; font-size: 0.9rem; height: 36px;">
+                                                    <option value="">Seleccionar</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group" id="venta-tipo-tarjeta-container" style="flex: 2; margin: 0; min-width: 110px; display: none;">
+                                                <label for="venta-cobro-tipo-tarjeta" style="font-size: 0.85rem; margin-bottom: 4px;">Tipo Tarjeta</label>
+                                                <select id="venta-cobro-tipo-tarjeta" class="form-control" style="padding: 6px 10px; font-size: 0.9rem; height: 36px;">
+                                                    <option value="">Seleccionar</option>
+                                                    <option value="Débito">Débito</option>
+                                                    <option value="Crédito">Crédito</option>
+                                                </select>
+                                            </div>
+                                            <div class="form-group" style="flex: 2; margin: 0; min-width: 100px;">
+                                                <label for="venta-cobro-monto" style="font-size: 0.85rem; margin-bottom: 4px;">Importe</label>
+                                                <input type="text" id="venta-cobro-monto" class="form-control" placeholder="0" style="padding: 6px 10px; font-size: 0.9rem; height: 36px;">
+                                            </div>
+                                            <button type="button" id="btn-add-cobro-mixto" class="btn-primary"
+                                                style="padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; height: 36px; min-width: 36px; max-width: 36px; flex-shrink: 0;"
+                                                title="Añadir Cobro">
+                                                <i class="fas fa-plus" style="margin: 0;"></i>
+                                            </button>
+                                        </div>
+
+                                        <div id="venta-paga-con-container" style="display: none; margin-top: 10px;">
+                                            <label for="venta-paga-con" style="font-size: 0.85rem; margin-bottom: 4px; display: block;">Paga con (efectivo)</label>
+                                            <input type="text" id="venta-paga-con" placeholder="0" style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
+                                        </div>
+                                        <div id="venta-vuelto-display" style="display: none; text-align: center; padding: 10px 12px; background: #e8f5e9; border-radius: 8px; margin-top: 8px;">
+                                            <div style="font-size: 0.7rem; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Vuelto</div>
+                                            <div id="venta-vuelto-amount" style="font-size: 1.4rem; font-weight: 700; color: #2e7d32;">$0</div>
+                                        </div>
+
+                                        <div class="error-message" id="errorMetodoPago" style="margin-top: 5px;"></div>
+
+                                        <!-- 4. Lista de cobros + Balance -->
+                                        <div id="cobros-mixtos-container" style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;"></div>
+                                        <div id="venta-cobro-balance-indicator" style="margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px;"></div>
                                     </div>
 
-                                    <div class="action-buttons" style="width: 95%; margin: 0 auto; flex-direction: column; align-items: center; gap: 12px; padding-top: 20px;">
+                                    <div class="action-buttons" style="width: 95%; margin: 15px auto 0; flex-direction: column; align-items: center; gap: 12px;">
                                         <button type="submit" class="btn-primary" style="width: 100%; padding: 16px 20px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 8px;">
                                             <i class="fas fa-check-circle"></i> Registrar Venta
                                         </button>
@@ -728,40 +741,41 @@
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="addClienteNombre">Nombre</label>
-                                    <input type="text" id="addClienteNombre" placeholder="Juan">
+                                    <input type="text" id="addClienteNombre" placeholder="Juan" maxlength="70">
                                     <span class="error-message" id="errorAddClienteNombre"></span>
                                 </div>
                                 <div class="form-group">
                                     <label for="addClienteApellido">Apellido</label>
-                                    <input type="text" id="addClienteApellido" placeholder="García">
+                                    <input type="text" id="addClienteApellido" placeholder="García" maxlength="70">
                                     <span class="error-message" id="errorAddClienteApellido"></span>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="addClienteDNI">DNI</label>
-                                    <input type="text" id="addClienteDNI" placeholder="36222999">
+                                    <input type="text" id="addClienteDNI" placeholder="36.222.999" maxlength="10">
                                     <span class="error-message" id="errorAddClienteDNI"></span>
                                 </div>
                                 <div class="form-group">
                                     <label for="addClienteTelefono">Teléfono</label>
-                                    <input type="tel" id="addClienteTelefono" placeholder="+54 11 4321 9876">
+                                    <input type="tel" id="addClienteTelefono" placeholder="+54 11 4321 9876" maxlength="20">
                                     <span class="error-message" id="errorAddClienteTelefono"></span>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group">
                                     <label for="addClienteDireccion">Dirección</label>
-                                    <input type="text" id="addClienteDireccion" placeholder="Argentina, Santa Fe, Santa Fe, Aristóbulo del Valle 1234">
+                                    <input type="text" id="addClienteDireccion" placeholder="Argentina, Santa Fe, Santa Fe, Aristóbulo del Valle 1234" maxlength="200">
                                     <span class="error-message" id="errorAddClienteDireccion"></span>
                                 </div>
                                 <div class="form-group">
                                     <label for="addClienteEmail">Email</label>
-                                    <input type="email" id="addClienteEmail" placeholder="ejemplo@mail.com">
+                                    <input type="email" id="addClienteEmail" placeholder="ejemplo@mail.com" maxlength="255">
                                     <span class="error-message" id="errorAddClienteEmail"></span>
                                 </div>
                             </div>
                             <div class="modal-footer">
+                                <button type="button" id="btn-limpiar-add-cliente" class="btn-outline"><i class="fas fa-eraser"></i> Limpiar</button>
                                 <button type="submit" class="btn btn-primary">Guardar Cliente</button>
                             </div>
                         </form>

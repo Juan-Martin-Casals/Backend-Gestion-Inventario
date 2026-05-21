@@ -17,16 +17,17 @@ public class VentaRequestDTO {
     private List<DetalleVentaRequestDTO> detalles;
     private LocalDate fecha;
 
-    // Datos del cobro
-    private Long idMetodoPago; // Obligatorio
-    private String nroTransaccion; // Opcional para Tarjeta/Transferencia
-    private String tipoTarjeta; // Opcional: 'Débito' o 'Crédito'
-    private String ultimosDigitos; // Opcional: últimos 4 dígitos
+    // Múltiples cobros (nuevo)
+    private List<CobroItemDTO> cobros;
+
+    // Cobro simple — legacy (solo si cobros == null)
+    private Long idMetodoPago;
+    private String nroTransaccion;
+    private String tipoTarjeta;
+    private String ultimosDigitos;
+    private Double montoPagado;
 
     // Descuento
     private Double descuento;
     private String tipoDescuento; // "$" o "%"
-
-    // Datos para cálculo de vuelto (solo efectivo)
-    private Double montoPagado;
 }

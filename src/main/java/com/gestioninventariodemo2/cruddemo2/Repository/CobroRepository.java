@@ -13,8 +13,8 @@ import com.gestioninventariodemo2.cruddemo2.Model.Cobro;
 @Repository
 public interface CobroRepository extends JpaRepository<Cobro, Long> {
 
-    // Encontrar cobro por ID de venta (relación 1:1)
-    Cobro findByVentaIdVenta(Long idVenta);
+    // Obtener todos los cobros de una venta
+    List<Cobro> findAllByVentaIdVenta(Long idVenta);
 
     // Obtener cobros por método de pago
     List<Cobro> findByMetodoPagoIdMetodoPago(Long idMetodoPago);

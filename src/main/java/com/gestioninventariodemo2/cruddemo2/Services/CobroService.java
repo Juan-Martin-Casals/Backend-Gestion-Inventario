@@ -48,11 +48,19 @@ public class CobroService {
     }
 
     /**
-     * Obtener cobro por ID de venta
+     * Obtener primer cobro de una venta (compatibilidad con PDF y respuesta legacy)
      */
     public CobroResponseDTO obtenerCobroPorVenta(Long idVenta) {
-        Cobro cobro = cobroRepository.findByVentaIdVenta(idVenta);
-        return cobro != null ? convertirADTO(cobro) : null;
+        List<Cobro> cobros = cobroRepository.findAllByVentaIdVenta(idVenta);
+        return (cobros != null && !cobros.isEmpty()) ? convertirADTO(cobros.get(0)) : null;
+    }
+
+    /**
+     * Obtener todos los cobros de una venta
+     */
+    public List<CobroResponseDTO> obtenerCobrosPorVenta(Long idVenta) {
+        List<Cobro> cobros = cobroRepository.findAllByVentaIdVenta(idVenta);
+        return cobros.stream().map(this::convertirADTO).collect(Collectors.toList());
     }
 
     /**

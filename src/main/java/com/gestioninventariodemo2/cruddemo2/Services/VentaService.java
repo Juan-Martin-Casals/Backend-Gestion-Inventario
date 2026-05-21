@@ -22,6 +22,8 @@ import java.time.LocalDateTime;
 import com.gestioninventariodemo2.cruddemo2.Model.Cobro;
 import com.gestioninventariodemo2.cruddemo2.Model.DetalleVenta;
 
+import com.gestioninventariodemo2.cruddemo2.DTO.CobroItemDTO;
+import com.gestioninventariodemo2.cruddemo2.DTO.CobroResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.DetalleVentaRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.ProductoVentaDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.VentaRequestDTO;
@@ -150,8 +152,12 @@ public class VentaService {
 
         Venta ventaGuardada = ventaRepository.save(venta);
 
-        // 7. Registrar el cobro automáticamente
-        registrarCobroVenta(ventaRequestDTO, ventaGuardada, usuario);
+        // 7. Registrar cobros
+        if (ventaRequestDTO.getCobros() != null && !ventaRequestDTO.getCobros().isEmpty()) {
+            registrarCobrosVenta(ventaRequestDTO.getCobros(), ventaGuardada, usuario, totalFinal);
+        } else {
+            registrarCobroVenta(ventaRequestDTO, ventaGuardada, usuario);
+        }
 
         return mapToVentaDTO(ventaGuardada);
     }
@@ -245,25 +251,21 @@ public class VentaService {
         }
         // --- FIN DE LA LÓGICA SEGURA ---
 
-        // Obtener el método de pago y datos del cobro
+        // Obtener cobros
         String metodoPago = "Desconocido";
         Double montoPagado = null;
         Double vuelto = null;
+        List<CobroResponseDTO> cobrosDTO = new ArrayList<>();
         try {
-            var cobro = cobroService.obtenerCobroPorVenta(venta.getIdVenta());
-            if (cobro != null) {
-                if (cobro.getMetodoPago() != null) {
-                    metodoPago = cobro.getMetodoPago();
-                }
-                if (cobro.getMontoPagado() != null) {
-                    montoPagado = cobro.getMontoPagado().doubleValue();
-                }
-                if (cobro.getVuelto() != null) {
-                    vuelto = cobro.getVuelto().doubleValue();
-                }
+            cobrosDTO = cobroService.obtenerCobrosPorVenta(venta.getIdVenta());
+            if (!cobrosDTO.isEmpty()) {
+                CobroResponseDTO primero = cobrosDTO.get(0);
+                if (primero.getMetodoPago() != null) metodoPago = primero.getMetodoPago();
+                if (primero.getMontoPagado() != null) montoPagado = primero.getMontoPagado().doubleValue();
+                if (primero.getVuelto() != null) vuelto = primero.getVuelto().doubleValue();
             }
         } catch (Exception e) {
-            // Ignorar el error si no se encuentra el cobro
+            // ignorar si no hay cobros aún
         }
 
         return VentaResponseDTO.builder()
@@ -278,12 +280,42 @@ public class VentaService {
                 .metodoPago(metodoPago)
                 .montoPagado(montoPagado)
                 .vuelto(vuelto)
+                .cobros(cobrosDTO)
                 .build();
     }
 
-/**
-      * Registrar el cobro de una venta
-      */
+    /**
+     * Registrar múltiples cobros para una venta
+     */
+    private void registrarCobrosVenta(List<CobroItemDTO> cobros, Venta venta, Usuario usuario, double totalVenta) {
+        double sumaImportes = cobros.stream()
+                .mapToDouble(c -> c.getImporte() != null ? c.getImporte().doubleValue() : 0)
+                .sum();
+        if (Math.abs(sumaImportes - totalVenta) > 0.05) {
+            throw new IllegalArgumentException(
+                    "La suma de los cobros ($" + sumaImportes + ") no coincide con el total de la venta ($" + totalVenta + ")");
+        }
+        for (CobroItemDTO item : cobros) {
+            if (item.getIdMetodoPago() == null) {
+                throw new IllegalArgumentException("Cada cobro debe tener un método de pago");
+            }
+            var metodoPago = metodoPagoService.obtenerPorId(item.getIdMetodoPago());
+            cobroService.registrarCobro(
+                    venta,
+                    metodoPago,
+                    item.getImporte(),
+                    null,
+                    item.getTipoTarjeta(),
+                    null,
+                    item.getMontoPagado(),
+                    item.getVuelto(),
+                    usuario);
+        }
+    }
+
+    /**
+     * Registrar el cobro de una venta (legacy — un solo cobro)
+     */
     private void registrarCobroVenta(VentaRequestDTO ventaRequestDTO, Venta venta, Usuario usuario) {
         // Validar que se haya enviado el método de pago
         if (ventaRequestDTO.getIdMetodoPago() == null) {

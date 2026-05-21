@@ -562,7 +562,7 @@
 /* Rankings Grid (3 tablas lado a lado) */
 .informes-rankings {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 14px;
     margin-bottom: 15px;
 }

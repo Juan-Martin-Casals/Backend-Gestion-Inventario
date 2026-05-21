@@ -965,6 +965,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const detailCloseBtn = document.getElementById('product-detail-close');
     const detailCloseBtnFooter = document.getElementById('product-detail-close-btn');
 
+    // Tab switching en el modal de detalle
+    document.querySelectorAll('.product-detail-tab').forEach(tab => {
+        tab.addEventListener('click', function () {
+            document.querySelectorAll('.product-detail-tab').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+            document.querySelectorAll('.product-detail-tab-content').forEach(c => c.style.display = 'none');
+            const target = document.getElementById(this.getAttribute('data-tab'));
+            if (target) target.style.display = 'block';
+        });
+    });
+
     /**
      * Abre el modal y carga los detalles del producto
      */
@@ -1029,6 +1040,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const provResponse = await fetch(`${API_PRODUCTOS_URL}/${productId}/proveedores`, { cache: 'no-store' });
                 if (provResponse.ok) {
                     const proveedores = await provResponse.json();
+                    document.getElementById('product-detail-tab-proveedores-badge').textContent = proveedores.length;
                     const costoMinimoEl = document.getElementById('detail-costo-minimo');
                     const costos = proveedores.map(p => p.ultimoCosto).filter(c => c != null);
                     if (costos.length > 0) {
@@ -1057,6 +1069,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 console.error('Error al cargar proveedores:', provErr);
                 proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #e74c3c; padding: 20px;">Error al cargar proveedores</td></tr>';
             }
+
+            // Resetear a Tab 1 al abrir
+            document.querySelectorAll('.product-detail-tab').forEach(t => t.classList.remove('active'));
+            document.querySelector('.product-detail-tab[data-tab="product-detail-tab-info"]').classList.add('active');
+            document.querySelectorAll('.product-detail-tab-content').forEach(c => c.style.display = 'none');
+            document.getElementById('product-detail-tab-info').style.display = 'block';
 
             // Mostrar modal
             detailModal.style.display = 'flex';

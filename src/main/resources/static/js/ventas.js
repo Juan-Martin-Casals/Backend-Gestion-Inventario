@@ -30,7 +30,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // SELECTORES FORMULARIO VENTA
     // ===============================
     const ventaForm = document.getElementById('venta-form');
-    const fechaVentaInput = document.getElementById('fecha-venta');
 
     // --- Selectores Buscador Cliente ---
     const clienteSearchInput = document.getElementById('venta-cliente-search');
@@ -40,24 +39,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Selectores Buscador Producto ---
     const productSearchInput = document.getElementById('product-search');
-    const cantidadProductoInput = document.getElementById('cantidad-producto');
     const productResultsContainer = document.getElementById('product-results');
 
     // --- Selectores Detalle Venta ("Carrito") ---
-    const btnAgregarProducto = document.getElementById('btn-agregar-producto');
     const ventaDetalleTemporalBody = document.getElementById('venta-detalle-temporal');
     const totalVentaDisplay = document.getElementById('total-venta');
 
     // --- Mensajes de Error ---
-    const errorFechaVenta = document.getElementById('errorFechaVenta');
     const errorProducto = document.getElementById('errorProducto');
     const errorDetalleGeneral = document.getElementById('errorStockVenta');
     const generalMessage = document.getElementById('form-general-message-venta');
 
-    // --- Selectores Método de Pago ---
-    const metodoPagoSelect = document.getElementById('metodo-pago');
-    const tipoTarjetaSelect = document.getElementById('tipo-tarjeta');
-    const errorMetodoPago = document.getElementById('errorMetodoPago');
+    // --- Selectores Gestión de Cobros ---
+    const cobroMetodoSelect    = document.getElementById('venta-cobro-metodo');
+    const cobroMontoInput      = document.getElementById('venta-cobro-monto');
+    const cobroTipoTarjetaSelect = document.getElementById('venta-cobro-tipo-tarjeta');
+    const errorMetodoPago      = document.getElementById('errorMetodoPago');
+    let cobrosMixtos = [];
+
+    // Legacy — ya no están en HTML, pero se deja null para no romper refs dispersas
+    const metodoPagoSelect = null;
+    const tipoTarjetaSelect = null;
 
     // --- Navegación con teclado en dropdowns ---
     let clienteSelectedIndex = -1;
@@ -207,22 +209,21 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ===============================
-    // ESTABLECER FECHA ACTUAL
+    // HELPERS DE FECHA
     // ===============================
-    function setFechaActual() {
+    function getFechaActual() {
         const hoy = new Date();
-        const año = hoy.getFullYear();
-        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-        const dia = String(hoy.getDate()).padStart(2, '0');
-        const fechaFormateada = `${año}-${mes}-${dia}`;
-
-        if (fechaVentaInput) {
-            fechaVentaInput.value = fechaFormateada;
-        }
+        return `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
     }
 
-    // Establecer fecha al cargar
-    setFechaActual();
+    function refrescarFechaVentaDisplay() {
+        const hoy = new Date();
+        const dd = String(hoy.getDate()).padStart(2, '0');
+        const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+        const el = document.getElementById('fecha-venta-valor');
+        if (el) el.textContent = `${dd}/${mm}/${hoy.getFullYear()}`;
+    }
+    refrescarFechaVentaDisplay();
 
     // ===============================
     // HELPERS DE FORMATO
@@ -296,7 +297,6 @@ document.addEventListener('DOMContentLoaded', function () {
     let todosLosClientes = [];
     let productoSeleccionado = null;
     let detallesVenta = [];
-    let editIndexVenta = -1; // Para edición inline
 
     // --- Estado de Paginación ---
     let currentPageVentas = 0;
@@ -653,7 +653,6 @@ document.addEventListener('DOMContentLoaded', function () {
                     () => {
                         // Usuario confirmó: limpiar detalle y cambiar cliente
                         detallesVenta = [];
-                        editIndexVenta = -1;
                         renderDetalleTemporal();
                         clienteSearchInput.value = nombreCompleto.trim();
                         clienteHiddenInput.value = newClienteId;
@@ -750,12 +749,42 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!target || !target.dataset.id) return;
 
         const productoId = Number(target.dataset.id);
-        productoSeleccionado = todosLosProductos.find(p => p.idProducto === productoId);
+        const producto = todosLosProductos.find(p => p.idProducto === productoId);
+        if (!producto) return;
 
-        if (productoSeleccionado) {
-            productSearchInput.value = productoSeleccionado.nombreProducto;
-            productResultsContainer.innerHTML = '';
-            productResultsContainer.style.display = 'none';
+        // Limpiar input y cerrar dropdown
+        productSearchInput.value = '';
+        productResultsContainer.innerHTML = '';
+        productResultsContainer.style.display = 'none';
+        productoSelectedIndex = -1;
+
+        // Si ya está en el detalle: resaltar fila y no agregar
+        const existente = detallesVenta.find(d => d.idProducto === productoId);
+        if (existente) {
+            const fila = ventaDetalleTemporalBody.querySelector(`tr[data-id="${productoId}"]`);
+            if (fila) {
+                fila.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                fila.classList.remove('row-highlight');
+                void fila.offsetWidth; // reinicia la animación
+                fila.classList.add('row-highlight');
+            }
+            return;
+        }
+
+        // Agregar al detalle con cantidad 0
+        detallesVenta.push({
+            idProducto: producto.idProducto,
+            nombreProducto: producto.nombreProducto,
+            precioVenta: producto.precioVenta,
+            cantidad: 0,
+            stockAlAgregar: producto.stockActual || 0
+        });
+        renderDetalleTemporal();
+
+        // Limpiar error previo
+        if (errorDetalleGeneral) {
+            errorDetalleGeneral.textContent = '';
+            errorDetalleGeneral.style.display = 'none';
         }
     }
 
@@ -763,65 +792,25 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÓGICA DEL DETALLE DE VENTA ("CARRITO")
     // ==========================================================
 
-    function agregarProductoAlDetalle() {
-        // Limpiar errores previos
-        errorDetalleGeneral.textContent = '';
-        errorDetalleGeneral.style.display = 'none';
-
-        if (!productoSeleccionado) {
-            errorDetalleGeneral.textContent = 'Debe seleccionar un producto de la lista.';
-            errorDetalleGeneral.className = 'form-message error';
-            errorDetalleGeneral.style.display = 'block';
+    function cambiarCantidadDetalle(index, delta) {
+        const item = detallesVenta[index];
+        if (!item) return;
+        const nueva = item.cantidad + delta;
+        if (nueva < 0) return;
+        if (nueva > item.stockAlAgregar) {
+            if (errorDetalleGeneral) {
+                errorDetalleGeneral.textContent = `Stock disponible: ${item.stockAlAgregar} unidades.`;
+                errorDetalleGeneral.className = 'form-message error';
+                errorDetalleGeneral.style.display = 'block';
+            }
             return;
         }
-        const cantidadRaw = cantidadProductoInput.value;
-        const cantidad = parseInt(cantidadRaw, 10);
-        if (isNaN(cantidad) || cantidad < 1 || cantidadRaw.includes('.') || cantidadRaw.includes(',')) {
-            errorDetalleGeneral.textContent = 'La cantidad debe ser un número entero mayor o igual a 1.';
-            errorDetalleGeneral.className = 'form-message error';
-            errorDetalleGeneral.style.display = 'block';
-            return;
+        if (errorDetalleGeneral) {
+            errorDetalleGeneral.textContent = '';
+            errorDetalleGeneral.style.display = 'none';
         }
-
-        // Validar stock disponible
-        const stockDisponible = productoSeleccionado.stockActual || 0;
-        const productoExistente = detallesVenta.find(item => item.idProducto === productoSeleccionado.idProducto);
-        const cantidadActualEnDetalle = productoExistente ? productoExistente.cantidad : 0;
-        const cantidadTotal = cantidadActualEnDetalle + cantidad;
-
-        if (cantidadTotal > stockDisponible) {
-            const mensajeError = `Stock insuficiente. Stock disponible: ${stockDisponible} unidades.`;
-
-            errorDetalleGeneral.textContent = mensajeError;
-            errorDetalleGeneral.className = 'form-message error';
-            errorDetalleGeneral.style.display = 'block';
-
-            return;
-        }
-
-        const productoExistente2 = detallesVenta.find(item => item.idProducto === productoSeleccionado.idProducto);
-
-        if (productoExistente2) {
-            productoExistente2.cantidad += cantidad;
-        } else {
-            detallesVenta.push({
-                idProducto: productoSeleccionado.idProducto,
-                nombreProducto: productoSeleccionado.nombreProducto,
-                precioVenta: productoSeleccionado.precioVenta,
-                cantidad: cantidad
-            });
-        }
+        item.cantidad = nueva;
         renderDetalleTemporal();
-
-        // Limpiar error después de agregar exitosamente
-        errorDetalleGeneral.textContent = '';
-        errorDetalleGeneral.style.display = 'none';
-        errorDetalleGeneral.className = 'form-message';
-
-        productoSeleccionado = null;
-        productSearchInput.value = '';
-        cantidadProductoInput.value = '1';
-        productSearchInput.focus();
     }
 
     function renderDetalleTemporal() {
@@ -829,59 +818,56 @@ document.addEventListener('DOMContentLoaded', function () {
         let totalAcumulado = 0;
 
         if (detallesVenta.length === 0) {
-            ventaDetalleTemporalBody.innerHTML = '<tr><td colspan="5">Agregue productos a la venta...</td></tr>';
-            totalVentaDisplay.textContent = '$ Total: $0.00';
+            ventaDetalleTemporalBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#999;">Buscá un producto y hacé click para agregarlo...</td></tr>';
+            totalVentaDisplay.textContent = '$0.00';
+            if (subtotalVentaDisplay) subtotalVentaDisplay.textContent = '$0.00';
+            if (descuentoDisplay) descuentoDisplay.style.display = 'none';
             return;
         }
 
         detallesVenta.forEach((item, index) => {
             const subtotal = item.precioVenta * item.cantidad;
-            totalAcumulado += subtotal;
 
-            let row;
-            if (editIndexVenta === index) {
-                // Modo edición
-                row = `
-                    <tr>
-                        <td>${item.nombreProducto}</td>
-                        <td class="col-num"><input type="number" class="inline-edit-input" id="inline-cantidad-venta-${index}" value="${item.cantidad}" min="1"></td>
-                        <td class="col-num">$${formatoMoneda.format(item.precioVenta)}</td>
-                        <td class="col-num">$${formatoMoneda.format(subtotal)}</td>
-                        <td>
-                            <button type="button" class="btn-icon btn-save-detalle btn-guardar-venta-inline" data-index="${index}" title="Guardar">
-                                <i class="fas fa-check"></i>
-                            </button>
-                            <button type="button" class="btn-icon btn-cancel-detalle" onclick="cancelarEdicionVentaInline()" title="Cancelar">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            } else {
-                // Modo normal
-                row = `
-                    <tr>
-                        <td>${item.nombreProducto}</td>
-                        <td class="col-num">${item.cantidad}</td>
-                        <td class="col-num">$${formatoMoneda.format(item.precioVenta)}</td>
-                        <td class="col-num">$${formatoMoneda.format(subtotal)}</td>
-                        <td>
-                            <button type="button" class="btn-icon btn-edit-detalle btn-editar-venta-item" data-index="${index}" title="Editar">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button type="button" class="btn-icon btn-delete-detalle" data-id="${item.idProducto}" title="Quitar">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            }
+            const row = `
+                <tr data-id="${item.idProducto}">
+                    <td>${item.nombreProducto}</td>
+                    <td class="col-num">${item.stockAlAgregar}</td>
+                    <td class="col-num col-qty">
+                        <div class="qty-stepper">
+                            <button type="button" class="btn-qty btn-qty-minus" data-index="${index}">−</button>
+                            <input type="number" class="qty-input" data-index="${index}" value="${item.cantidad}" min="0" max="${item.stockAlAgregar}" inputmode="numeric">
+                            <button type="button" class="btn-qty btn-qty-plus" data-index="${index}">+</button>
+                        </div>
+                    </td>
+                    <td class="col-num">$${formatoMoneda.format(item.precioVenta)}</td>
+                    <td class="col-num col-subtotal">$${formatoMoneda.format(subtotal)}</td>
+                    <td>
+                        <button type="button" class="btn-icon btn-delete-detalle" data-id="${item.idProducto}" title="Quitar">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
             ventaDetalleTemporalBody.innerHTML += row;
         });
 
-        totalVentaDisplay.textContent = `$ Total: $${formatoMoneda.format(totalAcumulado)}`;
+        actualizarSubtotalesYTotales();
+    }
 
-        // Calcular descuento aplicado
+    function actualizarSubtotalesYTotales() {
+        let totalAcumulado = 0;
+        detallesVenta.forEach(item => {
+            const subtotal = item.precioVenta * item.cantidad;
+            totalAcumulado += subtotal;
+            const fila = ventaDetalleTemporalBody.querySelector(`tr[data-id="${item.idProducto}"]`);
+            if (fila) {
+                const cell = fila.querySelector('.col-subtotal');
+                if (cell) cell.textContent = `$${formatoMoneda.format(subtotal)}`;
+            }
+        });
+
+        if (subtotalVentaDisplay) subtotalVentaDisplay.textContent = `$${formatoMoneda.format(totalAcumulado)}`;
+
         const descuento = parseFloat(descuentoInput?.value) || 0;
         const tipoDescuento = tipoDescuentoSelect?.value || '$';
         let descuentoMonto = 0;
@@ -895,18 +881,14 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             descuentoMonto = Math.min(descuentoMonto, totalAcumulado);
             totalConDescuento = totalAcumulado - descuentoMonto;
-
             if (descuentoDisplay) {
-                descuentoDisplay.style.display = 'block';
-                montoDescuentoMostrado.textContent = `-${formatoMoneda.format(descuentoMonto)}`;
+                descuentoDisplay.style.display = 'flex';
+                if (montoDescuentoMostrado) montoDescuentoMostrado.textContent = `-${formatoMoneda.format(descuentoMonto)}`;
             }
         } else {
-            if (descuentoDisplay) {
-                descuentoDisplay.style.display = 'none';
-            }
+            if (descuentoDisplay) descuentoDisplay.style.display = 'none';
         }
 
-        // Validar descuento en tiempo real
         if (totalConDescuento <= 0 && descuento > 0) {
             if (errorDescuento) {
                 errorDescuento.textContent = 'El total con descuento debe ser mayor a $0.';
@@ -919,64 +901,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Mostrar total real (con descuento)
-        totalVentaDisplay.textContent = `$ Total: $${formatoMoneda.format(totalConDescuento)}`;
+        totalVentaDisplay.textContent = `$${formatoMoneda.format(totalConDescuento)}`;
+        renderCobrosMixtos();
     }
-
-    // ==========================================================
-    // FUNCIONES DE EDICIÓN INLINE
-    // ==========================================================
-
-    function editarVentaItemInline(index) {
-        editIndexVenta = index;
-        renderDetalleTemporal();
-    }
-
-    function guardarVentaEdicionInline(index) {
-        const cantidadInput = document.getElementById(`inline-cantidad-venta-${index}`);
-
-        if (!cantidadInput) return;
-
-        const nuevaCantidad = parseInt(cantidadInput.value);
-
-        if (isNaN(nuevaCantidad) || nuevaCantidad <= 0) {
-            errorDetalleGeneral.textContent = 'La cantidad debe ser un número entero mayor a 0.';
-            errorDetalleGeneral.className = 'form-message error';
-            errorDetalleGeneral.style.display = 'block';
-            return;
-        }
-
-        // Validar stock disponible
-        const item = detallesVenta[index];
-        const productoEnLista = todosLosProductos.find(p => p.idProducto === item.idProducto);
-        if (productoEnLista) {
-            const stockDisponible = productoEnLista.stockActual || 0;
-            if (nuevaCantidad > stockDisponible) {
-                errorDetalleGeneral.textContent = `Stock insuficiente. Stock disponible: ${stockDisponible} unidades.`;
-                errorDetalleGeneral.className = 'form-message error';
-                errorDetalleGeneral.style.display = 'block';
-                return;
-            }
-        }
-
-        errorDetalleGeneral.textContent = '';
-        errorDetalleGeneral.style.display = 'none';
-        errorDetalleGeneral.className = 'form-message';
-
-        detallesVenta[index].cantidad = nuevaCantidad;
-
-        // Salir del modo edición
-        editIndexVenta = -1;
-        renderDetalleTemporal();
-    }
-
-    function cancelarEdicionVentaInline() {
-        editIndexVenta = -1;
-        renderDetalleTemporal();
-    }
-
-    // Exponer funciones globalmente
-    window.cancelarEdicionVentaInline = cancelarEdicionVentaInline;
 
     // ==========================================================
     // LÓGICA DE ENVÍO DE FORMULARIO (SUBMIT)
@@ -987,88 +914,73 @@ document.addEventListener('DOMContentLoaded', function () {
 
         generalMessage.textContent = '';
         generalMessage.className = 'form-message';
-        if (errorFechaVenta) errorFechaVenta.textContent = '';
         if (clienteError) clienteError.textContent = '';
-        if (errorDetalleGeneral) errorDetalleGeneral.textContent = '';
+        if (errorDetalleGeneral) {
+            errorDetalleGeneral.textContent = '';
+            errorDetalleGeneral.style.display = 'none';
+        }
 
-        const fechaVenta = fechaVentaInput.value;
+        const fechaVenta = getFechaActual();
         const idCliente = clienteHiddenInput.value;
 
         let isValid = true;
-
-        if (!fechaVenta) {
-            if (errorFechaVenta) errorFechaVenta.textContent = 'La fecha es obligatoria.';
-            isValid = false;
-        }
 
         if (!idCliente) {
             if (clienteError) clienteError.textContent = 'Debe seleccionar un cliente.';
             isValid = false;
         }
 
-        // Variable para monto pagado (se usará en el DTO)
-        let montoPagado = null;
-
         if (detallesVenta.length === 0) {
-            if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto.';
+            if (errorDetalleGeneral) {
+                errorDetalleGeneral.textContent = 'Debe agregar al menos un producto.';
+                errorDetalleGeneral.style.display = 'block';
+            }
             isValid = false;
         }
 
-        // Validar método de pago
-        const idMetodoPago = metodoPagoSelect.value;
-        if (!idMetodoPago) {
-            if (errorMetodoPago) errorMetodoPago.textContent = 'Debe seleccionar un método de pago.';
+        const itemsSinCantidad = detallesVenta.filter(d => d.cantidad < 1);
+        if (itemsSinCantidad.length > 0) {
+            if (errorDetalleGeneral) {
+                errorDetalleGeneral.textContent = 'Todos los productos deben tener cantidad mayor a 0.';
+                errorDetalleGeneral.className = 'form-message error';
+                errorDetalleGeneral.style.display = 'block';
+            }
             isValid = false;
         }
 
-        // Validar efectivo: debe haber pagado al menos el total
-        const selectedOption = metodoPagoSelect.options[metodoPagoSelect.selectedIndex];
-        const nombreMetodo = selectedOption ? selectedOption.text.toLowerCase() : '';
-        if (nombreMetodo.includes('efectivo') && detallesVenta.length > 0) {
-            const pagaConInput = document.getElementById('paga-con');
-            if (pagaConInput && pagaConInput.value.trim() !== '') {
-                montoPagado = parsearMoneda(pagaConInput.value);
-                let totalVenta = 0;
-                detallesVenta.forEach(item => {
-                    totalVenta += item.precioVenta * item.cantidad;
-                });
-                if (montoPagado < totalVenta - 0.01) {
-                    if (errorMetodoPago) errorMetodoPago.textContent = 'El monto pagado es menor al total de la venta.';
-                    isValid = false;
-                }
+        // Calcular totales (debe ir antes de validar cobros)
+        let descuentoMonto = 0;
+        const descuento = parseFloat(descuentoInput?.value) || 0;
+        const tipoDescuento = tipoDescuentoSelect?.value || '$';
+        let totalBase = 0;
+        detallesVenta.forEach(item => { totalBase += item.precioVenta * item.cantidad; });
+        if (descuento > 0 && totalBase > 0) {
+            const d = tipoDescuento === '%' ? totalBase * (descuento / 100) : descuento;
+            descuentoMonto = Math.min(d, totalBase);
+        }
+        const totalFinal = totalBase - descuentoMonto;
+
+        if (totalFinal <= 0 && totalBase > 0) {
+            if (errorDescuento) errorDescuento.textContent = 'El total con descuento debe ser mayor a $0.';
+            isValid = false;
+        }
+
+        // Auto-registro de cobro si el usuario no tocó el botón +
+        if (cobrosMixtos.length === 0) {
+            intentarAgregarCobroAutomatico(totalFinal);
+        }
+
+        // Validar cobros
+        if (cobrosMixtos.length === 0) {
+            if (errorMetodoPago) errorMetodoPago.textContent = 'Debe agregar al menos un cobro.';
+            isValid = false;
+        } else {
+            const sumaCobros = cobrosMixtos.reduce((acc, c) => acc + parseFloat(c.importe), 0);
+            if (Math.abs(sumaCobros - totalFinal) > 0.05) {
+                if (errorMetodoPago) errorMetodoPago.textContent = `Los cobros ($${formatoMoneda.format(sumaCobros)}) no cubren el total ($${formatoMoneda.format(totalFinal)}).`;
+                isValid = false;
             }
         }
-
-
-        // Calcular descuentos para validación y DTO
-                let descuentoMonto = 0;
-                const descuento = parseFloat(descuentoInput?.value) || 0;
-                const tipoDescuento = tipoDescuentoSelect?.value || '$';
-
-                // Calcular total base (sin descuento)
-                let totalBase = 0;
-                detallesVenta.forEach(item => {
-                    totalBase += item.precioVenta * item.cantidad;
-                });
-
-                if (descuento > 0 && totalBase > 0) {
-                    if (tipoDescuento === '%') {
-                        descuentoMonto = totalBase * (descuento / 100);
-                    } else {
-                        descuentoMonto = descuento;
-                    }
-                    descuentoMonto = Math.min(descuentoMonto, totalBase);
-                }
-
-                const totalFinal = totalBase - descuentoMonto;
-
-                // Validar que el total no sea <= 0
-                if (totalFinal <= 0) {
-                    if (errorDescuento) {
-                        errorDescuento.textContent = 'El total con descuento debe ser mayor a $0.';
-                        isValid = false;
-                    }
-                }
 
                 if (!isValid) {
                     generalMessage.textContent = 'Por favor, complete todos los campos obligatorios.';
@@ -1091,10 +1003,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     fecha: fechaVenta,
                     idCliente: parseInt(idCliente),
                     detalles: detallesParaBackend,
-                    idMetodoPago: parseInt(idMetodoPago),
+                    cobros: cobrosMixtos.map(c => ({
+                        idMetodoPago: c.idMetodoPago,
+                        importe: c.importe,
+                        tipoTarjeta: c.tipoTarjeta || null,
+                        montoPagado: c.montoPagado || null,
+                        vuelto: c.vuelto || null
+                    })),
                     descuento: descuento,
-                    tipoDescuento: tipoDescuento,
-                    montoPagado: montoPagado // Agregar monto pagado al DTO
+                    tipoDescuento: tipoDescuento
                 };
 
                 const response = await fetch(API_VENTAS_URL, {
@@ -1127,12 +1044,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Resetear formulario
                 detallesVenta = [];
-                editIndexVenta = -1; // Reset edit mode
                 renderDetalleTemporal();
                 clienteHiddenInput.value = '';
                 clienteSearchInput.value = '';
                 productSearchInput.value = '';
-                cantidadProductoInput.value = '1';
                 // Resetear descuento
                 if (descuentoInput) descuentoInput.value = '';
                 if (tipoDescuentoSelect) tipoDescuentoSelect.value = '$';
@@ -1142,14 +1057,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 previousClienteId = null;
                 previousClienteNombre = '';
 
-                // Resetear método de pago y ocultar tipo tarjeta
-                if (metodoPagoSelect) metodoPagoSelect.value = '';
-                const camposTipoTarjeta = document.getElementById('campos-tipo-tarjeta');
-                if (camposTipoTarjeta) camposTipoTarjeta.style.display = 'none';
-                if (tipoTarjetaSelect) tipoTarjetaSelect.value = '';
-
-                // Restaurar fecha actual
-                setFechaActual();
+                // Resetear cobros
+                cobrosMixtos = [];
+                if (cobroMetodoSelect) cobroMetodoSelect.value = '';
+                if (cobroMontoInput) cobroMontoInput.value = '';
+                renderCobrosMixtos();
                 await new Promise(resolve => setTimeout(resolve, 250));
                 currentPageVentas = 0;
                 ventasSortField = 'fecha';
@@ -1639,10 +1551,6 @@ document.addEventListener('DOMContentLoaded', function () {
     if (productResultsContainer) {
         productResultsContainer.addEventListener('click', seleccionarProducto);
     }
-    if (btnAgregarProducto) {
-        btnAgregarProducto.addEventListener('click', agregarProductoAlDetalle);
-    }
-
     if (ventaDetalleTemporalBody) {
         ventaDetalleTemporalBody.addEventListener('click', function (event) {
             // Botón eliminar
@@ -1650,26 +1558,50 @@ document.addEventListener('DOMContentLoaded', function () {
             if (deleteButton) {
                 const idParaQuitar = Number(deleteButton.dataset.id);
                 detallesVenta = detallesVenta.filter(item => item.idProducto !== idParaQuitar);
-                editIndexVenta = -1; // Reset edit mode
                 renderDetalleTemporal();
                 return;
             }
 
-            // Botón editar
-            const editButton = event.target.closest('.btn-editar-venta-item');
-            if (editButton) {
-                const index = Number(editButton.dataset.index);
-                editarVentaItemInline(index);
+            // Botón +
+            const plusBtn = event.target.closest('.btn-qty-plus');
+            if (plusBtn) {
+                cambiarCantidadDetalle(parseInt(plusBtn.dataset.index, 10), +1);
                 return;
             }
 
-            // Botón guardar
-            const saveButton = event.target.closest('.btn-guardar-venta-inline');
-            if (saveButton) {
-                const index = Number(saveButton.dataset.index);
-                guardarVentaEdicionInline(index);
+            // Botón -
+            const minusBtn = event.target.closest('.btn-qty-minus');
+            if (minusBtn) {
+                cambiarCantidadDetalle(parseInt(minusBtn.dataset.index, 10), -1);
                 return;
             }
+        });
+
+        ventaDetalleTemporalBody.addEventListener('input', function (event) {
+            const qtyInput = event.target.closest('.qty-input');
+            if (!qtyInput) return;
+            const index = parseInt(qtyInput.dataset.index, 10);
+            const item = detallesVenta[index];
+            if (!item) return;
+
+            let val = parseInt(qtyInput.value, 10);
+            if (isNaN(val) || val < 0) val = 0;
+            if (val > item.stockAlAgregar) {
+                val = item.stockAlAgregar;
+                qtyInput.value = val;
+                if (errorDetalleGeneral) {
+                    errorDetalleGeneral.textContent = `Stock disponible: ${item.stockAlAgregar} unidades.`;
+                    errorDetalleGeneral.className = 'form-message error';
+                    errorDetalleGeneral.style.display = 'block';
+                }
+            } else {
+                if (errorDetalleGeneral) {
+                    errorDetalleGeneral.textContent = '';
+                    errorDetalleGeneral.style.display = 'none';
+                }
+            }
+            item.cantidad = val;
+            actualizarSubtotalesYTotales();
         });
     }
 
@@ -1796,99 +1728,253 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const metodos = await response.json();
 
-            // Limpiar y poblar select
-            metodoPagoSelect.innerHTML = '<option value="">Seleccionar método</option>';
-            metodos.forEach(metodo => {
-                // Ventas: mostrar todos EXCEPTO los que contengan "caja" o "aporte externo"
-                if (!metodo.nombre.includes('caja') && !metodo.nombre.includes('aporte externo')) {
-                    const option = document.createElement('option');
-                    option.value = metodo.idMetodoPago;
-                    option.textContent = metodo.nombre;
-                    option.dataset.requiereExtra = metodo.requiereDatosExtra;
-                    option.dataset.nombre = metodo.nombre;
-                    metodoPagoSelect.appendChild(option);
-                }
-            });
+            if (cobroMetodoSelect) {
+                cobroMetodoSelect.innerHTML = '<option value="">Seleccionar</option>';
+                metodos.forEach(metodo => {
+                    if (!metodo.nombre.toLowerCase().includes('caja') && !metodo.nombre.toLowerCase().includes('aporte externo')) {
+                        const option = document.createElement('option');
+                        option.value = metodo.idMetodoPago;
+                        option.textContent = metodo.nombre;
+                        option.dataset.nombre = metodo.nombre.toLowerCase();
+                        cobroMetodoSelect.appendChild(option);
+                    }
+                });
+            }
         } catch (error) {
             console.error('Error:', error);
-            errorMetodoPago.textContent = 'No se pudieron cargar los métodos de pago';
+            if (errorMetodoPago) errorMetodoPago.textContent = 'No se pudieron cargar los métodos de pago';
         }
     }
 
     /**
      * Manejar cambio de método de pago
      */
-    function handleMetodoPagoChange() {
-        // Limpiar errores
+    function handleCobroMetodoChange() {
         if (errorMetodoPago) errorMetodoPago.textContent = '';
+        const selectedOption = cobroMetodoSelect ? cobroMetodoSelect.options[cobroMetodoSelect.selectedIndex] : null;
+        const nombreMetodo = selectedOption ? (selectedOption.dataset.nombre || selectedOption.text.toLowerCase()) : '';
 
-        const selectedOption = metodoPagoSelect.options[metodoPagoSelect.selectedIndex];
-        const nombreMetodo = selectedOption ? selectedOption.text.toLowerCase() : '';
-        
-        const pagaConContainer = document.getElementById('paga-con-container');
-        const vueltoDisplay = document.getElementById('vuelto-display');
-        const pagaConInput = document.getElementById('paga-con');
+        const tipoTarjetaContainer = document.getElementById('venta-tipo-tarjeta-container');
+        const pagaConContainer     = document.getElementById('venta-paga-con-container');
+        const vueltoDisplay        = document.getElementById('venta-vuelto-display');
+        const pagaConInput         = document.getElementById('venta-paga-con');
 
-        // Mostrar input "Paga con" solo si es efectivo
-        if (nombreMetodo.includes('efectivo')) {
-            if (pagaConContainer) pagaConContainer.style.display = 'block';
-        } else {
-            if (pagaConContainer) pagaConContainer.style.display = 'none';
+        const esEfectivo = nombreMetodo.includes('efectivo');
+
+        if (tipoTarjetaContainer) tipoTarjetaContainer.style.display = 'none';
+        if (pagaConContainer) pagaConContainer.style.display = esEfectivo ? 'block' : 'none';
+        if (!esEfectivo) {
             if (vueltoDisplay) vueltoDisplay.style.display = 'none';
             if (pagaConInput) pagaConInput.value = '';
         }
+
+        // Autocompletar importe con el saldo pendiente
+        if (cobroMontoInput && !cobroMontoInput.value) {
+            const pendiente = calcularPendiente();
+            if (pendiente > 0) cobroMontoInput.value = new Intl.NumberFormat('es-AR').format(Math.round(pendiente));
+        }
+
+        renderCobrosMixtos();
     }
 
-    // Función para calcular y mostrar el vuelto
-    function calcularVuelto() {
-        const pagaConInput = document.getElementById('paga-con');
-        const vueltoDisplay = document.getElementById('vuelto-display');
-        const vueltoAmount = document.getElementById('vuelto-amount');
+    function calcularPendiente() {
+        let totalVenta = calcularTotalConDescuento();
+        let totalCobrado = cobrosMixtos.reduce((acc, c) => acc + parseFloat(c.importe), 0);
+        return totalVenta - totalCobrado;
+    }
 
+    function calcularTotalConDescuento() {
+        let base = 0;
+        detallesVenta.forEach(item => { base += item.precioVenta * item.cantidad; });
+        const descuento = parseFloat(descuentoInput?.value) || 0;
+        const tipo = tipoDescuentoSelect?.value || '$';
+        if (descuento > 0) {
+            const d = tipo === '%' ? base * (descuento / 100) : descuento;
+            base -= Math.min(d, base);
+        }
+        return base;
+    }
+
+    function calcularVuelto() {
+        const pagaConInput  = document.getElementById('venta-paga-con');
+        const vueltoDisplay = document.getElementById('venta-vuelto-display');
+        const vueltoAmount  = document.getElementById('venta-vuelto-amount');
         if (!pagaConInput || !vueltoDisplay || !vueltoAmount) return;
 
         const montoPagado = parsearMoneda(pagaConInput.value);
-        
-        // Calcular total actual de la venta
-        let totalVenta = 0;
-        detallesVenta.forEach(item => {
-            totalVenta += item.precioVenta * item.cantidad;
-        });
+        const montoImporte = parsearMoneda(cobroMontoInput?.value) || calcularPendiente();
+        const vuelto = montoPagado - montoImporte;
 
-        const vuelto = montoPagado - totalVenta;
-
-        if (montoPagado > 0 && totalVenta > 0) {
-            if (vuelto > 0) {
-                // Hay vuelto - mostrar en verde
-                vueltoAmount.textContent = `$${formatoMoneda.format(vuelto)}`;
-                vueltoAmount.style.color = '#2e7d32';
-                vueltoDisplay.style.background = '#e8f5e9';
-            } else if (vuelto === 0) {
-                // Exactamente
-                vueltoAmount.textContent = '$0';
-                vueltoAmount.style.color = '#2e7d32';
-                vueltoDisplay.style.background = '#e8f5e9';
-            } else {
-                // Falta pagar - mostrar mensaje de monto insuficiente
-                vueltoAmount.textContent = 'Monto insuficiente';
-                vueltoAmount.style.color = '#d32f2f';
-                vueltoDisplay.style.background = '#ffebee';
-            }
+        if (montoPagado > 0 && montoImporte > 0) {
+            vueltoAmount.textContent = vuelto >= 0 ? `$${formatoMoneda.format(vuelto)}` : 'Monto insuficiente';
+            vueltoAmount.style.color = vuelto >= 0 ? '#2e7d32' : '#d32f2f';
+            vueltoDisplay.style.background = vuelto >= 0 ? '#e8f5e9' : '#ffebee';
             vueltoDisplay.style.display = 'block';
         } else {
             vueltoDisplay.style.display = 'none';
         }
     }
 
-    // Event listener para cambio de método
-    if (metodoPagoSelect) {
-        metodoPagoSelect.addEventListener('change', handleMetodoPagoChange);
+    function renderCobrosMixtos() {
+        const container        = document.getElementById('cobros-mixtos-container');
+        const balanceIndicator = document.getElementById('venta-cobro-balance-indicator');
+        if (!container) return;
+        container.innerHTML = '';
+
+        let totalCobrado = 0;
+        cobrosMixtos.forEach((cobro, index) => {
+            totalCobrado += parseFloat(cobro.importe);
+            container.insertAdjacentHTML('beforeend', `
+                <div style="background:#fff;border:1px solid #e2e8f0;border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;box-shadow:0 1px 2px rgba(0,0,0,0.02);">
+                    <span style="font-weight:600;font-size:0.85rem;color:#475569;">${cobro.nombreMetodo}${cobro.tipoTarjeta ? ' (' + cobro.tipoTarjeta + ')' : ''}</span>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                        <span style="font-size:0.9rem;font-weight:600;color:#1e293b;font-variant-numeric:tabular-nums;">$${formatoMoneda.format(cobro.importe)}</span>
+                        <button type="button" class="btn-icon btn-delete-cobro" data-index="${index}" style="color:#94a3b8;background:none;border:none;cursor:pointer;padding:2px 6px;" title="Quitar">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>`);
+        });
+
+        container.querySelectorAll('.btn-delete-cobro').forEach(btn => {
+            btn.addEventListener('click', e => {
+                cobrosMixtos.splice(parseInt(e.currentTarget.dataset.index), 1);
+                renderCobrosMixtos();
+            });
+        });
+
+        const totalVenta   = calcularTotalConDescuento();
+        const pendiente    = totalVenta - totalCobrado;
+        const inputPreview = parsearMoneda(cobroMontoInput?.value) || 0;
+        const diff         = pendiente - inputPreview;
+
+        if (balanceIndicator) {
+            if (totalVenta === 0 && cobrosMixtos.length === 0) {
+                balanceIndicator.innerHTML = '';
+            } else {
+                balanceIndicator.innerHTML = `
+                    <div style="display:flex;gap:10px;">
+                        <div style="flex:1;padding:12px;background:#f0f2f5;border-radius:6px;">
+                            <div style="font-size:0.70rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:5px;letter-spacing:0.5px;">Cobrado</div>
+                            <div style="font-size:1.3rem;font-weight:600;color:#1e293b;text-align:right;">$${formatoMoneda.format(totalCobrado + inputPreview)}</div>
+                        </div>
+                        <div style="flex:1;padding:12px;background:${diff > 0.05 ? '#fee2e2' : '#f0f9ff'};border-radius:6px;">
+                            <div style="font-size:0.70rem;color:${diff > 0.05 ? '#b91c1c' : '#0369a1'};font-weight:700;text-transform:uppercase;margin-bottom:5px;letter-spacing:0.5px;">Pendiente</div>
+                            <div style="font-size:1.3rem;font-weight:600;color:${diff > 0.05 ? '#b91c1c' : '#0369a1'};text-align:right;">$${formatoMoneda.format(diff > 0 ? diff : 0)}</div>
+                        </div>
+                    </div>`;
+            }
+        }
     }
 
-    // Event listener para input "Paga con"
-    const pagaConInput = document.getElementById('paga-con');
-    if (pagaConInput) {
-        pagaConInput.addEventListener('input', calcularVuelto);
+    // Listener cambio método
+    if (cobroMetodoSelect) cobroMetodoSelect.addEventListener('change', handleCobroMetodoChange);
+
+    // Listener paga-con para vuelto
+    const pagaConInput = document.getElementById('venta-paga-con');
+    if (pagaConInput) pagaConInput.addEventListener('input', calcularVuelto);
+
+    // Formatear importe al escribir
+    if (cobroMontoInput) {
+        cobroMontoInput.addEventListener('input', function () {
+            let raw = this.value.replace(/[^0-9]/g, '');
+            if (raw === '') { this.value = ''; renderCobrosMixtos(); return; }
+            const cursorPos = this.selectionStart;
+            const oldLen = this.value.length;
+            this.value = new Intl.NumberFormat('es-AR').format(parseInt(raw, 10));
+            const diff = this.value.length - oldLen;
+            this.setSelectionRange(cursorPos + diff, cursorPos + diff);
+            renderCobrosMixtos();
+        });
+    }
+
+    // Lógica de agregar cobro (usada por el botón + y por el auto-registro)
+    function agregarCobroDesdeInputs() {
+        if (errorMetodoPago) errorMetodoPago.textContent = '';
+
+        const idMetodo     = cobroMetodoSelect?.value;
+        const nombreMetodo = cobroMetodoSelect?.options[cobroMetodoSelect.selectedIndex]?.text || '';
+        const montoRaw     = cobroMontoInput?.value?.replace(/\./g, '') || '0';
+        const monto        = parseFloat(montoRaw);
+        const tipoTarjeta  = cobroTipoTarjetaSelect?.value || null;
+        const esEfectivo   = nombreMetodo.toLowerCase().includes('efectivo');
+
+        if (!idMetodo) { if (errorMetodoPago) errorMetodoPago.textContent = 'Seleccione un método de pago.'; return false; }
+        if (isNaN(monto) || monto <= 0) { if (errorMetodoPago) errorMetodoPago.textContent = 'Ingrese un monto válido.'; return false; }
+
+        const pendiente = calcularPendiente();
+        if (monto > pendiente + 0.05) {
+            if (errorMetodoPago) errorMetodoPago.textContent = `El monto excede. Pendiente: $${formatoMoneda.format(pendiente)}`;
+            return false;
+        }
+
+        let montoPagado = null;
+        let vueltoVal   = null;
+        if (esEfectivo) {
+            const pagaCon = parsearMoneda(document.getElementById('venta-paga-con')?.value);
+            if (!isNaN(pagaCon) && pagaCon > 0) {
+                montoPagado = pagaCon;
+                vueltoVal   = Math.max(0, pagaCon - monto);
+            }
+        }
+
+        cobrosMixtos.push({
+            idMetodoPago: parseInt(idMetodo),
+            nombreMetodo: nombreMetodo,
+            importe: monto,
+            tipoTarjeta: tipoTarjeta,
+            montoPagado: montoPagado,
+            vuelto: vueltoVal
+        });
+
+        // Reset fila
+        if (cobroMontoInput) cobroMontoInput.value = '';
+        if (cobroMetodoSelect) cobroMetodoSelect.value = '';
+        if (cobroTipoTarjetaSelect) cobroTipoTarjetaSelect.value = '';
+        const tipoTarjetaContainer = document.getElementById('venta-tipo-tarjeta-container');
+        const pagaConContainer     = document.getElementById('venta-paga-con-container');
+        const vueltoDisplay        = document.getElementById('venta-vuelto-display');
+        const pagaConInputEl       = document.getElementById('venta-paga-con');
+        if (tipoTarjetaContainer) tipoTarjetaContainer.style.display = 'none';
+        if (pagaConContainer) pagaConContainer.style.display = 'none';
+        if (vueltoDisplay) vueltoDisplay.style.display = 'none';
+        if (pagaConInputEl) pagaConInputEl.value = '';
+
+        renderCobrosMixtos();
+        return true;
+    }
+
+    function intentarAgregarCobroAutomatico(totalFinal) {
+        const idMetodo = cobroMetodoSelect?.value;
+        if (!idMetodo) return; // sin método, la validación posterior mostrará el error
+
+        // Autocompletar monto si está vacío o en cero
+        const montoRaw = cobroMontoInput?.value?.replace(/\./g, '') || '';
+        const montoActual = parseFloat(montoRaw);
+        if (!montoRaw || isNaN(montoActual) || montoActual <= 0) {
+            if (cobroMontoInput && totalFinal > 0) {
+                cobroMontoInput.value = new Intl.NumberFormat('es-AR').format(Math.round(totalFinal));
+            }
+        }
+
+        const nombreMetodo = cobroMetodoSelect.options[cobroMetodoSelect.selectedIndex]?.text || '';
+        const esEfectivo = nombreMetodo.toLowerCase().includes('efectivo');
+
+        // Si es efectivo y "paga con" está vacío, asumir paga con = monto cobrado
+        if (esEfectivo) {
+            const pagaConInput = document.getElementById('venta-paga-con');
+            if (pagaConInput && !pagaConInput.value) {
+                pagaConInput.value = cobroMontoInput.value;
+            }
+        }
+
+        agregarCobroDesdeInputs();
+    }
+
+    // Botón Agregar Cobro
+    const btnAddCobroMixto = document.getElementById('btn-add-cobro-mixto');
+    if (btnAddCobroMixto) {
+        btnAddCobroMixto.addEventListener('click', agregarCobroDesdeInputs);
     }
 
     // Event listeners para descuento
@@ -1901,11 +1987,6 @@ document.addEventListener('DOMContentLoaded', function () {
         tipoDescuentoSelect.addEventListener('change', function () {
             renderDetalleTemporal();
         });
-    }
-
-    // Event listener para agregar producto
-    if (btnAgregarProducto) {
-        btnAgregarProducto.addEventListener('click', agregarProductoAlDetalle);
     }
 
     // Event listeners para búsqueda de clientes
@@ -1944,7 +2025,6 @@ document.addEventListener('DOMContentLoaded', function () {
         clienteSearchInput.value = '';
         clienteHiddenInput.value = '';
         productSearchInput.value = '';
-        cantidadProductoInput.value = '1';
 
         // Limpiar detalle de venta
         detallesVenta = [];
@@ -1955,19 +2035,20 @@ document.addEventListener('DOMContentLoaded', function () {
         previousClienteId = null;
         previousClienteNombre = '';
 
-        // Resetear método de pago
-        if (metodoPagoSelect) metodoPagoSelect.selectedIndex = 0;
-
-        // Resetear campos de efectivo/vuelto
-        const pagaConContainer = document.getElementById('paga-con-container');
-        const vueltoDisplay = document.getElementById('vuelto-display');
-        const pagaConInput = document.getElementById('paga-con');
-        if (pagaConContainer) pagaConContainer.style.display = 'none';
-        if (vueltoDisplay) vueltoDisplay.style.display = 'none';
-        if (pagaConInput) pagaConInput.value = '';
-
-        // Establecer fecha actual nuevamente
-        setFechaActual();
+        // Resetear cobros
+        cobrosMixtos = [];
+        if (cobroMetodoSelect) cobroMetodoSelect.value = '';
+        if (cobroMontoInput) cobroMontoInput.value = '';
+        if (cobroTipoTarjetaSelect) cobroTipoTarjetaSelect.value = '';
+        const tipoTarjetaContainerLimpiar = document.getElementById('venta-tipo-tarjeta-container');
+        const pagaConContainerLimpiar = document.getElementById('venta-paga-con-container');
+        const vueltoDisplayLimpiar = document.getElementById('venta-vuelto-display');
+        const pagaConInputLimpiar = document.getElementById('venta-paga-con');
+        if (tipoTarjetaContainerLimpiar) tipoTarjetaContainerLimpiar.style.display = 'none';
+        if (pagaConContainerLimpiar) pagaConContainerLimpiar.style.display = 'none';
+        if (vueltoDisplayLimpiar) vueltoDisplayLimpiar.style.display = 'none';
+        if (pagaConInputLimpiar) pagaConInputLimpiar.value = '';
+        renderCobrosMixtos();
     }
 
     // Event listener para botón limpiar

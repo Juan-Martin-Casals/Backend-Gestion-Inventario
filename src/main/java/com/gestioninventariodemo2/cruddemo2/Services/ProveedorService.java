@@ -117,7 +117,7 @@ public class ProveedorService {
 
     @Transactional(readOnly = true)
     public List<ProveedorResponseDTO> listarTodosProveedores() {
-        return proveedorRepository.findAllByEstado("ACTIVO").stream()
+        return proveedorRepository.findAll().stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
     }

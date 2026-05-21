@@ -171,9 +171,9 @@ public class ClienteService {
         return ventas.stream().map(v -> {
             // Get payment method from Cobro entity
             String metodoPagoNombre = "-";
-            Cobro cobro = cobroRepository.findByVentaIdVenta(v.getIdVenta());
-            if (cobro != null && cobro.getMetodoPago() != null) {
-                metodoPagoNombre = cobro.getMetodoPago().getNombre();
+            java.util.List<Cobro> cobros = cobroRepository.findAllByVentaIdVenta(v.getIdVenta());
+            if (!cobros.isEmpty() && cobros.get(0).getMetodoPago() != null) {
+                metodoPagoNombre = cobros.get(0).getMetodoPago().getNombre();
             }
 
             return VentaResponseDTO.builder()

@@ -55,8 +55,9 @@ public class Venta {
     private Cliente cliente;
 
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<DetalleVenta>detalleVentas;
+    private List<DetalleVenta> detalleVentas;
 
-
+    @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Cobro> cobros;
 
 }
