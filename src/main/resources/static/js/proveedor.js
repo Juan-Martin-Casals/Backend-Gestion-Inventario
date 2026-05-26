@@ -946,22 +946,46 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // 3. Si no hay productos, mostramos el mensaje
         if (filteredProducts.length === 0) {
-            const mensaje = modalProveedorSearchTerm 
-                ? 'No hay coincidencias con tu búsqueda.' 
+            const icon = modalProveedorSearchTerm ? 'fa-search' : 'fa-box-open';
+            const msg = modalProveedorSearchTerm
+                ? 'No hay coincidencias con tu búsqueda.'
                 : 'No hay productos asociados a este proveedor.';
-            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 20px; color: #64748b;">${mensaje}</td></tr>`;
+            const hint = modalProveedorSearchTerm
+                ? 'Intentá con otro término de búsqueda.'
+                : 'Vinculá productos desde la sección de edición.';
+            tbody.innerHTML = `<tr><td colspan="3" style="text-align: center; padding: 40px 20px;">
+                <i class="fas ${icon}" style="font-size: 32px; color: #cbd5e1; margin-bottom: 12px; display: block;"></i>
+                <div style="font-size: 14px; font-weight: 600; color: #64748b; margin-bottom: 4px;">${msg}</div>
+                <div style="font-size: 12px; color: #94a3b8;">${hint}</div>
+            </td></tr>`;
             return;
         }
 
         // 4. Recorremos los productos filtrados y los agregamos a la tabla
-        filteredProducts.forEach(prod => {
+        filteredProducts.forEach((prod, index) => {
             const costoFormat = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(prod.ultimoCosto || 0);
+            const stock = prod.stock || 0;
+            const stockColor = stock > 10 ? '#059669' : stock > 0 ? '#d97706' : '#dc2626';
+            const stockBg = stock > 10 ? '#f0fdf4' : stock > 0 ? '#fffbeb' : '#fef2f2';
+            const stockBorder = stock > 10 ? '#bbf7d0' : stock > 0 ? '#fde68a' : '#fecaca';
+            const bgColor = index % 2 === 0 ? 'white' : '#fafbfc';
 
             const row = `
-            <tr>
-                <td>${prod.nombreProducto || 'N/A'}</td>
-                <td>${costoFormat}</td>
-                <td>${prod.stock || 0}</td>
+            <tr style="background: ${bgColor}; transition: background 0.15s;" onmouseenter="this.style.background='#f0f9ff'" onmouseleave="this.style.background='${bgColor}'">
+                <td style="padding: 12px 22px; border-bottom: 1px solid #f1f5f9;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: #f1f5f9; border-radius: 8px; flex-shrink: 0;">
+                            <i class="fas fa-cube" style="color: #64748b; font-size: 12px;"></i>
+                        </span>
+                        <span style="font-size: 14px; font-weight: 500; color: #1e293b;">${prod.nombreProducto || 'N/A'}</span>
+                    </div>
+                </td>
+                <td style="padding: 12px 22px; text-align: right; border-bottom: 1px solid #f1f5f9;">
+                    <span style="font-size: 14px; font-weight: 600; color: #059669; background: #f0fdf4; padding: 4px 10px; border-radius: 6px; border: 1px solid #bbf7d0;">${costoFormat}</span>
+                </td>
+                <td style="padding: 12px 22px; text-align: center; border-bottom: 1px solid #f1f5f9;">
+                    <span style="font-size: 13px; font-weight: 600; color: ${stockColor}; background: ${stockBg}; padding: 4px 10px; border-radius: 6px; border: 1px solid ${stockBorder};">${stock}</span>
+                </td>
             </tr>
         `;
             tbody.innerHTML += row;
@@ -1003,9 +1027,24 @@ document.addEventListener('DOMContentLoaded', function () {
             // Llenar datos estáticos
             document.getElementById('detail-proveedor-nombre').textContent = proveedor.nombre || 'N/A';
             document.getElementById('detail-proveedor-cuit').textContent = proveedor.cuit || 'N/A';
-            document.getElementById('detail-proveedor-email').textContent = proveedor.email || 'N/A';
-            document.getElementById('detail-proveedor-telefono').textContent = proveedor.telefono || 'N/A';
-            document.getElementById('detail-proveedor-direccion').textContent = proveedor.direccion || 'N/A';
+
+            // Contact cards con manejo de datos vacíos
+            const emailEl = document.getElementById('detail-proveedor-email');
+            const telEl = document.getElementById('detail-proveedor-telefono');
+            const dirEl = document.getElementById('detail-proveedor-direccion');
+            emailEl.textContent = proveedor.email || 'No especificado';
+            emailEl.style.color = proveedor.email ? '#1e293b' : '#94a3b8';
+            emailEl.style.fontStyle = proveedor.email ? 'normal' : 'italic';
+            telEl.textContent = proveedor.telefono || 'No especificado';
+            telEl.style.color = proveedor.telefono ? '#1e293b' : '#94a3b8';
+            telEl.style.fontStyle = proveedor.telefono ? 'normal' : 'italic';
+            dirEl.textContent = proveedor.direccion || 'No especificado';
+            dirEl.style.color = proveedor.direccion ? '#1e293b' : '#94a3b8';
+            dirEl.style.fontStyle = proveedor.direccion ? 'normal' : 'italic';
+
+            // Actualizar badge de cantidad de productos
+            const countNum = document.getElementById('detail-prov-count-num');
+            if (countNum) countNum.textContent = (proveedor.productos || []).length;
 
             // Productos Asociados
             productosProveedorActual = proveedor.productos || [];
@@ -1386,9 +1425,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (proveedor.email?.toLowerCase().includes(query)) return true;
                 if (proveedor.telefono?.toLowerCase().includes(query)) return true;
                 if (proveedor.direccion?.toLowerCase().includes(query)) return true;
-                if (proveedor.productos && proveedor.productos.some(p =>
-                    p.nombreProducto?.toLowerCase().includes(query)
-                )) return true;
+                if (proveedor.cuit?.toLowerCase().includes(query)) return true;
                 return false;
             });
         }
