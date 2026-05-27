@@ -13,4 +13,5 @@ public class CierreCajaRequestDTO {
     private Long idUsuario;
     private Double montoFinalReal;
     private String observacionesCierre;
+    private Double fondoProximaApertura;
 }

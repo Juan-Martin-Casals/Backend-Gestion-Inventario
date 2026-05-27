@@ -28,6 +28,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputObsCierre = document.getElementById('caja-observaciones-cierre');
     const panelErrorCierre = document.getElementById('caja-error-cierre');
 
+    // Drawer elements
+    const drawerOverlay = document.getElementById('caja-drawer-overlay');
+    const drawerPanel = document.getElementById('caja-drawer-cierre');
+    const btnAbrirDrawer = document.getElementById('btn-abrir-drawer-cierre');
+    const btnCerrarDrawer = document.getElementById('btn-cerrar-drawer');
+
+    // Ingresos collapsible
+    const ingresosToggleBtn = document.getElementById('caja-ingresos-toggle-btn');
+    const ingresosBody = document.getElementById('caja-ingresos-body');
+
     let saldoAnteriorGlobal = 0.0;
     let usuarioIdActual = null;
     let cajaEstaAbierta = false;
@@ -51,6 +61,9 @@ document.addEventListener('DOMContentLoaded', function () {
             cajaEstaAbierta = data.abierta;
 
             spanOperador.textContent = `${usuarioObj.nombreCompleto} (${usuarioObj.rol})`;
+            // Also populate the KPI hero operator name
+            const kpiOperador = document.getElementById('caja-kpi-operador');
+            if (kpiOperador) kpiOperador.textContent = usuarioObj.nombreCompleto;
 
             if (!cajaEstaAbierta) {
                 // CONFIGURACIÓN PARA APERTURA
@@ -177,9 +190,15 @@ document.addEventListener('DOMContentLoaded', function () {
             // 4. Lógica de Fondo Fijo y Retiro
             const totalEfectivoTeorico = resumenData.saldoEsperado || ((resumenData.montoInicial || 0) + (resumenData.totalEfectivo || 0) - (resumenData.totalCompras || 0));
             
-            // Popula Efvo Esperado en el sidebar derecho
+            // Popula Efvo Esperado en el KPI hero
             const labelEsperado = document.getElementById('caja-sidebar-efectivo-esperado');
-            if(labelEsperado) labelEsperado.textContent = formatter.format(totalEfectivoTeorico).replace('$', '').trim();
+            if(labelEsperado) labelEsperado.textContent = formatter.format(totalEfectivoTeorico);
+            // Also populate the drawer copy
+            const drawerEsperado = document.getElementById('drawer-efectivo-esperado');
+            if(drawerEsperado) {
+                const roundedEsperado = Math.round(totalEfectivoTeorico);
+                drawerEsperado.textContent = "$ " + new Intl.NumberFormat('es-AR').format(roundedEsperado);
+            }
             
             // Sugerencia para el monto físico
             if(inputMontoFinalFisico) {
@@ -187,7 +206,8 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             // Sugerencia para dejar el monto inicial como fondo fijo para mañana
             if(inputFondoFijo) {
-                inputFondoFijo.value = (resumenData.montoInicial || 0).toFixed(2);
+                const sugerido = Math.round(resumenData.montoInicial || 0);
+                inputFondoFijo.value = new Intl.NumberFormat('es-AR').format(sugerido);
             }
 
             // 5. Cargar Ingresos Recientes
@@ -211,9 +231,29 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    const formatNumberInput = (e) => {
+        const input = e.target;
+        // Solo permitimos dígitos
+        let value = input.value.replace(/\D/g, '');
+        if (value === '') {
+            input.value = '';
+            return;
+        }
+        input.value = new Intl.NumberFormat('es-AR').format(parseInt(value, 10));
+    };
+
+    if (inputFondoFijo) {
+        inputFondoFijo.addEventListener('input', formatNumberInput);
+    }
+
+    if (inputMontoFinalFisico) {
+        inputMontoFinalFisico.addEventListener('input', formatNumberInput);
+    }
+
     if (warningFinalText && inputMontoFinalFisico) {
         inputMontoFinalFisico.addEventListener('input', () => {
-            const value = parseFloat(inputMontoFinalFisico.value);
+            const rawValueStr = inputMontoFinalFisico.value.replace(/\./g, '');
+            const value = parseFloat(rawValueStr);
             const esperado = resumenCajaActual ? (resumenCajaActual.saldoEsperado || 0) : 0;
             
             if (!isNaN(value) && Math.abs(value - esperado) > 0.01) {
@@ -224,16 +264,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Bloquear caracteres no numéricos en inputs de cierre
-    [inputMontoFinalFisico, inputFondoFijo].forEach(input => {
-        if (input) {
-            input.addEventListener('keydown', (e) => {
-                if (['e', 'E', '+', '-'].includes(e.key)) {
-                    e.preventDefault();
-                }
-            });
-        }
-    });
+    // Character count para observaciones
+    if (inputObsCierre) {
+        const charCountEl = document.getElementById('char-count-observaciones');
+        inputObsCierre.addEventListener('input', function() {
+            if (charCountEl) {
+                charCountEl.textContent = this.value.length;
+            }
+        });
+    }
 
     // Bloquear caracteres no válidos en monto inicial (solo enteros positivos)
     if (inputMontoInicial) {
@@ -388,14 +427,21 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnCerrarCaja) {
         btnCerrarCaja.addEventListener('click', async () => {
             // 1. Validaciones iniciales
-            const fondoFijoVal = parseFloat(inputFondoFijo.value) || 0;
-            const montoFisicoVal = parseFloat(inputMontoFinalFisico.value) || 0;
+            const parseAmount = (valStr) => {
+                if (!valStr) return NaN;
+                let cleanStr = valStr.replace(/\./g, '').replace(',', '.');
+                return parseFloat(cleanStr);
+            };
+
+            const fondoFijoVal = parseAmount(inputFondoFijo.value) || 0;
+            const montoFisicoVal = parseAmount(inputMontoFinalFisico.value);
 
             if (isNaN(fondoFijoVal) || fondoFijoVal < 0) {
                 if (panelErrorCierre) {
                     panelErrorCierre.textContent = 'Por favor ingresa un fondo fijo válido.';
                     panelErrorCierre.style.display = 'block';
                 }
+                inputFondoFijo.focus();
                 return;
             }
 
@@ -404,6 +450,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     panelErrorCierre.textContent = 'Por favor ingresa el "Efectivo Real (Físico)".';
                     panelErrorCierre.style.display = 'block';
                 }
+                inputMontoFinalFisico.focus();
                 return;
             }
 
@@ -478,6 +525,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // 4. Mostrar Modal
             if (modalResumen) {
                 modalResumen.style.display = 'flex';
+                document.addEventListener('keydown', handleResumenEsc);
             } else {
                 console.error("No se encontró el modal de cierre (modal-resumen-cierre)");
             }
@@ -485,10 +533,28 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Lógica para cerrar el Modal de Resumen
+    const closeModalResumen = () => {
+        if (modalResumen) modalResumen.style.display = 'none';
+        document.removeEventListener('keydown', handleResumenEsc);
+    };
+    const handleResumenEsc = (e) => { if (e.key === 'Escape') closeModalResumen(); };
+
     // Botón Cancelar del Modal
     if (btnCancelarCierre) {
-        btnCancelarCierre.addEventListener('click', () => {
-            modalResumen.style.display = 'none';
+        btnCancelarCierre.addEventListener('click', closeModalResumen);
+    }
+
+    // Botón X (cerrar flotante)
+    const btnCierreCloseX = document.getElementById('modal-cierre-close-x');
+    if (btnCierreCloseX) {
+        btnCierreCloseX.addEventListener('click', closeModalResumen);
+    }
+
+    // Click afuera del modal
+    if (modalResumen) {
+        modalResumen.addEventListener('click', (e) => {
+            if (e.target === modalResumen) closeModalResumen();
         });
     }
 
@@ -504,15 +570,22 @@ document.addEventListener('DOMContentLoaded', function () {
     // Botón Confirmar del Modal (LA CIERRE REAL)
     if (btnConfirmarCierre) {
         btnConfirmarCierre.addEventListener('click', async () => {
-            const fondoFijoValStr = inputFondoFijo.value;
-            const montoFisicoVal = parseFloat(inputMontoFinalFisico.value);
+            const parseAmount = (valStr) => {
+                if (!valStr) return 0;
+                let cleanStr = valStr.replace(/\./g, '').replace(',', '.');
+                return parseFloat(cleanStr);
+            };
+
+            const fondoFijoValStr = parseAmount(inputFondoFijo.value).toFixed(2);
+            const montoFisicoVal = parseAmount(inputMontoFinalFisico.value);
             const obsBase = inputObsCierre ? inputObsCierre.value.trim() : "";
-            const observacionesCierre = `FF=${parseFloat(fondoFijoValStr).toFixed(2)}; Obs=${obsBase}`;
+            const observacionesCierre = `FF=${fondoFijoValStr}; Obs=${obsBase}`;
 
             const bodyReq = {
                 idUsuario: usuarioIdActual,
                 montoFinalReal: montoFisicoVal,
-                observacionesCierre: observacionesCierre
+                observacionesCierre: observacionesCierre,
+                fondoProximaApertura: parseAmount(inputFondoFijo.value)
             };
 
             btnConfirmarCierre.disabled = true;
@@ -526,7 +599,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
 
                 if (response.ok) {
-                    if (modalResumen) modalResumen.style.display = 'none';
+                    closeModalResumen();
+                    closeDrawer();
                     showSuccessBanner('Caja cerrada exitosamente. Sesión finalizada.');
                     cajaEstaAbierta = false;
                     verificarEstadoCaja();
@@ -535,7 +609,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     throw new Error(err.error || 'Error al cerrar caja.');
                 }
             } catch (error) {
-                if (modalResumen) modalResumen.style.display = 'none';
+                closeModalResumen();
+                closeDrawer();
                 showErrorBanner(error.message);
             } finally {
                 btnConfirmarCierre.disabled = false;
@@ -793,6 +868,55 @@ document.addEventListener('DOMContentLoaded', function () {
     window.cargarDatosCaja = verificarEstadoCaja;
 
     // ==========================================
+    // DRAWER: Open / Close
+    // ==========================================
+    const handleDrawerEsc = (e) => { if (e.key === 'Escape') closeDrawer(); };
+
+    function openDrawer() {
+        // Refresh esperado value in drawer before opening (without decimals)
+        const heroEsperado = document.getElementById('caja-sidebar-efectivo-esperado');
+        const drawerEsp = document.getElementById('drawer-efectivo-esperado');
+        if (heroEsperado && drawerEsp) {
+            // Parse "$ 28.000,00" -> 28000
+            let rawStr = heroEsperado.textContent.replace('$', '').replace(/\./g, '').replace(',', '.').trim();
+            let parsedVal = Math.round(parseFloat(rawStr)) || 0;
+            drawerEsp.textContent = "$ " + new Intl.NumberFormat('es-AR').format(parsedVal);
+        }
+
+        if (drawerOverlay) drawerOverlay.classList.add('active');
+        if (drawerPanel) drawerPanel.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        document.addEventListener('keydown', handleDrawerEsc);
+    }
+
+    function closeDrawer() {
+        if (drawerOverlay) drawerOverlay.classList.remove('active');
+        if (drawerPanel) drawerPanel.classList.remove('open');
+        document.body.style.overflow = '';
+        document.removeEventListener('keydown', handleDrawerEsc);
+    }
+
+    if (btnAbrirDrawer) btnAbrirDrawer.addEventListener('click', openDrawer);
+    if (btnCerrarDrawer) btnCerrarDrawer.addEventListener('click', closeDrawer);
+    if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
+
+    // ==========================================
+    // INGRESOS COLLAPSIBLE TOGGLE
+    // ==========================================
+    if (ingresosToggleBtn && ingresosBody) {
+        ingresosToggleBtn.addEventListener('click', () => {
+            const isOpen = ingresosBody.classList.contains('expanded');
+            if (isOpen) {
+                ingresosBody.classList.remove('expanded');
+                ingresosToggleBtn.classList.remove('open');
+            } else {
+                ingresosBody.classList.add('expanded');
+                ingresosToggleBtn.classList.add('open');
+            }
+        });
+    }
+
+    // ==========================================
     // SUBSECCIONES: Operaciones / Historial
     // ==========================================
     const cajaOperacionesContainer = document.getElementById('caja-operaciones-container');
@@ -864,37 +988,113 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            let obs = [];
-            const obsApertura = (sesion.observacionesApertura || '').trim();
-            if (obsApertura) obs.push(obsApertura);
-            const obsMatch = (sesion.observacionesCierre || '').match(/Obs=(.+)$/);
-            const obsCierre = obsMatch ? obsMatch[1].trim() : '';
-            if (obsCierre) obs.push(obsCierre);
+            // Separate Apertura and Cierre
+            let aperturaText = fmtFecha(sesion.fechaApertura);
+            let cierreText = sesion.fechaCierre 
+                ? fmtFecha(sesion.fechaCierre)
+                : `<span style="font-size: 11px; color: #64748b;">En curso</span>`;
 
-            let obsHtml = '';
-            if (obs.length > 0) {
-                const obsText = obs.join(' | ');
-                const obsDisplay = obsText.length > 40 ? obsText.substring(0, 40) + '...' : obsText;
-                obsHtml = `<span title="${obsText}">${obsDisplay}</span>`;
-            } else {
-                obsHtml = '<span style="color: #94a3b8; font-style: italic;">No hay ninguna observacion</span>';
-            }
+            // Button to open modal
+            const btnDetalles = `<button type="button" class="btn-icon btn-ver-detalles" data-id="${sesion.idSesion}" title="Ver Detalles">
+                <i class="fas fa-eye"></i>
+            </button>`;
 
             return `
                 <tr>
                     <td>${offset + index + 1}</td>
-                    <td>${fmtFecha(sesion.fechaApertura)}</td>
-                    <td>${fmtFecha(sesion.fechaCierre)}</td>
-                    <td>${sesion.duracion || '-'}</td>
+                    <td>${aperturaText}</td>
+                    <td>${cierreText}</td>
                     <td>${sesion.operador || '-'}</td>
                     <td style="font-weight: 600; text-align: right;">${sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '-'}</td>
                     <td style="font-weight: 600; text-align: right;">${sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : '-'}</td>
                     <td style="text-align: right;">${difHtml}</td>
-                    <td>${estadoBadge}</td>
-                    <td>${obsHtml}</td>
+                    <td style="text-align: center;">${estadoBadge}</td>
+                    <td style="text-align: center;">${btnDetalles}</td>
                 </tr>
             `;
         }).join('');
+
+        // Attach event listeners to the "Ver Detalles" buttons
+        const botonesDetalle = tbody.querySelectorAll('.btn-ver-detalles');
+        botonesDetalle.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idSesion = parseInt(e.currentTarget.getAttribute('data-id'), 10);
+                const sesionData = todasLasSesiones.find(s => s.idSesion === idSesion);
+                if (sesionData) {
+                    abrirModalDetalles(sesionData);
+                }
+            });
+        });
+    }
+
+    // Lógica del Modal de Detalles
+    const modalDetalles = document.getElementById('modal-detalles-sesion');
+    const btnCerrarModal = document.getElementById('btn-cerrar-modal-detalles');
+    const btnEntendidoModal = document.getElementById('btn-entendido-modal-detalles');
+
+    function abrirModalDetalles(sesion) {
+        if (!modalDetalles) return;
+        
+        // Header (Operador y Estado)
+        document.getElementById('detalle-sesion-operador').textContent = sesion.operador || 'Desconocido';
+        const elEstado = document.getElementById('detalle-sesion-estado');
+        if (sesion.estado === 'ABIERTA') {
+            elEstado.innerHTML = '<i class="fas fa-door-open" style="font-size: 10px;"></i> ABIERTA';
+            elEstado.style.background = 'rgba(16, 185, 129, 0.2)'; // Verde translucido
+            elEstado.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+            elEstado.style.color = '#fff';
+        } else {
+            elEstado.innerHTML = '<i class="fas fa-door-closed" style="font-size: 10px;"></i> CERRADA';
+            elEstado.style.background = 'rgba(255, 255, 255, 0.1)';
+            elEstado.style.border = '1px solid rgba(255, 255, 255, 0.15)';
+            elEstado.style.color = 'rgba(255, 255, 255, 0.9)';
+        }
+
+        // Formatear Fechas y Duración
+        document.getElementById('detalle-sesion-apertura').textContent = sesion.fechaApertura ? new Date(sesion.fechaApertura).toLocaleString('es-AR') : '-';
+        document.getElementById('detalle-sesion-cierre').textContent = sesion.fechaCierre ? new Date(sesion.fechaCierre).toLocaleString('es-AR') : 'Aún abierta';
+        document.getElementById('detalle-sesion-duracion').textContent = sesion.duracion || '-';
+
+        // Formatear Montos
+        document.getElementById('detalle-sesion-inicial').textContent = sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '-';
+        document.getElementById('detalle-sesion-fisico').textContent = sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : '-';
+        
+        // Diferencia
+        const elDif = document.getElementById('detalle-sesion-diferencia');
+        if (sesion.diferencia !== null && sesion.diferencia !== undefined) {
+            if (Math.abs(sesion.diferencia) < 0.01) {
+                elDif.innerHTML = '<span style="color: #16a34a; font-weight: 600;">$0,00</span>';
+            } else if (sesion.diferencia > 0) {
+                elDif.innerHTML = `<span style="color: #16a34a; font-weight: 600;">+${formatter.format(sesion.diferencia)}</span>`;
+            } else {
+                elDif.innerHTML = `<span style="color: #dc3545; font-weight: 600;">${formatter.format(sesion.diferencia)}</span>`;
+            }
+        } else {
+            elDif.textContent = '-';
+        }
+
+        // Observaciones
+        const obsAp = (sesion.observacionesApertura || '').trim();
+        const obsMatch = (sesion.observacionesCierre || '').match(/Obs=(.+)$/);
+        const obsCi = obsMatch ? obsMatch[1].trim() : '';
+
+        document.getElementById('detalle-sesion-obs-apertura').textContent = obsAp || 'Sin observaciones de apertura registradas.';
+        document.getElementById('detalle-sesion-obs-cierre').textContent = obsCi || 'Sin observaciones de cierre registradas.';
+
+        // Mostrar Modal
+        modalDetalles.style.display = 'flex';
+    }
+
+    function cerrarModalDetalles() {
+        if (modalDetalles) modalDetalles.style.display = 'none';
+    }
+
+    if (btnCerrarModal) btnCerrarModal.addEventListener('click', cerrarModalDetalles);
+    if (btnEntendidoModal) btnEntendidoModal.addEventListener('click', cerrarModalDetalles);
+    if (modalDetalles) {
+        modalDetalles.addEventListener('click', (e) => {
+            if (e.target === modalDetalles) cerrarModalDetalles();
+        });
     }
 
     async function filtrarYRenderHistorial(page) {

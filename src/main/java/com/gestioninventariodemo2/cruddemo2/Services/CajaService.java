@@ -50,7 +50,12 @@ public class CajaService {
      */
     public Double obtenerSaldoUltimoCierre() {
         return sesionCajaRepository.findFirstByEstadoOrderByFechaCierreDesc("CERRADA")
-                .map(sesion -> sesion.getMontoFinalReal() != null ? sesion.getMontoFinalReal() : 0.0)
+                .map(sesion -> {
+                    if (sesion.getFondoProximaApertura() != null) {
+                        return sesion.getFondoProximaApertura();
+                    }
+                    return sesion.getMontoFinalReal() != null ? sesion.getMontoFinalReal() : 0.0;
+                })
                 .orElse(0.0);
     }
 
@@ -192,6 +197,7 @@ public class CajaService {
         sesion.setFechaCierre(LocalDateTime.now());
         sesion.setMontoFinalReal(request.getMontoFinalReal());
         sesion.setObservacionesCierre(request.getObservacionesCierre());
+        sesion.setFondoProximaApertura(request.getFondoProximaApertura());
 
         SesionCaja guardada = sesionCajaRepository.save(sesion);
         return mapToDTO(guardada);

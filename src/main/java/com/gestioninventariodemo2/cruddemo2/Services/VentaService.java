@@ -235,6 +235,7 @@ public class VentaService {
                 .map(detalle -> ProductoVentaDTO.builder()
                         .nombreProducto(detalle.getProducto().getNombre())
                         .cantidad(detalle.getCantidad())
+                        .precioUnitario(detalle.getPrecioUnitario())
                         .build())
                 .collect(Collectors.toList());
 

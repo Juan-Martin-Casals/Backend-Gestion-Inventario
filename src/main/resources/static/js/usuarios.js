@@ -50,8 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ===============================
     let sortField = 'apellido';
     let sortDirection = 'asc';
-    const btnSortApellido = document.getElementById('user-sort-apellido');
-    const btnSortNombre   = document.getElementById('user-sort-nombre');
+    const btnSortNombre = document.getElementById('user-sort-nombre');
     const selectFiltroRol = document.getElementById('user-filtro-rol');
 
 
@@ -209,21 +208,29 @@ document.addEventListener('DOMContentLoaded', function () {
     function renderUserTable(usuarios) {
         userTableBody.innerHTML = '';
         if (usuarios.length === 0) {
-            userTableBody.innerHTML = '<tr><td colspan="5">No hay usuarios registrados.</td></tr>';
+            userTableBody.innerHTML = '<tr><td colspan="4" style="text-align: center;">No hay usuarios registrados.</td></tr>';
             return;
         }
 
         usuarios.forEach(user => {
-            const rolText = user.descripcionRol
-                ? user.descripcionRol.charAt(0).toUpperCase() + user.descripcionRol.slice(1).toLowerCase()
-                : 'Sin Rol';
+            const nombreCompleto = `${user.nombre || ''} ${user.apellido || ''}`.trim() || 'N/A';
+            const rolKey = user.descripcionRol ? user.descripcionRol.toUpperCase() : '';
+            
+            let badgeStyle = 'background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1;';
+            if (rolKey === 'ADMIN') {
+                badgeStyle = 'background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;';
+            } else if (rolKey === 'EMPLEADO') {
+                badgeStyle = 'background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;';
+            }
+            
+            const rolBadge = `<span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; ${badgeStyle}">${user.descripcionRol || 'Sin Rol'}</span>`;
+
             const row = `
                 <tr>
-                    <td>${user.nombre || 'N/A'}</td>
-                    <td>${user.apellido || 'N/A'}</td>
+                    <td style="font-weight: 600; color: #0f172a;">${nombreCompleto}</td>
                     <td>${user.email || 'N/A'}</td>
-                    <td>${rolText}</td>
-                    <td>
+                    <td>${rolBadge}</td>
+                    <td style="text-align: center;">
                         <button class="btn-icon btn-edit-usuario" data-id="${user.id}" title="Editar">
                             <i class="fas fa-edit"></i>
                         </button>
@@ -285,16 +292,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function updateSortIndicators() {
-        [btnSortApellido, btnSortNombre].forEach(btn => {
-            if (!btn) return;
-            btn.classList.remove('active');
-            const arrow = btn.querySelector('.sort-arrow');
-            if (arrow) arrow.className = 'fas fa-sort sort-arrow';
-        });
-        const activeBtn = sortField === 'apellido' ? btnSortApellido : btnSortNombre;
-        if (activeBtn) {
-            activeBtn.classList.add('active');
-            const arrow = activeBtn.querySelector('.sort-arrow');
+        if (!btnSortNombre) return;
+        btnSortNombre.classList.remove('active');
+        const arrow = btnSortNombre.querySelector('.sort-arrow');
+        if (arrow) arrow.className = 'fas fa-sort sort-arrow';
+        
+        if (sortField === 'nombre') {
+            btnSortNombre.classList.add('active');
             if (arrow) arrow.className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} sort-arrow`;
         }
     }
@@ -532,10 +536,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // --- Abrir el modal ---
     function openEditModal(user) {
+        // Popular datos en el form
         editIdInput.value = user.id;
         editNombreInput.value = user.nombre;
         editApellidoInput.value = user.apellido;
         editEmailInput.value = user.email;
+
+        // Populate Premium Header
+        const nombreCompleto = `${user.nombre || ''} ${user.apellido || ''}`.trim() || 'Desconocido';
+        const inicial = user.nombre ? user.nombre.charAt(0).toUpperCase() : 'U';
+        const avatarEl = document.getElementById('edit-usuario-avatar');
+        const badgeNombreEl = document.getElementById('edit-usuario-badge-nombre');
+        
+        if (avatarEl) avatarEl.textContent = inicial;
+        if (badgeNombreEl) badgeNombreEl.textContent = nombreCompleto;
 
         // Seleccionar el rol correcto
         editRolSelect.innerHTML = '';
@@ -779,8 +793,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // CARGA INICIAL
     // ===============================
 
-    if (btnSortApellido) btnSortApellido.addEventListener('click', () => handleSortBtn('apellido'));
-    if (btnSortNombre)   btnSortNombre.addEventListener('click', () => handleSortBtn('nombre'));
+    if (btnSortNombre) btnSortNombre.addEventListener('click', () => handleSortBtn('nombre'));
     if (selectFiltroRol) selectFiltroRol.addEventListener('change', () => { currentPage = 0; loadUsuarios(); });
 
     // ===============================

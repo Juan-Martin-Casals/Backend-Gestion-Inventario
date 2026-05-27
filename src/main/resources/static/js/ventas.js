@@ -733,7 +733,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <span style="color: ${stockColor}; font-weight: 600; font-size: 12px;">
                                 <i class="fas fa-box"></i> ${stockText}
                             </span>
-                            <span style="color: #667eea; font-weight: 600;">
+                            <span style="color: #000000; font-weight: 600;">
                                 $${formatoMoneda.format(producto.precioVenta)}
                             </span>
                         </div>
@@ -1194,7 +1194,7 @@ document.addEventListener('DOMContentLoaded', function () {
             renderModalVentaProductos();
 
             // Mostrar modal
-            document.getElementById('venta-detail-modal').style.display = 'block';
+            document.getElementById('venta-detail-modal').style.display = 'flex';
 
         } catch (error) {
             console.error('Error:', error);
@@ -1208,9 +1208,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function renderModalVentaProductos() {
         const tbody = document.getElementById('modal-venta-productos');
-        const pageInfo = document.getElementById('modal-venta-page-info');
-        const prevBtn = document.getElementById('modal-venta-prev-page');
-        const nextBtn = document.getElementById('modal-venta-next-page');
 
         if (!tbody) return;
 
@@ -1218,71 +1215,34 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (modalVentaProductos.length === 0) {
             tbody.innerHTML = '<tr><td colspan="4">No hay productos en esta venta.</td></tr>';
-            if (pageInfo) pageInfo.textContent = 'Página 0 de 0';
-            if (prevBtn) prevBtn.disabled = true;
-            if (nextBtn) nextBtn.disabled = true;
             return;
         }
 
-        // Calcular paginación
-        const totalPages = Math.ceil(modalVentaProductos.length / modalVentaItemsPerPage);
-        const startIndex = modalVentaCurrentPage * modalVentaItemsPerPage;
-        const endIndex = Math.min(startIndex + modalVentaItemsPerPage, modalVentaProductos.length);
-        const productosEnPagina = modalVentaProductos.slice(startIndex, endIndex);
-
-        // Calcular precio unitario promedio
+        // Calcular precio unitario promedio (Lógica original)
         const totalVentaStr = document.getElementById('modal-venta-total').textContent;
         const totalVenta = parseFloat(totalVentaStr.replace('$', '').replace(/\./g, '').replace(',', '.'));
         const cantidadTotal = modalVentaProductos.reduce((sum, p) => sum + p.cantidad, 0);
 
-        // Renderizar productos de la página actual
-        productosEnPagina.forEach(producto => {
-            const precioUnitario = totalVenta / cantidadTotal;
+        // Renderizar todos los productos de la venta (sin límite de página)
+        modalVentaProductos.forEach(producto => {
+            const precioUnitario = producto.precioUnitario || 0;
             const subtotal = precioUnitario * producto.cantidad;
 
             const row = `
                 <tr>
                     <td>${producto.nombreProducto || 'N/A'}</td>
-                    <td>${producto.cantidad || 0}</td>
-                    <td>$${formatoMoneda.format(precioUnitario)}</td>
-                    <td>$${formatoMoneda.format(subtotal)}</td>
+                    <td class="col-center">${producto.cantidad || 0}</td>
+                    <td class="col-num">$${formatoMoneda.format(precioUnitario)}</td>
+                    <td class="col-num">$${formatoMoneda.format(subtotal)}</td>
                 </tr>
             `;
             tbody.innerHTML += row;
         });
-
-        // Actualizar controles de paginación
-        if (pageInfo) {
-            pageInfo.textContent = `Página ${modalVentaCurrentPage + 1} de ${totalPages}`;
-        }
-        if (prevBtn) {
-            prevBtn.disabled = (modalVentaCurrentPage === 0);
-        }
-        if (nextBtn) {
-            nextBtn.disabled = (modalVentaCurrentPage + 1 >= totalPages);
-        }
-    }
-
-    function modalVentaPrevPage() {
-        if (modalVentaCurrentPage > 0) {
-            modalVentaCurrentPage--;
-            renderModalVentaProductos();
-        }
-    }
-
-    function modalVentaNextPage() {
-        const totalPages = Math.ceil(modalVentaProductos.length / modalVentaItemsPerPage);
-        if (modalVentaCurrentPage + 1 < totalPages) {
-            modalVentaCurrentPage++;
-            renderModalVentaProductos();
-        }
     }
 
     // Exponer funciones globalmente
     window.mostrarDetalleVenta = mostrarDetalleVenta;
     window.cerrarModalDetalleVenta = cerrarModalDetalleVenta;
-    window.modalVentaPrevPage = modalVentaPrevPage;
-    window.modalVentaNextPage = modalVentaNextPage;
 
     function updateVentasPaginationControls() {
         if (!ventasPageInfo || !ventasPrevPageBtn || !ventasNextPageBtn) return;
@@ -2059,5 +2019,25 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Exponer globalmente
     window.showVentasSubsection = showSubsection;
+
+    // Cerrar modal de detalle al hacer clic fuera del contenido
+    const ventaDetailModal = document.getElementById('venta-detail-modal');
+    if (ventaDetailModal) {
+        ventaDetailModal.addEventListener('click', function (e) {
+            if (e.target === ventaDetailModal) {
+                cerrarModalDetalleVenta();
+            }
+        });
+    }
+
+    // Cerrar modal de detalle con ESC
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+            const modal = document.getElementById('venta-detail-modal');
+            if (modal && modal.style.display === 'flex') {
+                cerrarModalDetalleVenta();
+            }
+        }
+    });
 
 });

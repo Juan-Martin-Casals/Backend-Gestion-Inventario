@@ -40,11 +40,13 @@ public class SesionCaja {
     @Column(nullable = false)
     private Boolean diferenciaApertura;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 255)
     private String observacionesApertura;
 
-    @Column(columnDefinition = "TEXT")
+    @Column(length = 255)
     private String observacionesCierre;
+
+    private Double fondoProximaApertura;
 
     @Column(nullable = false)
     private String estado;

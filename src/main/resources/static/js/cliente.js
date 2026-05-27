@@ -201,7 +201,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (btnSortApellido) btnSortApellido.addEventListener('click', () => handleSortBtn('apellido'));
-    if (btnSortNombre)   btnSortNombre.addEventListener('click', () => handleSortBtn('nombre'));
+    if (btnSortNombre) btnSortNombre.addEventListener('click', () => handleSortBtn('nombre'));
 
     // ==========================================
     // EVENTOS DE NAVEGACION Y BUSQUEDA
@@ -270,10 +270,8 @@ document.addEventListener('DOMContentLoaded', function () {
             ventasBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Este cliente no tiene ventas registradas.</td></tr>';
             return;
         }
-        const start = detailVentasPage * detailVentasPerPage;
-        const pageData = detailVentas.slice(start, start + detailVentasPerPage);
 
-        ventasBody.innerHTML = pageData.map(v => {
+        ventasBody.innerHTML = detailVentas.map(v => {
             const fecha = v.fecha ? new Date(v.fecha).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-';
             const productos = v.productos && v.productos.length > 0
                 ? v.productos.map(p => `${p.nombreProducto} (x${p.cantidad})`).join(', ')
@@ -287,32 +285,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td>${metodo}</td>
             </tr>`;
         }).join('');
-
-        updateVentasPagination();
     }
-
-    function updateVentasPagination() {
-        const pagination = document.getElementById('detail-ventas-pagination');
-        const pageInfo = document.getElementById('detail-ventas-page-info');
-        const btnPrev = document.getElementById('detail-ventas-prev');
-        const btnNext = document.getElementById('detail-ventas-next');
-        const totalPagesV = Math.max(1, Math.ceil(detailVentas.length / detailVentasPerPage));
-
-        if (detailVentas.length <= detailVentasPerPage) {
-            pagination.style.display = 'none';
-        } else {
-            pagination.style.display = '';
-            pageInfo.textContent = `Página ${detailVentasPage + 1} de ${totalPagesV}`;
-            btnPrev.disabled = detailVentasPage === 0;
-            btnNext.disabled = detailVentasPage + 1 >= totalPagesV;
-        }
-    }
-
-    // Pagination button listeners for detail ventas
-    const dvPrev = document.getElementById('detail-ventas-prev');
-    const dvNext = document.getElementById('detail-ventas-next');
-    if (dvPrev) dvPrev.addEventListener('click', () => { if (detailVentasPage > 0) { detailVentasPage--; renderVentasPage(); } });
-    if (dvNext) dvNext.addEventListener('click', () => { detailVentasPage++; renderVentasPage(); });
 
     async function handleView(id) {
         const ventasBody = document.getElementById('detail-cliente-ventas-body');
@@ -334,16 +307,23 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('detail-cliente-email').textContent = data.email || '-';
             document.getElementById('detail-cliente-direccion').textContent = data.direccion || '-';
 
+            const avatarEl = document.getElementById('detail-cliente-avatar');
+            if (avatarEl) {
+                avatarEl.textContent = data.nombre ? data.nombre.charAt(0).toUpperCase() : 'C';
+            }
+
             if (resVentas.ok) {
                 detailVentas = await resVentas.json();
-                detailVentasPage = 0;
                 ventasCount.textContent = `(${detailVentas.length} ${detailVentas.length === 1 ? 'venta' : 'ventas'})`;
+                const badgeEl = document.getElementById('detail-cliente-ventas-count-badge');
+                if (badgeEl) badgeEl.textContent = detailVentas.length;
                 renderVentasPage();
             } else {
                 detailVentas = [];
                 ventasBody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:red;">Error al cargar ventas.</td></tr>';
                 ventasCount.textContent = '';
-                document.getElementById('detail-ventas-pagination').style.display = 'none';
+                const badgeEl = document.getElementById('detail-cliente-ventas-count-badge');
+                if (badgeEl) badgeEl.textContent = '0';
             }
 
             detailModal.style.display = 'block';
@@ -407,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function () {
         editModal.style.display = 'none';
         clearEditErrors();
     });
-    
+
     document.getElementById('cliente-edit-cancel').addEventListener('click', () => {
         editModal.style.display = 'none';
         clearEditErrors();
@@ -415,7 +395,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     document.getElementById('cliente-edit-save').addEventListener('click', async () => {
         clearEditErrors();
-        
+
         const id = document.getElementById('edit-cliente-id').value;
         const dto = {
             nombre: document.getElementById('edit-cliente-nombre').value.trim(),
@@ -433,9 +413,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!dto.dni) { document.getElementById('error-edit-cliente-dni').textContent = 'El DNI es obligatorio'; isValid = false; }
         if (!dto.telefono) { document.getElementById('error-edit-cliente-telefono').textContent = 'El teléfono es obligatorio'; isValid = false; }
         if (!dto.direccion) { document.getElementById('error-edit-cliente-direccion').textContent = 'La dirección es obligatoria'; isValid = false; }
-        if (!dto.email) { 
-            document.getElementById('error-edit-cliente-email').textContent = 'El email es obligatorio'; 
-            isValid = false; 
+        if (!dto.email) {
+            document.getElementById('error-edit-cliente-email').textContent = 'El email es obligatorio';
+            isValid = false;
         } else if (!dto.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
             document.getElementById('error-edit-cliente-email').textContent = 'El formato del email no es válido';
             isValid = false;
@@ -628,19 +608,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     restrictTelefonoInput(document.getElementById('crearClienteTelefono'));
     restrictDniInput(document.getElementById('crearClienteDNI'));
-    bindLimit(document.getElementById('crearClienteNombre'),    document.getElementById('errorCrearClienteNombre'),    70);
-    bindLimit(document.getElementById('crearClienteApellido'),  document.getElementById('errorCrearClienteApellido'),  70);
-    bindLimit(document.getElementById('crearClienteTelefono'),  document.getElementById('errorCrearClienteTelefono'),  20);
+    bindLimit(document.getElementById('crearClienteNombre'), document.getElementById('errorCrearClienteNombre'), 70);
+    bindLimit(document.getElementById('crearClienteApellido'), document.getElementById('errorCrearClienteApellido'), 70);
+    bindLimit(document.getElementById('crearClienteTelefono'), document.getElementById('errorCrearClienteTelefono'), 20);
     bindLimit(document.getElementById('crearClienteDireccion'), document.getElementById('errorCrearClienteDireccion'), 200);
-    bindLimit(document.getElementById('crearClienteEmail'),     document.getElementById('errorCrearClienteEmail'),     255);
+    bindLimit(document.getElementById('crearClienteEmail'), document.getElementById('errorCrearClienteEmail'), 255);
 
     restrictTelefonoInput(document.getElementById('edit-cliente-telefono'));
     restrictDniInput(document.getElementById('edit-cliente-dni'));
-    bindLimit(document.getElementById('edit-cliente-nombre'),    document.getElementById('error-edit-cliente-nombre'),    70);
-    bindLimit(document.getElementById('edit-cliente-apellido'),  document.getElementById('error-edit-cliente-apellido'),  70);
-    bindLimit(document.getElementById('edit-cliente-telefono'),  document.getElementById('error-edit-cliente-telefono'),  20);
+    bindLimit(document.getElementById('edit-cliente-nombre'), document.getElementById('error-edit-cliente-nombre'), 70);
+    bindLimit(document.getElementById('edit-cliente-apellido'), document.getElementById('error-edit-cliente-apellido'), 70);
+    bindLimit(document.getElementById('edit-cliente-telefono'), document.getElementById('error-edit-cliente-telefono'), 20);
     bindLimit(document.getElementById('edit-cliente-direccion'), document.getElementById('error-edit-cliente-direccion'), 200);
-    bindLimit(document.getElementById('edit-cliente-email'),     document.getElementById('error-edit-cliente-email'),     255);
+    bindLimit(document.getElementById('edit-cliente-email'), document.getElementById('error-edit-cliente-email'), 255);
 
     // ===============================
     // LÓGICA DEL FORMULARIO DE REGISTRO
@@ -676,9 +656,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!dto.dni) { document.getElementById('errorCrearClienteDNI').textContent = 'El DNI es obligatorio'; isValid = false; }
             if (!dto.telefono) { document.getElementById('errorCrearClienteTelefono').textContent = 'El teléfono es obligatorio'; isValid = false; }
             if (!dto.direccion) { document.getElementById('errorCrearClienteDireccion').textContent = 'La dirección es obligatoria'; isValid = false; }
-            if (!dto.email) { 
-                document.getElementById('errorCrearClienteEmail').textContent = 'El email es obligatorio'; 
-                isValid = false; 
+            if (!dto.email) {
+                document.getElementById('errorCrearClienteEmail').textContent = 'El email es obligatorio';
+                isValid = false;
             } else if (!dto.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
                 document.getElementById('errorCrearClienteEmail').textContent = 'El formato del email no es válido';
                 isValid = false;

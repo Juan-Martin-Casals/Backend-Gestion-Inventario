@@ -13,5 +13,6 @@ public class ProductoVentaDTO {
 
     private String nombreProducto;
     private int cantidad;
+    private double precioUnitario;
 
 }

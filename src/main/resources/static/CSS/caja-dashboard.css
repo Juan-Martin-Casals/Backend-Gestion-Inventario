@@ -1,137 +1,603 @@
+/* =============================================
+   CAJA DASHBOARD — REDESIGN v2 (Premium Minimal)
+   ============================================= */
+
+/* — Base Section — */
 #caja-section {
-    padding: 30px;
-    background: #f8fafc; /* Fondo gris muy claro para que resalten las tarjetas blancas */
+    padding: 30px 40px;
+    background: #f8fafc;
     min-height: 100vh;
 }
 
-.caja-monto-inicial-card {
-    background: white;
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    border: 1px solid #f1f5f9;
-    border-top: 4px solid #6366f1; /* Borde superior índigo */
-    margin-bottom: 25px;
+/* — Panel Cierre: Controlled density, left-aligned like the rest of the system — */
+#caja-panel-cierre {
+    width: 100%;
+    max-width: 1400px;
+    margin-left: 80px;
 }
 
-.caja-monto-inicial-card .header-monto {
+/* Override global h3 border from dashboard-informes.css */
+#caja-panel-cierre h3,
+#caja-panel-cierre h4,
+.caja-drawer h3 {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+/* — Hero KPI Card (Efectivo Esperado) — */
+.caja-kpi-hero {
+    background: white;
+    border-radius: 16px;
+    padding: 32px 36px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 8px 30px rgba(0,0,0,0.04);
+    border: 1px solid #f1f5f9;
+    margin-bottom: 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 12px;
 }
 
-.caja-monto-inicial-card .label-monto {
-    font-size: 14px;
-    font-weight: 700;
-    color: #64748b;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.caja-monto-inicial-card .badge-abierta {
-    background: #dcfce7;
-    color: #166534;
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 12px;
-    font-weight: 800;
+.caja-kpi-hero-main {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    gap: 4px;
+    text-align: right;
+    align-items: flex-end;
+}
+
+.caja-kpi-hero-main .kpi-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+.caja-kpi-hero-main .kpi-value {
+    font-size: 40px;
+    font-weight: 900;
+    color: #0f172a;
+    line-height: 1.1;
+    letter-spacing: -1px;
+}
+
+.caja-kpi-hero-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
     gap: 6px;
 }
 
-.caja-monto-inicial-card .valor-monto {
-    font-size: 42px;
-    font-weight: 900;
-    color: #0f172a;
-}
-
-.caja-layout-grid {
+.caja-kpi-hero-meta .meta-row {
     display: flex;
-    gap: 24px;
-    align-items: flex-start;
-    /* Clave para el sticky sidebar */
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #64748b;
 }
 
-/* Tarjeta estándar con fondo blanco */
-.caja-premium-card {
+.caja-kpi-hero-meta .meta-row i {
+    color: #94a3b8;
+    font-size: 12px;
+    width: 14px;
+    text-align: center;
+}
+
+.caja-kpi-hero-meta .meta-row strong {
+    color: #334155;
+    font-weight: 700;
+}
+
+/* — Stats Row (Facturación, Cant, Efectivo, Tarjeta, Transferencia) — */
+.caja-stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 14px;
+    margin-bottom: 24px;
+}
+
+.caja-stat-mini {
     background: white;
-    border-radius: 12px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     border: 1px solid #f1f5f9;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: box-shadow 0.25s ease, transform 0.25s ease;
 }
 
-.caja-col-data {
-    flex: 7;
-    /* ~70% */
-    min-width: 0;
-    /* Para evitar overflow oculto */
+.caja-stat-mini:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    transform: translateY(-2px);
 }
 
-.caja-col-sidebar {
-    flex: 3;
-    /* ~30% */
-    min-width: 300px;
-    /* Tamaño minimo razonable */
-    position: sticky;
-    top: 24px;
+.caja-stat-mini .stat-mini-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
 }
 
-/* Tabla Refinada - Header Blanco minimalist */
-.caja-table-wrapper {
+.caja-stat-mini .stat-mini-icon.green {
+    background: #ecfdf5;
+    color: #10b981;
+}
+.caja-stat-mini .stat-mini-icon.blue {
+    background: #eff6ff;
+    color: #3b82f6;
+}
+.caja-stat-mini .stat-mini-icon.purple {
+    background: #f5f3ff;
+    color: #8b5cf6;
+}
+.caja-stat-mini .stat-mini-icon.amber {
+    background: #fffbeb;
+    color: #f59e0b;
+}
+
+.caja-stat-mini .stat-mini-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.1;
+    text-align: right;
+    width: 100%;
+}
+
+.caja-stat-mini .stat-mini-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    text-align: right;
+    width: 100%;
+}
+
+/* — Desglose Table Card — */
+.caja-card {
     background: white;
-    border-radius: 12px;
-    padding: 25px;
-    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.03);
+    border-radius: 16px;
+    padding: 24px 28px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     border: 1px solid #f1f5f9;
-    margin-bottom: 30px; /* Separación entre tablas y con lo de arriba */
+    margin-bottom: 24px;
 }
 
-.caja-table-wrapper h4 {
-    margin: 0 0 5px 0;
-    font-size: 18px;
+.caja-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
+}
+
+.caja-card-header h4 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
     color: #0f172a;
     display: flex;
     align-items: center;
-    gap: 12px;
-    font-weight: 800;
+    gap: 10px;
 }
 
-.caja-table-wrapper h4 i {
+.caja-card-header h4 i {
+    color: #6366f1;
+    background: #e0e7ff;
+    padding: 7px;
+    border-radius: 8px;
+    font-size: 13px;
+}
+
+.caja-card-header p {
+    margin: 0;
+    font-size: 13px;
+    color: #94a3b8;
+}
+
+/* — Collapsible Ingresos — */
+.caja-ingresos-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: white;
+    border-radius: 14px;
+    padding: 18px 24px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    border: 1px solid #f1f5f9;
+    cursor: pointer;
+    margin-bottom: 8px;
+    transition: all 0.25s ease;
+    user-select: none;
+}
+
+.caja-ingresos-toggle:hover {
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    border-color: #e2e8f0;
+}
+
+.caja-ingresos-toggle .toggle-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.caja-ingresos-toggle .toggle-left i.icon {
     color: #6366f1;
     background: #e0e7ff;
     padding: 8px;
     border-radius: 8px;
+    font-size: 14px;
 }
 
-/* Inputs redondedos formulario sidebar */
-.caja-col-sidebar input,
-.caja-col-sidebar textarea {
-    width: 100%;
-    padding: 12px 16px;
-    border: 1px solid #e2e8f0;
-    border-radius: 12px;
-    font-size: 14px;
-    transition: all 0.3s ease;
-    background-color: #ffffff;
+.caja-ingresos-toggle .toggle-left span {
+    font-size: 15px;
+    font-weight: 700;
     color: #1e293b;
 }
 
-.caja-col-sidebar input:focus,
-.caja-col-sidebar textarea:focus {
-    box-shadow: 0 0 0 3px rgba(92, 107, 192, 0.15);
-    border-color: #5C6BC0;
+.caja-ingresos-toggle .toggle-chevron {
+    color: #94a3b8;
+    font-size: 14px;
+    transition: transform 0.3s ease;
+}
+
+.caja-ingresos-toggle.open .toggle-chevron {
+    transform: rotate(180deg);
+}
+
+.caja-ingresos-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+    opacity: 0;
+}
+
+.caja-ingresos-body.expanded {
+    max-height: 2000px;
+    opacity: 1;
+}
+
+.caja-ingresos-body-inner {
+    background: white;
+    border-radius: 0 0 16px 16px;
+    padding: 20px 24px 24px;
+    border: 1px solid #f1f5f9;
+    border-top: none;
+}
+
+/* Search + filter bar inside ingresos */
+.caja-ingresos-filters {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.caja-ingresos-filters .search-wrap {
+    flex: 1;
+    min-width: 200px;
+    position: relative;
+}
+
+.caja-ingresos-filters .search-wrap i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    font-size: 13px;
+}
+
+.caja-ingresos-filters .search-wrap input {
+    width: 100%;
+    padding: 10px 14px 10px 36px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 13px;
+    color: #334155;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #f8fafc;
+}
+
+.caja-ingresos-filters .search-wrap input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.caja-ingresos-filters select {
+    padding: 9px 14px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+    font-size: 13px;
+    color: #334155;
+    background: white;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s;
+}
+
+.caja-ingresos-filters select:focus {
+    border-color: #6366f1;
+}
+
+.caja-ingresos-filters .btn-filter-clear {
+    padding: 9px 14px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: white;
+    color: #64748b;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.caja-ingresos-filters .btn-filter-clear:hover {
+    background: #f1f5f9;
+    color: #334155;
+}
+
+/* — Ingresos List Items — */
+#caja-lista-ingresos {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* — Big Action Button (Cerrar Turno) — */
+.caja-action-bar {
+    margin-top: 32px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.btn-cerrar-turno {
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
+    color: white;
+    border: none;
+    padding: 16px 32px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 14px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.25);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-cerrar-turno:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(99,102,241,0.35);
+}
+
+.btn-cerrar-turno:active {
+    transform: translateY(0);
+}
+
+/* =============================================
+   DRAWER (Slide-in Panel for Cierre de Caja)
+   ============================================= */
+.caja-drawer-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(4px);
+    z-index: 9998;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+.caja-drawer-overlay.active {
+    opacity: 1;
+    visibility: visible;
+}
+
+.caja-drawer {
+    position: fixed;
+    top: 0;
+    right: -460px;
+    width: 440px;
+    height: 100%;
+    background: white;
+    z-index: 9999;
+    box-shadow: -10px 0 40px rgba(0,0,0,0.12);
+    transition: right 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.caja-drawer.open {
+    right: 0;
+}
+
+.caja-drawer-header {
+    padding: 28px 30px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.caja-drawer-header h3 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    color: #0f172a;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.caja-drawer-header h3 i {
+    color: #6366f1;
+}
+
+.caja-drawer-header .drawer-close {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #94a3b8;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 8px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+}
+
+.caja-drawer-header .drawer-close:hover {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.caja-drawer-body {
+    padding: 24px 30px;
+    flex: 1;
+}
+
+/* Efectivo Esperado inside drawer */
+.drawer-esperado-box {
+    background: #f8fafc;
+    border-radius: 14px;
+    padding: 20px;
+    text-align: center;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 28px;
+}
+
+.drawer-esperado-box .esperado-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 6px 0;
+}
+
+.drawer-esperado-box .esperado-value {
+    font-size: 30px;
+    font-weight: 900;
+    color: #0f172a;
+    margin: 0 0 4px 0;
+}
+
+.drawer-esperado-box .esperado-hint {
+    font-size: 11px;
+    color: #94a3b8;
+    margin: 0;
+}
+
+/* Drawer form fields */
+.drawer-form-group {
+    margin-bottom: 22px;
+}
+
+.drawer-form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 700;
+    color: #334155;
+    margin-bottom: 8px;
+}
+
+.drawer-form-group .input-wrap {
+    position: relative;
+}
+
+.drawer-form-group .input-wrap .prefix {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 15px;
+    color: #64748b;
+    font-weight: bold;
+}
+
+.drawer-form-group input,
+.drawer-form-group textarea {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    background: #ffffff;
+    color: #1e293b;
     outline: none;
 }
 
+.drawer-form-group input.has-prefix {
+    padding-left: 35px;
+}
+
+.drawer-form-group input:focus,
+.drawer-form-group textarea:focus {
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    border-color: #6366f1;
+}
+
+.drawer-form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    max-height: 200px;
+}
+
+.drawer-form-group .input-warning {
+    display: none;
+    color: #c2410c;
+    margin-top: 8px;
+    font-size: 13px;
+}
+
+.drawer-form-group .input-warning i {
+    margin-right: 4px;
+}
+
+/* Drawer footer */
+.caja-drawer-footer {
+    padding: 20px 30px 28px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.caja-drawer-footer .drawer-error {
+    display: none;
+    text-align: center;
+    margin-bottom: 14px;
+    font-size: 13px;
+    color: #dc3545;
+    background: #fee2e2;
+    padding: 10px;
+    border-radius: 10px;
+}
+
 .caja-btn-cerrar {
-    background: #5C6BC0;
-    /* Azul violeta */
+    background: linear-gradient(135deg, #6366f1, #4f46e5);
     color: white;
-    padding: 14px 28px;
-    font-size: 16px;
-    border-radius: 12px;
+    padding: 16px 28px;
+    font-size: 15px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -140,21 +606,16 @@
     border: none;
     cursor: pointer;
     font-weight: 700;
-    box-shadow: 0 4px 12px rgba(92, 107, 192, 0.2);
-    transition: all 0.2s;
+    box-shadow: 0 4px 14px rgba(99,102,241,0.25);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .caja-btn-cerrar:hover {
     transform: translateY(-2px);
-    box-shadow: 0 6px 15px rgba(92, 107, 192, 0.3);
-    background: #4f5baf;
+    box-shadow: 0 8px 24px rgba(99,102,241,0.35);
 }
 
-.data-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-/* Format method name with icon */
+/* — Metodo Pago Label (table desglose) — */
 .metodo-pago-label {
     display: flex;
     align-items: center;
@@ -187,37 +648,9 @@
     color: #f59e0b;
 }
 
-.caja-summary-cards {
-    margin-bottom: 25px;
-}
-
-.caja-summary-card.initial {
-    background: white;
-    padding: 24px;
-    border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
-    border: 1px solid #e2e8f0;
-}
-
-.caja-summary-card p {
-    margin: 0;
-    font-size: 12px;
-    color: #64748b;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-.caja-summary-card h4 {
-    margin: 5px 0 0 0;
-    color: #0f172a;
-    font-size: 32px;
-    font-weight: 900;
-}
-
-/* ========================================
-   MODAL DE RESUMEN DE CIERRE (REDISEÑO PREMIUM)
-   ======================================== */
+/* =============================================
+   MODAL DE RESUMEN DE CIERRE (kept from v1)
+   ============================================= */
 .modal-overlay-caja {
     position: fixed;
     top: 0;
@@ -229,7 +662,7 @@
     display: none;
     align-items: center;
     justify-content: center;
-    z-index: 9999;
+    z-index: 10001;
 }
 
 .modal-cierre-container {
@@ -240,7 +673,7 @@
     box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     animation: modalScaleIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    padding: 10px; /* Espacio extra para que respire */
+    padding: 10px;
 }
 
 @keyframes modalScaleIn {
@@ -297,7 +730,6 @@
     padding: 10px 40px 30px;
 }
 
-/* CARDS INTERNAS */
 .modal-section-card {
     background: #f8fafc;
     border-radius: 16px;
@@ -312,7 +744,6 @@
     border: 1px dashed #e2e8f0;
 }
 
-/* FILAS CONTABLES */
 .contable-fila {
     display: flex;
     justify-content: space-between;
@@ -327,17 +758,14 @@
 }
 
 .contable-valor {
-    font-family: 'Inter', sans-serif;
     font-weight: 700;
     text-align: right;
     color: #1e293b;
 }
 
-/* Colores Suaves */
 .pos-soft { color: #10b981; }
 .neg-soft { color: #f43f5e; }
 
-/* Saldo Esperado Destacado */
 .fila-destacada {
     margin-top: 15px;
     padding-top: 15px;
@@ -351,12 +779,11 @@
 }
 
 .fila-destacada .contable-valor {
-    color: #1e1b4b; /* Azul muy oscuro */
+    color: #1e1b4b;
     font-size: 20px;
     font-weight: 900;
 }
 
-/* SECCIÓN RESULTADO (FOOTER INTERNO) */
 .resultado-contable-box {
     border: 1px solid #e2e8f0;
     border-radius: 16px;
@@ -390,7 +817,6 @@
     color: #1e293b;
 }
 
-/* DIFERENCIA BADGE */
 .diff-container {
     margin-top: 5px;
 }
@@ -406,7 +832,6 @@
 .diff-pill.ok { background: #dcfce7; color: #15803d; }
 .diff-pill.error { background: #fee2e2; color: #b91c1c; }
 
-/* FOOTER ACCIONES */
 .modal-cierre-footer {
     padding: 0 40px 40px;
     display: grid;
@@ -442,7 +867,6 @@
 .btn-primary-modal {
     background: #4f46e5;
     color: white;
-    grid-column: span 1;
 }
 
 .btn-primary-modal:hover {
@@ -474,7 +898,6 @@
     color: #1e293b;
 }
 
-/* Grid de tiempos discreto */
 .tiempos-discretos {
     display: flex;
     gap: 20px;
@@ -491,4 +914,61 @@
 .tiempo-simple strong {
     color: #64748b;
     margin-left: 4px;
+}
+
+/* =============================================
+   APERTURA DE CAJA (kept clean)
+   ============================================= */
+.caja-summary-card.initial {
+    background: white;
+    padding: 24px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+}
+
+.caja-summary-card p {
+    margin: 0;
+    font-size: 12px;
+    color: #64748b;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.caja-summary-card h4 {
+    margin: 5px 0 0 0;
+    color: #0f172a;
+    font-size: 32px;
+    font-weight: 900;
+}
+
+/* =============================================
+   RESPONSIVE
+   ============================================= */
+@media (max-width: 900px) {
+    .caja-stats-row {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 650px) {
+    .caja-stats-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    .caja-kpi-hero {
+        flex-direction: column;
+        gap: 16px;
+    }
+    .caja-kpi-hero-meta {
+        align-items: flex-start;
+    }
+    .caja-drawer {
+        width: 100%;
+        right: -100%;
+    }
+    .caja-header-hero {
+        flex-direction: column;
+        gap: 12px;
+    }
 }
