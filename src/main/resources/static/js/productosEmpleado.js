@@ -340,8 +340,32 @@ document.addEventListener('DOMContentLoaded', function () {
     const detailCloseBtn = document.getElementById('product-detail-close');
     const detailCloseBtnFooter = document.getElementById('product-detail-close-btn');
 
+    // --- Lógica de Pestañas ---
+    const detailTabs = document.querySelectorAll('#product-detail-modal .product-detail-tab');
+    detailTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            detailTabs.forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#product-detail-modal .product-detail-tab-content').forEach(c => c.style.display = 'none');
+            tab.classList.add('active');
+            const targetId = tab.getAttribute('data-tab');
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) targetContent.style.display = 'block';
+        });
+    });
+
+    function resetDetailTabs() {
+        detailTabs.forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('#product-detail-modal .product-detail-tab-content').forEach(c => c.style.display = 'none');
+        const firstTab = document.querySelector('#product-detail-modal .product-detail-tab[data-tab="product-detail-tab-info"]');
+        if (firstTab) firstTab.classList.add('active');
+        const firstContent = document.getElementById('product-detail-tab-info');
+        if (firstContent) firstContent.style.display = 'block';
+    }
+
     async function openDetailModal(productId) {
         try {
+            resetDetailTabs();
+
             const response = await fetch(`${API_PRODUCTOS_URL}/inventario?page=0&size=1000`, { cache: 'no-store' });
             if (!response.ok) throw new Error('Error al cargar datos del producto');
 
@@ -367,37 +391,59 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('detail-stock-max').textContent = product.stockMaximo;
 
             let estadoTexto = 'N/A', estadoClase = '';
+            let badgeBg = 'rgba(16,185,129,0.25)', badgeBorder = 'rgba(16,185,129,0.3)';
+
             if (product.estadoStock === 'AGOTADO' || product.stockActual === 0) {
                 estadoTexto = 'Agotado'; estadoClase = 'empty';
-            } else if (product.estadoStock === 'BAJO' || product.stockActual < product.stockMinimo) {
+                badgeBg = 'rgba(239,68,68,0.25)'; badgeBorder = 'rgba(239,68,68,0.3)';
+            } else if (product.estadoStock === 'BAJO' || (product.stockMinimo && product.stockActual < product.stockMinimo)) {
                 estadoTexto = 'Bajo'; estadoClase = 'low';
-            } else {
+                badgeBg = 'rgba(245,158,11,0.25)'; badgeBorder = 'rgba(245,158,11,0.3)';
+            } else if (product.estadoStock === 'BUENO' || product.stockActual >= product.stockMinimo) {
                 estadoTexto = 'Óptimo'; estadoClase = 'good';
+            } else {
+                estadoTexto = 'N/A';
             }
-            document.getElementById('detail-stock-estado').innerHTML =
-                `<span class="stock-badge ${estadoClase}" style="padding-left: 6px; padding-right: 8px;">${estadoTexto}</span>`;
+
+            document.getElementById('detail-stock-estado').textContent = estadoTexto;
+            const estadoBadgeEl = document.getElementById('detail-stock-estado-badge');
+            if (estadoBadgeEl) {
+                estadoBadgeEl.style.background = badgeBg;
+                estadoBadgeEl.style.borderColor = badgeBorder;
+            }
+
+            const estadoTextEl = document.getElementById('detail-stock-estado-text');
+            if (estadoTextEl) {
+                estadoTextEl.innerHTML = `<span class="stock-badge ${estadoClase}" style="padding-left: 6px; padding-right: 8px;">${estadoTexto}</span>`;
+            }
 
             const proveedoresBody = document.getElementById('detail-proveedores-body');
-            proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
+            if (proveedoresBody) {
+                proveedoresBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #94a3b8; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Cargando...</td></tr>';
 
-            try {
-                const provResponse = await fetch(`${API_PRODUCTOS_URL}/${productId}/proveedores`, { cache: 'no-store' });
-                if (provResponse.ok) {
-                    const proveedores = await provResponse.json();
-                    proveedoresBody.innerHTML = proveedores.length === 0
-                        ? '<tr><td colspan="4" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">Sin proveedores asociados</td></tr>'
-                        : proveedores.map(prov => `
-                            <tr>
-                                <td style="font-weight: 500;">${prov.nombre || 'N/A'}</td>
-                                <td>${prov.telefono || '<span style="color: #94a3b8;">—</span>'}</td>
-                                <td>${prov.email || '<span style="color: #94a3b8;">—</span>'}</td>
-                                <td style="text-align: right; font-weight: 600;">${prov.ultimoCosto != null ? '$' + prov.ultimoCosto.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '<span style="color: #94a3b8;">—</span>'}</td>
-                            </tr>`).join('');
-                } else {
-                    proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #e74c3c; padding: 20px;">Error al cargar proveedores</td></tr>';
+                try {
+                    const provResponse = await fetch(`${API_PRODUCTOS_URL}/${productId}/proveedores`, { cache: 'no-store' });
+                    if (provResponse.ok) {
+                        const proveedores = await provResponse.json();
+                        const provBadge = document.getElementById('product-detail-tab-proveedores-badge');
+                        if (provBadge) provBadge.textContent = proveedores.length;
+
+                        if (proveedores.length === 0) {
+                            proveedoresBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">Sin proveedores asociados</td></tr>';
+                        } else {
+                            proveedoresBody.innerHTML = proveedores.map(prov => `
+                                <tr>
+                                    <td style="font-weight: 500;">${prov.nombre || 'N/A'}</td>
+                                    <td>${prov.telefono || '<span style="color: #94a3b8;">—</span>'}</td>
+                                    <td>${prov.email || '<span style="color: #94a3b8;">—</span>'}</td>
+                                </tr>`).join('');
+                        }
+                    } else {
+                        proveedoresBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #e74c3c; padding: 20px;">Error al cargar proveedores</td></tr>';
+                    }
+                } catch (e) {
+                    proveedoresBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #e74c3c; padding: 20px;">Error al cargar proveedores</td></tr>';
                 }
-            } catch (e) {
-                proveedoresBody.innerHTML = '<tr><td colspan="4" style="text-align: center; color: #e74c3c; padding: 20px;">Error al cargar proveedores</td></tr>';
             }
 
             detailModal.style.display = 'flex';
@@ -412,6 +458,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function closeDetailModal() {
+        if (!detailModal) return;
         detailModal.style.display = 'none';
         if (detailModal._escHandler) {
             document.removeEventListener('keydown', detailModal._escHandler);

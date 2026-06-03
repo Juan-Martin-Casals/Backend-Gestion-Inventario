@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let cajaEstaAbierta = false;
     let resumenCajaActual = null; // Almacenamos el DTO de respuesta para cálculos locales y PDF
 
-    const formatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+    const formatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
     // Verificar el estado de la caja de forma automática al cargar
     async function verificarEstadoCaja() {
@@ -50,6 +50,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const data = await res.json();
             cajaEstaAbierta = data.abierta;
 
+            window.usuarioNombreActual = usuarioObj.nombreCompleto;
             spanOperador.textContent = `${usuarioObj.nombreCompleto} (${usuarioObj.rol})`;
 
             if (!cajaEstaAbierta) {
@@ -57,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 saldoAnteriorGlobal = data.saldoAnterior || 0.0;
 
                 spanSaldoAnterior.textContent = formatter.format(saldoAnteriorGlobal);
-                inputMontoInicial.value = Math.round(saldoAnteriorGlobal);
+                inputMontoInicial.value = new Intl.NumberFormat('es-AR').format(Math.round(saldoAnteriorGlobal));
 
                 panelApertura.style.display = 'block';
                 if (tituloApertura) tituloApertura.style.display = 'block';
@@ -101,78 +102,92 @@ document.addEventListener('DOMContentLoaded', function () {
             const elIngresos = document.getElementById('caja-resumen-ingresos');
             const elEgresos = document.getElementById('caja-resumen-egresos');
             const elEsperado = document.getElementById('caja-resumen-esperado');
+            const elOperador = document.getElementById('caja-kpi-operador');
+            
             if (elInicial) elInicial.textContent = formatter.format(resumenData.montoInicial || 0);
+            if (elOperador && window.usuarioNombreActual) elOperador.textContent = window.usuarioNombreActual;
             if (elIngresos) elIngresos.textContent = formatter.format(resumenData.totalVentas || 0);
             if (elEgresos) elEgresos.textContent = formatter.format(resumenData.totalCompras || 0);
             if (elEsperado) elEsperado.textContent = formatter.format(resumenData.saldoEsperado || 0);
             
             // 2. Poblamos Tarjetas del Nuevo Dashboard Analítico
-            document.getElementById('caja-card-total-ventas').textContent = formatter.format(resumenData.totalVentas || 0);
-            document.getElementById('caja-card-cantidad-ventas').textContent = resumenData.cantidadVentas || 0;
-            document.getElementById('caja-card-efectivo').textContent = formatter.format(resumenData.totalEfectivo || 0);
-            document.getElementById('caja-card-tarjeta').textContent = formatter.format(resumenData.totalTarjeta || 0);
-            document.getElementById('caja-card-transferencia').textContent = formatter.format(resumenData.totalTransferencia || 0);
+            const elTotalVentas = document.getElementById('caja-card-total-ventas');
+            if (elTotalVentas) elTotalVentas.textContent = formatter.format(resumenData.totalVentas || 0);
+            
+            const elCantVentas = document.getElementById('caja-card-cantidad-ventas');
+            if (elCantVentas) elCantVentas.textContent = resumenData.cantidadVentas || 0;
+            
+            const elEfectivo = document.getElementById('caja-card-efectivo');
+            if (elEfectivo) elEfectivo.textContent = formatter.format(resumenData.totalEfectivo || 0);
+            
+            const elTarjeta = document.getElementById('caja-card-tarjeta');
+            if (elTarjeta) elTarjeta.textContent = formatter.format(resumenData.totalTarjeta || 0);
+            
+            const elTransferencia = document.getElementById('caja-card-transferencia');
+            if (elTransferencia) elTransferencia.textContent = formatter.format(resumenData.totalTransferencia || 0);
 
             // 3. Poblamos Tabla de Desglose (siempre mostramos los 3 métodos por defecto)
             const tbodyDesglose = document.getElementById('caja-tabla-desglose');
-            tbodyDesglose.innerHTML = '';
+            if (tbodyDesglose) {
+                tbodyDesglose.innerHTML = '';
 
-            const metodosDefault = [
-                { nombre: 'Efectivo',      iconoClass: 'fas fa-money-bill',   spanClass: 'icon-efectivo' },
-                { nombre: 'Tarjeta',       iconoClass: 'fas fa-credit-card',  spanClass: 'icon-tarjeta' },
-                { nombre: 'Transferencia', iconoClass: 'fas fa-exchange-alt', spanClass: 'icon-transferencia' }
-            ];
+                const metodosDefault = [
+                    { nombre: 'Efectivo',      iconoClass: 'fas fa-money-bill',   spanClass: 'icon-efectivo' },
+                    { nombre: 'Tarjeta',       iconoClass: 'fas fa-credit-card',  spanClass: 'icon-tarjeta' },
+                    { nombre: 'Transferencia', iconoClass: 'fas fa-exchange-alt', spanClass: 'icon-transferencia' }
+                ];
 
-            // Crear mapa de datos reales del backend indexado por nombre normalizado
-            const datosReales = {};
-            if (resumenData.desgloseCobros && resumenData.desgloseCobros.length > 0) {
-                resumenData.desgloseCobros.forEach(cobro => {
-                    const key = (cobro.metodoPago || '').toLowerCase();
-                    datosReales[key] = cobro;
-                });
-            }
+                // Crear mapa de datos reales del backend indexado por nombre normalizado
+                const datosReales = {};
+                if (resumenData.desgloseCobros && resumenData.desgloseCobros.length > 0) {
+                    resumenData.desgloseCobros.forEach(cobro => {
+                        const key = (cobro.metodoPago || '').toLowerCase();
+                        datosReales[key] = cobro;
+                    });
+                }
 
-            let totalOperacionesGlobal = 0;
-            let totalGananciasGlobal = 0;
+                let totalOperacionesGlobal = 0;
+                let totalGananciasGlobal = 0;
 
-            metodosDefault.forEach(metodo => {
-                const key = metodo.nombre.toLowerCase();
-                const datoReal = datosReales[key] || null;
-                const operaciones = datoReal ? datoReal.cantidadOperaciones : 0;
-                const total = datoReal ? datoReal.totalIngresado : 0;
+                metodosDefault.forEach(metodo => {
+                    const key = metodo.nombre.toLowerCase();
+                    const datoReal = datosReales[key] || null;
+                    const operaciones = datoReal ? datoReal.cantidadOperaciones : 0;
+                    const total = datoReal ? datoReal.totalIngresado : 0;
 
-                totalOperacionesGlobal += operaciones;
-                totalGananciasGlobal += total;
+                    totalOperacionesGlobal += operaciones;
+                    totalGananciasGlobal += total;
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <div class="metodo-pago-label">
-                            <div class="metodo-icon ${metodo.spanClass}">
-                                <i class="${metodo.iconoClass}"></i>
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <div class="metodo-pago-label">
+                                <div class="metodo-icon ${metodo.spanClass}">
+                                    <i class="${metodo.iconoClass}"></i>
+                                </div>
+                                ${metodo.nombre}
                             </div>
-                            ${metodo.nombre}
+                        </td>
+                        <td style="text-align: center; font-weight: 600;">${operaciones}</td>
+                        <td style="text-align: right; font-weight: 800;">${formatter.format(total)}</td>
+                    `;
+                    tbodyDesglose.appendChild(tr);
+                });
+
+                // Fila de TOTALES
+                const trTotal = document.createElement('tr');
+                trTotal.style.backgroundColor = '#f8fafc';
+                trTotal.innerHTML = `
+                    <td>
+                        <div style="font-weight: 800; color: #1e293b; padding-left: 10px;">
+                            TOTALES
                         </div>
                     </td>
-                    <td style="text-align: center; font-weight: 600;">${operaciones}</td>
-                    <td style="text-align: right; font-weight: 800;">${formatter.format(total)}</td>
+                    <td style="text-align: center; font-weight: 800; color: #1e293b;">${totalOperacionesGlobal}</td>
+                    <td style="text-align: right; font-weight: 900; color: #10b981; font-size: 15px;">${formatter.format(totalGananciasGlobal)}</td>
                 `;
-                tbodyDesglose.appendChild(tr);
-            });
-
-            // Fila de TOTALES
-            const trTotal = document.createElement('tr');
-            trTotal.style.backgroundColor = '#f8fafc';
-            trTotal.innerHTML = `
-                <td>
-                    <div style="font-weight: 800; color: #1e293b; padding-left: 10px;">
-                        TOTALES
-                    </div>
-                </td>
-                <td style="text-align: center; font-weight: 800; color: #1e293b;">${totalOperacionesGlobal}</td>
-                <td style="text-align: right; font-weight: 900; color: #10b981; font-size: 15px;">${formatter.format(totalGananciasGlobal)}</td>
-            `;
-            tbodyDesglose.appendChild(trTotal);
+                tbodyDesglose.appendChild(trTotal);
+            }
 
             // 4. Lógica de Fondo Fijo y Retiro
             const totalEfectivoTeorico = resumenData.saldoEsperado || ((resumenData.montoInicial || 0) + (resumenData.totalEfectivo || 0) - (resumenData.totalCompras || 0));
@@ -201,8 +216,19 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (inputMontoInicial) {
-        inputMontoInicial.addEventListener('input', () => {
-            const value = parseFloat(inputMontoInicial.value) || 0;
+        inputMontoInicial.addEventListener('input', (e) => {
+            // Reutilizamos la misma logica de formateo local (asumiendo que function formatNumberInput existe más abajo, 
+            // pero js hace hoisting o podemos inlinear la lógica para que no falle si se define después).
+            const input = e.target;
+            let valueStr = input.value.replace(/\D/g, '');
+            if (valueStr === '') {
+                input.value = '';
+            } else {
+                input.value = new Intl.NumberFormat('es-AR').format(parseInt(valueStr, 10));
+            }
+
+            const rawValueStr = input.value.replace(/\./g, '');
+            const value = parseFloat(rawValueStr) || 0;
             if (Math.abs(value - saldoAnteriorGlobal) > 0.01) {
                 warningText.style.display = 'block';
             } else {
@@ -211,12 +237,27 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    const formatNumberInput = (e) => {
+        const input = e.target;
+        let valueStr = input.value.replace(/\D/g, '');
+        if (valueStr === '') {
+            input.value = '';
+        } else {
+            input.value = new Intl.NumberFormat('es-AR').format(parseInt(valueStr, 10));
+        }
+    };
+
+    if (inputMontoFinalFisico) {
+        inputMontoFinalFisico.addEventListener('input', formatNumberInput);
+    }
+
     if (warningFinalText && inputMontoFinalFisico) {
         inputMontoFinalFisico.addEventListener('input', () => {
-            const value = parseFloat(inputMontoFinalFisico.value);
+            const rawValueStr = inputMontoFinalFisico.value.replace(/\./g, '');
+            const value = parseFloat(rawValueStr) || 0;
             const esperado = resumenCajaActual ? (resumenCajaActual.saldoEsperado || 0) : 0;
             
-            if (!isNaN(value) && Math.abs(value - esperado) > 0.01) {
+            if (Math.abs(value - esperado) > 0.01) {
                 warningFinalText.style.display = 'block';
             } else {
                 warningFinalText.style.display = 'none';
@@ -224,16 +265,13 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Bloquear caracteres no numéricos en inputs de cierre
-    [inputMontoFinalFisico, inputFondoFijo].forEach(input => {
-        if (input) {
-            input.addEventListener('keydown', (e) => {
-                if (['e', 'E', '+', '-'].includes(e.key)) {
-                    e.preventDefault();
-                }
-            });
-        }
-    });
+    // Counter para observaciones
+    const charCountSpan = document.getElementById('char-count-observaciones');
+    if (inputObsCierre && charCountSpan) {
+        inputObsCierre.addEventListener('input', () => {
+            charCountSpan.textContent = inputObsCierre.value.length;
+        });
+    }
 
     // Bloquear caracteres no válidos en monto inicial (solo enteros positivos)
     if (inputMontoInicial) {
@@ -246,8 +284,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (btnAbrirCaja) {
         btnAbrirCaja.addEventListener('click', async () => {
-            const montoInicial = parseFloat(inputMontoInicial.value);
-            if (isNaN(montoInicial) || montoInicial <= 0) {
+            const rawValueStr = inputMontoInicial.value.replace(/\./g, '');
+            const montoInicial = parseFloat(rawValueStr);
+            if (isNaN(montoInicial) || montoInicial < 0) {
                 showError('El monto es inválido.');
                 return;
             }
@@ -389,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btnCerrarCaja.addEventListener('click', async () => {
             // 1. Validaciones iniciales
             const fondoFijoVal = parseFloat(inputFondoFijo.value) || 0;
-            const montoFisicoVal = parseFloat(inputMontoFinalFisico.value) || 0;
+            const montoFisicoVal = parseFloat(inputMontoFinalFisico.value.replace(/\./g, '')) || 0;
 
             if (isNaN(fondoFijoVal) || fondoFijoVal < 0) {
                 if (panelErrorCierre) {
@@ -436,44 +475,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const crNode = document.getElementById('modal-resumen-cierre-hora');
             if (crNode) crNode.textContent = horaCierre;
 
-            // Card Efectivo - datos reales del backend
-            const iniNode = document.getElementById('modal-resumen-inicial');
-            if (iniNode) iniNode.textContent = formatter.format(data.montoInicial || 0);
-            const vtEfNode = document.getElementById('modal-resumen-ventas-efectivo');
-            if (vtEfNode) vtEfNode.textContent = `+${formatter.format(data.totalEfectivo || 0)}`;
-            const gaNode = document.getElementById('modal-resumen-gastos');
-            if (gaNode) gaNode.textContent = `-${formatter.format(data.totalCompras || 0)}`;
-            const espNode = document.getElementById('modal-resumen-esperado');
-            if (espNode) espNode.textContent = formatter.format(totalEfTeorico);
-
-            // Card Digital - datos reales del backend
-            const trjNode = document.getElementById('modal-resumen-tarjeta');
-            if (trjNode) trjNode.textContent = formatter.format(data.totalTarjeta || 0);
-            const trfNode = document.getElementById('modal-resumen-transferencia');
-            if (trfNode) trfNode.textContent = formatter.format(data.totalTransferencia || 0);
-
-            // Resultado Arqueo - datos del usuario + cálculos
+            // Resultado Arqueo (Ciego) - solo mostramos lo declarado
             const realNode = document.getElementById('modal-resumen-real');
             if (realNode) realNode.textContent = formatter.format(montoFisicoVal);
-            
-            const diffSpan = document.getElementById('modal-resumen-diferencia');
-            if (diffSpan) {
-                if (Math.abs(diferencia) < 0.01) {
-                    diffSpan.textContent = `$0,00 (Cuadrado)`;
-                    diffSpan.className = 'diff-pill ok';
-                } else {
-                    const tipo = diferencia > 0 ? 'SOBRANTE' : 'FALTANTE';
-                    diffSpan.textContent = `${formatter.format(diferencia)} (${tipo})`;
-                    diffSpan.className = 'diff-pill error';
-                }
-            }
-
-            // Fondo y Retiro - cálculos basados en datos reales
-            const pxNode = document.getElementById('modal-resumen-fondo-proximo');
-            if (pxNode) pxNode.textContent = formatter.format(fondoFijoVal);
-            const retiro = Math.max(0, montoFisicoVal - fondoFijoVal);
-            const retNode = document.getElementById('modal-resumen-retiro');
-            if (retNode) retNode.textContent = formatter.format(retiro);
 
             // 4. Mostrar Modal
             if (modalResumen) {
@@ -496,7 +500,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnPrevisualizarCierre) {
         btnPrevisualizarCierre.addEventListener('click', () => {
             const fondoFijoVal = parseFloat(inputFondoFijo.value) || 0;
-            const montoFisicoVal = parseFloat(inputMontoFinalFisico.value) || 0;
+            const montoFisicoVal = parseFloat(inputMontoFinalFisico.value.replace(/\./g, '')) || 0;
             generarCierrePDF(fondoFijoVal, montoFisicoVal);
         });
     }
@@ -505,7 +509,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnConfirmarCierre) {
         btnConfirmarCierre.addEventListener('click', async () => {
             const fondoFijoValStr = inputFondoFijo.value;
-            const montoFisicoVal = parseFloat(inputMontoFinalFisico.value);
+            const montoFisicoVal = parseFloat(inputMontoFinalFisico.value.replace(/\./g, ''));
             const obsBase = inputObsCierre ? inputObsCierre.value.trim() : "";
             const observacionesCierre = `FF=${parseFloat(fondoFijoValStr).toFixed(2)}; Obs=${obsBase}`;
 
@@ -811,10 +815,239 @@ document.addEventListener('DOMContentLoaded', function () {
     let historialCurrentPage = 0;
     let historialTotalPages = 1;
     let historialLoaded = false;
+    let todasLasSesiones = [];
 
     window.showCajaSubsection = function(subsectionId) {
-        if (cajaOperacionesContainer) cajaOperacionesContainer.style.display = 'block';
-        verificarEstadoCaja();
+        if (subsectionId === 'caja-operaciones') {
+            if (cajaOperacionesContainer) cajaOperacionesContainer.style.display = 'block';
+            if (cajaHistorialContainer) cajaHistorialContainer.style.display = 'none';
+            verificarEstadoCaja();
+        } else if (subsectionId === 'caja-historial') {
+            if (cajaOperacionesContainer) cajaOperacionesContainer.style.display = 'none';
+            if (cajaHistorialContainer) cajaHistorialContainer.style.display = 'block';
+            cargarHistorialSesiones(0);
+        }
     };
 
+    // ==========================================
+    // HISTORIAL DE SESIONES
+    // ==========================================
+
+    function normH(str) {
+        return (str || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+    }
+
+    function fmtFecha(fechaStr) {
+        if (!fechaStr) return '-';
+        const d = new Date(fechaStr);
+        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+    }
+
+    function renderHistorialRows(sesiones, offset) {
+        const tbody = document.getElementById('tabla-historial-caja-body');
+        if (!tbody) return;
+
+        if (!sesiones.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 30px; color: #94a3b8;">No hay sesiones registradas</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = sesiones.map((sesion, index) => {
+            const estadoBadge = sesion.estado === 'ABIERTA'
+                ? '<span style="background: #dcfce7; color: #16a34a; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">ABIERTA</span>'
+                : '<span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">CERRADA</span>';
+
+            let difHtml = '-';
+            if (sesion.diferencia !== null && sesion.diferencia !== undefined) {
+                if (Math.abs(sesion.diferencia) < 0.01) {
+                    difHtml = '<span style="color: #16a34a; font-weight: 600;">$0,00</span>';
+                } else if (sesion.diferencia > 0) {
+                    difHtml = `<span style="color: #16a34a; font-weight: 600;">+${formatter.format(sesion.diferencia)}</span>`;
+                } else {
+                    difHtml = `<span style="color: #dc3545; font-weight: 600;">${formatter.format(sesion.diferencia)}</span>`;
+                }
+            }
+
+            // Separate Apertura and Cierre
+            let aperturaText = fmtFecha(sesion.fechaApertura);
+            let cierreText = sesion.fechaCierre 
+                ? fmtFecha(sesion.fechaCierre)
+                : `<span style="font-size: 11px; color: #64748b;">En curso</span>`;
+
+            // En empleado.html no está el botón "Ver Detalles" porque removimos el modal-detalles-sesion para simplificar, 
+            // pero si quieres lo puedes dejar o quitar. Lo quitaremos por ahora y solo mostraremos los datos en tabla.
+
+            return `
+                <tr>
+                    <td>${offset + index + 1}</td>
+                    <td>${aperturaText}</td>
+                    <td>${cierreText}</td>
+                    <td style="font-weight: 600; text-align: right;">${sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '-'}</td>
+                    <td style="font-weight: 600; text-align: right;">${sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : '-'}</td>
+                    <td style="text-align: right;">${difHtml}</td>
+                    <td style="text-align: center;">${estadoBadge}</td>
+                    <td style="text-align: center;">-</td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    async function filtrarYRenderHistorial(page) {
+        const tbody = document.getElementById('tabla-historial-caja-body');
+        if (tbody) {
+            tbody.classList.add('loading');
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
+
+        const texto = normH(historialBusqueda?.value || '');
+        const PAGE_SIZE = 10;
+
+        const filtradas = texto
+            ? todasLasSesiones.filter(s => {
+                const rawCierre = s.observacionesCierre || '';
+                const obsMatch = rawCierre.match(/Obs=(.+)$/);
+                const campos = normH([s.estado, s.observacionesApertura, obsMatch ? obsMatch[1] : ''].join(' '));
+                return campos.includes(texto);
+            })
+            : todasLasSesiones;
+
+        historialTotalPages = Math.max(Math.ceil(filtradas.length / PAGE_SIZE), 1);
+        historialCurrentPage = Math.min(page, historialTotalPages - 1);
+
+        const pageInfo = document.getElementById('historial-caja-page-info');
+        if (pageInfo) pageInfo.textContent = `Página ${historialCurrentPage + 1} de ${historialTotalPages}`;
+        const prevBtn = document.getElementById('historial-caja-prev');
+        const nextBtn = document.getElementById('historial-caja-next');
+        if (prevBtn) prevBtn.disabled = historialCurrentPage === 0;
+        if (nextBtn) nextBtn.disabled = historialCurrentPage + 1 >= historialTotalPages;
+
+        const offset = historialCurrentPage * PAGE_SIZE;
+        renderHistorialRows(filtradas.slice(offset, offset + PAGE_SIZE), offset);
+
+        requestAnimationFrame(() => { if (tbody) tbody.classList.remove('loading'); });
+    }
+
+    async function cargarHistorialSesiones(page) {
+        const tbody = document.getElementById('tabla-historial-caja-body');
+        if (!tbody) return;
+
+        tbody.classList.add('loading');
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        try {
+            const params = new URLSearchParams({ page: 0, size: 1000, sort: 'fechaApertura,desc' });
+            const fechaDesde = historialFechaDesde?.value;
+            const fechaHasta = historialFechaHasta?.value;
+            const estado = historialFiltroEstado?.value;
+            const soloDiferencias = btnHistorialDiferencias?.dataset.active === 'true';
+
+            if (fechaDesde) params.append('fechaDesde', fechaDesde + 'T00:00:00');
+            if (fechaHasta) params.append('fechaHasta', fechaHasta + 'T23:59:59');
+            if (estado) params.append('estado', estado);
+            
+            // FILTRO ESTRICTO POR USUARIO ACTUAL
+            if (usuarioIdActual) params.append('operadorId', usuarioIdActual);
+            
+            if (soloDiferencias) params.append('soloDiferencias', 'true');
+
+            const response = await fetch(`/api/caja/historial?${params}`);
+            if (!response.ok) throw new Error('Error al obtener historial');
+
+            const data = await response.json();
+            todasLasSesiones = data.content || [];
+
+            filtrarYRenderHistorial(page);
+            requestAnimationFrame(() => tbody.classList.remove('loading'));
+
+        } catch (error) {
+            console.error('Error cargando historial de sesiones:', error);
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 30px; color: #dc3545;">Error al cargar historial</td></tr>';
+            requestAnimationFrame(() => tbody.classList.remove('loading'));
+        }
+    }
+
+    const historialFiltroError = document.getElementById('historial-caja-filtro-error');
+
+    function mostrarErrorHistorial(msg) {
+        if (!historialFiltroError) return;
+        historialFiltroError.textContent = msg;
+        historialFiltroError.style.display = 'block';
+        setTimeout(() => { historialFiltroError.style.display = 'none'; }, 4000);
+    }
+
+    function validarFechasHistorial() {
+        const desde = historialFechaDesde?.value;
+        const hasta = historialFechaHasta?.value;
+        if (desde && hasta && desde > hasta) {
+            mostrarErrorHistorial('La fecha de inicio no puede ser mayor que la fecha de fin');
+            return false;
+        }
+        if (historialFiltroError) historialFiltroError.style.display = 'none';
+        return true;
+    }
+
+    // Búsqueda en tiempo real (sin llamada al servidor)
+    if (historialBusqueda) {
+        historialBusqueda.addEventListener('input', () => filtrarYRenderHistorial(0));
+    }
+
+    // Lupa: aplica filtros de fecha (requiere fetch al servidor)
+    if (historialBtnBuscar) {
+        historialBtnBuscar.addEventListener('click', () => {
+            if (validarFechasHistorial()) cargarHistorialSesiones(0);
+        });
+    }
+
+    if (btnHistorialDiferencias) {
+        btnHistorialDiferencias.addEventListener('click', () => {
+            const isActive = btnHistorialDiferencias.dataset.active === 'true';
+            btnHistorialDiferencias.dataset.active = String(!isActive);
+            if (!isActive) {
+                btnHistorialDiferencias.style.background = '#007bff';
+                btnHistorialDiferencias.style.color = '#fff';
+                btnHistorialDiferencias.style.borderColor = '#007bff';
+            } else {
+                btnHistorialDiferencias.style.background = 'white';
+                btnHistorialDiferencias.style.color = '#495057';
+                btnHistorialDiferencias.style.borderColor = '#ddd';
+            }
+            cargarHistorialSesiones(0);
+        });
+    }
+
+    if (btnHistorialLimpiar) {
+        btnHistorialLimpiar.addEventListener('click', () => {
+            if (historialBusqueda) historialBusqueda.value = '';
+            if (historialFechaDesde) historialFechaDesde.value = '';
+            if (historialFechaHasta) historialFechaHasta.value = '';
+            if (historialFiltroEstado) historialFiltroEstado.value = '';
+            if (historialFiltroError) historialFiltroError.style.display = 'none';
+            if (btnHistorialDiferencias) {
+                btnHistorialDiferencias.dataset.active = 'false';
+                btnHistorialDiferencias.style.background = 'white';
+                btnHistorialDiferencias.style.color = '#495057';
+                btnHistorialDiferencias.style.borderColor = '#ddd';
+            }
+            cargarHistorialSesiones(0);
+        });
+    }
+
+    if (historialFiltroEstado) {
+        historialFiltroEstado.addEventListener('change', () => cargarHistorialSesiones(0));
+    }
+
+    // Paginación local (sin re-fetch)
+    const histPrev = document.getElementById('historial-caja-prev');
+    const histNext = document.getElementById('historial-caja-next');
+
+    if (histPrev) {
+        histPrev.addEventListener('click', () => {
+            if (historialCurrentPage > 0) filtrarYRenderHistorial(historialCurrentPage - 1);
+        });
+    }
+    if (histNext) {
+        histNext.addEventListener('click', () => {
+            if (historialCurrentPage + 1 < historialTotalPages) filtrarYRenderHistorial(historialCurrentPage + 1);
+        });
+    }
 });

@@ -3381,10 +3381,10 @@ body {
 }
 
 .product-detail-tab {
-    padding: 10px 22px;
+    padding: 12px 26px;
     border: 1px solid transparent;
-    background: transparent;
-    font-size: 13px;
+    background: #f1f5f9;
+    font-size: 14px;
     font-weight: 600;
     color: #64748b;
     cursor: pointer;
@@ -3392,15 +3392,22 @@ body {
     margin-bottom: -1px;
     display: flex;
     align-items: center;
-    gap: 7px;
-    transition: all 0.2s;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.product-detail-tab:hover {
+    background: #e2e8f0;
+    color: #334155;
 }
 
 .product-detail-tab.active {
     background: white;
-    color: #1e293b;
+    color: #0f172a;
     border-color: #e2e8f0;
+    border-top: 3px solid #14b8a6;
     border-bottom: 2px solid white;
+    box-shadow: 0 -4px 6px -4px rgba(0,0,0,0.05);
 }
 
 .product-detail-tab-badge {

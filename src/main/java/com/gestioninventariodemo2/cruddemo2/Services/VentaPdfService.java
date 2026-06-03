@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import com.gestioninventariodemo2.cruddemo2.Repository.UsuarioRepository;
+import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
 
 @Service
 public class VentaPdfService {
@@ -44,404 +46,351 @@ public class VentaPdfService {
         private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
         private static final DecimalFormat NUMBER_FORMATTER;
 
-        // Datos del negocio (hardcodeados por ahora)
-        private static final String NOMBRE_NEGOCIO = "Mi Negocio";
-        private static final String DIRECCION_NEGOCIO = "Calle Falsa 123";
-        private static final String TELEFONO_NEGOCIO = "11 1234-5678";
+    // Definición de colores de la marca
+    private static final DeviceRgb BRAND_COLOR = new DeviceRgb(41, 98, 255); // Azul Índigo
+    private static final DeviceRgb TEXT_DARK = new DeviceRgb(55, 65, 81); // Gris Oscuro
+    private static final DeviceRgb TEXT_MUTED = new DeviceRgb(107, 114, 128); // Gris Claro
+    private static final DeviceRgb ROW_EVEN = new DeviceRgb(249, 250, 251); // Zebra striping sutil
+    private static final DeviceRgb BORDER_COLOR = new DeviceRgb(229, 231, 235); // Gris para bordes
 
-        @Autowired
-        private CobroService cobroService;
+    // Datos del negocio (hardcodeados por ahora, usados para ticket)
+    private static final String NOMBRE_NEGOCIO = "Libreria";
+    private static final String DIRECCION_NEGOCIO = "Calle Falsa 123";
+    private static final String TELEFONO_NEGOCIO = "11 1234-5678";
 
-        static {
-                DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.of("es", "AR"));
-                symbols.setGroupingSeparator('.');
-                symbols.setDecimalSeparator(',');
-                NUMBER_FORMATTER = new DecimalFormat("#,##0.00", symbols);
+    @Autowired
+    private CobroService cobroService;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
+
+    static {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.of("es", "AR"));
+        symbols.setGroupingSeparator('.');
+        symbols.setDecimalSeparator(',');
+        NUMBER_FORMATTER = new DecimalFormat("#,##0", symbols);
+    }
+
+    public byte[] generarPdfVentas(List<VentaResponseDTO> ventas, LocalDate inicio, LocalDate fin, String search, String metodoPago, String nombreVendedor) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf, PageSize.A4);
+            document.setMargins(40, 40, 60, 40);
+            pdf.addEventHandler(com.itextpdf.kernel.events.PdfDocumentEvent.END_PAGE, new PageEvent());
+
+            // ========== CABECERA ==========
+            agregarCabecera(document, inicio, fin, search, metodoPago, nombreVendedor);
+
+            // ========== RESUMEN ==========
+            if (!ventas.isEmpty()) {
+                agregarResumen(document, ventas);
+                agregarTopProductos(document, ventas);
+                agregarDesglosePorVendedor(document, ventas);
+            }
+
+            // ========== TABLA DE VENTAS ==========
+            agregarTablaVentas(document, ventas);
+
+            document.close();
+            return baos.toByteArray();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error al generar PDF de ventas", e);
+        }
+    }
+
+    private void agregarCabecera(Document document, LocalDate inicio, LocalDate fin, String search, String metodoPago, String nombreVendedor) {
+        Table headerTable = new Table(UnitValue.createPercentArray(new float[]{1, 1})).useAllAvailableWidth();
+        headerTable.setMarginBottom(15);
+
+        Cell leftCell = new Cell().setBorder(com.itextpdf.layout.borders.Border.NO_BORDER).setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE);
+        leftCell.add(new Paragraph("SGI").setBold().setFontSize(24).setFontColor(BRAND_COLOR).setMarginBottom(0));
+        leftCell.add(new Paragraph("Reporte de Ventas").setBold().setFontSize(14).setFontColor(TEXT_DARK).setMarginBottom(0));
+        leftCell.add(new Paragraph("Sistema de Gestión Integrado").setFontSize(9).setFontColor(TEXT_MUTED));
+
+        Cell rightCell = new Cell().setBorder(com.itextpdf.layout.borders.Border.NO_BORDER).setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.BOTTOM).setTextAlignment(TextAlignment.RIGHT);
+        
+        String fechaHora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        rightCell.add(new Paragraph("Generado el: " + fechaHora).setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(2));
+        
+        String periodoTexto = (inicio != null && fin != null)
+                ? inicio.format(DATE_FORMATTER) + " - " + fin.format(DATE_FORMATTER)
+                : "Todas las fechas";
+        rightCell.add(new Paragraph("Período: " + periodoTexto).setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(2));
+
+        if (search != null && !search.trim().isEmpty()) {
+            rightCell.add(new Paragraph("Búsqueda: " + search).setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(2));
+        }
+        if (metodoPago != null && !metodoPago.trim().isEmpty()) {
+            rightCell.add(new Paragraph("Método de Cobro: " + metodoPago).setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(2));
+        }
+        if (nombreVendedor != null && !nombreVendedor.trim().isEmpty()) {
+            rightCell.add(new Paragraph("Vendedor: " + nombreVendedor).setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(2));
         }
 
-        public byte[] generarPdfVentas(List<VentaResponseDTO> ventas, LocalDate inicio, LocalDate fin) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        headerTable.addCell(leftCell);
+        headerTable.addCell(rightCell);
+        document.add(headerTable);
 
-                try {
-                        PdfWriter writer = new PdfWriter(baos);
-                        PdfDocument pdf = new PdfDocument(writer);
-                        Document document = new Document(pdf);
+        Table lineTable = new Table(1).useAllAvailableWidth();
+        lineTable.addCell(new Cell().setBorder(com.itextpdf.layout.borders.Border.NO_BORDER).setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(BRAND_COLOR, 2f)));
+        lineTable.setMarginBottom(15);
+        document.add(lineTable);
+    }
 
-                        // ========== PORTADA ==========
-                        agregarPortada(document, inicio, fin);
+    private void agregarResumen(Document document, List<VentaResponseDTO> ventas) {
+        int totalVentas = ventas.size();
+        double ingresosTotal = ventas.stream().mapToDouble(VentaResponseDTO::getTotal).sum();
 
-                        // ========== RESUMEN ==========
-                        if (!ventas.isEmpty()) {
-                                agregarResumen(document, ventas);
-                                agregarTopProductos(document, ventas);
-                                agregarDesglosePorVendedor(document, ventas);
-                        }
-
-                        // ========== TABLA DE VENTAS ==========
-                        agregarTablaVentas(document, ventas);
-
-                        // ========== PIE DE PÁGINA ==========
-                        agregarPiePagina(document);
-
-                        document.close();
-                        return baos.toByteArray();
-
-                } catch (Exception e) {
-                        throw new RuntimeException("Error al generar PDF de ventas", e);
-                }
+        Set<String> clientesUnicos = new HashSet<>();
+        for (VentaResponseDTO venta : ventas) {
+            clientesUnicos.add(venta.getNombreCliente());
         }
 
-        private void agregarPortada(Document document, LocalDate inicio, LocalDate fin) {
-                // Título Principal
-                Paragraph titulo = new Paragraph("REPORTE DE VENTAS")
-                                .setFontSize(28).setBold()
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginTop(100).setMarginBottom(20);
-                document.add(titulo);
+        Table resumenTable = new Table(UnitValue.createPercentArray(new float[]{1, 1, 1})).useAllAvailableWidth();
+        resumenTable.setMarginBottom(20);
 
-                // Subtítulo
-                Paragraph subtitulo = new Paragraph("Reporte de Ventas")
-                                .setFontSize(16)
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(40);
-                document.add(subtitulo);
+        resumenTable.addCell(crearTarjetaResumen("Total Ventas", formatNumber(totalVentas)));
+        resumenTable.addCell(crearTarjetaResumen("Ingresos Totales", "$" + formatCurrency(ingresosTotal)));
+        resumenTable.addCell(crearTarjetaResumen("Clientes Únicos", formatNumber(clientesUnicos.size())));
 
-                // Nombre del negocio
-                Paragraph negocio = new Paragraph("Gestión Inventario")
-                                .setFontSize(20).setBold()
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(60);
-                document.add(negocio);
+        document.add(resumenTable);
+    }
 
-                // Período
-                Paragraph periodoLabel = new Paragraph("Período del Informe")
-                                .setFontSize(14).setBold()
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(10);
-                document.add(periodoLabel);
+    private Cell crearTarjetaResumen(String titulo, String valor) {
+        return new Cell().setBorder(com.itextpdf.layout.borders.Border.NO_BORDER).setPadding(5)
+                .add(new Paragraph(titulo).setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(2))
+                .add(new Paragraph(valor).setFontSize(12).setBold().setFontColor(BRAND_COLOR));
+    }
 
-                String periodoTexto = (inicio != null && fin != null)
-                                ? inicio.format(DATE_FORMATTER) + " - " + fin.format(DATE_FORMATTER)
-                                : "Todas las fechas";
-                Paragraph fechas = new Paragraph(periodoTexto)
-                                .setFontSize(16)
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(60);
-                document.add(fechas);
+    private void agregarTopProductos(Document document, List<VentaResponseDTO> ventas) {
+        Paragraph titulo = new Paragraph("Top 5 Productos Más Vendidos")
+                .setFontSize(12).setBold().setFontColor(TEXT_DARK).setMarginTop(10).setMarginBottom(10).setKeepWithNext(true);
+        document.add(titulo);
 
-                // Fecha de generación
-                Paragraph fechaGeneracion = new Paragraph("Generado: " + LocalDate.now().format(DATE_FORMATTER))
-                                .setFontSize(12)
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(20);
-                document.add(fechaGeneracion);
-
-                // Salto de página — portada sola
-                document.add(new AreaBreak(AreaBreakType.NEXT_PAGE));
+        Map<String, Integer> productoCantidades = new HashMap<>();
+        for (VentaResponseDTO venta : ventas) {
+            for (ProductoVentaDTO producto : venta.getProductos()) {
+                String nombreProducto = producto.getNombreProducto();
+                int cantidad = producto.getCantidad();
+                productoCantidades.put(nombreProducto, productoCantidades.getOrDefault(nombreProducto, 0) + cantidad);
+            }
         }
 
-        private void agregarResumen(Document document, List<VentaResponseDTO> ventas) {
-                // Calcular estadísticas
-                int totalVentas = ventas.size();
-                double ingresosTotal = ventas.stream().mapToDouble(VentaResponseDTO::getTotal).sum();
-                double ventaPromedio = totalVentas > 0 ? ingresosTotal / totalVentas : 0;
+        List<Map.Entry<String, Integer>> topProductos = productoCantidades.entrySet().stream()
+                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
+                .limit(5)
+                .toList();
 
-                // Contar clientes únicos
-                Set<String> clientesUnicos = new HashSet<>();
-                for (VentaResponseDTO venta : ventas) {
-                        clientesUnicos.add(venta.getNombreCliente());
-                }
+        Table table = new Table(UnitValue.createPercentArray(new float[]{3, 1})).setWidth(UnitValue.createPercentValue(60));
+        table.setMarginBottom(20);
 
-                // Crear tabla de resumen (2x2)
-                Table resumenTable = new Table(UnitValue.createPercentArray(new float[] { 1, 1 }))
-                                .setWidth(UnitValue.createPercentValue(100))
-                                .setMarginBottom(20);
+        table.addHeaderCell(crearCabeceraCelda("Producto", TextAlignment.CENTER));
+        table.addHeaderCell(crearCabeceraCelda("Cantidades", TextAlignment.CENTER));
 
-                DeviceRgb colorFondo = new DeviceRgb(240, 248, 255);
+        boolean isEven = false;
+        for (Map.Entry<String, Integer> entry : topProductos) {
+            DeviceRgb rowBg = isEven ? ROW_EVEN : new DeviceRgb(255, 255, 255);
+            isEven = !isEven;
 
-                // Total de Ventas
-                Cell cellVentas = new Cell().add(new Paragraph("Total de Ventas\n" + formatNumber(totalVentas))
-                                .setFontSize(12)
-                                .setTextAlignment(TextAlignment.CENTER))
-                                .setBackgroundColor(colorFondo)
-                                .setPadding(10);
-                resumenTable.addCell(cellVentas);
-
-                // Ingresos Total
-                Cell cellIngresos = new Cell().add(new Paragraph("Ingresos Totales\n$" + formatCurrency(ingresosTotal))
-                                .setFontSize(12)
-                                .setTextAlignment(TextAlignment.CENTER))
-                                .setBackgroundColor(colorFondo)
-                                .setPadding(10);
-                resumenTable.addCell(cellIngresos);
-
-                // Venta Promedio
-                Cell cellPromedio = new Cell().add(new Paragraph("Venta Promedio\n$" + formatCurrency(ventaPromedio))
-                                .setFontSize(12)
-                                .setTextAlignment(TextAlignment.CENTER))
-                                .setBackgroundColor(colorFondo)
-                                .setPadding(10);
-                resumenTable.addCell(cellPromedio);
-
-                // Clientes Únicos
-                Cell cellClientes = new Cell()
-                                .add(new Paragraph("Clientes Únicos\n" + formatNumber(clientesUnicos.size()))
-                                                .setFontSize(12)
-                                                .setTextAlignment(TextAlignment.CENTER))
-                                .setBackgroundColor(colorFondo)
-                                .setPadding(10);
-                resumenTable.addCell(cellClientes);
-
-                document.add(resumenTable);
+            table.addCell(crearCeldaDato(entry.getKey(), rowBg, TextAlignment.LEFT));
+            table.addCell(crearCeldaDato(formatNumber(entry.getValue()), rowBg, TextAlignment.RIGHT));
         }
 
-        private void agregarTopProductos(Document document, List<VentaResponseDTO> ventas) {
-                // Título de la sección
-                Paragraph titulo = new Paragraph("Top 5 Productos Más Vendidos")
-                                .setFontSize(14).setBold().setMarginBottom(10).setKeepWithNext(true);
-                document.add(titulo);
-
-                // Contar cantidades vendidas por producto
-                Map<String, Integer> productoCantidades = new HashMap<>();
-                for (VentaResponseDTO venta : ventas) {
-                        for (ProductoVentaDTO producto : venta.getProductos()) {
-                                String nombreProducto = producto.getNombreProducto();
-                                int cantidad = producto.getCantidad();
-                                productoCantidades.put(nombreProducto,
-                                                productoCantidades.getOrDefault(nombreProducto, 0) + cantidad);
-                        }
-                }
-
-                // Ordenar y obtener top 5
-                List<Map.Entry<String, Integer>> topProductos = productoCantidades.entrySet().stream()
-                                .sorted((e1, e2) -> e2.getValue().compareTo(e1.getValue()))
-                                .limit(5)
-                                .toList();
-
-                // Crear tabla simple con 2 columnas
-                Table table = new Table(UnitValue.createPercentArray(new float[] { 3, 1 }))
-                                .setWidth(UnitValue.createPercentValue(70))
-                                .setMarginBottom(20);
-
-                DeviceRgb colorFondo = new DeviceRgb(255, 250, 240);
-
-                int posicion = 1;
-                for (Map.Entry<String, Integer> entry : topProductos) {
-                        // Nombre del producto
-                        Cell cellProducto = new Cell()
-                                        .add(new Paragraph(posicion + ". " + entry.getKey()).setFontSize(11))
-                                        .setBackgroundColor(colorFondo)
-                                        .setPadding(8);
-                        table.addCell(cellProducto);
-
-                        // Cantidad vendida
-                        Cell cellCantidad = new Cell()
-                                        .add(new Paragraph(formatNumber(entry.getValue()) + " unid.").setFontSize(11))
-                                        .setBackgroundColor(colorFondo)
-                                        .setTextAlignment(TextAlignment.RIGHT)
-                                        .setPadding(8);
-                        table.addCell(cellCantidad);
-
-                        posicion++;
-                }
-
-                if (topProductos.isEmpty()) {
-                        Cell emptyCell = new Cell(1, 2)
-                                        .add(new Paragraph("No hay datos de productos")
-                                                        .setTextAlignment(TextAlignment.CENTER))
-                                        .setPadding(10);
-                        table.addCell(emptyCell);
-                }
-
-                document.add(table);
+        if (topProductos.isEmpty()) {
+            table.addCell(new Cell(1, 2).add(new Paragraph("No hay datos de productos").setTextAlignment(TextAlignment.CENTER)).setBorder(com.itextpdf.layout.borders.Border.NO_BORDER).setPadding(10));
         }
 
-        private void agregarDesglosePorVendedor(Document document, List<VentaResponseDTO> ventas) {
-                // Título de la sección
-                Paragraph titulo = new Paragraph("Desglose por Vendedor")
-                                .setFontSize(14).setBold().setMarginBottom(10).setKeepWithNext(true);
-                document.add(titulo);
+        document.add(table);
+    }
 
-                // Agrupar ventas por vendedor
-                Map<String, VendedorStats> vendedorStats = new HashMap<>();
-                for (VentaResponseDTO venta : ventas) {
-                        String vendedor = venta.getNombreVendedor() != null ? venta.getNombreVendedor() : "N/A";
-                        VendedorStats stats = vendedorStats.getOrDefault(vendedor, new VendedorStats());
-                        stats.cantidadVentas++;
-                        stats.totalIngresos += venta.getTotal();
-                        vendedorStats.put(vendedor, stats);
-                }
+    private void agregarDesglosePorVendedor(Document document, List<VentaResponseDTO> ventas) {
+        Paragraph titulo = new Paragraph("Desglose por Vendedor")
+                .setFontSize(12).setBold().setFontColor(TEXT_DARK).setMarginTop(10).setMarginBottom(10).setKeepWithNext(true);
+        document.add(titulo);
 
-                // Ordenar por total de ingresos descendente
-                List<Map.Entry<String, VendedorStats>> vendedoresOrdenados = vendedorStats.entrySet().stream()
-                                .sorted((e1, e2) -> Double.compare(e2.getValue().totalIngresos,
-                                                e1.getValue().totalIngresos))
-                                .toList();
-
-                // Crear tabla con 3 columnas
-                Table table = new Table(UnitValue.createPercentArray(new float[] { 3, 1, 2 }))
-                                .setWidth(UnitValue.createPercentValue(70))
-                                .setMarginBottom(20);
-
-                DeviceRgb colorHeader = new DeviceRgb(102, 126, 234);
-                DeviceRgb colorFondo = new DeviceRgb(245, 245, 250);
-
-                // Encabezados
-                table.addHeaderCell(
-                                new Cell().add(new Paragraph("Vendedor").setBold().setFontColor(ColorConstants.WHITE))
-                                                .setBackgroundColor(colorHeader).setPadding(5));
-                table.addHeaderCell(new Cell().add(new Paragraph("Ventas").setBold().setFontColor(ColorConstants.WHITE))
-                                .setBackgroundColor(colorHeader).setTextAlignment(TextAlignment.CENTER).setPadding(5));
-                table.addHeaderCell(new Cell().add(new Paragraph("Total").setBold().setFontColor(ColorConstants.WHITE))
-                                .setBackgroundColor(colorHeader).setTextAlignment(TextAlignment.RIGHT).setPadding(5));
-
-                // Datos
-                for (Map.Entry<String, VendedorStats> entry : vendedoresOrdenados) {
-                        // Vendedor
-                        table.addCell(new Cell().add(new Paragraph(entry.getKey()).setFontSize(11))
-                                        .setBackgroundColor(colorFondo).setPadding(8));
-
-                        // Cantidad de ventas
-                        table.addCell(new Cell()
-                                        .add(new Paragraph(String.valueOf(entry.getValue().cantidadVentas))
-                                                        .setFontSize(11))
-                                        .setBackgroundColor(colorFondo).setTextAlignment(TextAlignment.CENTER)
-                                        .setPadding(8));
-
-                        // Total ingresos
-                        table.addCell(new Cell()
-                                        .add(new Paragraph("$" + formatCurrency(entry.getValue().totalIngresos))
-                                                        .setFontSize(11))
-                                        .setBackgroundColor(colorFondo).setTextAlignment(TextAlignment.RIGHT)
-                                        .setPadding(8));
-                }
-
-                if (vendedoresOrdenados.isEmpty()) {
-                        Cell emptyCell = new Cell(1, 3)
-                                        .add(new Paragraph("No hay datos de vendedores")
-                                                        .setTextAlignment(TextAlignment.CENTER))
-                                        .setPadding(10);
-                        table.addCell(emptyCell);
-                }
-
-                document.add(table);
+        Map<String, VendedorStats> vendedorStats = new HashMap<>();
+        
+        // Agregar primero a todos los usuarios/vendedores en el sistema con 0 ventas
+        List<Usuario> todosLosVendedores = usuarioRepository.findAll();
+        for (Usuario u : todosLosVendedores) {
+            String nombreVendedor = u.getNombre() != null ? u.getNombre() : "N/A";
+            vendedorStats.put(nombreVendedor, new VendedorStats());
         }
 
-        // Clase auxiliar para estadísticas de vendedor
-        private static class VendedorStats {
-                int cantidadVentas = 0;
-                double totalIngresos = 0.0;
+        // Sumarizar las ventas del periodo filtrado
+        for (VentaResponseDTO venta : ventas) {
+            String vendedor = venta.getNombreVendedor() != null ? venta.getNombreVendedor() : "N/A";
+            VendedorStats stats = vendedorStats.getOrDefault(vendedor, new VendedorStats());
+            stats.cantidadVentas++;
+            stats.totalIngresos += venta.getTotal();
+            vendedorStats.put(vendedor, stats);
         }
 
-        private void agregarTablaVentas(Document document, List<VentaResponseDTO> ventas) {
-                // Título de la sección
-                Paragraph tituloTabla = new Paragraph("Detalle de Ventas")
-                                .setFontSize(14).setBold().setMarginBottom(10).setKeepWithNext(true);
-                document.add(tituloTabla);
+        List<Map.Entry<String, VendedorStats>> vendedoresOrdenados = vendedorStats.entrySet().stream()
+                .sorted((e1, e2) -> Double.compare(e2.getValue().totalIngresos, e1.getValue().totalIngresos))
+                .toList();
 
-                // Ordenar ventas por fecha descendente (más reciente primero)
-                List<VentaResponseDTO> ventasOrdenadas = ventas.stream()
-                                .sorted((v1, v2) -> v2.getFecha().compareTo(v1.getFecha()))
-                                .toList();
+        Table table = new Table(UnitValue.createPercentArray(new float[]{3, 1, 2})).setWidth(UnitValue.createPercentValue(70));
+        table.setMarginBottom(20);
 
-                // Crear tabla con 5 columnas: Fecha, Cliente, Productos, Total, Vendedor
-                Table table = new Table(UnitValue.createPercentArray(new float[] { 2, 3, 4, 2, 2 }))
-                                .setWidth(UnitValue.createPercentValue(100));
+        table.addHeaderCell(crearCabeceraCelda("Vendedor", TextAlignment.CENTER));
+        table.addHeaderCell(crearCabeceraCelda("Ventas", TextAlignment.CENTER));
+        table.addHeaderCell(crearCabeceraCelda("Ingresos", TextAlignment.CENTER));
 
-                // Encabezados de la tabla
-                DeviceRgb colorHeader = new DeviceRgb(102, 126, 234);
-                String[] headers = { "Fecha", "Cliente", "Productos", "Total", "Vendedor" };
+        boolean isEven = false;
+        for (Map.Entry<String, VendedorStats> entry : vendedoresOrdenados) {
+            DeviceRgb rowBg = isEven ? ROW_EVEN : new DeviceRgb(255, 255, 255);
+            isEven = !isEven;
 
-                for (String header : headers) {
-                        Cell cell = new Cell().add(new Paragraph(header).setBold().setFontColor(ColorConstants.WHITE))
-                                        .setBackgroundColor(colorHeader)
-                                        .setTextAlignment(TextAlignment.CENTER)
-                                        .setPadding(5);
-                        table.addHeaderCell(cell);
+            table.addCell(crearCeldaDato(entry.getKey(), rowBg, TextAlignment.LEFT));
+            table.addCell(crearCeldaDato(String.valueOf(entry.getValue().cantidadVentas), rowBg, TextAlignment.CENTER));
+            table.addCell(crearCeldaDato("$" + formatCurrency(entry.getValue().totalIngresos), rowBg, TextAlignment.RIGHT));
+        }
+
+        if (vendedoresOrdenados.isEmpty()) {
+            table.addCell(new Cell(1, 3).add(new Paragraph("No hay datos de vendedores").setTextAlignment(TextAlignment.CENTER)).setBorder(com.itextpdf.layout.borders.Border.NO_BORDER).setPadding(10));
+        }
+
+        document.add(table);
+    }
+
+    private static class VendedorStats {
+        int cantidadVentas = 0;
+        double totalIngresos = 0.0;
+    }
+
+    private void agregarTablaVentas(Document document, List<VentaResponseDTO> ventas) {
+        Paragraph tituloTabla = new Paragraph("Detalle de Ventas")
+                .setFontSize(12).setBold().setFontColor(TEXT_DARK).setMarginTop(10).setMarginBottom(10).setKeepWithNext(true);
+        document.add(tituloTabla);
+
+        List<VentaResponseDTO> ventasOrdenadas = ventas.stream()
+                .sorted((v1, v2) -> v2.getFecha().compareTo(v1.getFecha()))
+                .toList();
+
+        Table table = new Table(UnitValue.createPercentArray(new float[]{2, 3, 4, 2, 2})).useAllAvailableWidth();
+
+        String[] headers = {"Fecha", "Cliente", "Productos", "Total", "Vendedor"};
+        for (String header : headers) {
+            table.addHeaderCell(crearCabeceraCelda(header, TextAlignment.CENTER));
+        }
+
+        if (ventas.isEmpty()) {
+            table.addCell(new Cell(1, 5)
+                    .add(new Paragraph("No hay ventas registradas en este período"))
+                    .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER)
+                    .setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(BORDER_COLOR, 1f))
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setFontColor(TEXT_MUTED)
+                    .setPadding(15));
+        } else {
+            boolean isEven = false;
+            for (VentaResponseDTO venta : ventasOrdenadas) {
+                DeviceRgb rowBg = isEven ? ROW_EVEN : new DeviceRgb(255, 255, 255);
+                isEven = !isEven;
+
+                String fechaStr = formatFecha(venta.getFecha());
+                String nombreCliente = venta.getNombreCliente() != null ? venta.getNombreCliente() : "N/A";
+
+                StringBuilder productos = new StringBuilder();
+                List<ProductoVentaDTO> productosVendidos = venta.getProductos();
+                int maxProductosAMostrar = 2;
+                int totalProductos = productosVendidos.size();
+
+                for (int i = 0; i < Math.min(maxProductosAMostrar, totalProductos); i++) {
+                    ProductoVentaDTO detalle = productosVendidos.get(i);
+                    productos.append(detalle.getNombreProducto())
+                            .append(" (x").append(detalle.getCantidad()).append(")\n");
                 }
 
-                // Datos de las ventas
-                for (VentaResponseDTO venta : ventasOrdenadas) {
-                        // Fecha
-                        String fechaStr = formatFecha(venta.getFecha());
-                        table.addCell(new Cell().add(new Paragraph(fechaStr).setFontSize(10)).setPadding(5));
-
-                        // Cliente
-                        String nombreCliente = venta.getNombreCliente() != null ? venta.getNombreCliente() : "N/A";
-                        table.addCell(new Cell().add(new Paragraph(nombreCliente).setFontSize(10)).setPadding(5));
-
-                        // Productos (mostrar máximo 2, luego resumir)
-                        StringBuilder productos = new StringBuilder();
-                        List<ProductoVentaDTO> productosVendidos = venta.getProductos();
-                        int maxProductosAMostrar = 2;
-                        int totalProductos = productosVendidos.size();
-
-                        for (int i = 0; i < Math.min(maxProductosAMostrar, totalProductos); i++) {
-                                ProductoVentaDTO detalle = productosVendidos.get(i);
-                                productos.append(detalle.getNombreProducto())
-                                                .append(" (x")
-                                                .append(detalle.getCantidad())
-                                                .append(")\n");
-                        }
-
-                        // Si hay más productos, agregar resumen
-                        if (totalProductos > maxProductosAMostrar) {
-                                int productosRestantes = totalProductos - maxProductosAMostrar;
-                                productos.append("... y ")
-                                                .append(productosRestantes)
-                                                .append(" producto")
-                                                .append(productosRestantes > 1 ? "s" : "")
-                                                .append(" más");
-                        }
-
-                        table.addCell(new Cell().add(new Paragraph(productos.toString().trim()).setFontSize(10))
-                                        .setPadding(5));
-
-                        // Total
-                        table.addCell(new Cell()
-                                        .add(new Paragraph("$" + formatCurrency(venta.getTotal())).setFontSize(10))
-                                        .setTextAlignment(TextAlignment.RIGHT)
-                                        .setPadding(5));
-
-                        // Vendedor
-                        String nombreVendedor = venta.getNombreVendedor() != null ? venta.getNombreVendedor() : "N/A";
-                        table.addCell(new Cell().add(new Paragraph(nombreVendedor).setFontSize(10)).setPadding(5));
+                if (totalProductos > maxProductosAMostrar) {
+                    int productosRestantes = totalProductos - maxProductosAMostrar;
+                    productos.append("... y ").append(productosRestantes).append(" más");
                 }
 
-                // Mensaje si no hay ventas
-                if (ventas.isEmpty()) {
-                        Cell emptyCell = new Cell(1, 5)
-                                        .add(new Paragraph("No hay ventas registradas en este período")
-                                                        .setTextAlignment(TextAlignment.CENTER))
-                                        .setPadding(10);
-                        table.addCell(emptyCell);
-                }
+                String nombreVendedor = venta.getNombreVendedor() != null ? venta.getNombreVendedor() : "N/A";
 
-                document.add(table);
+                table.addCell(crearCeldaDato(fechaStr, rowBg, TextAlignment.LEFT));
+                table.addCell(crearCeldaDato(nombreCliente, rowBg, TextAlignment.LEFT));
+                table.addCell(crearCeldaDato(productos.toString().trim(), rowBg, TextAlignment.LEFT));
+                table.addCell(crearCeldaDato("$" + formatCurrency(venta.getTotal()), rowBg, TextAlignment.RIGHT));
+                table.addCell(crearCeldaDato(nombreVendedor, rowBg, TextAlignment.LEFT));
+            }
         }
 
-        private void agregarPiePagina(Document document) {
-                Paragraph piePagina = new Paragraph("Documento generado automáticamente - Gestión Inventario")
-                                .setFontSize(8)
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginTop(20);
-                document.add(piePagina);
-        }
+        document.add(table);
+    }
 
-        private String formatFecha(LocalDateTime fecha) {
-                if (fecha == null) {
-                        return "N/A";
-                }
-                return fecha.format(DATE_TIME_FORMATTER);
-        }
+    private Cell crearCabeceraCelda(String text, TextAlignment alignment) {
+        return new Cell()
+                .add(new Paragraph(text).setBold().setFontSize(9))
+                .setBackgroundColor(BRAND_COLOR)
+                .setFontColor(ColorConstants.WHITE)
+                .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER)
+                .setTextAlignment(alignment)
+                .setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE)
+                .setPadding(6);
+    }
 
-        private String formatNumber(int number) {
-                return String.format("%,d", number).replace(',', '.');
-        }
+    private Cell crearCeldaDato(String text, DeviceRgb bgColor, TextAlignment alignment) {
+        return new Cell().setKeepTogether(true)
+                .add(new Paragraph(text).setFontSize(8).setFontColor(TEXT_DARK))
+                .setBackgroundColor(bgColor)
+                .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER)
+                .setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(BORDER_COLOR, 0.5f))
+                .setTextAlignment(alignment)
+                .setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE)
+                .setPadding(5);
+    }
 
-        private String formatCurrency(double amount) {
-                return NUMBER_FORMATTER.format(amount);
+    private static class PageEvent implements com.itextpdf.kernel.events.IEventHandler {
+        @Override
+        public void handleEvent(com.itextpdf.kernel.events.Event event) {
+            com.itextpdf.kernel.events.PdfDocumentEvent docEvent = (com.itextpdf.kernel.events.PdfDocumentEvent) event;
+            PdfDocument pdfDoc = docEvent.getDocument();
+            com.itextpdf.kernel.pdf.PdfPage page = docEvent.getPage();
+            int pageNumber = pdfDoc.getPageNumber(page);
+            com.itextpdf.kernel.geom.Rectangle pageSize = page.getPageSize();
+            
+            com.itextpdf.kernel.pdf.canvas.PdfCanvas canvas = new com.itextpdf.kernel.pdf.canvas.PdfCanvas(page.newContentStreamBefore(), page.getResources(), pdfDoc);
+            
+            canvas.setStrokeColor(BORDER_COLOR)
+                  .setLineWidth(0.5f)
+                  .moveTo(40, 35)
+                  .lineTo(pageSize.getWidth() - 40, 35)
+                  .stroke();
+
+            Paragraph footerText = new Paragraph("Reporte de Ventas - Sistema de Gestión")
+                    .setFontSize(7)
+                    .setFontColor(TEXT_MUTED);
+            
+            Paragraph pageNumberParagraph = new Paragraph("Página " + pageNumber)
+                    .setFontSize(7)
+                    .setFontColor(TEXT_MUTED);
+            
+            com.itextpdf.layout.Canvas htmlCanvas = new com.itextpdf.layout.Canvas(canvas, new com.itextpdf.kernel.geom.Rectangle(40, 15, pageSize.getWidth() - 80, 20));
+            htmlCanvas.showTextAligned(footerText, 40, 15, TextAlignment.LEFT);
+            htmlCanvas.showTextAligned(pageNumberParagraph, pageSize.getWidth() - 40, 15, TextAlignment.RIGHT);
+            htmlCanvas.close();
         }
+    }
+
+    private String formatFecha(LocalDateTime fecha) {
+        if (fecha == null) return "N/A";
+        return fecha.format(DATE_TIME_FORMATTER);
+    }
+
+    private String formatNumber(int number) {
+        return String.format("%,d", number).replace(',', '.');
+    }
+
+    private String formatCurrency(double amount) {
+        return NUMBER_FORMATTER.format(amount);
+    }
 
         public byte[] generarTicketVenta(Venta venta) {
                 ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -453,33 +402,54 @@ public class VentaPdfService {
 
                         // Calcular alto dinámico según cantidad de productos
                         int cantProductos = (venta.getDetalleVentas() != null) ? venta.getDetalleVentas().size() : 0;
-                        float baseHeight = 250f; // altura base mínima
-                        float heightPerItem = 18f; // altura por cada producto
+                        float baseHeight = 280f; // altura base mínima aumentada por diseño
+                        float heightPerItem = 22f; // altura por cada producto
                         float heightPt = baseHeight + (cantProductos * heightPerItem);
 
-                        // Usar fuente monoespaciada (COURIER)
-                        PdfFont fontMono = PdfFontFactory.createFont(StandardFonts.COURIER);
-                        PdfFont fontMonoBold = PdfFontFactory.createFont(StandardFonts.COURIER_BOLD);
+                        // Fuentes limpias y modernas
+                        PdfFont fontRegular = PdfFontFactory.createFont(StandardFonts.HELVETICA);
+                        PdfFont fontBold = PdfFontFactory.createFont(StandardFonts.HELVETICA_BOLD);
 
                         PdfWriter writer = new PdfWriter(baos);
                         PdfDocument pdf = new PdfDocument(writer);
                         PageSize pageSize = new PageSize(widthPt, heightPt);
                         Document document = new Document(pdf, pageSize);
-                        document.setMargins(5, 5, 5, 5);
+                        document.setMargins(10, 10, 10, 10);
+
+                        // Divider reutilizable
+                        Table divider = new Table(1).useAllAvailableWidth();
+                        divider.addCell(new Cell().setBorder(com.itextpdf.layout.borders.Border.NO_BORDER).setBorderBottom(new com.itextpdf.layout.borders.DashedBorder(BORDER_COLOR, 1f)));
+                        divider.setMarginBottom(10);
+                        divider.setMarginTop(10);
 
                         // ========== ENCABEZADO ==========
-                        Paragraph header = new Paragraph(NOMBRE_NEGOCIO + "\n" + DIRECCION_NEGOCIO + "\n" + TELEFONO_NEGOCIO)
-                                .setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER);
+                        Paragraph title = new Paragraph(NOMBRE_NEGOCIO)
+                                .setFont(fontBold).setFontSize(16).setTextAlignment(TextAlignment.CENTER).setFontColor(TEXT_DARK);
+                        document.add(title);
+
+                        Paragraph header = new Paragraph(DIRECCION_NEGOCIO + "\n" + TELEFONO_NEGOCIO)
+                                .setFont(fontRegular).setFontSize(8).setTextAlignment(TextAlignment.CENTER).setFontColor(TEXT_MUTED);
                         document.add(header);
 
-                        document.add(new Paragraph("================================").setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+                        document.add(divider);
 
-                        document.add(new Paragraph("TICKET #" + venta.getIdVenta()).setFont(fontMonoBold).setFontSize(9).setTextAlignment(TextAlignment.CENTER));
-
+                        // NÚMERO DE TICKET Y FECHA
+                        Table infoTable = new Table(UnitValue.createPercentArray(new float[]{1, 1})).useAllAvailableWidth();
+                        
+                        Cell ticketCell = new Cell().setBorder(com.itextpdf.layout.borders.Border.NO_BORDER)
+                                .add(new Paragraph("TICKET").setFont(fontRegular).setFontSize(7).setFontColor(TEXT_MUTED).setMarginBottom(0))
+                                .add(new Paragraph("#" + venta.getIdVenta()).setFont(fontBold).setFontSize(10).setFontColor(TEXT_DARK).setMarginTop(0));
+                        
                         String fechaStr = (venta.getFecha() != null) ? venta.getFecha().format(DATE_TIME_FORMATTER) : "N/A";
-                        document.add(new Paragraph(fechaStr).setFont(fontMono).setFontSize(7).setTextAlignment(TextAlignment.CENTER));
+                        Cell dateCell = new Cell().setBorder(com.itextpdf.layout.borders.Border.NO_BORDER).setTextAlignment(TextAlignment.RIGHT)
+                                .add(new Paragraph("FECHA").setFont(fontRegular).setFontSize(7).setFontColor(TEXT_MUTED).setMarginBottom(0))
+                                .add(new Paragraph(fechaStr).setFont(fontBold).setFontSize(8).setFontColor(TEXT_DARK).setMarginTop(0));
+                        
+                        infoTable.addCell(ticketCell);
+                        infoTable.addCell(dateCell);
+                        document.add(infoTable);
 
-                        document.add(new Paragraph("================================").setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+                        document.add(divider);
 
                         // ========== TABLA DE PRODUCTOS ==========
                         // 2 columnas: 70% nombre/cantidad, 30% precio
@@ -491,15 +461,16 @@ public class VentaPdfService {
                         if (venta.getDetalleVentas() != null && !venta.getDetalleVentas().isEmpty()) {
                                 for (DetalleVenta detalle : venta.getDetalleVentas()) {
                                         String nombre = (detalle.getProducto() != null) ? detalle.getProducto().getNombre() : "Producto";
-                                        if (nombre.length() > 18) nombre = nombre.substring(0, 15) + "...";
+                                        // Envolver si es largo no pasa nada, pero cortamos por prolijidad
+                                        if (nombre.length() > 22) nombre = nombre.substring(0, 19) + "...";
 
-                                        String nombreCol = nombre + " x" + detalle.getCantidad();
+                                        String nombreCol = nombre + "\nx" + detalle.getCantidad();
                                         String precioCol = "$" + formatCurrency(detalle.getPrecioUnitario() * detalle.getCantidad());
 
-                                        Cell cellNombre = new Cell().add(new Paragraph(nombreCol).setFont(fontMono).setFontSize(8))
-                                                .setBorder(null).setPadding(1);
-                                        Cell cellPrecio = new Cell().add(new Paragraph(precioCol).setFont(fontMono).setFontSize(8))
-                                                .setBorder(null).setPadding(1).setTextAlignment(TextAlignment.RIGHT);
+                                        Cell cellNombre = new Cell().add(new Paragraph(nombreCol).setFont(fontRegular).setFontSize(8).setFontColor(TEXT_DARK))
+                                                .setBorder(null).setPaddingBottom(5);
+                                        Cell cellPrecio = new Cell().add(new Paragraph(precioCol).setFont(fontBold).setFontSize(9).setFontColor(TEXT_DARK))
+                                                .setBorder(null).setPaddingBottom(5).setTextAlignment(TextAlignment.RIGHT).setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE);
 
                                         table.addCell(cellNombre);
                                         table.addCell(cellPrecio);
@@ -507,39 +478,42 @@ public class VentaPdfService {
                         }
                         document.add(table);
 
-                        document.add(new Paragraph("================================").setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+                        document.add(divider);
 
                         // ========== TOTALES ==========
+                        Table totalsTable = new Table(UnitValue.createPercentArray(new float[]{1, 1})).useAllAvailableWidth();
+                        
                         if (venta.getSubtotal() != null && venta.getSubtotal() > 0) {
-                                document.add(new Paragraph("Subtotal: $" + formatCurrency(venta.getSubtotal()))
-                                        .setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.RIGHT));
+                                totalsTable.addCell(new Cell().setBorder(null).add(new Paragraph("Subtotal:").setFont(fontRegular).setFontSize(8).setFontColor(TEXT_MUTED)));
+                                totalsTable.addCell(new Cell().setBorder(null).setTextAlignment(TextAlignment.RIGHT).add(new Paragraph("$" + formatCurrency(venta.getSubtotal())).setFont(fontRegular).setFontSize(8).setFontColor(TEXT_DARK)));
                         }
 
                         if (venta.getDescuentoMonto() != null && venta.getDescuentoMonto() > 0) {
-                                document.add(new Paragraph("Descuento: -$" + formatCurrency(venta.getDescuentoMonto()))
-                                        .setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.RIGHT));
+                                totalsTable.addCell(new Cell().setBorder(null).add(new Paragraph("Descuento:").setFont(fontRegular).setFontSize(8).setFontColor(TEXT_MUTED)));
+                                totalsTable.addCell(new Cell().setBorder(null).setTextAlignment(TextAlignment.RIGHT).add(new Paragraph("-$" + formatCurrency(venta.getDescuentoMonto())).setFont(fontRegular).setFontSize(8).setFontColor(TEXT_DARK)));
                         }
 
-                        document.add(new Paragraph("================================").setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+                        // Total Grande
+                        totalsTable.addCell(new Cell().setBorder(null).setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE).add(new Paragraph("TOTAL").setFont(fontBold).setFontSize(12).setFontColor(TEXT_DARK).setMarginTop(5)));
+                        totalsTable.addCell(new Cell().setBorder(null).setTextAlignment(TextAlignment.RIGHT).add(new Paragraph("$" + formatCurrency(venta.getTotal())).setFont(fontBold).setFontSize(14).setFontColor(TEXT_DARK).setMarginTop(5)));
+                        
+                        document.add(totalsTable);
 
-                        document.add(new Paragraph("TOTAL: $" + formatCurrency(venta.getTotal()))
-                                .setFont(fontMonoBold).setFontSize(11).setTextAlignment(TextAlignment.CENTER));
-
-                        document.add(new Paragraph("================================").setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+                        document.add(divider);
 
                         // ========== METODO PAGO ==========
-                        String metodoPago = "Pago: ";
+                        String metodoPago = "";
                         try {
                                 var cobro = cobroService.obtenerCobroPorVenta(venta.getIdVenta());
-                                metodoPago += (cobro != null && cobro.getMetodoPago() != null) ? cobro.getMetodoPago() : "No especificado";
+                                metodoPago = (cobro != null && cobro.getMetodoPago() != null) ? cobro.getMetodoPago() : "No especificado";
                         } catch (Exception e) {
-                                metodoPago += "No especificado";
+                                metodoPago = "No especificado";
                         }
-                        document.add(new Paragraph(metodoPago).setFont(fontMono).setFontSize(8).setTextAlignment(TextAlignment.CENTER));
+                        document.add(new Paragraph("Pagado con " + metodoPago).setFont(fontRegular).setFontSize(8).setFontColor(TEXT_MUTED).setTextAlignment(TextAlignment.CENTER));
 
                         // ========== PIE ==========
                         document.add(new Paragraph("¡Gracias por su compra!")
-                                .setFont(fontMonoBold).setFontSize(9).setTextAlignment(TextAlignment.CENTER));
+                                .setFont(fontBold).setFontSize(9).setFontColor(TEXT_DARK).setTextAlignment(TextAlignment.CENTER).setMarginTop(10));
 
                         document.close();
                         return baos.toByteArray();

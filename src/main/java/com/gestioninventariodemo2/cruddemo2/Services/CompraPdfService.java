@@ -4,16 +4,25 @@ import com.gestioninventariodemo2.cruddemo2.DTO.CompraResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.DetalleCompraResponseDTO;
 import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.colors.DeviceRgb;
+import com.itextpdf.kernel.events.Event;
+import com.itextpdf.kernel.events.IEventHandler;
+import com.itextpdf.kernel.events.PdfDocumentEvent;
+import com.itextpdf.kernel.geom.PageSize;
+import com.itextpdf.kernel.geom.Rectangle;
 import com.itextpdf.kernel.pdf.PdfDocument;
+import com.itextpdf.kernel.pdf.PdfPage;
 import com.itextpdf.kernel.pdf.PdfWriter;
+import com.itextpdf.kernel.pdf.canvas.PdfCanvas;
+import com.itextpdf.layout.Canvas;
 import com.itextpdf.layout.Document;
+import com.itextpdf.layout.borders.Border;
+import com.itextpdf.layout.borders.SolidBorder;
 import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
-import com.itextpdf.layout.element.AreaBreak;
-import com.itextpdf.layout.properties.AreaBreakType;
 import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
+import com.itextpdf.layout.properties.VerticalAlignment;
 import org.springframework.stereotype.Service;
 
 import java.io.ByteArrayOutputStream;
@@ -24,362 +33,349 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.Locale;
 
 @Service
 public class CompraPdfService {
 
-        private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-        private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-        private static final DecimalFormat NUMBER_FORMATTER;
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+    private static final DecimalFormat NUMBER_FORMATTER;
 
-        static {
-                DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.of("es", "AR"));
-                symbols.setGroupingSeparator('.');
-                symbols.setDecimalSeparator(',');
-                NUMBER_FORMATTER = new DecimalFormat("#,##0.00", symbols);
+    // Definición de colores de la marca
+    private static final DeviceRgb BRAND_COLOR = new DeviceRgb(41, 98, 255); // Azul Índigo
+    private static final DeviceRgb TEXT_DARK = new DeviceRgb(55, 65, 81); // Gris Oscuro
+    private static final DeviceRgb TEXT_MUTED = new DeviceRgb(107, 114, 128); // Gris Claro
+    private static final DeviceRgb ROW_EVEN = new DeviceRgb(249, 250, 251); // Zebra striping sutil
+    private static final DeviceRgb BORDER_COLOR = new DeviceRgb(229, 231, 235); // Gris para bordes
+
+    static {
+        DecimalFormatSymbols symbols = new DecimalFormatSymbols(Locale.of("es", "AR"));
+        symbols.setGroupingSeparator('.');
+        symbols.setDecimalSeparator(',');
+        NUMBER_FORMATTER = new DecimalFormat("#,##0", symbols);
+    }
+
+    public byte[] generarPdfCompras(List<CompraResponseDTO> compras, LocalDate inicio, LocalDate fin, String search, String estadoPago, String nombreProveedor) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        try {
+            PdfWriter writer = new PdfWriter(baos);
+            PdfDocument pdf = new PdfDocument(writer);
+            Document document = new Document(pdf, PageSize.A4);
+            document.setMargins(40, 40, 60, 40); // Ajuste de márgenes
+            pdf.addEventHandler(PdfDocumentEvent.END_PAGE, new PageEvent());
+
+            // ========== CABECERA ==========
+            agregarCabecera(document, inicio, fin, search, estadoPago, nombreProveedor);
+
+            // ========== RESUMEN ==========
+            if (!compras.isEmpty()) {
+                agregarResumen(document, compras);
+                // ========== DESGLOSE POR PROVEEDOR ==========
+                agregarDesglosePorProveedor(document, compras);
+                // ========== TOTALES POR MES ==========
+                agregarTotalesPorMes(document, compras);
+            }
+
+            // ========== TABLA DE COMPRAS ==========
+            agregarTablaCompras(document, compras);
+
+            document.close();
+            return baos.toByteArray();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error al generar PDF de compras", e);
+        }
+    }
+
+    private void agregarCabecera(Document document, LocalDate inicio, LocalDate fin, String search, String estadoPago, String nombreProveedor) {
+        Table headerTable = new Table(UnitValue.createPercentArray(new float[]{1, 1})).useAllAvailableWidth();
+        headerTable.setMarginBottom(15);
+
+        // Columna Izquierda: Logo y Título
+        Cell leftCell = new Cell().setBorder(Border.NO_BORDER).setVerticalAlignment(VerticalAlignment.MIDDLE);
+        
+        Paragraph logo = new Paragraph("SGI")
+                .setBold().setFontSize(24)
+                .setFontColor(BRAND_COLOR)
+                .setMarginBottom(0);
+        
+        Paragraph title = new Paragraph("Reporte de Compras")
+                .setBold().setFontSize(14)
+                .setFontColor(TEXT_DARK)
+                .setMarginBottom(0);
+                
+        Paragraph subtitle = new Paragraph("Sistema de Gestión Integrado")
+                .setFontSize(9)
+                .setFontColor(TEXT_MUTED);
+
+        leftCell.add(logo).add(title).add(subtitle);
+
+        // Columna Derecha: Metadatos
+        Cell rightCell = new Cell().setBorder(Border.NO_BORDER).setVerticalAlignment(VerticalAlignment.BOTTOM).setTextAlignment(TextAlignment.RIGHT);
+        
+        String fechaHora = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm"));
+        rightCell.add(new Paragraph("Generado el: " + fechaHora).setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(2));
+        
+        String periodoTexto = (inicio != null && fin != null)
+                ? inicio.format(DATE_FORMATTER) + " - " + fin.format(DATE_FORMATTER)
+                : "Todas las fechas";
+        rightCell.add(new Paragraph("Período: " + periodoTexto).setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(2));
+
+        if (search != null && !search.trim().isEmpty()) {
+            rightCell.add(new Paragraph("Búsqueda: " + search).setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(2));
+        }
+        if (estadoPago != null && !estadoPago.trim().isEmpty()) {
+            rightCell.add(new Paragraph("Estado: " + estadoPago).setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(2));
+        }
+        if (nombreProveedor != null && !nombreProveedor.trim().isEmpty()) {
+            rightCell.add(new Paragraph("Proveedor: " + nombreProveedor).setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(2));
         }
 
-        public byte[] generarPdfCompras(List<CompraResponseDTO> compras, LocalDate inicio, LocalDate fin) {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        headerTable.addCell(leftCell);
+        headerTable.addCell(rightCell);
+        document.add(headerTable);
 
-                try {
-                        PdfWriter writer = new PdfWriter(baos);
-                        PdfDocument pdf = new PdfDocument(writer);
-                        Document document = new Document(pdf);
+        // Línea divisoria elegante
+        Table lineTable = new Table(1).useAllAvailableWidth();
+        lineTable.addCell(new Cell().setBorder(Border.NO_BORDER).setBorderBottom(new SolidBorder(BRAND_COLOR, 2f)));
+        lineTable.setMarginBottom(15);
+        document.add(lineTable);
+    }
 
-                        // ========== PORTADA ==========
-                        agregarPortada(document, inicio, fin);
+    private void agregarResumen(Document document, List<CompraResponseDTO> compras) {
+        // Calcular estadísticas
+        int totalCompras = compras.size();
+        double inversionTotal = compras.stream().mapToDouble(CompraResponseDTO::getTotal).sum();
+        int totalProductos = compras.stream()
+                .flatMap(c -> c.getProductosComprados().stream())
+                .mapToInt(DetalleCompraResponseDTO::getCantidad)
+                .sum();
 
-                        // ========== RESUMEN ==========
-                        if (!compras.isEmpty()) {
-                                agregarResumen(document, compras);
-                                // ========== DESGLOSE POR PROVEEDOR ==========
-                                agregarDesglosePorProveedor(document, compras);
-                                // ========== TOTALES POR MES ==========
-                                agregarTotalesPorMes(document, compras);
-                        }
+        // Obtener proveedor principal
+        Map<String, Integer> proveedoresCount = new HashMap<>();
+        for (CompraResponseDTO compra : compras) {
+            String proveedor = compra.getNombreProveedor();
+            proveedoresCount.put(proveedor, proveedoresCount.getOrDefault(proveedor, 0) + 1);
+        }
+        String proveedorPrincipal = proveedoresCount.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse("N/A");
 
-                        // ========== TABLA DE COMPRAS ==========
-                        agregarTablaCompras(document, compras);
+        // Crear tabla de resumen estilo "Cards" (1 fila, 4 columnas)
+        Table resumenTable = new Table(UnitValue.createPercentArray(new float[]{1, 1, 1, 1})).useAllAvailableWidth();
+        resumenTable.setMarginBottom(20);
 
-                        // ========== PIE DE PÁGINA ==========
-                        agregarPiePagina(document);
+        resumenTable.addCell(crearTarjetaResumen("Total Compras", formatNumber(totalCompras)));
+        resumenTable.addCell(crearTarjetaResumen("Inversión Total", "$" + formatCurrency(inversionTotal)));
+        resumenTable.addCell(crearTarjetaResumen("Total Productos", formatNumber(totalProductos)));
+        resumenTable.addCell(crearTarjetaResumen("Prov. Principal", proveedorPrincipal));
 
-                        document.close();
-                        return baos.toByteArray();
+        document.add(resumenTable);
+    }
 
-                } catch (Exception e) {
-                        throw new RuntimeException("Error al generar PDF de compras", e);
-                }
+    private Cell crearTarjetaResumen(String titulo, String valor) {
+        return new Cell().setBorder(Border.NO_BORDER).setPadding(5)
+                .add(new Paragraph(titulo).setFontSize(8).setFontColor(TEXT_MUTED).setMarginBottom(2))
+                .add(new Paragraph(valor).setFontSize(12).setBold().setFontColor(BRAND_COLOR));
+    }
+
+    private void agregarDesglosePorProveedor(Document document, List<CompraResponseDTO> compras) {
+        Paragraph titulo = new Paragraph("Desglose por Proveedor")
+                .setFontSize(12).setBold().setFontColor(TEXT_DARK).setMarginTop(10).setMarginBottom(10).setKeepWithNext(true);
+        document.add(titulo);
+
+        Map<String, List<CompraResponseDTO>> porProveedor = compras.stream()
+                .collect(Collectors.groupingBy(c -> c.getNombreProveedor() != null ? c.getNombreProveedor() : "N/A"));
+
+        List<Map.Entry<String, List<CompraResponseDTO>>> ordenados = porProveedor.entrySet().stream()
+                .sorted((a, b) -> Double.compare(
+                        b.getValue().stream().mapToDouble(CompraResponseDTO::getTotal).sum(),
+                        a.getValue().stream().mapToDouble(CompraResponseDTO::getTotal).sum()))
+                .collect(Collectors.toList());
+
+        Table table = new Table(UnitValue.createPercentArray(new float[]{4, 2, 2})).useAllAvailableWidth();
+        table.setMarginBottom(20);
+
+        String[] headers = {"Proveedor", "Cant. Compras", "Inversión Total"};
+        for (String header : headers) {
+            table.addHeaderCell(crearCabeceraCelda(header, TextAlignment.CENTER));
         }
 
-        private void agregarPortada(Document document, LocalDate inicio, LocalDate fin) {
-                // Título Principal
-                Paragraph titulo = new Paragraph("REPORTE DE COMPRAS")
-                                .setFontSize(28).setBold()
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginTop(100).setMarginBottom(20);
-                document.add(titulo);
+        boolean isEven = false;
+        for (Map.Entry<String, List<CompraResponseDTO>> entry : ordenados) {
+            DeviceRgb rowBg = isEven ? ROW_EVEN : new DeviceRgb(255, 255, 255);
+            isEven = !isEven;
 
-                // Subtítulo
-                Paragraph subtitulo = new Paragraph("Reporte de Compras")
-                                .setFontSize(16)
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(40);
-                document.add(subtitulo);
-
-                // Nombre del negocio
-                Paragraph negocio = new Paragraph("Gestión Inventario")
-                                .setFontSize(20).setBold()
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(60);
-                document.add(negocio);
-
-                // Período
-                Paragraph periodoLabel = new Paragraph("Período del Informe")
-                                .setFontSize(14).setBold()
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(10);
-                document.add(periodoLabel);
-
-                String periodoTexto = (inicio != null && fin != null)
-                                ? inicio.format(DATE_FORMATTER) + " - " + fin.format(DATE_FORMATTER)
-                                : "Todas las fechas";
-                Paragraph fechas = new Paragraph(periodoTexto)
-                                .setFontSize(16)
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(60);
-                document.add(fechas);
-
-                // Fecha de generación
-                Paragraph fechaGeneracion = new Paragraph("Generado: " + LocalDate.now().format(DATE_FORMATTER))
-                                .setFontSize(12)
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginBottom(20);
-                document.add(fechaGeneracion);
-
-                // Salto de página — portada sola
-                document.add(new AreaBreak(AreaBreakType.NEXT_PAGE));
+            double total = entry.getValue().stream().mapToDouble(CompraResponseDTO::getTotal).sum();
+            
+            table.addCell(crearCeldaDato(entry.getKey(), rowBg, TextAlignment.LEFT));
+            table.addCell(crearCeldaDato(String.valueOf(entry.getValue().size()), rowBg, TextAlignment.CENTER));
+            table.addCell(crearCeldaDato("$" + formatCurrency(total), rowBg, TextAlignment.RIGHT));
         }
 
-        private void agregarResumen(Document document, List<CompraResponseDTO> compras) {
-                // Calcular estadísticas
-                int totalCompras = compras.size();
-                double inversionTotal = compras.stream().mapToDouble(CompraResponseDTO::getTotal).sum();
-                int totalProductos = compras.stream()
-                                .flatMap(c -> c.getProductosComprados().stream())
-                                .mapToInt(DetalleCompraResponseDTO::getCantidad)
-                                .sum();
+        document.add(table);
+    }
 
-                // Obtener proveedor principal
-                Map<String, Integer> proveedoresCount = new HashMap<>();
-                for (CompraResponseDTO compra : compras) {
-                        String proveedor = compra.getNombreProveedor();
-                        proveedoresCount.put(proveedor, proveedoresCount.getOrDefault(proveedor, 0) + 1);
-                }
-                String proveedorPrincipal = proveedoresCount.entrySet().stream()
-                                .max(Map.Entry.comparingByValue())
-                                .map(Map.Entry::getKey)
-                                .orElse("N/A");
+    private void agregarTotalesPorMes(Document document, List<CompraResponseDTO> compras) {
+        Map<String, Double> porMes = new TreeMap<>();
+        DateTimeFormatter mesFormatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale.forLanguageTag("es-AR"));
 
-                // Crear tabla de resumen (2x2)
-                Table resumenTable = new Table(UnitValue.createPercentArray(new float[] { 1, 1 }))
-                                .setWidth(UnitValue.createPercentValue(100))
-                                .setMarginBottom(20);
-
-                DeviceRgb colorFondo = new DeviceRgb(240, 248, 255);
-
-                // Total de Compras
-                Cell cellCompras = new Cell().add(new Paragraph("Total de Compras\n" + formatNumber(totalCompras))
-                                .setFontSize(12)
-                                .setTextAlignment(TextAlignment.CENTER))
-                                .setBackgroundColor(colorFondo)
-                                .setPadding(10);
-                resumenTable.addCell(cellCompras);
-
-                // Inversión Total
-                Cell cellInversion = new Cell().add(new Paragraph("Inversión Total\n$" + formatCurrency(inversionTotal))
-                                .setFontSize(12)
-                                .setTextAlignment(TextAlignment.CENTER))
-                                .setBackgroundColor(colorFondo)
-                                .setPadding(10);
-                resumenTable.addCell(cellInversion);
-
-                // Total de Productos
-                Cell cellProductos = new Cell().add(new Paragraph("Total de Productos\n" + formatNumber(totalProductos))
-                                .setFontSize(12)
-                                .setTextAlignment(TextAlignment.CENTER))
-                                .setBackgroundColor(colorFondo)
-                                .setPadding(10);
-                resumenTable.addCell(cellProductos);
-
-                // Proveedor Principal
-                Cell cellProveedor = new Cell().add(new Paragraph("Proveedor Principal\n" + proveedorPrincipal)
-                                .setFontSize(12)
-                                .setTextAlignment(TextAlignment.CENTER))
-                                .setBackgroundColor(colorFondo)
-                                .setPadding(10);
-                resumenTable.addCell(cellProveedor);
-
-                document.add(resumenTable);
+        for (CompraResponseDTO compra : compras) {
+            if (compra.getFecha() != null) {
+                String mes = compra.getFecha().format(mesFormatter);
+                porMes.merge(mes, compra.getTotal(), (a, b) -> a + b);
+            }
         }
 
-        private void agregarTablaCompras(Document document, List<CompraResponseDTO> compras) {
-                // Título de la sección
-                Paragraph tituloTabla = new Paragraph("Detalle de Compras")
-                                .setFontSize(14).setBold().setMarginBottom(10).setKeepWithNext(true);
-                document.add(tituloTabla);
+        if (porMes.size() <= 1) return;
 
-                // Crear tabla con 4 columnas
-                Table table = new Table(UnitValue.createPercentArray(new float[] { 2, 3, 4, 2 }))
-                                .setWidth(UnitValue.createPercentValue(100));
+        Paragraph titulo = new Paragraph("Totales por Mes")
+                .setFontSize(12).setBold().setFontColor(TEXT_DARK).setMarginTop(10).setMarginBottom(10).setKeepWithNext(true);
+        document.add(titulo);
 
-                // Encabezados de la tabla
-                DeviceRgb colorHeader = new DeviceRgb(102, 126, 234);
-                String[] headers = { "Fecha", "Proveedor", "Productos", "Total" };
+        Table table = new Table(UnitValue.createPercentArray(new float[]{4, 2})).setWidth(UnitValue.createPercentValue(60));
+        table.setMarginBottom(20);
 
-                for (String header : headers) {
-                        Cell cell = new Cell().add(new Paragraph(header).setBold().setFontColor(ColorConstants.WHITE))
-                                        .setBackgroundColor(colorHeader)
-                                        .setTextAlignment(TextAlignment.CENTER)
-                                        .setPadding(5);
-                        table.addHeaderCell(cell);
-                }
+        table.addHeaderCell(crearCabeceraCelda("Mes", TextAlignment.CENTER));
+        table.addHeaderCell(crearCabeceraCelda("Total Invertido", TextAlignment.CENTER));
 
-                // Datos de las compras
-                for (CompraResponseDTO compra : compras) {
-                        // Fecha
-                        String fechaStr = formatFecha(compra.getFecha());
-                        table.addCell(new Cell().add(new Paragraph(fechaStr).setFontSize(10)).setPadding(5));
+        boolean isEven = false;
+        for (Map.Entry<String, Double> entry : porMes.entrySet()) {
+            DeviceRgb rowBg = isEven ? ROW_EVEN : new DeviceRgb(255, 255, 255);
+            isEven = !isEven;
 
-                        // Proveedor
-                        table.addCell(new Cell().add(new Paragraph(compra.getNombreProveedor()).setFontSize(10))
-                                        .setPadding(5));
-
-                        // Productos (mostrar máximo 2, luego resumir)
-                        StringBuilder productos = new StringBuilder();
-                        List<DetalleCompraResponseDTO> productosComprados = compra.getProductosComprados();
-                        int maxProductosAMostrar = 2;
-                        int totalProductos = productosComprados.size();
-
-                        for (int i = 0; i < Math.min(maxProductosAMostrar, totalProductos); i++) {
-                                DetalleCompraResponseDTO detalle = productosComprados.get(i);
-                                productos.append(detalle.getNombreProducto())
-                                                .append(" (x")
-                                                .append(detalle.getCantidad())
-                                                .append(")\n");
-                        }
-
-                        // Si hay más productos, agregar resumen
-                        if (totalProductos > maxProductosAMostrar) {
-                                int productosRestantes = totalProductos - maxProductosAMostrar;
-                                productos.append("... y ")
-                                                .append(productosRestantes)
-                                                .append(" producto")
-                                                .append(productosRestantes > 1 ? "s" : "")
-                                                .append(" más");
-                        }
-
-                        table.addCell(new Cell().add(new Paragraph(productos.toString().trim()).setFontSize(10))
-                                        .setPadding(5));
-
-                        // Total
-                        table.addCell(new Cell()
-                                        .add(new Paragraph("$" + formatCurrency(compra.getTotal())).setFontSize(10))
-                                        .setTextAlignment(TextAlignment.RIGHT)
-                                        .setPadding(5));
-                }
-
-                // Mensaje si no hay compras
-                if (compras.isEmpty()) {
-                        Cell emptyCell = new Cell(1, 4)
-                                        .add(new Paragraph("No hay compras registradas en este período")
-                                                        .setTextAlignment(TextAlignment.CENTER))
-                                        .setPadding(10);
-                        table.addCell(emptyCell);
-                }
-
-                document.add(table);
+            String mes = entry.getKey().substring(0, 1).toUpperCase() + entry.getKey().substring(1);
+            
+            table.addCell(crearCeldaDato(mes, rowBg, TextAlignment.LEFT));
+            table.addCell(crearCeldaDato("$" + formatCurrency(entry.getValue()), rowBg, TextAlignment.RIGHT));
         }
 
-        private void agregarDesglosePorProveedor(Document document, List<CompraResponseDTO> compras) {
-                Paragraph titulo = new Paragraph("Desglose por Proveedor")
-                                .setFontSize(14).setBold().setMarginTop(20).setMarginBottom(10).setKeepWithNext(true);
-                document.add(titulo);
+        document.add(table);
+    }
 
-                // Agrupar por proveedor
-                Map<String, List<CompraResponseDTO>> porProveedor = compras.stream()
-                                .collect(Collectors.groupingBy(
-                                                c -> c.getNombreProveedor() != null ? c.getNombreProveedor() : "N/A"));
+    private void agregarTablaCompras(Document document, List<CompraResponseDTO> compras) {
+        Paragraph tituloTabla = new Paragraph("Detalle de Compras")
+                .setFontSize(12).setBold().setFontColor(TEXT_DARK).setMarginTop(10).setMarginBottom(10).setKeepWithNext(true);
+        document.add(tituloTabla);
 
-                // Ordenar por inversión total descendente
-                List<Map.Entry<String, List<CompraResponseDTO>>> ordenados = porProveedor.entrySet().stream()
-                                .sorted((a, b) -> Double.compare(
-                                                b.getValue().stream().mapToDouble(CompraResponseDTO::getTotal).sum(),
-                                                a.getValue().stream().mapToDouble(CompraResponseDTO::getTotal).sum()))
-                                .collect(Collectors.toList());
+        Table table = new Table(UnitValue.createPercentArray(new float[]{2, 3, 4, 2})).useAllAvailableWidth();
 
-                Table table = new Table(UnitValue.createPercentArray(new float[] { 4, 2, 2 }))
-                                .setWidth(UnitValue.createPercentValue(100));
-
-                DeviceRgb colorHeader = new DeviceRgb(102, 126, 234);
-                for (String header : new String[] { "Proveedor", "Cant. Compras", "Inversión Total" }) {
-                        table.addHeaderCell(new Cell()
-                                        .add(new Paragraph(header).setBold().setFontColor(ColorConstants.WHITE))
-                                        .setBackgroundColor(colorHeader).setTextAlignment(TextAlignment.CENTER)
-                                        .setPadding(6));
-                }
-
-                DeviceRgb colorFila = new DeviceRgb(240, 248, 255);
-                DeviceRgb blanco = new DeviceRgb(255, 255, 255);
-                boolean alterno = false;
-                for (Map.Entry<String, List<CompraResponseDTO>> entry : ordenados) {
-                        double total = entry.getValue().stream().mapToDouble(CompraResponseDTO::getTotal).sum();
-                        DeviceRgb fondo = alterno ? colorFila : blanco;
-                        table.addCell(new Cell().add(new Paragraph(entry.getKey()).setFontSize(10))
-                                        .setBackgroundColor(fondo).setPadding(6));
-                        table.addCell(new Cell()
-                                        .add(new Paragraph(String.valueOf(entry.getValue().size())).setFontSize(10))
-                                        .setBackgroundColor(fondo).setTextAlignment(TextAlignment.CENTER)
-                                        .setPadding(6));
-                        table.addCell(new Cell().add(new Paragraph("$" + formatCurrency(total)).setFontSize(10))
-                                        .setBackgroundColor(fondo).setTextAlignment(TextAlignment.RIGHT).setPadding(6));
-                        alterno = !alterno;
-                }
-
-                document.add(table);
+        String[] headers = {"Fecha", "Proveedor", "Productos", "Total"};
+        for (String header : headers) {
+            table.addHeaderCell(crearCabeceraCelda(header, TextAlignment.CENTER));
         }
 
-        private void agregarTotalesPorMes(Document document, List<CompraResponseDTO> compras) {
-                // Solo mostrar si hay más de un mes
-                Map<String, Double> porMes = new TreeMap<>();
-                DateTimeFormatter mesFormatter = DateTimeFormatter.ofPattern("MMMM yyyy",
-                                Locale.forLanguageTag("es-AR"));
+        if (compras.isEmpty()) {
+            table.addCell(new Cell(1, 4)
+                    .add(new Paragraph("No hay compras registradas en este período"))
+                    .setBorder(Border.NO_BORDER)
+                    .setBorderBottom(new SolidBorder(BORDER_COLOR, 1f))
+                    .setTextAlignment(TextAlignment.CENTER)
+                    .setFontColor(TEXT_MUTED)
+                    .setPadding(15));
+        } else {
+            boolean isEven = false;
+            for (CompraResponseDTO compra : compras) {
+                DeviceRgb rowBg = isEven ? ROW_EVEN : new DeviceRgb(255, 255, 255);
+                isEven = !isEven;
 
-                for (CompraResponseDTO compra : compras) {
-                        if (compra.getFecha() != null) {
-                                String mes = compra.getFecha().format(mesFormatter);
-                                porMes.merge(mes, compra.getTotal(), (a, b) -> a + b);
-                        }
+                String fechaStr = formatFecha(compra.getFecha());
+
+                StringBuilder productos = new StringBuilder();
+                List<DetalleCompraResponseDTO> productosComprados = compra.getProductosComprados();
+                int maxProductosAMostrar = 2;
+                int totalProductos = productosComprados.size();
+
+                for (int i = 0; i < Math.min(maxProductosAMostrar, totalProductos); i++) {
+                    DetalleCompraResponseDTO detalle = productosComprados.get(i);
+                    productos.append(detalle.getNombreProducto())
+                            .append(" (x").append(detalle.getCantidad()).append(")\n");
                 }
 
-                if (porMes.size() <= 1)
-                        return; // No tiene sentido mostrar si solo hay un mes
-
-                Paragraph titulo = new Paragraph("Totales por Mes")
-                                .setFontSize(14).setBold().setMarginTop(20).setMarginBottom(10).setKeepWithNext(true);
-                document.add(titulo);
-
-                Table table = new Table(UnitValue.createPercentArray(new float[] { 4, 2 }))
-                                .setWidth(UnitValue.createPercentValue(60));
-
-                DeviceRgb colorHeader = new DeviceRgb(102, 126, 234);
-                for (String header : new String[] { "Mes", "Total Invertido" }) {
-                        table.addHeaderCell(new Cell()
-                                        .add(new Paragraph(header).setBold().setFontColor(ColorConstants.WHITE))
-                                        .setBackgroundColor(colorHeader).setTextAlignment(TextAlignment.CENTER)
-                                        .setPadding(6));
+                if (totalProductos > maxProductosAMostrar) {
+                    int productosRestantes = totalProductos - maxProductosAMostrar;
+                    productos.append("... y ").append(productosRestantes).append(" más");
                 }
 
-                DeviceRgb colorFila = new DeviceRgb(240, 248, 255);
-                DeviceRgb blanco = new DeviceRgb(255, 255, 255);
-                boolean alterno = false;
-                for (Map.Entry<String, Double> entry : porMes.entrySet()) {
-                        DeviceRgb fondo = alterno ? colorFila : blanco;
-                        // Capitalizar primera letra del mes
-                        String mes = entry.getKey().substring(0, 1).toUpperCase() + entry.getKey().substring(1);
-                        table.addCell(new Cell().add(new Paragraph(mes).setFontSize(10))
-                                        .setBackgroundColor(fondo).setPadding(6));
-                        table.addCell(new Cell()
-                                        .add(new Paragraph("$" + formatCurrency(entry.getValue())).setFontSize(10))
-                                        .setBackgroundColor(fondo).setTextAlignment(TextAlignment.RIGHT).setPadding(6));
-                        alterno = !alterno;
-                }
-
-                document.add(table);
+                table.addCell(crearCeldaDato(fechaStr, rowBg, TextAlignment.LEFT));
+                table.addCell(crearCeldaDato(compra.getNombreProveedor(), rowBg, TextAlignment.LEFT));
+                table.addCell(crearCeldaDato(productos.toString().trim(), rowBg, TextAlignment.LEFT));
+                table.addCell(crearCeldaDato("$" + formatCurrency(compra.getTotal()), rowBg, TextAlignment.RIGHT));
+            }
         }
 
-        private void agregarPiePagina(Document document) {
-                Paragraph piePagina = new Paragraph("Documento generado automáticamente - Gestión Inventario")
-                                .setFontSize(8)
-                                .setTextAlignment(TextAlignment.CENTER)
-                                .setMarginTop(20);
-                document.add(piePagina);
-        }
+        document.add(table);
+    }
 
-        private String formatFecha(LocalDateTime fecha) {
-                if (fecha == null) {
-                        return "N/A";
-                }
-                return fecha.format(DATE_TIME_FORMATTER);
-        }
+    private Cell crearCabeceraCelda(String text, TextAlignment alignment) {
+        return new Cell()
+                .add(new Paragraph(text).setBold().setFontSize(9))
+                .setBackgroundColor(BRAND_COLOR)
+                .setFontColor(ColorConstants.WHITE)
+                .setBorder(Border.NO_BORDER)
+                .setTextAlignment(alignment)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setPadding(6);
+    }
 
-        private String formatNumber(int number) {
-                return String.format("%,d", number).replace(',', '.');
-        }
+    private Cell crearCeldaDato(String text, DeviceRgb bgColor, TextAlignment alignment) {
+        return new Cell().setKeepTogether(true)
+                .add(new Paragraph(text).setFontSize(8).setFontColor(TEXT_DARK))
+                .setBackgroundColor(bgColor)
+                .setBorder(Border.NO_BORDER)
+                .setBorderBottom(new SolidBorder(BORDER_COLOR, 0.5f)) // Solo borde inferior
+                .setTextAlignment(alignment)
+                .setVerticalAlignment(VerticalAlignment.MIDDLE)
+                .setPadding(5);
+    }
 
-        private String formatCurrency(double amount) {
-                return NUMBER_FORMATTER.format(amount);
+    // Manejador de eventos para el pie de página
+    private static class PageEvent implements IEventHandler {
+        @Override
+        public void handleEvent(Event event) {
+            PdfDocumentEvent docEvent = (PdfDocumentEvent) event;
+            PdfDocument pdfDoc = docEvent.getDocument();
+            PdfPage page = docEvent.getPage();
+            int pageNumber = pdfDoc.getPageNumber(page);
+            Rectangle pageSize = page.getPageSize();
+            
+            PdfCanvas canvas = new PdfCanvas(page.newContentStreamBefore(), page.getResources(), pdfDoc);
+            
+            // Dibujar línea fina encima del footer
+            canvas.setStrokeColor(BORDER_COLOR)
+                  .setLineWidth(0.5f)
+                  .moveTo(40, 35)
+                  .lineTo(pageSize.getWidth() - 40, 35)
+                  .stroke();
+
+            // Footer Text
+            Paragraph footerText = new Paragraph("Reporte de Compras - Sistema de Gestión")
+                    .setFontSize(7)
+                    .setFontColor(TEXT_MUTED);
+            
+            Paragraph pageNumberParagraph = new Paragraph("Página " + pageNumber)
+                    .setFontSize(7)
+                    .setFontColor(TEXT_MUTED);
+            
+            Canvas htmlCanvas = new Canvas(canvas, new Rectangle(40, 15, pageSize.getWidth() - 80, 20));
+            htmlCanvas.showTextAligned(footerText, 40, 15, TextAlignment.LEFT);
+            htmlCanvas.showTextAligned(pageNumberParagraph, pageSize.getWidth() - 40, 15, TextAlignment.RIGHT);
+            htmlCanvas.close();
         }
+    }
+
+    private String formatFecha(LocalDateTime fecha) {
+        if (fecha == null) return "N/A";
+        return fecha.format(DATE_TIME_FORMATTER);
+    }
+
+    private String formatNumber(int number) {
+        return String.format("%,d", number).replace(',', '.');
+    }
+
+    private String formatCurrency(double amount) {
+        return NUMBER_FORMATTER.format(amount);
+    }
 }

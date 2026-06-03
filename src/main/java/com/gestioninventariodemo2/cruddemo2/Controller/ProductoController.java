@@ -48,9 +48,13 @@ public class ProductoController {
         byte[] pdfBytes = pdfReportService.generarReporteInventarioPdf(
                 productos, request.getFiltrosAplicados(), request.getSortDescripcion());
 
+        String fechaActual = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy_MM_dd"));
+        String filename = "Reporte_Inventario_" + fechaActual + ".pdf";
+
         HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_PDF);
-        headers.setContentDispositionFormData("attachment", "reporte_inventario.pdf");
+        headers.setContentType(org.springframework.http.MediaType.APPLICATION_PDF);
+        headers.add("Access-Control-Expose-Headers", "Content-Disposition");
+        headers.setContentDispositionFormData("attachment", filename);
 
         return ResponseEntity.ok()
                 .headers(headers)

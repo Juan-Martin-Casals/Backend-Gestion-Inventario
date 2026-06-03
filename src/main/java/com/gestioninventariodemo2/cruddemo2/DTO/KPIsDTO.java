@@ -19,4 +19,8 @@ public class KPIsDTO {
     private Double valorInventario;
     private Double gananciaProyectada;
     private Double gananciaReal;
+    
+    // Nuevas métricas para Flujo de Caja
+    private Double comprasEnEfectivo;
+    private Double flujoCajaLibre;
 }

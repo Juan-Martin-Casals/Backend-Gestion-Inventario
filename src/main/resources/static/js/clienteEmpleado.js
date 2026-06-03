@@ -22,6 +22,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnNextPage = document.getElementById('clientes-next-page');
     const inputSearch = document.getElementById('clientes-search-input');
     const btnClearSearch = document.getElementById('clientes-btn-limpiar');
+    const btnSortApellido = document.getElementById('clientes-sort-apellido');
+    const btnSortNombre = document.getElementById('clientes-sort-nombre');
 
     // Modales y formularios
     const detailModal = document.getElementById('cliente-detail-modal');
@@ -160,47 +162,46 @@ document.addEventListener('DOMContentLoaded', function () {
     // ORDENAMIENTO LOCAL
     // ==========================================
     function sortClientes() {
+        const tiebreaker = sortField === 'apellido' ? 'nombre' : 'apellido';
         filteredClientes.sort((a, b) => {
             const valA = quitarAcentos(a[sortField] || '');
             const valB = quitarAcentos(b[sortField] || '');
             if (valA < valB) return sortDirection === 'asc' ? -1 : 1;
             if (valA > valB) return sortDirection === 'asc' ? 1 : -1;
-            return 0;
+            const tieA = quitarAcentos(a[tiebreaker] || '');
+            const tieB = quitarAcentos(b[tiebreaker] || '');
+            return tieA < tieB ? -1 : tieA > tieB ? 1 : 0;
         });
     }
 
     function updateSortIndicators() {
-        const table = document.getElementById('tabla-clientes');
-        if (!table) return;
-        table.querySelectorAll('th[data-sort-by]').forEach(th => {
-            th.classList.remove('sort-asc', 'sort-desc');
-            const icon = th.querySelector('.sort-icon');
-            if (icon) icon.className = 'sort-icon fas fa-sort';
-
-            if (th.dataset.sortBy === sortField) {
-                th.classList.add(sortDirection === 'asc' ? 'sort-asc' : 'sort-desc');
-                if (icon) icon.className = `sort-icon fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'}`;
-            }
+        [btnSortApellido, btnSortNombre].forEach(btn => {
+            if (!btn) return;
+            btn.classList.remove('active');
+            const arrow = btn.querySelector('.sort-arrow');
+            if (arrow) arrow.className = 'fas fa-sort sort-arrow';
         });
+        const activeBtn = sortField === 'apellido' ? btnSortApellido : btnSortNombre;
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+            const arrow = activeBtn.querySelector('.sort-arrow');
+            if (arrow) arrow.className = `fas fa-sort-${sortDirection === 'asc' ? 'up' : 'down'} sort-arrow`;
+        }
     }
 
-    // Registrar clics en headers ordenables
-    const clienteTable = document.getElementById('tabla-clientes');
-    if (clienteTable) {
-        clienteTable.querySelectorAll('th[data-sort-by]').forEach(th => {
-            th.addEventListener('click', () => {
-                const field = th.dataset.sortBy;
-                if (sortField === field) {
-                    sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
-                } else {
-                    sortField = field;
-                    sortDirection = 'asc';
-                }
-                currentPage = 0;
-                loadClientes();
-            });
-        });
+    function handleSortBtn(field) {
+        if (sortField === field) {
+            sortDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            sortField = field;
+            sortDirection = 'asc';
+        }
+        currentPage = 0;
+        loadClientes();
     }
+
+    if (btnSortApellido) btnSortApellido.addEventListener('click', () => handleSortBtn('apellido'));
+    if (btnSortNombre) btnSortNombre.addEventListener('click', () => handleSortBtn('nombre'));
 
     // ==========================================
     // EVENTOS DE NAVEGACION Y BUSQUEDA

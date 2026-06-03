@@ -29,6 +29,7 @@ import com.gestioninventariodemo2.cruddemo2.Repository.CobroRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.CompraRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.StockRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.VentaRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.PagoRepository;
 import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.source.ByteArrayOutputStream;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -46,6 +47,7 @@ public class InformeService {
         private final CompraRepository compraRepository;
         private final StockRepository stockRepository;
         private final CobroRepository cobroRepository;
+        private final PagoRepository pagoRepository;
 
         public InformeResponseDTO generarInforme(LocalDate inicio, LocalDate fin) {
                 LocalDateTime start = inicio.atStartOfDay();
@@ -290,6 +292,20 @@ public class InformeService {
                 if (costoBienesVendidos == null) costoBienesVendidos = 0.0;
                 Double gananciaReal = totalVentas - costoBienesVendidos;
 
+                // Total de compras pagadas en efectivo
+                Double comprasEnEfectivo = 0.0;
+                List<Object[]> pagos = pagoRepository.obtenerTotalPorMetodoPagoEntreFechas(start, end);
+                for (Object[] row : pagos) {
+                        String metodo = (String) row[0];
+                        if (metodo != null && metodo.equalsIgnoreCase("Efectivo")) {
+                                comprasEnEfectivo = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
+                                break;
+                        }
+                }
+
+                // Flujo de Caja Libre
+                Double flujoCajaLibre = gananciaReal - comprasEnEfectivo;
+
                 return KPIsDTO.builder()
                                 .totalVentas(totalVentas)
                                 .totalCompras(totalCompras)
@@ -300,6 +316,8 @@ public class InformeService {
                                 .valorInventario(valorInventarioCosto)
                                 .gananciaProyectada(gananciaProyectada)
                                 .gananciaReal(gananciaReal)
+                                .comprasEnEfectivo(comprasEnEfectivo)
+                                .flujoCajaLibre(flujoCajaLibre)
                                 .build();
         }
 

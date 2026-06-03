@@ -289,7 +289,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const ventasPrevPageBtn = document.getElementById('ventas-prev-page');
     const ventasNextPageBtn = document.getElementById('ventas-next-page');
     const mainContent = document.querySelector('.main-content');
-    const ventasTableHeaders = document.querySelectorAll('#ventas-section .data-table th[data-sort-by]');
 
     // ===============================
     // ESTADO GLOBAL
@@ -311,16 +310,20 @@ document.addEventListener('DOMContentLoaded', function () {
     let previousClienteId = null;
     let previousClienteNombre = '';
 
-    // --- Variables para búsqueda y filtrado ---
-    let todasLasVentas = [];
-    let ventasFiltradas = [];
-    let modoFiltradoLocal = false;
+    // --- ID del empleado logueado (se carga desde /api/auth/perfil) ---
+    let empleadoUserId = null;
+
+    // --- Variables para búsqueda y filtrado (server-side, estilo admin) ---
     const ventasSearchInput = document.getElementById('ventas-search-input');
     const ventasFechaInicio = document.getElementById('ventas-fecha-inicio');
     const ventasFechaFin = document.getElementById('ventas-fecha-fin');
     const ventasBtnFiltrar = document.getElementById('ventas-btn-filtrar');
     const ventasBtnLimpiar = document.getElementById('ventas-btn-limpiar-filtro');
     const ventasFiltroError = document.getElementById('ventas-filtro-error');
+    const btnSortFecha = document.getElementById('ventas-sort-fecha');
+    const btnSortTotal = document.getElementById('ventas-sort-total');
+    const filtroMetodoPago = document.getElementById('ventas-filtro-metodo-pago');
+    const sortButtons = [btnSortFecha, btnSortTotal].filter(Boolean);
 
     function mostrarErrorFiltroVentas(mensaje) {
         if (ventasFiltroError) {
@@ -349,62 +352,31 @@ document.addEventListener('DOMContentLoaded', function () {
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
-            const textoBusqueda = ventasSearchInput ? ventasSearchInput.value.trim().toLowerCase() : '';
-            const fechaInicio = ventasFechaInicio ? ventasFechaInicio.value : '';
-            const fechaFin = ventasFechaFin ? ventasFechaFin.value : '';
-            // Mapear campos del frontend a campos reales de la entidad JPA
-            const sortFieldMap = {
-                'vendedor.nombre': 'usuario.nombre',
-                'cliente.nombre': 'cliente.nombre'
-            };
-            const sortFieldBackend = sortFieldMap[ventasSortField] || ventasSortField;
-            const sortParam = `${sortFieldBackend},${ventasSortDirection}`;
+            const sortParam = `&sort=${ventasSortField},${ventasSortDirection}`;
 
+            const searchText = ventasSearchInput ? ventasSearchInput.value.trim() : '';
+            const searchParam = searchText ? `&search=${encodeURIComponent(searchText)}` : '';
 
-            if (textoBusqueda) {
-                // Modo local: cargar todas y filtrar en el frontend
-                const url = `${API_VENTAS_URL}?page=0&size=1000&sort=${sortParam}`;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-                const pageData = await response.json();
+            const inicioVal = ventasFechaInicio ? ventasFechaInicio.value : '';
+            const finVal = ventasFechaFin ? ventasFechaFin.value : '';
+            const fechaParam = (inicioVal && finVal) ? `&inicio=${inicioVal}&fin=${finVal}` : '';
 
-                let ventas = pageData.content;
+            // Filtrar automáticamente por el empleado logueado
+            const vendedorParam = empleadoUserId ? `&vendedorId=${empleadoUserId}` : '';
 
-                // Filtrar por fechas si aplica
-                if (fechaInicio) ventas = ventas.filter(v => v.fecha >= fechaInicio);
-                if (fechaFin) ventas = ventas.filter(v => v.fecha <= fechaFin);
+            const metodoVal = filtroMetodoPago ? filtroMetodoPago.value : '';
+            const metodoParam = metodoVal ? `&metodoPagoId=${metodoVal}` : '';
 
-                // Filtrar por texto (cliente, producto, vendedor)
-                ventas = ventas.filter(v => {
-                    const cliente = (v.nombreCliente || '').toLowerCase();
-                    const vendedor = (v.nombreVendedor || '').toLowerCase();
-                    const productos = (v.productos || []).map(p => (p.nombreProducto || '').toLowerCase()).join(' ');
-                    return cliente.includes(textoBusqueda) ||
-                        vendedor.includes(textoBusqueda) ||
-                        productos.includes(textoBusqueda);
-                });
+            const url = `${API_VENTAS_URL}?page=${page}&size=${pageSizeVentas}${sortParam}${searchParam}${fechaParam}${vendedorParam}${metodoParam}`;
 
-                // Paginar localmente
-                const totalLocal = ventas.length;
-                totalPagesVentas = Math.ceil(totalLocal / pageSizeVentas) || 1;
-                currentPageVentas = Math.min(page, totalPagesVentas - 1);
-                const start = currentPageVentas * pageSizeVentas;
-                renderVentasTable(ventas.slice(start, start + pageSizeVentas));
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
 
-            } else {
-                // Modo normal: paginación del backend
-                let url = `${API_VENTAS_URL}?page=${page}&size=${pageSizeVentas}&sort=${sortParam}`;
-                if (fechaInicio) url += `&fechaInicio=${fechaInicio}`;
-                if (fechaFin) url += `&fechaFin=${fechaFin}`;
+            const pageData = await response.json();
+            currentPageVentas = pageData.number;
+            totalPagesVentas = pageData.totalPages;
 
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
-                const pageData = await response.json();
-                currentPageVentas = pageData.number;
-                totalPagesVentas = pageData.totalPages;
-                renderVentasTable(pageData.content);
-            }
-
+            renderVentasTable(pageData.content);
             updateVentasPaginationControls();
             updateVentasSortIndicators();
 
@@ -416,10 +388,11 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error('Error al cargar las ventas:', error);
             if (ventaTableBody) {
-                ventaTableBody.innerHTML = `<tr><td colspan="4">Error al cargar el historial de ventas.</td></tr>`;
+                ventaTableBody.innerHTML = `<tr><td colspan="7">Error al cargar el historial de ventas.</td></tr>`;
             }
             currentPageVentas = 0;
             totalPagesVentas = 0;
+            renderVentasTable([]);
             updateVentasPaginationControls();
             ventaTableBody.classList.remove('loading');
         }
@@ -697,6 +670,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÓGICA DEL BUSCADOR DE CLIENTES
     // ==========================================================
 
+    function removeAccents(str) {
+        return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+    }
+
     function capitalizarNombre(texto) {
         if (!texto) return '';
         return texto.toLowerCase().split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
@@ -788,11 +765,11 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function filtrarClientes() {
-        const query = clienteSearchInput.value.toLowerCase();
+        const query = removeAccents(clienteSearchInput.value.toLowerCase());
         const terminosBusqueda = query.split(' ').filter(term => term.length > 0);
 
         const clientesFiltrados = todosLosClientes.filter(c => {
-            const nombreCompleto = `${c.nombre.toLowerCase()} ${c.apellido ? c.apellido.toLowerCase() : ''} ${c.dni.toLowerCase()}`;
+            const nombreCompleto = removeAccents(`${c.nombre.toLowerCase()} ${c.apellido ? c.apellido.toLowerCase() : ''} ${c.dni.toLowerCase()}`);
             return terminosBusqueda.every(term => nombreCompleto.includes(term));
         });
 
@@ -855,13 +832,13 @@ document.addEventListener('DOMContentLoaded', function () {
             await loadProductosParaSelect();
         }
 
-        const query = productSearchInput.value.toLowerCase().trim();
+        const query = removeAccents(productSearchInput.value.toLowerCase().trim());
 
         // Si el campo está vacío o solo tiene espacios, mostrar todos los productos
         const productosFiltrados = query === ''
             ? todosLosProductos
             : todosLosProductos.filter(producto => {
-                return producto.nombreProducto.toLowerCase().includes(query);
+                return removeAccents(producto.nombreProducto.toLowerCase()).includes(query);
             });
         renderResultadosProductos(productosFiltrados);
     }
@@ -1328,42 +1305,57 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================================
-    // ORDENAMIENTO
+    // ORDENAMIENTO (estilo admin: sort buttons)
     // ==========================================================
 
-    function handleVentasSortClick(event) {
-        event.preventDefault();
-        const th = event.currentTarget;
-        const newSortField = th.getAttribute('data-sort-by');
-
-        if (!newSortField) return;
-
-        if (ventasSortField === newSortField) {
+    function handleSortBtnClick(field) {
+        if (ventasSortField === field) {
             ventasSortDirection = ventasSortDirection === 'asc' ? 'desc' : 'asc';
         } else {
-            ventasSortField = newSortField;
-            ventasSortDirection = 'asc';
+            ventasSortField = field;
+            ventasSortDirection = 'desc';
         }
-
         currentPageVentas = 0;
-        loadVentas(currentPageVentas);
+        loadVentas(0);
     }
 
     function updateVentasSortIndicators() {
-        ventasTableHeaders.forEach(th => {
-            th.classList.remove('sort-asc', 'sort-desc');
-            th.querySelector('.sort-icon').className = 'sort-icon fas fa-sort';
-
-            if (th.getAttribute('data-sort-by') === ventasSortField) {
-                const directionClass = `sort-${ventasSortDirection}`;
-                th.classList.add(directionClass);
-
-                const icon = th.querySelector('.sort-icon');
-                if (icon) {
-                    icon.className = `sort-icon fas fa-sort-${ventasSortDirection === 'asc' ? 'up' : 'down'}`;
-                }
+        sortButtons.forEach(btn => {
+            const field = btn.getAttribute('data-sort-field');
+            const arrow = btn.querySelector('.sort-arrow');
+            if (field === ventasSortField) {
+                btn.classList.add('active');
+                if (arrow) arrow.className = `fas fa-sort-${ventasSortDirection === 'asc' ? 'up' : 'down'} sort-arrow`;
+            } else {
+                btn.classList.remove('active');
+                if (arrow) arrow.className = 'fas fa-sort sort-arrow';
             }
         });
+    }
+
+    // ==========================================================
+    // FILTRO MÉTODO DE PAGO (cargar dinámicamente)
+    // ==========================================================
+    async function cargarFiltroMetodosPago() {
+        if (!filtroMetodoPago) return;
+        try {
+            const response = await fetch('/api/metodos-pago/activos');
+            if (!response.ok) return;
+            const metodos = await response.json();
+            const seleccionado = filtroMetodoPago.value;
+            filtroMetodoPago.innerHTML = '<option value="">💳 Método: Todos</option>';
+            metodos
+                .filter(m => !m.nombre.includes('('))
+                .forEach(m => {
+                    const opt = document.createElement('option');
+                    opt.value = m.id ?? m.idMetodoPago;
+                    opt.textContent = m.nombre;
+                    filtroMetodoPago.appendChild(opt);
+                });
+            if (seleccionado) filtroMetodoPago.value = seleccionado;
+        } catch (e) {
+            console.error('Error al cargar métodos de pago para filtro:', e);
+        }
     }
 
     // ==========================================================
@@ -1595,6 +1587,16 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Sort buttons
+    sortButtons.forEach(btn => {
+        btn.addEventListener('click', () => handleSortBtnClick(btn.getAttribute('data-sort-field')));
+    });
+
+    // Filtro Método de Pago
+    if (filtroMetodoPago) {
+        filtroMetodoPago.addEventListener('change', () => { currentPageVentas = 0; loadVentas(0); });
+    }
+
     if (ventasBtnFiltrar) {
         ventasBtnFiltrar.addEventListener('click', function () {
             ocultarErrorFiltroVentas();
@@ -1615,6 +1617,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (ventasSearchInput) ventasSearchInput.value = '';
             if (ventasFechaInicio) ventasFechaInicio.value = '';
             if (ventasFechaFin) ventasFechaFin.value = '';
+            if (filtroMetodoPago) filtroMetodoPago.value = '';
+            ventasSortField = 'fecha';
+            ventasSortDirection = 'desc';
             currentPageVentas = 0;
             loadVentas(0);
         });
@@ -1691,18 +1696,32 @@ document.addEventListener('DOMContentLoaded', function () {
     if (ventasNextPageBtn) {
         ventasNextPageBtn.addEventListener('click', handleVentasNextPage);
     }
-    ventasTableHeaders.forEach(header => {
-        header.addEventListener('click', handleVentasSortClick);
-    });
-
     // ==========================================================
     // CARGA INICIAL Y EXPOSICIÓN DE FUNCIONES
     // ==========================================================
 
-    loadProductosParaSelect();
-    loadClientesParaVenta();
-    loadMetodosPago();
-    loadVentas();
+    // Cargar el ID del empleado logueado para filtrar solo sus ventas
+    async function loadEmpleadoUserId() {
+        try {
+            const response = await fetch('/api/auth/perfil');
+            if (!response.ok) return;
+            const perfil = await response.json();
+            empleadoUserId = perfil.idUsuario;
+            console.log('Empleado userId cargado:', empleadoUserId);
+        } catch (e) {
+            console.error('Error al cargar perfil del empleado:', e);
+        }
+    }
+
+    // Inicialización secuencial: primero cargar userId, luego ventas
+    (async function init() {
+        await loadEmpleadoUserId();
+        loadProductosParaSelect();
+        loadClientesParaVenta();
+        loadMetodosPago();
+        cargarFiltroMetodosPago();
+        loadVentas();
+    })();
     renderDetalleTemporal();
 
     window.cargarDatosVentas = async function () {

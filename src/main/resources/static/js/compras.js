@@ -1218,8 +1218,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function exportarPdfCompras() {
-        const inicio = fechaInicio.value;
-        const fin = fechaFin.value;
+        const inicio = fechaInicio ? fechaInicio.value : '';
+        const fin = fechaFin ? fechaFin.value : '';
 
         // Construir URL con parámetros opcionales
         let url = `${API_COMPRAS_URL}/exportar-pdf`;
@@ -1227,6 +1227,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (inicio) params.append('inicio', inicio);
         if (fin) params.append('fin', fin);
+
+        const searchText = comprasSearchInput ? comprasSearchInput.value.trim() : '';
+        if (searchText) params.append('search', searchText);
+
+        const estadoVal = filtroEstado ? filtroEstado.value : '';
+        if (estadoVal) params.append('estadoPago', estadoVal);
+
+        const proveedorVal = filtroProveedor ? filtroProveedor.value : '';
+        if (proveedorVal) params.append('proveedorId', proveedorVal);
+
+        if (historialSortField) {
+            params.append('sort', `${historialSortField},${historialSortDirection}`);
+        }
 
         if (params.toString()) {
             url += `?${params.toString()}`;
@@ -1242,12 +1255,16 @@ document.addEventListener('DOMContentLoaded', function () {
             a.style.display = 'none';
             a.href = downloadUrl;
 
-            // Nombre del archivo con fechas si se especificaron
-            let filename = 'compras';
-            if (inicio && fin) {
-                filename += `_${inicio}_a_${fin}`;
+            // Extraer nombre de archivo del Content-Disposition si existe
+            let filename = 'Reporte_Compras.pdf';
+            const disposition = response.headers.get('Content-Disposition');
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) { 
+                    filename = matches[1].replace(/['"]/g, '');
+                }
             }
-            filename += '.pdf';
 
             a.download = filename;
             document.body.appendChild(a);
@@ -2011,7 +2028,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.addEventListener('click', (e) => {
-        if (addCompraSelect.container && !addCompraSelect.container.contains(e.target) && !addCompraSelect.options.contains(e.target)) {
+        if (typeof addCompraSelect !== 'undefined' && addCompraSelect && addCompraSelect.container && !addCompraSelect.container.contains(e.target) && !addCompraSelect.options.contains(e.target)) {
             addCompraSelect.options.style.display = 'none';
         }
     });

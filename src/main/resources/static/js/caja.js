@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let cajaEstaAbierta = false;
     let resumenCajaActual = null; // Almacenamos el DTO de respuesta para cálculos locales y PDF
 
-    const formatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+    const formatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
     // Verificar el estado de la caja de forma automática al cargar
     async function verificarEstadoCaja() {
@@ -70,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 saldoAnteriorGlobal = data.saldoAnterior || 0.0;
 
                 spanSaldoAnterior.textContent = formatter.format(saldoAnteriorGlobal);
-                inputMontoInicial.value = Math.round(saldoAnteriorGlobal);
+                inputMontoInicial.value = new Intl.NumberFormat('es-AR').format(Math.round(saldoAnteriorGlobal));
 
                 panelApertura.style.display = 'block';
                 if (tituloApertura) tituloApertura.style.display = 'block';
@@ -221,8 +221,10 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (inputMontoInicial) {
-        inputMontoInicial.addEventListener('input', () => {
-            const value = parseFloat(inputMontoInicial.value) || 0;
+        inputMontoInicial.addEventListener('input', (e) => {
+            formatNumberInput(e);
+            const rawValueStr = inputMontoInicial.value.replace(/\./g, '');
+            const value = parseFloat(rawValueStr) || 0;
             if (Math.abs(value - saldoAnteriorGlobal) > 0.01) {
                 warningText.style.display = 'block';
             } else {
@@ -285,8 +287,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (btnAbrirCaja) {
         btnAbrirCaja.addEventListener('click', async () => {
-            const montoInicial = parseFloat(inputMontoInicial.value);
-            if (isNaN(montoInicial) || montoInicial <= 0) {
+            const rawValueStr = inputMontoInicial.value.replace(/\./g, '');
+            const montoInicial = parseFloat(rawValueStr);
+            if (isNaN(montoInicial) || montoInicial < 0) {
                 showError('El monto es inválido.');
                 return;
             }

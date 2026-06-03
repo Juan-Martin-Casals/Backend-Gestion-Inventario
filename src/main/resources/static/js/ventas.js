@@ -623,12 +623,20 @@ document.addEventListener('DOMContentLoaded', function () {
         clienteResultsContainer.style.display = 'block';
     }
 
+    // ==========================================================
+    // LÓGICA DEL BUSCADOR DE CLIENTES
+    // ==========================================================
+
+    function removeAccents(str) {
+        return str ? str.normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+    }
+
     function filtrarClientes() {
-        const query = clienteSearchInput.value.toLowerCase();
+        const query = removeAccents(clienteSearchInput.value.toLowerCase());
         const terminosBusqueda = query.split(' ').filter(term => term.length > 0);
 
         const clientesFiltrados = todosLosClientes.filter(c => {
-            const nombreCompleto = `${c.nombre.toLowerCase()} ${c.apellido ? c.apellido.toLowerCase() : ''} ${c.dni.toLowerCase()}`;
+            const nombreCompleto = removeAccents(`${c.nombre.toLowerCase()} ${c.apellido ? c.apellido.toLowerCase() : ''} ${c.dni.toLowerCase()}`);
             return terminosBusqueda.every(term => nombreCompleto.includes(term));
         });
 
@@ -691,13 +699,13 @@ document.addEventListener('DOMContentLoaded', function () {
             await loadProductosParaSelect();
         }
 
-        const query = productSearchInput.value.toLowerCase().trim();
+        const query = removeAccents(productSearchInput.value.toLowerCase().trim());
 
         // Si el campo está vacío o solo tiene espacios, mostrar todos los productos
         const productosFiltrados = query === ''
             ? todosLosProductos
             : todosLosProductos.filter(producto => {
-                return producto.nombreProducto.toLowerCase().includes(query);
+                return removeAccents(producto.nombreProducto.toLowerCase()).includes(query);
             });
         renderResultadosProductos(productosFiltrados);
     }
@@ -1366,15 +1374,24 @@ document.addEventListener('DOMContentLoaded', function () {
     async function exportarVentasPdf() {
         const inicio = ventasFechaInicio ? ventasFechaInicio.value : '';
         const fin = ventasFechaFin ? ventasFechaFin.value : '';
+        const search = ventasSearchInput ? ventasSearchInput.value.trim() : '';
+        const vendedorId = filtroVendedor ? filtroVendedor.value : '';
+        const metodoPagoId = filtroMetodoPago ? filtroMetodoPago.value : '';
 
         // Construir URL con parámetros opcionales
         let url = '/api/ventas/pdf';
         const params = new URLSearchParams();
 
+        if (ventasSortField) {
+            params.append('sort', `${ventasSortField},${ventasSortDirection}`);
+        }
+        if (search) params.append('search', search);
         if (inicio && fin) {
             params.append('inicio', inicio);
             params.append('fin', fin);
         }
+        if (vendedorId) params.append('vendedorId', vendedorId);
+        if (metodoPagoId) params.append('metodoPagoId', metodoPagoId);
 
         if (params.toString()) {
             url += '?' + params.toString();
@@ -1392,16 +1409,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const a = document.createElement('a');
             a.href = downloadUrl;
 
-            // Generar nombre del archivo según filtros
-            let nombreArchivo = 'reporte_ventas';
-            if (inicio && fin) {
-                // Formato: reporte_ventas_2024-12-01_al_2024-12-15.pdf
-                nombreArchivo += `_${inicio}_al_${fin}`;
-            } else {
-                // Formato: reporte_ventas_2024-12-03.pdf
-                nombreArchivo += `_${new Date().toISOString().split('T')[0]}`;
+            // Leer filename del Content-Disposition si existe
+            let nombreArchivo = 'Reporte_Ventas.pdf';
+            const disposition = response.headers.get('Content-Disposition');
+            if (disposition && disposition.indexOf('filename=') !== -1) {
+                const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                const matches = filenameRegex.exec(disposition);
+                if (matches != null && matches[1]) {
+                    nombreArchivo = matches[1].replace(/['"]/g, '');
+                }
             }
-            nombreArchivo += '.pdf';
 
             a.download = nombreArchivo;
             document.body.appendChild(a);
@@ -1410,7 +1427,7 @@ document.addEventListener('DOMContentLoaded', function () {
             document.body.removeChild(a);
         } catch (error) {
             console.error('Error al exportar PDF:', error);
-            mostrarErrorFiltroVentas('No se pudo generar el PDF');
+            alert('No se pudo exportar el PDF. Intente nuevamente.');
         }
     }
 

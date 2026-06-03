@@ -35,6 +35,7 @@ public class CompraController {
 
     private final CompraService compraService;
     private final CompraPdfService compraPdfService;
+    private final com.gestioninventariodemo2.cruddemo2.Repository.ProveedorRepository proveedorRepository;
 
     @PostMapping
     public ResponseEntity<Compra> registrarCompra(@RequestBody CompraRequestDTO dto, @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
@@ -92,17 +93,61 @@ public class CompraController {
 
     @GetMapping("/exportar-pdf")
     public ResponseEntity<byte[]> exportarPdfCompras(
+            @RequestParam(required = false) String sort,
+            @RequestParam(required = false) String search,
             @RequestParam(required = false) String inicio,
-            @RequestParam(required = false) String fin) {
+            @RequestParam(required = false) String fin,
+            @RequestParam(required = false) String estadoPago,
+            @RequestParam(required = false) Long proveedorId) {
 
-        LocalDate fechaInicio = inicio != null ? LocalDate.parse(inicio) : null;
-        LocalDate fechaFin = fin != null ? LocalDate.parse(fin) : null;
+        // Detectar campos de ordenamiento custom
+        String customSort = null;
+        String customDirection = "asc";
 
-        List<CompraResponseDTO> compras = compraService.obtenerComprasPorRangoFechas(fechaInicio, fechaFin);
-        byte[] pdfBytes = compraPdfService.generarPdfCompras(compras, fechaInicio, fechaFin);
+        if (sort != null) {
+            String[] parts = sort.split(",");
+            customSort = parts[0];
+            if (parts.length > 1) {
+                customDirection = parts[1];
+            }
+        }
+
+        LocalDate fechaInicio = inicio != null && !inicio.isEmpty() ? LocalDate.parse(inicio) : null;
+        LocalDate fechaFin = fin != null && !fin.isEmpty() ? LocalDate.parse(fin) : null;
+
+        List<CompraResponseDTO> compras = compraService.obtenerComprasParaPdf(
+                customSort, customDirection, search, fechaInicio, fechaFin, estadoPago, proveedorId);
+        
+        StringBuilder nombreBuilder = new StringBuilder("Reporte_Compras_");
+        nombreBuilder.append(LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy_MM_dd")));
+
+        if (inicio != null && fin != null && !inicio.isEmpty() && !fin.isEmpty()) {
+            nombreBuilder.append("_Desde_").append(inicio).append("_Hasta_").append(fin);
+        }
+        if (estadoPago != null && !estadoPago.isEmpty()) {
+            nombreBuilder.append("_").append(estadoPago.toUpperCase());
+        }
+        if (search != null && !search.isEmpty()) {
+            nombreBuilder.append("_Busqueda_").append(search.replaceAll("[^a-zA-Z0-9_-]", ""));
+        }
+
+        String nombreProveedor = null;
+        if (proveedorId != null) {
+            com.gestioninventariodemo2.cruddemo2.Model.Proveedor prov = proveedorRepository.findById(proveedorId).orElse(null);
+            if (prov != null) {
+                nombreProveedor = prov.getNombre();
+                nombreBuilder.append("_Prov_").append(nombreProveedor.replaceAll("[^a-zA-Z0-9_-]", ""));
+            }
+        }
+        
+        String filename = nombreBuilder.toString() + ".pdf";
+
+        // Ahora pasamos los filtros a generarPdfCompras
+        byte[] pdfBytes = compraPdfService.generarPdfCompras(compras, fechaInicio, fechaFin, search, estadoPago, nombreProveedor);
 
         HttpHeaders headers = new HttpHeaders();
-        headers.add("Content-Disposition", "attachment; filename=compras.pdf");
+        headers.add("Access-Control-Expose-Headers", "Content-Disposition");
+        headers.add("Content-Disposition", "attachment; filename=\"" + filename + "\"");
         headers.add("Content-Type", "application/pdf");
 
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);

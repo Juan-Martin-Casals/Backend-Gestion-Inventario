@@ -237,16 +237,9 @@ public class CompraService {
 
 
     /**
-     * Lista todas las compras registradas con un formato simplificado.
-     * Maneja campos de ordenamiento custom (productos, costoUnitario)
-     * que requieren queries con JOIN.
-     * Soporta búsqueda global y filtro por rango de fechas.
+     * Construye dinámicamente los filtros de búsqueda JPA para las compras.
      */
-    public Page<CompraResponseDTO> listarTodasLasCompras(Pageable pageable, String customSort,
-            String customDirection, String search, LocalDate fechaInicio, LocalDate fechaFin,
-            String estadoPago, Long proveedorId) {
-
-        boolean asc = "asc".equalsIgnoreCase(customDirection);
+    private Specification<Compra> construirEspecificacion(String search, LocalDate fechaInicio, LocalDate fechaFin, String estadoPago, Long proveedorId) {
         boolean hasSearch = search != null && !search.trim().isEmpty();
         boolean hasDates = fechaInicio != null && fechaFin != null;
         boolean hasEstado = estadoPago != null && !estadoPago.isEmpty();
@@ -254,15 +247,12 @@ public class CompraService {
 
         final LocalDateTime start = hasDates ? fechaInicio.atStartOfDay() : null;
         final LocalDateTime end = hasDates ? fechaFin.atTime(LocalTime.MAX) : null;
-        final String searchFinal = search;
-        final String estadoFinal = estadoPago;
-        final Long proveedorFinal = proveedorId;
 
-        Specification<Compra> spec = (root, query, cb) -> {
+        return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             if (hasSearch) {
-                String like = "%" + searchFinal.toLowerCase() + "%";
+                String like = "%" + search.toLowerCase() + "%";
                 Predicate proveedorMatch = cb.like(cb.lower(root.get("proveedor").get("nombre")), like);
                 Join<Compra, DetalleCompra> dc = root.join("detalleCompras", JoinType.LEFT);
                 Predicate productoMatch = cb.like(cb.lower(dc.get("producto").get("nombre")), like);
@@ -275,7 +265,7 @@ public class CompraService {
             }
 
             if (hasProveedor) {
-                predicates.add(cb.equal(root.get("proveedor").get("idProveedor"), proveedorFinal));
+                predicates.add(cb.equal(root.get("proveedor").get("idProveedor"), proveedorId));
             }
 
             if (hasEstado) {
@@ -287,21 +277,35 @@ public class CompraService {
                 Expression<Double> totalPagado = sub.getSelection();
                 Expression<Double> umbral = cb.diff(root.<Double>get("total"), 0.05);
 
-                if ("PENDIENTE".equalsIgnoreCase(estadoFinal)) {
+                if ("PENDIENTE".equalsIgnoreCase(estadoPago)) {
                     predicates.add(cb.lessThan(totalPagado, umbral));
-                } else if ("PAGADO".equalsIgnoreCase(estadoFinal)) {
+                } else if ("PAGADO".equalsIgnoreCase(estadoPago)) {
                     predicates.add(cb.greaterThanOrEqualTo(totalPagado, umbral));
                 }
             }
 
             return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    /**
+     * Lista todas las compras registradas con un formato simplificado.
+     * Maneja campos de ordenamiento custom (productos, costoUnitario)
+     * que requieren queries con JOIN.
+     * Soporta búsqueda global y filtro por rango de fechas.
+     */
+    public Page<CompraResponseDTO> listarTodasLasCompras(Pageable pageable, String customSort,
+            String customDirection, String search, LocalDate fechaInicio, LocalDate fechaFin,
+            String estadoPago, Long proveedorId) {
+
+        Specification<Compra> spec = construirEspecificacion(search, fechaInicio, fechaFin, estadoPago, proveedorId);
 
         // Construir Pageable con sort: si es customSort (productos/costoUnitario) lo traducimos a paths JPA
         Pageable finalPageable = pageable;
         if (customSort != null) {
-            Sort customSortObj = null;
+            boolean asc = "asc".equalsIgnoreCase(customDirection);
             Sort.Direction dir = asc ? Sort.Direction.ASC : Sort.Direction.DESC;
+            Sort customSortObj = null;
             if ("productos".equals(customSort)) {
                 customSortObj = Sort.by(dir, "detalleCompras.producto.nombre");
             } else if ("costoUnitario".equals(customSort)) {
@@ -417,21 +421,29 @@ public class CompraService {
     }
 
     /**
-     * Obtiene compras filtradas por rango de fechas.
+     * Obtiene compras filtradas para el reporte PDF (sin paginación).
      */
-    public List<CompraResponseDTO> obtenerComprasPorRangoFechas(LocalDate inicio, LocalDate fin) {
-        List<Compra> compras;
+    public List<CompraResponseDTO> obtenerComprasParaPdf(String customSort, String customDirection, String search, LocalDate fechaInicio, LocalDate fechaFin, String estadoPago, Long proveedorId) {
+        
+        Specification<Compra> spec = construirEspecificacion(search, fechaInicio, fechaFin, estadoPago, proveedorId);
 
-        if (inicio != null && fin != null) {
-            compras = compraRepository.findAll().stream()
-                    .filter(c -> !c.getFecha().toLocalDate().isBefore(inicio) && !c.getFecha().toLocalDate().isAfter(fin))
-                    .collect(Collectors.toList());
+        Sort finalSort = Sort.unsorted();
+        if (customSort != null) {
+            boolean asc = "asc".equalsIgnoreCase(customDirection);
+            Sort.Direction dir = asc ? Sort.Direction.ASC : Sort.Direction.DESC;
+            if ("productos".equals(customSort)) {
+                finalSort = Sort.by(dir, "detalleCompras.producto.nombre");
+            } else if ("costoUnitario".equals(customSort)) {
+                finalSort = Sort.by(dir, "detalleCompras.precioUnitario");
+            } else {
+                finalSort = Sort.by(dir, customSort);
+            }
         } else {
-            compras = compraRepository.findAll();
+             // Por defecto ordenamos por fecha desc
+             finalSort = Sort.by(Sort.Direction.DESC, "fecha"); 
         }
 
-        return compras.stream()
-                .map(this::mapToCompraDTO)
-                .collect(Collectors.toList());
+        List<Compra> compras = compraRepository.findAll(spec, finalSort);
+        return compras.stream().map(this::mapToCompraDTO).collect(Collectors.toList());
     }
 }

@@ -170,24 +170,56 @@ public class VentaService {
     public Page<VentaResponseDTO> listarVentas(Pageable pageable, String search, LocalDate fechaInicio,
             LocalDate fechaFin, Long vendedorId, Long metodoPagoId) {
 
+        Specification<Venta> spec = construirEspecificacion(search, fechaInicio, fechaFin, vendedorId, metodoPagoId);
+        return ventaRepository.findAll(spec, pageable).map(this::mapToVentaDTO);
+    }
+
+    public List<VentaResponseDTO> obtenerVentasParaPdf(String sortStr, String direction, String search, LocalDate fechaInicio,
+            LocalDate fechaFin, Long vendedorId, Long metodoPagoId) {
+            
+        Specification<Venta> spec = construirEspecificacion(search, fechaInicio, fechaFin, vendedorId, metodoPagoId);
+        
+        org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.unsorted();
+        if (sortStr != null && !sortStr.isEmpty()) {
+            org.springframework.data.domain.Sort.Direction dir = "desc".equalsIgnoreCase(direction) ? 
+                org.springframework.data.domain.Sort.Direction.DESC : org.springframework.data.domain.Sort.Direction.ASC;
+            sort = org.springframework.data.domain.Sort.by(dir, sortStr);
+        } else {
+            sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "fecha");
+        }
+
+        return ventaRepository.findAll(spec, sort).stream()
+                .map(this::mapToVentaDTO)
+                .collect(Collectors.toList());
+    }
+
+    private Specification<Venta> construirEspecificacion(String search, LocalDate fechaInicio,
+            LocalDate fechaFin, Long vendedorId, Long metodoPagoId) {
+            
         boolean hasSearch = search != null && !search.trim().isEmpty();
         boolean hasDates = fechaInicio != null && fechaFin != null;
         final LocalDateTime start = hasDates ? fechaInicio.atStartOfDay() : null;
         final LocalDateTime end = hasDates ? fechaFin.atTime(LocalTime.MAX) : null;
         final String searchFinal = search;
 
-        Specification<Venta> spec = (root, query, cb) -> {
+        return (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             if (hasSearch) {
-                String like = "%" + searchFinal.toLowerCase() + "%";
+                String searchNoAccents = searchFinal != null ? 
+                    java.text.Normalizer.normalize(searchFinal, java.text.Normalizer.Form.NFD).replaceAll("\\p{InCombiningDiacriticalMarks}+", "").toLowerCase() : "";
+                String like = "%" + searchNoAccents + "%";
                 Join<Venta, DetalleVenta> dv = root.join("detalleVentas", JoinType.LEFT);
+                
+                jakarta.persistence.criteria.Expression<String> charsFrom = cb.literal("áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ");
+                jakarta.persistence.criteria.Expression<String> charsTo = cb.literal("aeiouaeiouaeiouaeiounn");
+                
                 Predicate match = cb.or(
-                        cb.like(cb.lower(root.get("cliente").get("nombre")), like),
-                        cb.like(cb.lower(root.get("cliente").get("apellido")), like),
-                        cb.like(cb.lower(root.get("usuario").get("nombre")), like),
-                        cb.like(cb.lower(root.get("usuario").get("apellido")), like),
-                        cb.like(cb.lower(dv.get("producto").get("nombre")), like));
+                        cb.like(cb.function("translate", String.class, cb.lower(root.get("cliente").get("nombre")), charsFrom, charsTo), like),
+                        cb.like(cb.function("translate", String.class, cb.lower(root.get("cliente").get("apellido")), charsFrom, charsTo), like),
+                        cb.like(cb.function("translate", String.class, cb.lower(root.get("usuario").get("nombre")), charsFrom, charsTo), like),
+                        cb.like(cb.function("translate", String.class, cb.lower(root.get("usuario").get("apellido")), charsFrom, charsTo), like),
+                        cb.like(cb.function("translate", String.class, cb.lower(dv.get("producto").get("nombre")), charsFrom, charsTo), like));
                 predicates.add(match);
                 query.distinct(true);
             }
@@ -208,8 +240,6 @@ public class VentaService {
             }
             return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
         };
-
-        return ventaRepository.findAll(spec, pageable).map(this::mapToVentaDTO);
     }
 
     public List<VentaResponseDTO> listarTodasLasVentas() {

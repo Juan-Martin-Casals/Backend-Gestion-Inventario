@@ -601,12 +601,17 @@ public class ProductoService {
             if ("sin-proveedor".equals(proveedor)) {
                 dtos = dtos.stream().filter(d -> d.getProveedorNombre() == null).collect(Collectors.toList());
             } else {
-                dtos = dtos.stream().filter(d -> proveedor.equalsIgnoreCase(d.getProveedorNombre())).collect(Collectors.toList());
+                String provTerm = proveedor.toLowerCase();
+                dtos = dtos.stream().filter(d -> d.getProveedorNombre() != null && d.getProveedorNombre().toLowerCase().contains(provTerm)).collect(Collectors.toList());
             }
         }
         if (busqueda != null && !busqueda.isBlank()) {
             String term = busqueda.toLowerCase();
-            dtos = dtos.stream().filter(d -> d.getNombre() != null && d.getNombre().toLowerCase().contains(term)).collect(Collectors.toList());
+            dtos = dtos.stream().filter(d -> 
+                (d.getNombre() != null && d.getNombre().toLowerCase().contains(term)) ||
+                (d.getCategoria() != null && d.getCategoria().toLowerCase().contains(term)) ||
+                (d.getProveedorNombre() != null && d.getProveedorNombre().toLowerCase().contains(term))
+            ).collect(Collectors.toList());
         }
 
         // Ordenamiento

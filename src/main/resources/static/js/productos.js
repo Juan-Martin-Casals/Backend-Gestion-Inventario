@@ -1016,20 +1016,39 @@ document.addEventListener('DOMContentLoaded', function () {
             // Mostrar estado como texto con badge
             let estadoTexto = 'N/A';
             let estadoClase = '';
+            let badgeBg = 'rgba(16,185,129,0.25)';
+            let badgeBorder = 'rgba(16,185,129,0.3)';
 
             if (product.estadoStock === 'AGOTADO' || product.stockActual === 0) {
                 estadoTexto = 'Agotado';
                 estadoClase = 'empty';
-            } else if (product.estadoStock === 'BAJO' || product.stockActual < product.stockMinimo) {
+                badgeBg = 'rgba(239,68,68,0.25)';
+                badgeBorder = 'rgba(239,68,68,0.3)';
+            } else if (product.estadoStock === 'BAJO' || (product.stockMinimo && product.stockActual < product.stockMinimo)) {
                 estadoTexto = 'Bajo';
                 estadoClase = 'low';
-            } else {
+                badgeBg = 'rgba(245,158,11,0.25)';
+                badgeBorder = 'rgba(245,158,11,0.3)';
+            } else if (product.estadoStock === 'BUENO' || product.stockActual >= product.stockMinimo) {
                 estadoTexto = 'Óptimo';
                 estadoClase = 'good';
+            } else {
+                estadoTexto = 'N/A';
             }
 
-            const estadoBadge = `<span class="stock-badge ${estadoClase}" style="padding-left: 6px; padding-right: 8px;">${estadoTexto}</span>`;
-            document.getElementById('detail-stock-estado').innerHTML = estadoBadge;
+            // Banner badge (en el header)
+            document.getElementById('detail-stock-estado').textContent = estadoTexto;
+            const estadoBadgeEl = document.getElementById('detail-stock-estado-badge');
+            if (estadoBadgeEl) {
+                estadoBadgeEl.style.background = badgeBg;
+                estadoBadgeEl.style.borderColor = badgeBorder;
+            }
+
+            // Config section badge
+            const estadoTextEl = document.getElementById('detail-stock-estado-text');
+            if (estadoTextEl) {
+                estadoTextEl.innerHTML = `<span class="stock-badge ${estadoClase}" style="padding-left: 6px; padding-right: 8px;">${estadoTexto}</span>`;
+            }
 
             // Cargar proveedores asociados
             const proveedoresBody = document.getElementById('detail-proveedores-body');
@@ -1261,6 +1280,13 @@ document.addEventListener('DOMContentLoaded', function () {
             // Llenar formulario con datos actuales
             editProductId.value = product.idProducto;
             editNameInput.value = product.nombre || '';
+            
+            // Actualizar el badge del header premium
+            const badgeName = document.getElementById('edit-product-badge-name');
+            if (badgeName) {
+                badgeName.textContent = product.nombre || 'Desconocido';
+            }
+
             editCategorySearchInput.value = product.categoria || '';
             // Buscar ID de categoría
             const categoriaEncontrada = todasLasCategorias.find(c => c.nombre === product.categoria);
