@@ -272,15 +272,16 @@ public class VentaPdfService {
                 .sorted((v1, v2) -> v2.getFecha().compareTo(v1.getFecha()))
                 .toList();
 
-        Table table = new Table(UnitValue.createPercentArray(new float[]{2, 3, 4, 2, 2})).useAllAvailableWidth();
+        Table table = new Table(UnitValue.createPercentArray(new float[]{2, 3, 2, 2})).useAllAvailableWidth();
 
-        String[] headers = {"Fecha", "Cliente", "Productos", "Total", "Vendedor"};
-        for (String header : headers) {
-            table.addHeaderCell(crearCabeceraCelda(header, TextAlignment.CENTER));
+        String[] headers = {"Fecha", "Cliente", "Total", "Vendedor"};
+        TextAlignment[] alignments = {TextAlignment.LEFT, TextAlignment.LEFT, TextAlignment.RIGHT, TextAlignment.LEFT};
+        for (int i = 0; i < headers.length; i++) {
+            table.addHeaderCell(crearCabeceraCelda(headers[i], alignments[i]));
         }
 
         if (ventas.isEmpty()) {
-            table.addCell(new Cell(1, 5)
+            table.addCell(new Cell(1, 4)
                     .add(new Paragraph("No hay ventas registradas en este período"))
                     .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER)
                     .setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(BORDER_COLOR, 1f))
@@ -295,30 +296,43 @@ public class VentaPdfService {
 
                 String fechaStr = formatFecha(venta.getFecha());
                 String nombreCliente = venta.getNombreCliente() != null ? venta.getNombreCliente() : "N/A";
-
-                StringBuilder productos = new StringBuilder();
-                List<ProductoVentaDTO> productosVendidos = venta.getProductos();
-                int maxProductosAMostrar = 2;
-                int totalProductos = productosVendidos.size();
-
-                for (int i = 0; i < Math.min(maxProductosAMostrar, totalProductos); i++) {
-                    ProductoVentaDTO detalle = productosVendidos.get(i);
-                    productos.append(detalle.getNombreProducto())
-                            .append(" (x").append(detalle.getCantidad()).append(")\n");
-                }
-
-                if (totalProductos > maxProductosAMostrar) {
-                    int productosRestantes = totalProductos - maxProductosAMostrar;
-                    productos.append("... y ").append(productosRestantes).append(" más");
-                }
-
                 String nombreVendedor = venta.getNombreVendedor() != null ? venta.getNombreVendedor() : "N/A";
 
-                table.addCell(crearCeldaDato(fechaStr, rowBg, TextAlignment.LEFT));
-                table.addCell(crearCeldaDato(nombreCliente, rowBg, TextAlignment.LEFT));
-                table.addCell(crearCeldaDato(productos.toString().trim(), rowBg, TextAlignment.LEFT));
-                table.addCell(crearCeldaDato("$" + formatCurrency(venta.getTotal()), rowBg, TextAlignment.RIGHT));
-                table.addCell(crearCeldaDato(nombreVendedor, rowBg, TextAlignment.LEFT));
+                // --- Master Row ---
+                table.addCell(crearCeldaDatoSinBordeInferior(fechaStr, rowBg, TextAlignment.LEFT));
+                table.addCell(crearCeldaDatoSinBordeInferior(nombreCliente, rowBg, TextAlignment.LEFT));
+                table.addCell(crearCeldaDatoSinBordeInferior("$" + formatCurrency(venta.getTotal()), rowBg, TextAlignment.RIGHT));
+                table.addCell(crearCeldaDatoSinBordeInferior(nombreVendedor, rowBg, TextAlignment.LEFT));
+
+                // --- Detail Rows (Aligned with Master Columns) ---
+                List<ProductoVentaDTO> detalles = venta.getProductos();
+                for (int i = 0; i < detalles.size(); i++) {
+                    ProductoVentaDTO detalle = detalles.get(i);
+                    boolean isLast = (i == detalles.size() - 1);
+                    
+                    // Celda vacía debajo de Fecha
+                    Cell emptyCellFecha = new Cell().setBackgroundColor(rowBg).setBorder(com.itextpdf.layout.borders.Border.NO_BORDER);
+                    if (isLast) emptyCellFecha.setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(BORDER_COLOR, 0.5f));
+                    table.addCell(emptyCellFecha);
+                    
+                    // Producto + Cantidad debajo de Cliente
+                    String prodStr = "↳ " + detalle.getNombreProducto() + " (Cant: " + detalle.getCantidad() + ")";
+                    Cell prodCell = new Cell().add(new Paragraph(prodStr).setFontSize(7).setFontColor(TEXT_MUTED))
+                            .setBackgroundColor(rowBg).setBorder(com.itextpdf.layout.borders.Border.NO_BORDER).setPadding(2).setPaddingLeft(10);
+                    if (isLast) prodCell.setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(BORDER_COLOR, 0.5f));
+                    table.addCell(prodCell);
+                    
+                    // Subtotal debajo de Total
+                    Cell subtotalCell = new Cell().add(new Paragraph("$" + formatCurrency(detalle.getPrecioUnitario() * detalle.getCantidad())).setFontSize(7).setFontColor(TEXT_MUTED))
+                            .setBackgroundColor(rowBg).setBorder(com.itextpdf.layout.borders.Border.NO_BORDER).setPadding(2).setTextAlignment(TextAlignment.RIGHT);
+                    if (isLast) subtotalCell.setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(BORDER_COLOR, 0.5f));
+                    table.addCell(subtotalCell);
+                    
+                    // Celda vacía debajo de Vendedor
+                    Cell emptyCellVendedor = new Cell().setBackgroundColor(rowBg).setBorder(com.itextpdf.layout.borders.Border.NO_BORDER);
+                    if (isLast) emptyCellVendedor.setBorderBottom(new com.itextpdf.layout.borders.SolidBorder(BORDER_COLOR, 0.5f));
+                    table.addCell(emptyCellVendedor);
+                }
             }
         }
 
@@ -345,6 +359,19 @@ public class VentaPdfService {
                 .setTextAlignment(alignment)
                 .setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE)
                 .setPadding(5);
+    }
+
+    private Cell crearCeldaDatoSinBordeInferior(String text, DeviceRgb bgColor, TextAlignment alignment) {
+        return new Cell().setKeepTogether(true)
+                .add(new Paragraph(text).setFontSize(8).setFontColor(TEXT_DARK).setBold())
+                .setBackgroundColor(bgColor)
+                .setBorder(com.itextpdf.layout.borders.Border.NO_BORDER)
+                .setTextAlignment(alignment)
+                .setVerticalAlignment(com.itextpdf.layout.properties.VerticalAlignment.MIDDLE)
+                .setPaddingTop(5)
+                .setPaddingLeft(5)
+                .setPaddingRight(5)
+                .setPaddingBottom(0); // Menos padding abajo para que conecte con la tabla anidada
     }
 
     private static class PageEvent implements com.itextpdf.kernel.events.IEventHandler {

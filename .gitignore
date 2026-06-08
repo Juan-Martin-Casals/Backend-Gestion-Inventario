@@ -31,3 +31,5 @@ build/
 
 ### VS Code ###
 .vscode/
+
+testsprite_tests\tmp\config.json

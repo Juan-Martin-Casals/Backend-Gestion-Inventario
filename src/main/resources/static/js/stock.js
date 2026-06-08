@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         const nombres = (producto.otrosProveedores && producto.otrosProveedores.length > 0)
                             ? producto.otrosProveedores.join(', ')
                             : `${extras} proveedor(es) más`;
-                        proveedorCell += ` <span class="proveedor-badge-wrapper">` +
+                        proveedorCell += ` <span class="proveedor-badge-wrapper" data-id="${producto.id}" style="cursor: pointer;" title="Ver proveedores">` +
                             `<span class="proveedor-badge">+${extras} ${extras === 1 ? 'opción' : 'opciones'}</span>` +
                             `<span class="proveedor-popover">` +
                             `<div class="popover-label">También suministrado por:</div>` +
@@ -374,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (firstContent) firstContent.style.display = 'block';
     }
 
-    async function openDetailModal(productId) {
+    async function openDetailModal(productId, targetTabId = null) {
         try {
             // Resetear pestañas al abrir
             resetDetailTabs();
@@ -474,6 +474,11 @@ document.addEventListener('DOMContentLoaded', function () {
                     console.error('Error al cargar proveedores:', provErr);
                     proveedoresBody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #e74c3c; padding: 20px;">Error al cargar proveedores</td></tr>';
                 }
+            }
+
+            if (targetTabId) {
+                const targetTab = document.querySelector(`#product-detail-modal .product-detail-tab[data-tab="${targetTabId}"]`);
+                if (targetTab) targetTab.click();
             }
 
             detailModal.style.display = 'flex';
@@ -658,6 +663,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const viewButton = target.closest('.btn-action.view');
             if (viewButton) {
                 openDetailModal(viewButton.dataset.id);
+                return;
+            }
+
+            // Click en el badge de proveedores
+            const badgeWrapper = target.closest('.proveedor-badge-wrapper');
+            if (badgeWrapper) {
+                openDetailModal(badgeWrapper.dataset.id, 'product-detail-tab-proveedores');
                 return;
             }
 

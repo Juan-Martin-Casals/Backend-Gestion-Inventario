@@ -59,6 +59,35 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 spanSaldoAnterior.textContent = formatter.format(saldoAnteriorGlobal);
                 inputMontoInicial.value = new Intl.NumberFormat('es-AR').format(Math.round(saldoAnteriorGlobal));
+                
+                // Contexto visual del cierre anterior
+                const contextoCierre = document.getElementById('caja-contexto-cierre');
+                const contextoIcono = document.getElementById('caja-contexto-icono');
+                const contextoTexto = document.getElementById('caja-contexto-texto');
+                const contextoOperador = document.getElementById('caja-contexto-operador');
+                
+                if (contextoCierre && data.ultimoCierreInfo) {
+                    const info = data.ultimoCierreInfo;
+                    contextoCierre.style.display = 'block';
+                    
+                    if (info.esFondoFijo) {
+                        contextoIcono.className = 'fas fa-shield-alt';
+                        contextoTexto.textContent = 'Fondo Fijo Asignado';
+                        contextoTexto.parentElement.style.color = '#2563eb';
+                        contextoTexto.parentElement.style.background = '#eff6ff';
+                        contextoTexto.parentElement.style.borderColor = '#bfdbfe';
+                    } else {
+                        contextoIcono.className = 'fas fa-money-bill-wave';
+                        contextoTexto.textContent = 'Efectivo Físico Declarado';
+                        contextoTexto.parentElement.style.color = '#059669';
+                        contextoTexto.parentElement.style.background = '#ecfdf5';
+                        contextoTexto.parentElement.style.borderColor = '#a7f3d0';
+                    }
+                    
+                    const fechaObj = info.fecha ? new Date(info.fecha) : new Date();
+                    const fechaStr = fechaObj.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
+                    contextoOperador.innerHTML = `<i class="fas fa-user-clock" style="font-size: 10px;"></i> <span>Por ${info.operador} (${info.rol}) el ${fechaStr}</span>`;
+                }
 
                 panelApertura.style.display = 'block';
                 if (tituloApertura) tituloApertura.style.display = 'block';
@@ -409,6 +438,9 @@ document.addEventListener('DOMContentLoaded', function () {
         document.body.appendChild(banner);
         return banner;
     }
+
+    // Exponer función de error banner globalmente
+    window.showErrorBannerCaja = showErrorBanner;
 
     // ==========================================
     // CIERRE Y GENERACIÓN DE PDF

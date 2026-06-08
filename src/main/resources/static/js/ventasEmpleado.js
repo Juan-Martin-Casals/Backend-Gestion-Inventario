@@ -769,7 +769,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const terminosBusqueda = query.split(' ').filter(term => term.length > 0);
 
         const clientesFiltrados = todosLosClientes.filter(c => {
-            const nombreCompleto = removeAccents(`${c.nombre.toLowerCase()} ${c.apellido ? c.apellido.toLowerCase() : ''} ${c.dni.toLowerCase()}`);
+            const nombreCompleto = removeAccents(`${c.nombre ? c.nombre.toLowerCase() : ''} ${c.apellido ? c.apellido.toLowerCase() : ''} ${c.dni ? c.dni.toLowerCase() : ''}`);
             return terminosBusqueda.every(term => nombreCompleto.includes(term));
         });
 

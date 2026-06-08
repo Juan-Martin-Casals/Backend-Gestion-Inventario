@@ -24,11 +24,12 @@ public class CajaController {
     @GetMapping("/estado/{idUsuario}")
     public ResponseEntity<Map<String, Object>> estadoCaja(@PathVariable Long idUsuario) {
         boolean estaAbierta = cajaService.verificarCajaActiva(idUsuario);
-        Double saldoAnterior = cajaService.obtenerSaldoUltimoCierre();
+        Map<String, Object> ultimoCierre = cajaService.obtenerDetalleUltimoCierre();
 
         Map<String, Object> response = new HashMap<>();
         response.put("abierta", estaAbierta);
-        response.put("saldoAnterior", saldoAnterior);
+        response.put("saldoAnterior", ultimoCierre.get("saldo"));
+        response.put("ultimoCierreInfo", ultimoCierre);
 
         return ResponseEntity.ok(response);
     }

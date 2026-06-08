@@ -208,19 +208,27 @@ public class VentaService {
             if (hasSearch) {
                 String searchNoAccents = searchFinal != null ? 
                     java.text.Normalizer.normalize(searchFinal, java.text.Normalizer.Form.NFD).replaceAll("\\p{InCombiningDiacriticalMarks}+", "").toLowerCase() : "";
-                String like = "%" + searchNoAccents + "%";
+                
+                String[] terms = searchNoAccents.split("\\s+");
+                
                 Join<Venta, DetalleVenta> dv = root.join("detalleVentas", JoinType.LEFT);
                 
                 jakarta.persistence.criteria.Expression<String> charsFrom = cb.literal("áéíóúÁÉÍÓÚäëïöüÄËÏÖÜñÑ");
                 jakarta.persistence.criteria.Expression<String> charsTo = cb.literal("aeiouaeiouaeiouaeiounn");
                 
-                Predicate match = cb.or(
-                        cb.like(cb.function("translate", String.class, cb.lower(root.get("cliente").get("nombre")), charsFrom, charsTo), like),
-                        cb.like(cb.function("translate", String.class, cb.lower(root.get("cliente").get("apellido")), charsFrom, charsTo), like),
-                        cb.like(cb.function("translate", String.class, cb.lower(root.get("usuario").get("nombre")), charsFrom, charsTo), like),
-                        cb.like(cb.function("translate", String.class, cb.lower(root.get("usuario").get("apellido")), charsFrom, charsTo), like),
-                        cb.like(cb.function("translate", String.class, cb.lower(dv.get("producto").get("nombre")), charsFrom, charsTo), like));
-                predicates.add(match);
+                List<Predicate> termPredicates = new ArrayList<>();
+                for (String term : terms) {
+                    if (term.trim().isEmpty()) continue;
+                    String like = "%" + term + "%";
+                    Predicate matchTerm = cb.or(
+                            cb.like(cb.function("translate", String.class, cb.lower(root.get("cliente").get("nombre")), charsFrom, charsTo), like),
+                            cb.like(cb.function("translate", String.class, cb.lower(root.get("cliente").get("apellido")), charsFrom, charsTo), like),
+                            cb.like(cb.function("translate", String.class, cb.lower(root.get("usuario").get("nombre")), charsFrom, charsTo), like),
+                            cb.like(cb.function("translate", String.class, cb.lower(root.get("usuario").get("apellido")), charsFrom, charsTo), like),
+                            cb.like(cb.function("translate", String.class, cb.lower(dv.get("producto").get("nombre")), charsFrom, charsTo), like));
+                    termPredicates.add(matchTerm);
+                }
+                predicates.add(cb.and(termPredicates.toArray(new Predicate[0])));
                 query.distinct(true);
             }
             if (hasDates) {

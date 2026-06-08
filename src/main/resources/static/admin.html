@@ -2336,8 +2336,8 @@
                                 <select id="compras-filtro-estado"
                                     style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; flex: 1; min-width: 130px;">
                                     <option value="">💳 Estado: Todos</option>
-                                    <option value="PENDIENTE">⏳ Pendiente</option>
                                     <option value="PAGADO">✅ Pagado</option>
+                                    <option value="PENDIENTE">⏳ Pendiente</option>
                                 </select>
                                 <select id="compras-filtro-proveedor"
                                     style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; flex: 1; min-width: 130px;">
@@ -3822,6 +3822,17 @@
                                         <span id="caja-saldo-anterior"
                                             style="font-size: 22px; font-weight: 800; color: #0f172a; letter-spacing: -0.5px;">$
                                             0</span>
+                                        <!-- Contexto Visual del Cierre Anterior -->
+                                        <div id="caja-contexto-cierre" style="margin-top: 8px; display: none;">
+                                            <div style="display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; background: #f1f5f9; border-radius: 6px; border: 1px solid #e2e8f0; font-size: 11px; font-weight: 600; color: #475569;">
+                                                <i id="caja-contexto-icono" class="fas fa-info-circle"></i>
+                                                <span id="caja-contexto-texto">Cargando contexto...</span>
+                                            </div>
+                                            <div id="caja-contexto-operador" style="font-size: 11px; color: #64748b; margin-top: 6px; font-weight: 500; display: flex; align-items: center; gap: 4px;">
+                                                <i class="fas fa-user-clock" style="font-size: 10px;"></i>
+                                                <span></span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <div

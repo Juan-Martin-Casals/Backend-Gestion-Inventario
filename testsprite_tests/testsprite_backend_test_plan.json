@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "postauthregisterwithvaliduserdata",
+    "description": "Verify that POST /auth/register with valid user data returns 200 or 201 status and confirms account creation."
+  },
+  {
+    "id": "TC002",
+    "title": "postauthloginwithvalidcredentials",
+    "description": "Verify that POST /auth/login with registered valid credentials returns 200 status with JWT or session cookie and authentication success."
+  },
+  {
+    "id": "TC003",
+    "title": "postauthloginwithinvalidcredentials",
+    "description": "Verify that POST /auth/login with invalid credentials returns 401 Unauthorized with an appropriate error message."
+  },
+  {
+    "id": "TC004",
+    "title": "postauthregisterwithinvalidfields",
+    "description": "Verify that POST /auth/register with missing or invalid fields returns 400 Bad Request with validation error details."
+  },
+  {
+    "id": "TC005",
+    "title": "getproductoswithauthentication",
+    "description": "Verify that GET /productos with valid authentication token returns 200 status with a list of products."
+  },
+  {
+    "id": "TC006",
+    "title": "getproductoswithoutauthentication",
+    "description": "Verify that GET /productos without authentication returns 401 Unauthorized."
+  },
+  {
+    "id": "TC007",
+    "title": "postproductoswithvaliddata",
+    "description": "Verify that POST /productos with valid product data and authentication returns 201 or 200 status with created product details."
+  },
+  {
+    "id": "TC008",
+    "title": "postproductoswithinvalidpayload",
+    "description": "Verify that POST /productos with invalid or missing required fields returns 400 Bad Request with validation errors."
+  },
+  {
+    "id": "TC009",
+    "title": "postventaswithvaliddata",
+    "description": "Verify that POST /ventas with valid sale data and authentication returns 201 or 200 status confirming sale creation."
+  },
+  {
+    "id": "TC010",
+    "title": "postventaswithoutauthentication",
+    "description": "Verify that POST /ventas without authentication returns 401 Unauthorized."
+  }
+]

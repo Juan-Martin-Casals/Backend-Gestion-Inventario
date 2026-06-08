@@ -186,7 +186,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!filtroProveedor || !todosLosProveedores) return;
         const seleccionado = filtroProveedor.value;
         filtroProveedor.innerHTML = '<option value="">🚚 Proveedor: Todos</option>';
-        todosLosProveedores.forEach(p => {
+        
+        const proveedoresOrdenados = [...todosLosProveedores].sort((a, b) => {
+            return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
+        });
+        
+        proveedoresOrdenados.forEach(p => {
             const opt = document.createElement('option');
             opt.value = p.id;
             opt.textContent = p.nombre;

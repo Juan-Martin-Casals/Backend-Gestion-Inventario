@@ -114,9 +114,6 @@ document.addEventListener('DOMContentLoaded', function () {
         if (emailValue === '') {
             showEmailError('Debe ingresar el correo electrónico.');
             hasError = true;
-        } else if (!emailPattern.test(emailValue)) {
-            showEmailError('El formato es incorrecto.');
-            hasError = true;
         }
 
         // Validación password
@@ -126,6 +123,15 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (hasError) return;
+
+        // Si el formato de email no es válido, mostrar error general y abortar envío
+        if (!emailPattern.test(emailValue)) {
+            messageContainer.textContent = "Email o contraseñas incorrectos";
+            messageContainer.style.color = '#dc3545';
+            emailInput.style.borderColor = '#dc3545';
+            passwordInput.style.borderColor = '#dc3545';
+            return;
+        }
 
 
 
@@ -153,6 +159,9 @@ document.addEventListener('DOMContentLoaded', function () {
             // Éxito:
             messageContainer.textContent = '¡Login exitoso! Redirigiendo...';
             messageContainer.style.color = '#28a745';
+
+            // Guardar flag de sesión para los Route Guards del Frontend
+            localStorage.setItem('isAuthenticated', 'true');
 
             // Limpiamos los bordes si el login fue exitoso
             emailInput.style.borderColor = '#28a745';

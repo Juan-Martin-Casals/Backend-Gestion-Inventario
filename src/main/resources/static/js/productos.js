@@ -750,7 +750,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const nombres = (product.otrosProveedores && product.otrosProveedores.length > 0)
                         ? product.otrosProveedores.join(', ')
                         : `${extras} proveedor(es) más`;
-                    proveedorCell += ` <div class="proveedor-badge-wrapper">` +
+                    proveedorCell += ` <div class="proveedor-badge-wrapper" data-id="${product.idProducto}" style="cursor: pointer;" title="Ver proveedores">` +
                         `<span class="proveedor-badge">+${extras} ${extras === 1 ? 'opción' : 'opciones'}</span>` +
                         `<div class="proveedor-popover">` +
                         `<div class="popover-label">También suministrado por:</div>` +
@@ -797,6 +797,14 @@ document.addEventListener('DOMContentLoaded', function () {
             btn.addEventListener('click', (e) => {
                 const productId = e.currentTarget.getAttribute('data-id');
                 openDetailModal(productId);
+            });
+        });
+
+        // Click en badge de proveedores
+        document.querySelectorAll('.proveedor-badge-wrapper').forEach(wrapper => {
+            wrapper.addEventListener('click', (e) => {
+                const productId = e.currentTarget.getAttribute('data-id');
+                openDetailModal(productId, 'product-detail-tab-proveedores');
             });
         });
 
@@ -979,7 +987,7 @@ document.addEventListener('DOMContentLoaded', function () {
     /**
      * Abre el modal y carga los detalles del producto
      */
-    async function openDetailModal(productId) {
+    async function openDetailModal(productId, targetTabId = null) {
         try {
             // Cargar datos del producto desde el endpoint de inventario
             // Cargar datos del producto desde el endpoint de inventario
@@ -1096,6 +1104,10 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('product-detail-tab-info').style.display = 'block';
 
             // Mostrar modal
+            if (targetTabId) {
+                const targetTab = document.querySelector(`#product-detail-modal .product-detail-tab[data-tab="${targetTabId}"]`);
+                if (targetTab) targetTab.click();
+            }
             detailModal.style.display = 'flex';
 
             // Cerrar modal con ESC

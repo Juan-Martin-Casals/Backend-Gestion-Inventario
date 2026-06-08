@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,42 @@ public class CajaService {
                     return sesion.getMontoFinalReal() != null ? sesion.getMontoFinalReal() : 0.0;
                 })
                 .orElse(0.0);
+    }
+
+    /**
+     * Devuelve información detallada del último cierre de caja (saldo, operador, rol, fecha).
+     */
+    public Map<String, Object> obtenerDetalleUltimoCierre() {
+        return sesionCajaRepository.findFirstByEstadoOrderByFechaCierreDesc("CERRADA")
+                .map(sesion -> {
+                    Map<String, Object> detalle = new HashMap<>();
+                    Double saldo = 0.0;
+                    boolean esFondoFijo = false;
+                    
+                    if (sesion.getFondoProximaApertura() != null) {
+                        saldo = sesion.getFondoProximaApertura();
+                        esFondoFijo = true;
+                    } else if (sesion.getMontoFinalReal() != null) {
+                        saldo = sesion.getMontoFinalReal();
+                    }
+
+                    detalle.put("saldo", saldo);
+                    detalle.put("esFondoFijo", esFondoFijo);
+                    detalle.put("fecha", sesion.getFechaCierre() != null ? sesion.getFechaCierre().toString() : null);
+                    if (sesion.getUsuario() != null) {
+                        detalle.put("operador", sesion.getUsuario().getNombre() + " " + sesion.getUsuario().getApellido());
+                        detalle.put("rol", sesion.getUsuario().getRol() != null ? sesion.getUsuario().getRol().getDescripcion() : "N/A");
+                    } else {
+                        detalle.put("operador", "Desconocido");
+                        detalle.put("rol", "N/A");
+                    }
+                    return detalle;
+                })
+                .orElseGet(() -> {
+                    Map<String, Object> vacio = new HashMap<>();
+                    vacio.put("saldo", 0.0);
+                    return vacio;
+                });
     }
 
     /**
