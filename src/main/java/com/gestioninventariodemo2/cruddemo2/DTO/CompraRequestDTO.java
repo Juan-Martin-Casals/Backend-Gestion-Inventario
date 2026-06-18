@@ -5,6 +5,8 @@ import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 
+import jakarta.validation.Valid;
+
 // Opcional, pero recomendado
 import lombok.Data;
 
@@ -15,7 +17,8 @@ public class CompraRequestDTO {
     private LocalDate fecha; // El usuario puede enviar la fecha
     private Long idProveedor; // Solo necesitamos el ID del proveedor
 
-        private List<DetalleCompraRequestDTO> detalleCompras;
+    @Valid
+    private List<DetalleCompraRequestDTO> detalleCompras;
 
     // Lista de pagos mixtos
     private List<PagoRequestDTO> pagos;

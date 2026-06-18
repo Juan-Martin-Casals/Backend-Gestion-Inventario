@@ -11,6 +11,8 @@ public class PagoResponseDTO {
     private Long idPago;
     private String metodoPago;
     private BigDecimal importe;
+    private BigDecimal montoEntregado;
+    private BigDecimal vuelto;
     private LocalDateTime fechaPago;
     private String estado;
 }

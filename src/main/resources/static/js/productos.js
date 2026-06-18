@@ -125,6 +125,32 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ===============================
+    // VALIDACIÓN DE DECIMALES (STOCK)
+    // ===============================
+    function validateStockInputRealTime(inputEl, errorEl) {
+        if (!inputEl || !errorEl) return;
+        let previousValue = inputEl.value || '';
+        inputEl.addEventListener('input', () => {
+            const val = inputEl.value;
+            if (val.includes(',') || /\.\d{1,2}$/.test(val)) {
+                errorEl.textContent = 'Solo se permiten números enteros';
+                previousValue = val; // Guardamos el valor para no trabar el borrado
+            } else if (val.replace(/\./g, '').length > 7) {
+                errorEl.textContent = 'El límite máximo es 9.999.999';
+                inputEl.value = previousValue; // Revertir al último valor válido
+            } else {
+                errorEl.textContent = '';
+                previousValue = val;
+            }
+        });
+    }
+
+    validateStockInputRealTime(stockMinInput, stockMinError);
+    validateStockInputRealTime(stockMaxInput, stockMaxError);
+    if (editStockMinInput) validateStockInputRealTime(editStockMinInput, document.getElementById('edit-stock-min-error'));
+    if (editStockMaxInput) validateStockInputRealTime(editStockMaxInput, document.getElementById('edit-stock-max-error'));
+
+    // ===============================
     // URLs DE LA API Y ESTADO
     // ===============================
     const API_PRODUCTOS_URL = '/api/productos';
@@ -504,6 +530,52 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÓGICA DE CATEGORÍAS
     // ==========================================================
 
+    let categorySelectedIndex = -1;
+    let editCategorySelectedIndex = -1;
+
+    function getResultItems(container) {
+        const items = container.querySelectorAll('.product-result-item');
+        return Array.from(items).filter(item => !item.textContent.includes('No se encontraron'));
+    }
+
+    function updateSelection(items, selectedIndex) {
+        items.forEach((item, i) => {
+            item.classList.toggle('selected', i === selectedIndex);
+        });
+        if (selectedIndex >= 0 && items[selectedIndex]) {
+            items[selectedIndex].scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }
+
+    function handleSearchKeyboard(e, resultsContainer, selectedIndexRef, onSelect) {
+        const items = getResultItems(resultsContainer);
+        if (items.length === 0) return;
+
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            e.stopPropagation();
+            if (resultsContainer.style.display === 'none') {
+                resultsContainer.style.display = 'block';
+            }
+            selectedIndexRef.current = Math.min(selectedIndexRef.current + 1, items.length - 1);
+            updateSelection(items, selectedIndexRef.current);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            e.stopPropagation();
+            selectedIndexRef.current = Math.max(selectedIndexRef.current - 1, 0);
+            updateSelection(items, selectedIndexRef.current);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            e.stopPropagation();
+            if (selectedIndexRef.current >= 0 && items[selectedIndexRef.current]) {
+                const selectedItem = items[selectedIndexRef.current];
+                const clickEvent = new MouseEvent('click', { bubbles: true, cancelable: true });
+                selectedItem.dispatchEvent(clickEvent);
+                if (onSelect) onSelect();
+            }
+        }
+    }
+
     async function loadCategoriasParaProductos() {
         if (!categorySearchInput) return;
         try {
@@ -527,6 +599,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const categoriasFiltradas = todasLasCategorias.filter(c =>
             removeAccents(c.nombre.toLowerCase()).includes(query)
         );
+        categorySelectedIndex = -1;
         renderResultadosCategorias(categoriasFiltradas);
     }
 
@@ -661,6 +734,13 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
         categorySearchInput.addEventListener('focus', filtrarCategorias);
+        categorySearchInput.addEventListener('keydown', (e) => {
+            const indexRef = { current: categorySelectedIndex };
+            handleSearchKeyboard(e, categoryResultsContainer, indexRef, () => {
+                categorySelectedIndex = -1;
+            });
+            categorySelectedIndex = indexRef.current;
+        });
     }
 
     if (categoryResultsContainer) {
@@ -784,6 +864,29 @@ document.addEventListener('DOMContentLoaded', function () {
             productTableBody.innerHTML += row;
         });
 
+        // Filas fantasmas para mantener la altura exacta de la tabla
+        const itemsPerPage = 10;
+        const ghostRowsNeeded = itemsPerPage - products.length;
+        if (ghostRowsNeeded > 0) {
+            for (let i = 0; i < ghostRowsNeeded; i++) {
+                // Fila invisible con estructura idéntica para forzar al navegador a calcular la misma altura
+                productTableBody.innerHTML += `
+                    <tr style="visibility: hidden; border-bottom: none;">
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td>-</td>
+                        <td style="text-align: right;">
+                            <div class="action-buttons" style="justify-content: flex-end;">
+                                <button class="btn-action"><i class="fas fa-eye"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+        }
+
         // Agregar event listeners para los botones de acción
         attachActionListeners();
     }
@@ -842,8 +945,8 @@ document.addEventListener('DOMContentLoaded', function () {
             const nombre = nameInput.value.trim();
             const idCategoria = categoryHiddenInput.value ? parseInt(categoryHiddenInput.value, 10) : null;
             const descripcion = descriptionInput.value.trim();
-            const stockMinimo = parseInt(stockMinInput.value, 10);
-            const stockMaximo = parseInt(stockMaxInput.value, 10);
+            const stockMinimoRaw = stockMinInput.value;
+            const stockMaximoRaw = stockMaxInput.value;
 
             // 3. Validaciones
             let isValid = true;
@@ -852,8 +955,15 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!idCategoria) { categoryError.textContent = 'Debe seleccionar una categoría'; isValid = false; }
             if (!descripcion) { descriptionError.textContent = 'La descripcion del producto es obligatoria'; isValid = false; }
             else if (descripcion.length > 650) { descriptionError.textContent = 'Máximo 650 caracteres'; isValid = false; }
+            
+            if (stockMinimoRaw.includes(',') || /\.\d{1,2}$/.test(stockMinimoRaw)) { stockMinError.textContent = 'Solo se permiten números enteros'; isValid = false; }
+            if (stockMaximoRaw.includes(',') || /\.\d{1,2}$/.test(stockMaximoRaw)) { stockMaxError.textContent = 'Solo se permiten números enteros'; isValid = false; }
+            const stockMinimo = parseInt(stockMinimoRaw.replace(/\./g, ''), 10);
+            const stockMaximo = parseInt(stockMaximoRaw.replace(/\./g, ''), 10);
+
             if (isNaN(stockMinimo) || stockMinimo < 0) { stockMinError.textContent = 'Debe ser un número positivo.'; isValid = false; }
             if (isNaN(stockMaximo) || stockMaximo <= 0) { stockMaxError.textContent = 'Debe ser un número mayor a 0.'; isValid = false; }
+            
             // Validar relación entre stock mínimo y máximo (solo si ambos son números válidos)
             if (!isNaN(stockMinimo) && !isNaN(stockMaximo) && stockMinimo >= stockMaximo) {
                 stockMaxError.textContent = 'El máximo debe ser mayor que el mínimo.';
@@ -1243,9 +1353,17 @@ document.addEventListener('DOMContentLoaded', function () {
             );
             renderEditCategoryResults(categoriasFiltradas);
         });
+        editCategorySearchInput.addEventListener('keydown', (e) => {
+            const indexRef = { current: editCategorySelectedIndex };
+            handleSearchKeyboard(e, editCategoryResultsContainer, indexRef, () => {
+                editCategorySelectedIndex = -1;
+            });
+            editCategorySelectedIndex = indexRef.current;
+        });
     }
 
     function renderEditCategoryResults(categorias) {
+        editCategorySelectedIndex = -1;
         if (!editCategoryResultsContainer) return;
         if (categorias.length === 0) {
             editCategoryResultsContainer.innerHTML = '<div class="product-result-item">No se encontraron categorías</div>';
@@ -1369,8 +1487,17 @@ document.addEventListener('DOMContentLoaded', function () {
             const idCategoria = editCategoryHiddenInput.value ? parseInt(editCategoryHiddenInput.value, 10) : null;
             const descripcion = editDescriptionInput.value.trim();
             const precio = parseFloat(editPriceInput.value);
-            const stockMinimo = parseInt(editStockMinInput.value);
-            const stockMaximo = parseInt(editStockMaxInput.value);
+            
+            const stockMinimoRaw = editStockMinInput.value;
+            const stockMaximoRaw = editStockMaxInput.value;
+            const editStockMinError = document.getElementById('edit-stock-min-error');
+            const editStockMaxError = document.getElementById('edit-stock-max-error');
+
+            if (stockMinimoRaw.includes(',') || /\.\d{1,2}$/.test(stockMinimoRaw)) { editStockMinError.textContent = 'Solo se permiten enteros'; isValid = false; }
+            if (stockMaximoRaw.includes(',') || /\.\d{1,2}$/.test(stockMaximoRaw)) { editStockMaxError.textContent = 'Solo se permiten enteros'; isValid = false; }
+
+            const stockMinimo = parseInt(stockMinimoRaw.replace(/\./g, ''), 10);
+            const stockMaximo = parseInt(stockMaximoRaw.replace(/\./g, ''), 10);
 
             // Validaciones
             let isValid = true;
@@ -1380,10 +1507,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!descripcion) { document.getElementById('edit-description-error').textContent = 'La descripción es obligatoria'; isValid = false; }
             else if (descripcion.length > 650) { document.getElementById('edit-description-error').textContent = 'Máximo 650 caracteres'; isValid = false; }
             if (isNaN(precio) || precio < 0) { document.getElementById('edit-price-error').textContent = 'El precio debe ser un número válido'; isValid = false; }
-            if (isNaN(stockMinimo) || stockMinimo < 0) { document.getElementById('edit-stock-min-error').textContent = 'El stock mínimo debe ser un número válido'; isValid = false; }
-            if (isNaN(stockMaximo) || stockMaximo < 0) { document.getElementById('edit-stock-max-error').textContent = 'El stock máximo debe ser un número válido'; isValid = false; }
+            if (isNaN(stockMinimo) || stockMinimo < 0) { editStockMinError.textContent = 'Número inválido'; isValid = false; }
+            if (isNaN(stockMaximo) || stockMaximo < 0) { editStockMaxError.textContent = 'Número inválido'; isValid = false; }
             if (!isNaN(stockMinimo) && !isNaN(stockMaximo) && stockMaximo < stockMinimo) {
-                document.getElementById('edit-stock-max-error').textContent = 'El stock máximo debe ser mayor o igual al mínimo';
+                editStockMaxError.textContent = 'El stock máximo debe ser mayor o igual al mínimo';
                 isValid = false;
             }
 

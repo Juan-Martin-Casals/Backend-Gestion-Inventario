@@ -12,4 +12,7 @@ public class AgregarPagoCompraDTO {
     
     @JsonFormat(pattern = "yyyy-MM-dd")
     private LocalDate fechaPago;
+
+    @JsonFormat(pattern = "yyyy-MM-dd")
+    private LocalDate nuevaFechaVencimiento;
 }

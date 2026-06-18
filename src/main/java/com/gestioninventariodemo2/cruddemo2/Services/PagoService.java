@@ -25,13 +25,15 @@ public class PagoService {
      * Registrar un nuevo pago de compra
      */
     @Transactional
-    public Pago registrarPago(Compra compra, MetodoPago metodoPago, BigDecimal importe,
+    public Pago registrarPago(Compra compra, MetodoPago metodoPago, BigDecimal importe, BigDecimal montoEntregado, BigDecimal vuelto,
             String tipoTarjeta, String estado, LocalDate fechaVencimiento, Usuario usuario) {
 
         Pago pago = new Pago();
         pago.setCompra(compra);
         pago.setMetodoPago(metodoPago);
         pago.setImporte(importe);
+        pago.setMontoEntregado(montoEntregado);
+        pago.setVuelto(vuelto);
         pago.setTipoTarjeta(tipoTarjeta);
         pago.setFechaPago(LocalDateTime.now());
         pago.setEstado(estado != null ? estado : "PAGADO");

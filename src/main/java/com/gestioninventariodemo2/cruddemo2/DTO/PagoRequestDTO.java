@@ -10,7 +10,9 @@ import lombok.Data;
 @Data
 public class PagoRequestDTO {
     private Long idMetodoPago; // Obligatorio
-    private BigDecimal importe; // Obligatorio para pagos mixtos
+    private BigDecimal importe; // Obligatorio para pagos mixtos (lo que salda la deuda)
+    private BigDecimal montoEntregado; 
+    private BigDecimal vuelto;
     private String tipoTarjeta; // Opcional
     private String estadoPago; // PAGADO o PENDIENTE
     

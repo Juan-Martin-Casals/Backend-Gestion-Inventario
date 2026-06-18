@@ -485,16 +485,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 balanceIndicator.innerHTML = '';
             } else {
                 balanceIndicator.innerHTML = `
-                    <div style="display:flex;gap:10px;">
-                        <div style="flex:1;padding:12px;background:#f0f2f5;border-radius:6px;">
-                            <div style="font-size:0.70rem;color:#64748b;font-weight:700;text-transform:uppercase;margin-bottom:5px;letter-spacing:0.5px;">Cobrado</div>
-                            <div style="font-size:1.3rem;font-weight:600;color:#1e293b;text-align:right;">$${formatoMoneda.format(totalCobrado + inputPrev)}</div>
-                        </div>
-                        <div style="flex:1;padding:12px;background:${diff > 0.05 ? '#fee2e2' : '#f0f9ff'};border-radius:6px;">
-                            <div style="font-size:0.70rem;color:${diff > 0.05 ? '#b91c1c' : '#0369a1'};font-weight:700;text-transform:uppercase;margin-bottom:5px;letter-spacing:0.5px;">Pendiente</div>
-                            <div style="font-size:1.3rem;font-weight:600;color:${diff > 0.05 ? '#b91c1c' : '#0369a1'};text-align:right;">$${formatoMoneda.format(diff > 0 ? diff : 0)}</div>
-                        </div>
-                    </div>`;
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
+                    <span style="color: #cfe2ff; font-size: 0.9rem;">Cobrado ahora</span>
+                    <span style="color: #fff; font-weight: 600; font-size: 0.95rem;">$${formatoMoneda.format(totalCobrado + inputPrev)}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
+                    <span style="color: #cfe2ff; font-size: 0.9rem;">Saldo pendiente</span>
+                    <span style="color: ${diff > 0.05 ? '#ff6b6b' : '#fff'}; font-weight: 700; font-size: 0.95rem;">$${formatoMoneda.format(diff > 0 ? diff : 0)}</span>
+                </div>
+            `;
             }
         }
     }
@@ -1060,9 +1059,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (detallesVenta.length === 0) {
-            if (errorDetalleGeneral) {
-                errorDetalleGeneral.textContent = 'Debe agregar al menos un producto.';
-                errorDetalleGeneral.style.display = 'block';
+            if (errorProducto) {
+                errorProducto.textContent = 'Debe agregar al menos un producto.';
             }
             isValid = false;
         }

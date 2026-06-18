@@ -26,7 +26,7 @@ import com.gestioninventariodemo2.cruddemo2.Services.CompraPdfService;
 import lombok.RequiredArgsConstructor;
 
 import java.time.LocalDate;
-import java.util.List;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/compras")
@@ -38,7 +38,7 @@ public class CompraController {
     private final com.gestioninventariodemo2.cruddemo2.Repository.ProveedorRepository proveedorRepository;
 
     @PostMapping
-    public ResponseEntity<Compra> registrarCompra(@RequestBody CompraRequestDTO dto, @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+    public ResponseEntity<Compra> registrarCompra(@Valid @RequestBody CompraRequestDTO dto, @org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
 
         // Llama al servicio. Si algo falla, lanzará una excepción
         // que será capturada por el manejador global.

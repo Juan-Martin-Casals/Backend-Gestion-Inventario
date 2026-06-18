@@ -1,5 +1,12 @@
 document.addEventListener('DOMContentLoaded', function () {
 
+    // ---- Aplicar mínimo de hoy a los inputs de fechas futuras ----
+    const hoyParaVencimientos = new Date().toISOString().split('T')[0];
+    const inputFechaProg = document.getElementById('compra-fecha-programada-pago');
+    const inputProxFecha = document.getElementById('pago-compra-proxima-fecha');
+    if (inputFechaProg) inputFechaProg.setAttribute('min', hoyParaVencimientos);
+    if (inputProxFecha) inputProxFecha.setAttribute('min', hoyParaVencimientos);
+
     // ===============================
     // URLs DE LA API
     // ===============================
@@ -10,17 +17,77 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // ===============================
     // CONFIGURACIÓN DE FORMATO
-    // ===============================
-    const formatoMoneda = new Intl.NumberFormat('es-AR', {
-        style: 'decimal',
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 2
-    });
+    // ===============================    // Utilidad: Formatear a moneda sin decimales
+    // Utilidad: Formateador manual estricto para evitar fallos de locale en navegadores
+    const formatoMoneda = {
+        format: function (num) {
+            if (num === null || num === undefined || isNaN(num)) return '0';
+            let partes = Number(num).toFixed(2).split('.');
+            let enteros = partes[0].replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+            let decimales = partes[1];
+            if (decimales === '00') return enteros;
+            return enteros + ',' + decimales;
+        }
+    };
+
+    function mostrarVueltoToast(vuelto) {
+        let toast = document.getElementById('vuelto-toast');
+        if (!toast) {
+            toast = document.createElement('div');
+            toast.id = 'vuelto-toast';
+            toast.className = 'vuelto-toast';
+            document.body.appendChild(toast);
+        }
+        toast.innerHTML = `<i class="fas fa-check-circle"></i> Vuelto: $${formatoMoneda.format(vuelto)}`;
+        toast.classList.add('show');
+
+        if (toast.hideTimeout) clearTimeout(toast.hideTimeout);
+        toast.hideTimeout = setTimeout(() => {
+            toast.classList.remove('show');
+        }, 5000);
+    }
 
     function parsearMoneda(valor) {
         if (!valor) return NaN;
         const limpio = valor.toString().replace(/\./g, '').replace(',', '.');
         return parseFloat(limpio);
+    }
+
+    // Utilidad: Máscara decimal inteligente para pagos
+    function formatearInputMonedaDecimales(valueStr) {
+        // 1. Solo dígitos y comas
+        let val = valueStr.replace(/[^0-9,]/g, '');
+
+        // 2. Solo la primera coma
+        let parts = val.split(',');
+        if (parts.length > 2) {
+            parts = [parts[0], parts.slice(1).join('')];
+        }
+
+        // 3. Limite parte entera a 10 digitos
+        let enteros = parts[0];
+        if (enteros.length > 10) enteros = enteros.substring(0, 10);
+
+        // 4. Limite parte decimal a 2 digitos
+        let decimales = parts[1];
+        if (decimales !== undefined && decimales.length > 2) {
+            decimales = decimales.substring(0, 2);
+        }
+
+        // 5. Formatear la parte entera con puntos de mil
+        let enterosFormateados = '';
+        if (enteros !== '') {
+            enterosFormateados = parseInt(enteros, 10).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+        }
+
+        // 6. Reconstruir
+        if (decimales !== undefined) {
+            return enterosFormateados + ',' + decimales;
+        } else if (val.endsWith(',')) {
+            return enterosFormateados + ',';
+        } else {
+            return enterosFormateados;
+        }
     }
 
     // Función para manejar fechas consistentemente
@@ -186,11 +253,11 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!filtroProveedor || !todosLosProveedores) return;
         const seleccionado = filtroProveedor.value;
         filtroProveedor.innerHTML = '<option value="">🚚 Proveedor: Todos</option>';
-        
+
         const proveedoresOrdenados = [...todosLosProveedores].sort((a, b) => {
             return a.nombre.localeCompare(b.nombre, 'es', { sensitivity: 'base' });
         });
-        
+
         proveedoresOrdenados.forEach(p => {
             const opt = document.createElement('option');
             opt.value = p.id;
@@ -203,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function fetchAllProductosParaCompra() {
         if (!productoSearchInput) return;
         todosLosProductos = [];
-        
+
         const idProveedorStr = proveedorHiddenInput ? proveedorHiddenInput.value : '';
         const urlReq = idProveedorStr ? `${API_PRODUCTOS_URL_SELECT_ALL}?idProveedor=${idProveedorStr}` : API_PRODUCTOS_URL_SELECT_ALL;
 
@@ -518,20 +585,20 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td class="col-num col-qty">
                     <div class="qty-stepper">
                         <button type="button" class="btn-qty btn-qty-minus" data-index="${index}">−</button>
-                        <input type="number" class="qty-input" data-index="${index}" value="${item.cantidad}" min="1" inputmode="numeric">
+                        <input type="number" class="qty-input" data-index="${index}" value="${item.cantidad}" min="1" max="999999" step="1" inputmode="numeric" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
                         <button type="button" class="btn-qty btn-qty-plus" data-index="${index}">+</button>
                     </div>
                 </td>
                 <td class="col-num">
-                    <div class="input-money">
+                    <div class="input-money" style="position: relative;">
                         <span class="money-prefix">$</span>
-                        <input type="text" class="inline-edit-input" data-index="${index}" data-field="precioUnitario" value="${formatoMoneda.format(item.precioUnitario)}">
+                        <input type="text" class="inline-edit-input" data-index="${index}" data-field="precioUnitario" value="${formatoMoneda.format(item.precioUnitario)}" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46 || event.charCode === 44">
                     </div>
                 </td>
                 <td class="col-num">
-                    <div class="input-money">
+                    <div class="input-money" style="position: relative;">
                         <span class="money-prefix">$</span>
-                        <input type="text" class="inline-edit-input" data-index="${index}" data-field="nuevoPrecioVenta" value="${formatoMoneda.format(item.nuevoPrecioVenta)}">
+                        <input type="text" class="inline-edit-input" data-index="${index}" data-field="nuevoPrecioVenta" value="${formatoMoneda.format(item.nuevoPrecioVenta)}" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46 || event.charCode === 44">
                     </div>
                 </td>
                 <td class="col-num" id="subtotal-cell-${index}">$${formatoMoneda.format(subtotal)}</td>
@@ -578,6 +645,7 @@ document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('.btn-qty-plus').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idx = parseInt(e.currentTarget.dataset.index);
+                if (detalleItems[idx].cantidad >= 999999) return;
                 detalleItems[idx].cantidad++;
                 const qtyInput = detalleTemporalTabla.querySelector(`.qty-input[data-index="${idx}"]`);
                 if (qtyInput) qtyInput.value = detalleItems[idx].cantidad;
@@ -586,10 +654,18 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         document.querySelectorAll('.qty-input').forEach(input => {
+            input.addEventListener('focus', (e) => {
+                e.target.dataset.lastValid = e.target.value;
+            });
             input.addEventListener('input', (e) => {
                 const idx = parseInt(e.target.dataset.index);
-                const val = parseInt(e.target.value);
+                let val = parseInt(e.target.value);
+                if (val > 999999) {
+                    e.target.value = e.target.dataset.lastValid || '';
+                    return;
+                }
                 if (!isNaN(val) && val >= 1) {
+                    e.target.dataset.lastValid = e.target.value;
                     detalleItems[idx].cantidad = val;
                     actualizarTotales(idx);
                 }
@@ -606,13 +682,19 @@ document.addEventListener('DOMContentLoaded', function () {
             input.addEventListener('focus', (e) => {
                 const rawVal = parsearMoneda(e.target.value);
                 e.target.value = isNaN(rawVal) ? '' : rawVal;
+                e.target.dataset.lastValid = e.target.value;
                 e.target.select();
             });
             input.addEventListener('input', (e) => {
                 const idx = parseInt(e.target.dataset.index);
                 const field = e.target.dataset.field;
-                const val = parsearMoneda(e.target.value);
+                let val = parsearMoneda(e.target.value);
                 if (!isNaN(val) && val >= 0) {
+                    if (val > 9999999999) {
+                        e.target.value = e.target.dataset.lastValid || '';
+                        return;
+                    }
+                    e.target.dataset.lastValid = e.target.value;
                     detalleItems[idx][field] = val;
                     actualizarTotales(idx);
                 }
@@ -644,34 +726,67 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (!fecha) { document.getElementById('errorCompraFecha').textContent = 'La fecha es obligatoria.'; isValid = false; }
             if (!idProveedor) { document.getElementById('errorCompraProveedor').textContent = 'El proveedor es obligatorio.'; isValid = false; }
-            if (detalleItems.length === 0) { if (errorDetalleGeneral) errorDetalleGeneral.textContent = 'Debe agregar al menos un producto al detalle.'; isValid = false; }
+            if (detalleItems.length === 0) { const errProd = document.getElementById('errorCompraProducto'); if (errProd) errProd.textContent = 'Debe agregar al menos un producto al detalle.'; isValid = false; }
 
             // Auto-absorber cuotas sueltas si el usuario tipeó el pago pero no tocó el botón +
             const selectMetodoSuelto = document.getElementById('compra-metodo-pago');
             const inputMontoSuelto = document.getElementById('compra-pago-monto');
             const montoSueltoValue = inputMontoSuelto && inputMontoSuelto.value ? parseFloat(inputMontoSuelto.value.replace(/\./g, '').replace(',', '.')) : 0;
             if (selectMetodoSuelto && inputMontoSuelto && selectMetodoSuelto.value && montoSueltoValue > 0) {
-                pagosMixtos.push({
-                    idMetodoPago: parseInt(selectMetodoSuelto.value),
-                    nombreMetodo: selectMetodoSuelto.options[selectMetodoSuelto.selectedIndex]?.text,
-                    importe: montoSueltoValue,
-                    estadoPago: 'PAGADO',
-                    fechaVencimientoPago: null
-                });
+                let montoAingresar = montoSueltoValue;
+                let montoFisicoEntregado = montoSueltoValue;
+                let vueltoCalculado = 0;
+
+                const totalC = calcularTotalGenerico(detalleItems);
+                let currentPagos = 0;
+                pagosMixtos.forEach(p => currentPagos += parseFloat(p.importe));
+                let saldoPendiente = totalC - currentPagos;
+
+                if (montoAingresar > saldoPendiente + 0.05) {
+                    vueltoCalculado = montoAingresar - saldoPendiente;
+                    mostrarVueltoToast(vueltoCalculado);
+                    montoAingresar = saldoPendiente;
+                }
+
+                if (montoAingresar > 0) {
+                    pagosMixtos.push({
+                        idMetodoPago: parseInt(selectMetodoSuelto.value),
+                        nombreMetodo: selectMetodoSuelto.options[selectMetodoSuelto.selectedIndex]?.text,
+                        importe: montoAingresar,
+                        montoEntregado: montoFisicoEntregado,
+                        vuelto: vueltoCalculado,
+                        estadoPago: 'PAGADO',
+                        fechaVencimientoPago: null
+                    });
+                }
                 selectMetodoSuelto.value = '';
                 inputMontoSuelto.value = '';
-                renderPagosMixtos(); // Render visual para que concuerde la validación debajo
+                renderPagosMixtos();
             }
 
-            // Validar pagos mixtos (solo evitar que excedan el total)
+            // Validar pagos mixtos (auto-ajuste si exceden por quita de productos)
             const totalCompraActual = calcularTotalGenerico(detalleItems);
             let totalPagosIngresados = 0;
             pagosMixtos.forEach(p => totalPagosIngresados += parseFloat(p.importe));
 
             if (totalPagosIngresados > totalCompraActual + 0.05) {
+                let exceso = totalPagosIngresados - totalCompraActual;
+                for (let i = pagosMixtos.length - 1; i >= 0; i--) {
+                    if (exceso <= 0.05) break;
+                    let p = pagosMixtos[i];
+                    if (p.importe > exceso) {
+                        p.importe -= exceso;
+                        exceso = 0;
+                    } else {
+                        exceso -= p.importe;
+                        pagosMixtos.splice(i, 1);
+                    }
+                }
+                renderPagosMixtos();
+                totalPagosIngresados = totalCompraActual;
+
                 const errorEl = document.getElementById('errorCompraPagoMonto');
-                if (errorEl) errorEl.textContent = `Los pagos exceden el total. Sobran $${formatoMoneda.format(totalPagosIngresados - totalCompraActual)}.`;
-                isValid = false;
+                if (errorEl) errorEl.textContent = '';
             }
 
             // Validar saldo pendiente (Vencimiento)
@@ -688,6 +803,15 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (scheduledDateInput) scheduledDateInput.style.border = '2px solid red';
                     return;
                 } else {
+                    const hoyStr = new Date().toISOString().split('T')[0];
+                    if (scheduledDateInput.value < hoyStr) {
+                        if (generalMessageCompra) {
+                            generalMessageCompra.textContent = "La fecha de pago programada no puede ser en el pasado.";
+                            generalMessageCompra.classList.add('error');
+                        }
+                        if (scheduledDateInput) scheduledDateInput.style.border = '2px solid red';
+                        return;
+                    }
                     if (scheduledDateInput) scheduledDateInput.style.border = '1px solid #ced4da';
                 }
 
@@ -1266,7 +1390,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (disposition && disposition.indexOf('attachment') !== -1) {
                 const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
                 const matches = filenameRegex.exec(disposition);
-                if (matches != null && matches[1]) { 
+                if (matches != null && matches[1]) {
                     filename = matches[1].replace(/['"]/g, '');
                 }
             }
@@ -1314,19 +1438,35 @@ document.addEventListener('DOMContentLoaded', function () {
     // MODAL PAGAR COMPRA PENDIENTE
     // ==========================================================
     window.abrirModalPagarCompra = async function (compraId) {
-        console.log("Abrir modal para pagar la compra PENDIENTE id:", compraId);
+        // Verificar si la caja está abierta antes de continuar
+        if (typeof window.isCajaAbierta === 'function' && !window.isCajaAbierta()) {
+            // Redirigir a la sección de caja
+            const cajaLink = document.querySelector('.sidebar-menu a[data-section="caja"]');
+            if (cajaLink) cajaLink.click();
+
+            if (typeof window.showErrorBannerCaja === 'function') {
+                window.showErrorBannerCaja('Para registrar un pago, primero debes abrir la caja.');
+            } else {
+                alert('Para registrar un pago, primero debes abrir la caja.');
+            }
+            return; // Bloquea la apertura del modal y la llamada a la API
+        }
+
+        // console.log removido
         try {
             const response = await fetch(`${API_COMPRAS_URL}/${compraId}`);
             if (!response.ok) throw new Error('Error al cargar la compra');
             const compra = await response.json();
 
             // Setea el ID
-            document.getElementById('pago-compra-id').value = compra.id;
+            const compraIdInput = document.getElementById('pago-compra-id');
+            compraIdInput.value = compra.id;
 
             // 1. Monto a Pagar
             const montoPagarInput = document.getElementById('pago-compra-monto');
             const montoPendiente = compra.montoPendiente !== undefined && compra.montoPendiente !== null ? compra.montoPendiente : compra.total;
-            montoPagarInput.value = montoPendiente;
+            montoPagarInput.value = formatoMoneda.format(montoPendiente);
+            montoPagarInput.dataset.montoPendiente = montoPendiente; // Guardar crudo para validación de pago parcial
 
             // 2. Fecha del Pago 
             const fechaInput = document.getElementById('pago-compra-fecha');
@@ -1334,7 +1474,59 @@ document.addEventListener('DOMContentLoaded', function () {
             const anio = hoy.getFullYear();
             const mes = String(hoy.getMonth() + 1).padStart(2, '0');
             const dia = String(hoy.getDate()).padStart(2, '0');
-            fechaInput.value = `${anio}-${mes}-${dia}`;
+            const hoyFormat = `${anio}-${mes}-${dia}`;
+            fechaInput.value = hoyFormat;
+
+            // Resetear contenedor de Próxima Fecha
+            const proximaFechaContainer = document.getElementById('pago-compra-proxima-fecha-container');
+            const proximaFechaInput = document.getElementById('pago-compra-proxima-fecha');
+            if (proximaFechaContainer && proximaFechaInput) {
+                proximaFechaContainer.style.display = 'none';
+                proximaFechaContainer.style.opacity = '0';
+                proximaFechaContainer.style.transform = 'translateY(-10px)';
+                proximaFechaInput.value = ''; // Limpiar valor previo
+
+                // Evento para detectar si es pago parcial y enmascarar
+                montoPagarInput.oninput = function () {
+                    let oldLength = this.value.length;
+                    let cursorPosition = this.selectionStart;
+
+                    let newValue = formatearInputMonedaDecimales(this.value);
+                    if (newValue === '') {
+                        this.value = '';
+                    } else {
+                        this.value = newValue;
+                        let diffLen = this.value.length - oldLength;
+                        this.setSelectionRange(cursorPosition + diffLen, cursorPosition + diffLen);
+                    }
+
+                    const valorIngresado = parsearMoneda(this.value) || 0;
+                    const pendiente = parseFloat(this.dataset.montoPendiente);
+
+                    if (valorIngresado > 0 && valorIngresado < pendiente) {
+                        // Es un pago parcial, mostrar fecha de compromiso
+                        proximaFechaContainer.style.display = 'block';
+                        setTimeout(() => {
+                            proximaFechaContainer.style.opacity = '1';
+                            proximaFechaContainer.style.transform = 'translateY(0)';
+                        }, 10);
+
+                        // Si no tiene fecha seleccionada, por defecto sugerimos un mes después
+                        if (!proximaFechaInput.value) {
+                            const nextMonth = new Date();
+                            nextMonth.setMonth(nextMonth.getMonth() + 1);
+                            proximaFechaInput.value = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-${String(nextMonth.getDate()).padStart(2, '0')}`;
+                        }
+                    } else {
+                        // Pago total o sobrepago, ocultar
+                        proximaFechaContainer.style.opacity = '0';
+                        proximaFechaContainer.style.transform = 'translateY(-10px)';
+                        setTimeout(() => {
+                            proximaFechaContainer.style.display = 'none';
+                        }, 300);
+                    }
+                };
+            }
 
             // 3. Método de Pago (copiamos las opciones del select original)
             const pagoMetodoSelect = document.getElementById('pago-compra-metodo');
@@ -1378,52 +1570,165 @@ document.addEventListener('DOMContentLoaded', function () {
             const fechaPago = document.getElementById('pago-compra-fecha').value;
             const errorDiv = document.getElementById('pago-compra-error');
 
-            if (!monto || monto <= 0 || !metodoId || !fechaPago) {
+            const montoNumerico = parsearMoneda(monto);
+            if (!monto || isNaN(montoNumerico) || montoNumerico <= 0 || !metodoId || !fechaPago) {
                 errorDiv.textContent = 'Por favor complete todos los campos correctamente.';
                 errorDiv.style.display = 'block';
                 return;
             }
 
             try {
+                // Verificar nueva fecha si el contenedor está visible
+                const proximaFechaContainer = document.getElementById('pago-compra-proxima-fecha-container');
+                const proximaFechaInput = document.getElementById('pago-compra-proxima-fecha');
+                let nuevaFechaVencimiento = null;
+
+                if (proximaFechaContainer && proximaFechaContainer.style.display === 'block') {
+                    if (!proximaFechaInput.value) {
+                        errorDiv.textContent = 'Por favor indique la fecha de compromiso para el pago restante.';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+                    const hoyStr = new Date().toISOString().split('T')[0];
+                    if (proximaFechaInput.value < hoyStr) {
+                        errorDiv.textContent = 'La fecha de compromiso para el pago restante no puede ser en el pasado.';
+                        errorDiv.style.display = 'block';
+                        return;
+                    }
+                    nuevaFechaVencimiento = proximaFechaInput.value;
+                }
+
                 // Bloquear botón
                 btnConfirmarPagoCompra.disabled = true;
                 btnConfirmarPagoCompra.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Procesando...';
 
+                const payload = {
+                    idMetodoPago: parseInt(metodoId, 10),
+                    importe: montoNumerico,
+                    fechaPago: fechaPago
+                };
+
+                if (nuevaFechaVencimiento) {
+                    payload.nuevaFechaVencimiento = nuevaFechaVencimiento;
+                }
+
                 const response = await fetch(`${API_COMPRAS_URL}/${compraId}/pagos`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        idMetodoPago: parseInt(metodoId, 10),
-                        importe: parseFloat(monto),
-                        fechaPago: fechaPago
-                    })
+                    body: JSON.stringify(payload)
                 });
 
                 if (response.ok) {
-                    // Éxito
-                    document.getElementById('pago-compra-modal').style.display = 'none';
-                    if (typeof showToast === 'function') {
-                        showToast('Pago registrado con éxito', 'success');
-                    } else {
-                        alert('Pago registrado con éxito');
-                    }
-                    if (typeof loadComprasHistorial === 'function') {
-                        loadComprasHistorial();
-                    } else {
-                        window.location.reload();
-                    }
+                    // Éxito in-modal
+                    errorDiv.style.backgroundColor = '#d1fae5';
+                    errorDiv.style.color = '#065f46';
+                    errorDiv.style.border = '1px solid #a7f3d0';
+                    errorDiv.style.padding = '10px';
+                    errorDiv.style.borderRadius = '5px';
+                    errorDiv.innerHTML = '<i class="fas fa-check-circle" style="margin-right: 5px;"></i> Pago realizado con éxito';
+                    errorDiv.style.display = 'block';
+
+                    btnConfirmarPagoCompra.innerHTML = '<i class="fas fa-check"></i> Éxito';
+
+                    setTimeout(() => {
+                        document.getElementById('pago-compra-modal').style.display = 'none';
+                        // Resetear estilos visuales para próxima vez
+                        errorDiv.style.backgroundColor = '';
+                        errorDiv.style.color = '';
+                        errorDiv.style.border = '';
+                        errorDiv.style.padding = '';
+
+                        btnConfirmarPagoCompra.disabled = false;
+                        btnConfirmarPagoCompra.innerHTML = '<i class="fas fa-check" style="margin-right: 5px;"></i> Confirmar Pago';
+
+                        if (typeof loadComprasHistorial === 'function') {
+                            loadComprasHistorial();
+                        } else {
+                            window.location.reload();
+                        }
+                    }, 500);
                 } else {
+                    errorDiv.style.backgroundColor = '#fee2e2';
+                    errorDiv.style.color = '#991b1b';
+                    errorDiv.style.border = '1px solid #fecaca';
+                    errorDiv.style.padding = '10px';
+                    errorDiv.style.borderRadius = '5px';
+
                     const textError = await response.text();
                     errorDiv.textContent = textError || 'Error al registrar el pago.';
                     errorDiv.style.display = 'block';
+
+                    btnConfirmarPagoCompra.disabled = false;
+                    btnConfirmarPagoCompra.innerHTML = '<i class="fas fa-check" style="margin-right: 5px;"></i> Confirmar Pago';
                 }
             } catch (error) {
                 console.error("Error al registrar pago diferido: ", error);
+
+                errorDiv.style.backgroundColor = '#fee2e2';
+                errorDiv.style.color = '#991b1b';
+                errorDiv.style.border = '1px solid #fecaca';
+                errorDiv.style.padding = '10px';
+                errorDiv.style.borderRadius = '5px';
+
                 errorDiv.textContent = 'Ocurrió un error (ej. caja cerrada).';
                 errorDiv.style.display = 'block';
-            } finally {
+
                 btnConfirmarPagoCompra.disabled = false;
                 btnConfirmarPagoCompra.innerHTML = '<i class="fas fa-check" style="margin-right: 5px;"></i> Confirmar Pago';
+            }
+        });
+    }
+
+    // Agregar evento al botón Limpiar en el Modal
+    const btnBorrarPagoCompra = document.getElementById('btn-borrar-pago-compra');
+    if (btnBorrarPagoCompra) {
+        btnBorrarPagoCompra.addEventListener('click', function () {
+            const form = document.getElementById('form-pagar-compra');
+            const montoInput = document.getElementById('pago-compra-monto');
+            const pendienteOriginal = montoInput.dataset.montoPendiente;
+
+            // Resetear el formulario (esto limpia el Método de Pago y fechas no default)
+            if (form) form.reset();
+
+            // Restaurar monto pendiente pre-formateado y disparar evento para ocultar fecha parcial
+            if (montoInput && pendienteOriginal) {
+                const num = parseFloat(pendienteOriginal);
+                if (!isNaN(num)) {
+                    montoInput.value = formatoMoneda.format(num);
+                } else {
+                    montoInput.value = pendienteOriginal;
+                }
+                // Disparar evento de input para que la lógica de "Próxima Fecha" evalúe
+                montoInput.dispatchEvent(new Event('input'));
+            }
+
+            // Ocultar mensajes de error si estaban visibles
+            const errorDiv = document.getElementById('pago-compra-error');
+            if (errorDiv) errorDiv.style.display = 'none';
+
+            // Volver a setear la fecha de pago al día de hoy por defecto
+            const fechaInput = document.getElementById('pago-compra-fecha');
+            if (fechaInput) {
+                const hoy = new Date();
+                const anio = hoy.getFullYear();
+                const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+                const dia = String(hoy.getDate()).padStart(2, '0');
+                fechaInput.value = `${anio}-${mes}-${dia}`;
+            }
+        });
+    }
+
+    // Cerrar modal al hacer clic fuera o presionar ESC
+    const pagoCompraModal = document.getElementById('pago-compra-modal');
+    if (pagoCompraModal) {
+        window.addEventListener('click', function (e) {
+            if (e.target === pagoCompraModal) {
+                pagoCompraModal.style.display = 'none';
+            }
+        });
+        window.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && pagoCompraModal.style.display === 'flex') {
+                pagoCompraModal.style.display = 'none';
             }
         });
     }
@@ -1605,10 +1910,15 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const estadoClass = pago.estado === 'PAGADO' ? 'style="color: #10b981; font-weight: 600;"' : 'style="color: #ef4444; font-weight: 600;"';
 
+            let importeHtml = `$${formatoMoneda.format(pago.importe || 0)}`;
+            if (pago.vuelto && parseFloat(pago.vuelto) > 0) {
+                importeHtml += `<br><span style="font-size: 0.75rem; color: #64748b;">(Efectivo: $${formatoMoneda.format(pago.montoEntregado)} - Vuelto: $${formatoMoneda.format(pago.vuelto)})</span>`;
+            }
+
             html += `<tr>`;
             html += `<td>${fechaStr}</td>`;
             html += `<td>${pago.metodoPago || 'N/A'}</td>`;
-            html += `<td style="text-align: right;">$${formatoMoneda.format(pago.importe || 0)}</td>`;
+            html += `<td style="text-align: right;">${importeHtml}</td>`;
             html += `<td ${estadoClass}>${pago.estado || 'N/A'}</td>`;
             html += `</tr>`;
         });
@@ -1751,9 +2061,9 @@ document.addEventListener('DOMContentLoaded', function () {
     // Aplicar restricciones y límites al modal rápido
     restrictTelefonoInputCompra(document.getElementById('addProveedorComprasTelefono'));
     restrictCuitInputCompra(document.getElementById('addProveedorComprasCuit'));
-    bindLimitCompra(document.getElementById('addProveedorComprasNombre'),    document.getElementById('errorAddProveedorComprasNombre'),    150);
-    bindLimitCompra(document.getElementById('addProveedorComprasTelefono'),  document.getElementById('errorAddProveedorComprasTelefono'),  20);
-    bindLimitCompra(document.getElementById('addProveedorComprasEmail'),     document.getElementById('errorAddProveedorComprasEmail'),     255);
+    bindLimitCompra(document.getElementById('addProveedorComprasNombre'), document.getElementById('errorAddProveedorComprasNombre'), 150);
+    bindLimitCompra(document.getElementById('addProveedorComprasTelefono'), document.getElementById('errorAddProveedorComprasTelefono'), 20);
+    bindLimitCompra(document.getElementById('addProveedorComprasEmail'), document.getElementById('errorAddProveedorComprasEmail'), 255);
     bindLimitCompra(document.getElementById('addProveedorComprasDireccion'), document.getElementById('errorAddProveedorComprasDireccion'), 200);
 
     if (btnAddProveedorCompra) {
@@ -1816,11 +2126,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 formMsgAddProveedorCompras.className = 'form-message';
             }
 
-            const nombre    = document.getElementById('addProveedorComprasNombre').value.trim();
-            const telefono  = document.getElementById('addProveedorComprasTelefono').value.trim();
-            const email     = document.getElementById('addProveedorComprasEmail').value.trim();
+            const nombre = document.getElementById('addProveedorComprasNombre').value.trim();
+            const telefono = document.getElementById('addProveedorComprasTelefono').value.trim();
+            const email = document.getElementById('addProveedorComprasEmail').value.trim();
             const direccion = document.getElementById('addProveedorComprasDireccion').value.trim();
-            const cuit      = document.getElementById('addProveedorComprasCuit').value.trim();
+            const cuit = document.getElementById('addProveedorComprasCuit').value.trim();
 
             let isValid = true;
 
@@ -1867,7 +2177,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     fetch(`/api/proveedores/existe/email/${encodeURIComponent(email)}`)
                 ]);
                 const nombreExiste = await nombreRes.json();
-                const emailExiste  = await emailRes.json();
+                const emailExiste = await emailRes.json();
                 if (nombreExiste) {
                     document.getElementById('errorAddProveedorComprasNombre').textContent = 'Ya existe un proveedor con ese nombre';
                     isValid = false;
@@ -2078,12 +2388,12 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const sortButtons = document.querySelectorAll('.pdm-filter-btn[data-sort-field]');
-        
+
         sortButtons.forEach(btn => {
             btn.addEventListener('click', () => {
                 const sortField = btn.getAttribute('data-sort-field');
                 let colIndex, dataType;
-                
+
                 if (sortField === 'cantidad') {
                     colIndex = 1;
                     dataType = 'number';
@@ -2210,14 +2520,14 @@ document.addEventListener('DOMContentLoaded', function () {
     if (selectMetodoGlobal && inputMontoGlobal) {
         selectMetodoGlobal.addEventListener('change', () => {
             // Autocompletar solo si se eligió un método válido y el monto está vacío
-            const valFormateadoNum = inputMontoGlobal.value ? parseFloat(inputMontoGlobal.value.replace(/\./g, '')) : 0;
+            const valFormateadoNum = inputMontoGlobal.value ? parsearMoneda(inputMontoGlobal.value) : 0;
             if (selectMetodoGlobal.value && valFormateadoNum === 0) {
                 const totalCompra = calcularTotalGenerico(detalleItems);
                 let totalPagosActuales = 0;
                 pagosMixtos.forEach(p => totalPagosActuales += parseFloat(p.importe));
-                const diff = Math.round(totalCompra - totalPagosActuales); // Evitar decimales
+                const diff = totalCompra - totalPagosActuales; // Permitimos decimales
                 if (diff > 0) {
-                    inputMontoGlobal.value = new Intl.NumberFormat('es-AR').format(diff);
+                    inputMontoGlobal.value = formatoMoneda.format(diff);
                     renderPagosMixtos(); // Refresh balance visual
                 }
             }
@@ -2228,15 +2538,14 @@ document.addEventListener('DOMContentLoaded', function () {
             let cursorPosition = this.selectionStart;
             let oldLength = this.value.length;
 
-            let valueRaw = this.value.replace(/[^0-9]/g, '');
-            if (valueRaw === '') {
+            let newValue = formatearInputMonedaDecimales(this.value);
+            if (newValue === '') {
                 this.value = '';
                 renderPagosMixtos();
                 return;
             }
 
-            let num = parseInt(valueRaw, 10);
-            this.value = new Intl.NumberFormat('es-AR').format(num);
+            this.value = newValue;
 
             let diffLen = this.value.length - oldLength;
             this.setSelectionRange(cursorPosition + diffLen, cursorPosition + diffLen);
@@ -2255,8 +2564,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const idMetodo = selectMetodo.value;
             const nombreMetodo = selectMetodo.options[selectMetodo.selectedIndex]?.text;
-            const montoRaw = inputMonto.value ? inputMonto.value.replace(/\./g, '') : '0';
-            const monto = parseFloat(montoRaw);
+            const monto = parsearMoneda(inputMonto.value) || 0;
 
             if (!idMetodo) {
                 errorMonto.textContent = 'Seleccione un método de pago.';
@@ -2271,9 +2579,20 @@ document.addEventListener('DOMContentLoaded', function () {
             let totalPagosActuales = 0;
             pagosMixtos.forEach(p => totalPagosActuales += parseFloat(p.importe));
 
+            let montoEntregadoFisico = monto;
+            let vueltoCalc = 0;
+
             if ((totalPagosActuales + monto) > totalCompraActual + 0.05) {
-                errorMonto.textContent = `El monto excede. Resta pagar: $${formatoMoneda.format(totalCompraActual - totalPagosActuales)}`;
-                return;
+                let saldoPendiente = totalCompraActual - totalPagosActuales;
+                vueltoCalc = monto - saldoPendiente;
+
+                if (saldoPendiente <= 0) {
+                    errorMonto.textContent = 'La compra ya está saldada en su totalidad.';
+                    return;
+                }
+
+                mostrarVueltoToast(vueltoCalc);
+                monto = saldoPendiente;
             }
 
             // Agregar a la lista temporal
@@ -2281,6 +2600,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 idMetodoPago: parseInt(idMetodo),
                 nombreMetodo: nombreMetodo,
                 importe: monto,
+                montoEntregado: montoEntregadoFisico,
+                vuelto: vueltoCalc,
                 estadoPago: 'PAGADO', // Todo lo pagado asume estado cancelado
                 fechaVencimientoPago: null
             });
@@ -2303,11 +2624,20 @@ document.addEventListener('DOMContentLoaded', function () {
         // Render Píldoras
         pagosMixtos.forEach((pago, index) => {
             totalPagosActuales += parseFloat(pago.importe);
+
+            let detallesVueltoHtml = '';
+            if (pago.vuelto && parseFloat(pago.vuelto) > 0) {
+                detallesVueltoHtml = `<div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">Entregó: $${formatoMoneda.format(pago.montoEntregado)} | Vuelto: $${formatoMoneda.format(pago.vuelto)}</div>`;
+            }
+
             const cardHtml = `
                 <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.02);">
-                    <div style="display: flex; gap: 8px; align-items: center;">
-                        <span style="font-weight: 600; font-size: 0.85rem; color: #475569;">${pago.nombreMetodo}</span>
-                        <span style="font-size: 0.85rem; font-weight: 500; color: #1e293b;">$${formatoMoneda.format(pago.importe)}</span>
+                    <div style="display: flex; flex-direction: column;">
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <span style="font-weight: 600; font-size: 0.85rem; color: #475569;">${pago.nombreMetodo}</span>
+                            <span style="font-size: 0.85rem; font-weight: 500; color: #1e293b;">$${formatoMoneda.format(pago.importe)}</span>
+                        </div>
+                        ${detallesVueltoHtml}
                     </div>
                     <button type="button" class="btn-icon btn-delete-pago" data-index="${index}" style="color: #94a3b8; background: none; border: none; cursor: pointer; padding: 2px 6px;">
                         <i class="fas fa-times"></i>
@@ -2331,7 +2661,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Sumar lo tippeado en el input para el display instantáneo (sin tocar "+")
         let sumFromInput = 0;
         if (inputMonto && inputMonto.value) {
-            const parsed = parseFloat(inputMonto.value.replace(/\./g, ''));
+            const parsed = parsearMoneda(inputMonto.value);
             if (!isNaN(parsed)) sumFromInput = parsed;
         }
 
@@ -2345,7 +2675,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
                     <span style="color: #cfe2ff; font-size: 0.9rem;">Saldo pendiente</span>
-                    <span style="color: ${diff > 0.05 ? '#fff3cd' : '#fff'}; font-weight: 700; font-size: 0.95rem;">$${formatoMoneda.format(diff > 0 ? diff : 0)}</span>
+                    <span style="color: ${diff > 0.05 ? '#ff6b6b' : '#fff'}; font-weight: 700; font-size: 0.95rem;">$${formatoMoneda.format(diff > 0 ? diff : 0)}</span>
                 </div>
             `;
         }
@@ -2365,7 +2695,34 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Se ELIMINÓ el autocompletado nativo aquí para permitir escritura libre
+        // Bloquear inputs de pago si el saldo REAL (sin contar lo tippeado) está cubierto
+        const selectMetodo = document.getElementById('compra-metodo-pago');
+        const inputPago = document.getElementById('compra-pago-monto');
+        const btnAddPago = document.getElementById('btn-add-pago-mixto');
+
+        if (selectMetodo && inputPago && btnAddPago) {
+            const saldoReal = totalCompraActual - totalPagosActuales;
+            if (saldoReal <= 0.05 && totalCompraActual > 0) {
+                selectMetodo.disabled = true;
+                inputPago.disabled = true;
+                btnAddPago.disabled = true;
+                inputPago.value = ''; // Limpia el input si ya llegamos al total
+
+                selectMetodo.style.backgroundColor = '#f1f5f9';
+                inputPago.style.backgroundColor = '#f1f5f9';
+                btnAddPago.style.opacity = '0.5';
+                btnAddPago.style.cursor = 'not-allowed';
+            } else {
+                selectMetodo.disabled = false;
+                inputPago.disabled = false;
+                btnAddPago.disabled = false;
+
+                selectMetodo.style.backgroundColor = 'white';
+                inputPago.style.backgroundColor = 'white';
+                btnAddPago.style.opacity = '1';
+                btnAddPago.style.cursor = 'pointer';
+            }
+        }
     }
 
     const originalRenderDetalleTemporal = renderDetalleTemporal;

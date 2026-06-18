@@ -36,6 +36,8 @@ public class Pago {
     private MetodoPago metodoPago;
 
     private BigDecimal importe;
+    private BigDecimal montoEntregado; // Lo que el usuario entrega físicamente
+    private BigDecimal vuelto; // Lo que se le devuelve
     private String tipoTarjeta;
 
     private LocalDateTime fechaPago;

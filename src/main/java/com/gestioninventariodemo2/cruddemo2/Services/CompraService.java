@@ -197,6 +197,8 @@ public class CompraService {
                     compra,
                     metodoPago,
                     pagoDto.getImporte(),
+                    pagoDto.getMontoEntregado(),
+                    pagoDto.getVuelto(),
                     pagoDto.getTipoTarjeta(),
                     pagoDto.getEstadoPago(),
                     pagoDto.getFechaVencimientoPago(),
@@ -233,6 +235,12 @@ public class CompraService {
                 "PAGADO",
                 fechaP,
                 usuario);
+                
+        // Actualizar la fecha de vencimiento si se envió un pago parcial con nueva fecha
+        if (dto.getNuevaFechaVencimiento() != null) {
+            compra.setFechaVencimientoPago(dto.getNuevaFechaVencimiento());
+            compraRepository.save(compra);
+        }
     }
 
 
@@ -412,6 +420,8 @@ public class CompraService {
                         .idPago(p.getIdPago())
                         .metodoPago(p.getMetodoPago() != null ? p.getMetodoPago().getNombre() : "N/A")
                         .importe(p.getImporte())
+                        .montoEntregado(p.getMontoEntregado())
+                        .vuelto(p.getVuelto())
                         .fechaPago(p.getFechaPago())
                         .estado(p.getEstado())
                         .build())
