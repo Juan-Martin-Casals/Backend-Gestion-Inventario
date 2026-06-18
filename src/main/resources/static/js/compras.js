@@ -1747,6 +1747,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const modal = document.getElementById('purchase-detail-modal');
         if (!modal) return;
 
+        resetPurchaseDetailTabs();
+
         try {
             const response = await fetch(`${API_COMPRAS_URL}/${compraId}`);
             if (!response.ok) throw new Error('Error al cargar el detalle');
@@ -1848,7 +1850,7 @@ document.addEventListener('DOMContentLoaded', function () {
             renderModalPagos(compra.pagos);
 
             // Actualizar badge de cantidad de pagos
-            const pagosCountEl = document.getElementById('pdm-pagos-count');
+            const pagosCountEl = document.getElementById('pdm-tab-pagos-badge');
             if (pagosCountEl) {
                 pagosCountEl.textContent = compra.pagos ? compra.pagos.length : 0;
             }
@@ -1956,11 +1958,38 @@ document.addEventListener('DOMContentLoaded', function () {
         // Removed cushion as footer is no longer explicitly sticky
     }
 
-    function cerrarModalDetalleCompra() {
+    window.cerrarModalDetalleCompra = function () {
         const modal = document.getElementById('purchase-detail-modal');
         if (modal) modal.style.display = 'none';
         modalProductosActuales = [];
     }
+
+    function resetPurchaseDetailTabs() {
+        const tabs = document.querySelectorAll('#purchase-detail-modal .pdm-tab');
+        const contents = document.querySelectorAll('#purchase-detail-modal .pdm-tab-content');
+        
+        tabs.forEach(t => t.classList.remove('active'));
+        contents.forEach(c => c.style.display = 'none');
+        
+        const firstTab = document.querySelector('#purchase-detail-modal .pdm-tab[data-tab="pdm-tab-info"]');
+        if (firstTab) firstTab.classList.add('active');
+        
+        const firstContent = document.getElementById('pdm-tab-info');
+        if (firstContent) firstContent.style.display = 'block';
+    }
+
+    const pdmTabs = document.querySelectorAll('#purchase-detail-modal .pdm-tab');
+    pdmTabs.forEach(tab => {
+        tab.addEventListener('click', () => {
+            pdmTabs.forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('#purchase-detail-modal .pdm-tab-content').forEach(c => c.style.display = 'none');
+            
+            tab.classList.add('active');
+            const targetId = tab.getAttribute('data-tab');
+            const targetContent = document.getElementById(targetId);
+            if (targetContent) targetContent.style.display = 'block';
+        });
+    });
 
     document.addEventListener('keydown', function (e) {
         if (e.key === 'Escape') {

@@ -4744,11 +4744,27 @@
                     <div id="modal-compra-estado" class="pdm-status-badge"></div>
                 </div>
 
+                <!-- TAB BAR -->
+                <div class="pdm-tabs">
+                    <button type="button" class="pdm-tab active" data-tab="pdm-tab-info">
+                        <i class="fas fa-info-circle"></i> Información General
+                    </button>
+                    <button type="button" class="pdm-tab" data-tab="pdm-tab-productos">
+                        <i class="fas fa-boxes"></i> Productos
+                    </button>
+                    <button type="button" class="pdm-tab" data-tab="pdm-tab-pagos">
+                        <i class="fas fa-history"></i> Historial de Pagos
+                        <span id="pdm-tab-pagos-badge" class="pdm-tab-badge">0</span>
+                    </button>
+                </div>
+
                 <!-- CUERPO SCROLLEABLE -->
                 <div class="pdm-body">
 
-                    <!-- INFO CARDS -->
-                    <div class="pdm-info-grid" id="pdm-info-grid">
+                    <!-- TAB 1: INFO Y RESUMEN -->
+                    <div id="pdm-tab-info" class="pdm-tab-content">
+                        <!-- INFO CARDS -->
+                        <div class="pdm-info-grid" id="pdm-info-grid">
                         <div class="pdm-info-card">
                             <div class="pdm-info-card-icon"><i class="fas fa-calendar-day"></i></div>
                             <div class="pdm-info-card-content">
@@ -4788,10 +4804,12 @@
                             </div>
                         </div>
                     </div>
+                    </div>
 
-                    <!-- PRODUCTOS COMPRADOS -->
-                    <div class="pdm-productos-section" style="margin-bottom: 24px;">
-                        <div class="pdm-productos-header"
+                    <!-- TAB 2: PRODUCTOS COMPRADOS -->
+                    <div id="pdm-tab-productos" class="pdm-tab-content" style="display: none;">
+                        <div class="pdm-productos-section" style="margin-bottom: 24px;">
+                            <div class="pdm-productos-header"
                             style="flex-direction: column; align-items: stretch; gap: 16px;">
                             <h4 class="pdm-section-title" style="margin-bottom: 0;"><i class="fas fa-boxes"></i>
                                 Productos Comprados</h4>
@@ -4841,17 +4859,19 @@
                             </table>
                         </div>
                     </div>
+                    </div>
 
-                    <!-- HISTORIAL DE PAGOS (colapsable) -->
-                    <details class="pdm-pagos-details" id="modal-compra-pagos-container">
-                        <summary class="pdm-pagos-summary">
-                            <i class="fas fa-history"></i>
-                            <span>Historial de Pagos</span>
-                            <span id="pdm-pagos-count" class="pdm-pagos-count"></span>
-                            <i class="fas fa-chevron-down pdm-chevron"></i>
-                        </summary>
-                        <div class="pdm-pagos-body" id="modal-compra-pagos-list"></div>
-                    </details>
+                    <!-- TAB 3: HISTORIAL DE PAGOS -->
+                    <div id="pdm-tab-pagos" class="pdm-tab-content" style="display: none;">
+                        <div class="pdm-productos-section" style="margin-bottom: 24px;">
+                            <div class="pdm-productos-header" style="flex-direction: column; align-items: stretch; gap: 16px;">
+                                <h4 class="pdm-section-title" style="margin-bottom: 0;"><i class="fas fa-history"></i> Pagos Realizados</h4>
+                            </div>
+                            <div class="compra-productos-wrapper" style="margin-top: 16px;">
+                                <div id="modal-compra-pagos-list"></div>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
 

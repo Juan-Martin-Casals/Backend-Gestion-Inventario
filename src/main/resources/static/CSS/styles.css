@@ -3441,7 +3441,7 @@ body {
     padding: 0 !important;
     background-color: #f8fafc !important;
     border-radius: 12px !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
     display: flex !important;
     flex-direction: column !important;
@@ -3458,6 +3458,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    border-radius: 12px 12px 0 0;
 }
 
 .pdm-header-left {
@@ -3504,6 +3505,80 @@ body {
     letter-spacing: 0.5px;
     margin-right: 24px;
     /* Space for close button */
+}
+
+/* Pestañas de Navegación */
+.pdm-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 16px 24px 0;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.pdm-tab {
+    padding: 12px 26px;
+    border: 1px solid transparent;
+    background: #f1f5f9;
+    font-size: 14px;
+    font-weight: 600;
+    color: #64748b;
+    cursor: pointer;
+    border-radius: 10px 10px 0 0;
+    margin-bottom: -1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.pdm-tab:hover {
+    background: #e2e8f0;
+    color: #334155;
+}
+
+.pdm-tab.active {
+    background: white;
+    color: #0f172a;
+    border-color: #e2e8f0;
+    border-top: 3px solid #3b82f6;
+    border-bottom: 2px solid white;
+    box-shadow: 0 -4px 6px -4px rgba(0,0,0,0.05);
+}
+
+.pdm-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    background: #e2e8f0;
+    color: #475569;
+    font-size: 11px;
+    font-weight: 700;
+    border-radius: 10px;
+}
+
+.pdm-tab.active .pdm-tab-badge {
+    background: #3b82f6;
+    color: white;
+}
+
+/* Animación y Pestañas Content */
+.pdm-tab-content {
+    animation: fadeInTab 0.3s ease-out;
+}
+
+@keyframes fadeInTab {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Body Scrolleable */
@@ -3869,6 +3944,7 @@ body {
     justify-content: flex-end;
     align-items: baseline;
     gap: 16px;
+    border-radius: 0 0 12px 12px;
 }
 
 .pdm-total-label {
