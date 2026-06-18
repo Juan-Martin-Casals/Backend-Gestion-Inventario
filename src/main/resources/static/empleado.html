@@ -1077,8 +1077,8 @@
                                                     style="font-size: 0.85rem; margin-bottom: 4px;">Descuento <span
                                                         style="color:#999; font-weight:normal;">(opcional)</span></label>
                                                 <div style="display: flex; gap: 8px;">
-                                                    <input type="number" id="descuento-venta" class="form-control"
-                                                        placeholder="0" min="0" step="0.01"
+                                                    <input type="text" inputmode="numeric" id="descuento-venta" class="form-control"
+                                                        placeholder="0" maxlength="9"
                                                         style="flex: 2; padding: 8px 12px; font-size: 0.9rem;">
                                                     <select id="tipo-descuento-venta" class="form-control"
                                                         style="flex: 1; padding: 8px 12px; font-size: 0.9rem;">
@@ -1118,7 +1118,7 @@
                                                     <label for="venta-cobro-monto"
                                                         style="font-size: 0.85rem; margin-bottom: 4px;">Importe</label>
                                                     <input type="text" id="venta-cobro-monto" class="form-control"
-                                                        placeholder="0"
+                                                        placeholder="0" maxlength="13"
                                                         style="padding: 6px 10px; font-size: 0.9rem; height: 36px;">
                                                 </div>
                                                 <button type="button" id="btn-add-cobro-mixto" class="btn-primary"
@@ -1133,7 +1133,7 @@
                                                 <label for="venta-paga-con"
                                                     style="font-size: 0.85rem; margin-bottom: 4px; display: block;">Paga con
                                                     (efectivo)</label>
-                                                <input type="text" id="venta-paga-con" placeholder="0"
+                                                <input type="text" id="venta-paga-con" placeholder="0" maxlength="13"
                                                     style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
                                             </div>
                                             <div id="venta-vuelto-display"
@@ -1272,87 +1272,91 @@
                 </div>
 
                 <div id="venta-detail-modal" class="modal">
-                    <div class="modal-content vd-modal-content">
+                    <div class="modal-content vd-modal-content vd-light">
                         <!-- Botón de cerrar flotante -->
                         <button class="vd-close-btn" onclick="cerrarModalDetalleVenta()">
                             <i class="fas fa-times"></i>
                         </button>
 
-                        <!-- Header -->
-                        <div class="vd-header">
-                            <div>
-                                <h3>
+                        <div class="vd-split-layout">
+                            <!-- Columna Izquierda: Panel Lateral -->
+                            <div class="vd-sidebar">
+                                <div class="vd-header-brand">
                                     <i class="fas fa-receipt"></i>
-                                    Recibo Digital <span id="modal-venta-id" class="vd-id-badge"></span>
-                                </h3>
-                            </div>
-                            <div class="vd-date-badge">
-                                <i class="fas fa-calendar-alt"></i> <span id="modal-venta-fecha"></span>
-                            </div>
-                        </div>
+                                    <span>Recibo Digital</span>
+                                </div>
+                                <div class="vd-total-highlight">
+                                    <span class="vd-total-highlight-label">Total Pagado</span>
+                                    <span id="modal-venta-total" class="vd-total-highlight-value"></span>
+                                    <div class="vd-id-badge">ID: <span id="modal-venta-id"></span></div>
+                                </div>
 
-                        <div class="vd-body">
-                            <!-- Info Grid -->
-                            <div class="vd-meta-grid">
-                                <div class="vd-meta-item">
-                                    <span class="vd-meta-label">Cliente</span>
-                                    <div class="vd-meta-value"><i class="fas fa-user"></i> <span
-                                            id="modal-venta-cliente"></span></div>
-                                </div>
-                                <div class="vd-meta-item">
-                                    <span class="vd-meta-label">Vendedor</span>
-                                    <div class="vd-meta-value"><i class="fas fa-id-badge"></i> <span
-                                            id="modal-venta-vendedor"></span></div>
-                                </div>
-                                <div class="vd-meta-item">
-                                    <span class="vd-meta-label">Método de Pago</span>
-                                    <div class="vd-meta-value"><i class="fas fa-credit-card"></i> <span
-                                            id="modal-venta-metodo-pago"></span></div>
-                                </div>
-                            </div>
-
-                            <!-- Resumen Pago Efectivo -->
-                            <div id="modal-venta-resumen-pago" class="vd-cash-summary" style="display: none;">
-                                <div class="vd-cash-item">
-                                    <span class="vd-cash-label">Pagó con</span>
-                                    <span id="modal-venta-pago-con" class="vd-cash-value"></span>
-                                </div>
-                                <div class="vd-cash-item">
-                                    <span class="vd-cash-label">Vuelto</span>
-                                    <span id="modal-venta-vuelto" class="vd-cash-value"></span>
-                                </div>
-                            </div>
-
-                            <!-- Productos -->
-                            <div class="vd-section-title">Productos Vendidos</div>
-                            <table class="vd-table">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th class="col-num">Cantidad</th>
-                                        <th class="col-num">P. Unitario</th>
-                                        <th class="col-num">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="modal-venta-productos">
-                                </tbody>
-                            </table>
-
-                            <!-- Totales -->
-                            <div class="vd-totals-wrapper">
-                                <div class="vd-totals-box">
-                                    <div class="vd-total-row">
-                                        <span>Subtotal</span>
-                                        <span id="modal-venta-subtotal"></span>
+                                <div class="vd-meta-list">
+                                    <div class="vd-meta-item">
+                                        <span class="vd-meta-label">Fecha</span>
+                                        <div class="vd-meta-value"><i class="fas fa-calendar-alt"></i> <span
+                                                id="modal-venta-fecha"></span></div>
                                     </div>
-                                    <div id="modal-venta-descuento-container" class="vd-total-row discount"
-                                        style="display: none;">
-                                        <span>Descuento Aplicado</span>
-                                        <span id="modal-venta-descuento"></span>
+                                    <div class="vd-meta-item">
+                                        <span class="vd-meta-label">Cliente</span>
+                                        <div class="vd-meta-value"><i class="fas fa-user"></i> <span
+                                                id="modal-venta-cliente"></span></div>
                                     </div>
-                                    <div class="vd-final-total">
-                                        <span class="vd-final-total-label">Total</span>
-                                        <span id="modal-venta-total" class="vd-final-total-value"></span>
+                                    <div class="vd-meta-item">
+                                        <span class="vd-meta-label">Vendedor</span>
+                                        <div class="vd-meta-value"><i class="fas fa-id-badge"></i> <span
+                                                id="modal-venta-vendedor"></span></div>
+                                    </div>
+                                    <div class="vd-meta-item">
+                                        <span class="vd-meta-label">Método de Pago</span>
+                                        <div class="vd-meta-value"><i class="fas fa-credit-card"></i> <span
+                                                id="modal-venta-metodo-pago"></span></div>
+                                    </div>
+                                </div>
+
+                                <!-- Resumen Pago Efectivo -->
+                                <div id="modal-venta-resumen-pago" class="vd-cash-summary" style="display: none;">
+                                    <div class="vd-cash-item">
+                                        <span class="vd-cash-label">Pagó con</span>
+                                        <span id="modal-venta-pago-con" class="vd-cash-value"></span>
+                                    </div>
+                                    <div class="vd-cash-item">
+                                        <span class="vd-cash-label">Vuelto</span>
+                                        <span id="modal-venta-vuelto" class="vd-cash-value"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Columna Derecha: Productos -->
+                            <div class="vd-main-content">
+                                <div class="vd-section-title">Desglose de Productos</div>
+                                <div class="vd-table-container">
+                                    <table class="vd-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Producto</th>
+                                                <th class="col-center">Cant.</th>
+                                                <th class="col-num">P. Unitario</th>
+                                                <th class="col-num">Subtotal</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="modal-venta-productos">
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Totales Secundarios -->
+                                <div class="vd-totals-wrapper">
+                                    <div class="vd-totals-box">
+                                        <div class="vd-total-row">
+                                            <span>Subtotal</span>
+                                            <span id="modal-venta-subtotal"></span>
+                                        </div>
+                                        <div id="modal-venta-descuento-container" class="vd-total-row discount"
+                                            style="display: none;">
+                                            <span>Descuento Aplicado</span>
+                                            <span id="modal-venta-descuento"></span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1625,7 +1629,7 @@
                                     <div style="position: relative; width: 100%; max-width: 400px;">
                                         <i class="fas fa-dollar-sign"
                                             style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 24px; color: #94a3b8; font-weight: 600;"></i>
-                                        <input type="text" id="caja-monto-inicial" autocomplete="off" required
+                                        <input type="text" id="caja-monto-inicial" autocomplete="off" required maxlength="13"
                                             style="width: 100%; padding: 20px 20px 20px 56px; font-size: 24px; font-weight: 800; color: #0f172a; background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 12px; outline: none; transition: all 0.2s; letter-spacing: -0.5px;"
                                             onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 4px rgba(30, 58, 95, 0.1)';"
                                             onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
@@ -1650,11 +1654,14 @@
                                     <div style="position: relative;">
                                         <i class="fas fa-align-left"
                                             style="position: absolute; left: 16px; top: 16px; color: #94a3b8;"></i>
-                                        <textarea id="caja-observaciones" rows="3"
+                                        <textarea id="caja-observaciones" rows="3" maxlength="255"
                                             placeholder="Ej: Faltaban billetes chicos del turno anterior..."
                                             style="width: 100%; padding: 16px 16px 16px 44px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none; resize: none; color: #334155; font-family: inherit;"
                                             onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                             onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';"></textarea>
+                                        <div style="text-align: right; font-size: 12px; color: #64748b; margin-top: 4px;">
+                                            <span id="char-count-obs-apertura">0</span>/255
+                                        </div>
                                     </div>
                                 </div>
 

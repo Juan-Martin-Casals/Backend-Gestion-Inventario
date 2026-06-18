@@ -136,8 +136,14 @@ public class VentaService {
         double descuentoMonto = 0;
         if (ventaRequestDTO.getDescuento() != null && ventaRequestDTO.getDescuento() > 0) {
             if ("%".equals(ventaRequestDTO.getTipoDescuento())) {
+                if (ventaRequestDTO.getDescuento() > 100) {
+                    throw new IllegalArgumentException("El porcentaje de descuento no puede ser mayor a 100");
+                }
                 descuentoMonto = subtotal * (ventaRequestDTO.getDescuento() / 100);
             } else {
+                if (ventaRequestDTO.getDescuento() > 9999999) {
+                    throw new IllegalArgumentException("El descuento excede el límite permitido de 7 dígitos.");
+                }
                 descuentoMonto = ventaRequestDTO.getDescuento();
             }
             descuentoMonto = Math.min(descuentoMonto, subtotal);
@@ -327,6 +333,14 @@ public class VentaService {
      * Registrar múltiples cobros para una venta
      */
     private void registrarCobrosVenta(List<CobroItemDTO> cobros, Venta venta, Usuario usuario, double totalVenta) {
+        for (CobroItemDTO cobro : cobros) {
+            if (cobro.getImporte() != null && cobro.getImporte().compareTo(new BigDecimal("9999999999")) > 0) {
+                throw new IllegalArgumentException("El importe de un cobro excede el límite permitido de 10 dígitos.");
+            }
+            if (cobro.getMontoPagado() != null && cobro.getMontoPagado().compareTo(new BigDecimal("9999999999")) > 0) {
+                throw new IllegalArgumentException("El monto pagado excede el límite permitido de 10 dígitos.");
+            }
+        }
         double sumaImportes = cobros.stream()
                 .mapToDouble(c -> c.getImporte() != null ? c.getImporte().doubleValue() : 0)
                 .sum();

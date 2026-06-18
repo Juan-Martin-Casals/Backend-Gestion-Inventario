@@ -760,6 +760,15 @@ document.addEventListener('DOMContentLoaded', function () {
         const producto = todosLosProductos.find(p => p.idProducto === productoId);
         if (!producto) return;
 
+        // Verificar stock
+        if ((producto.stockActual || 0) <= 0) {
+            if (errorProducto) {
+                errorProducto.textContent = "No se puede agregar un producto con stock agotado.";
+                setTimeout(() => errorProducto.textContent = '', 3000);
+            }
+            return;
+        }
+
         // Limpiar input y cerrar dropdown
         productSearchInput.value = '';
         productResultsContainer.innerHTML = '';
@@ -843,7 +852,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td class="col-num col-qty">
                         <div class="qty-stepper">
                             <button type="button" class="btn-qty btn-qty-minus" data-index="${index}">−</button>
-                            <input type="number" class="qty-input" data-index="${index}" value="${item.cantidad}" min="0" max="${item.stockAlAgregar}" inputmode="numeric">
+                            <input type="number" class="qty-input" data-index="${index}" value="${item.cantidad}" min="0" max="${item.stockAlAgregar}" inputmode="numeric" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
                             <button type="button" class="btn-qty btn-qty-plus" data-index="${index}">+</button>
                         </div>
                     </td>
@@ -876,8 +885,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (subtotalVentaDisplay) subtotalVentaDisplay.textContent = `$${formatoMoneda.format(totalAcumulado)}`;
 
-        const descuento = parseFloat(descuentoInput?.value) || 0;
         const tipoDescuento = tipoDescuentoSelect?.value || '$';
+        const descuento = tipoDescuento === '$' ? (parsearMoneda(descuentoInput?.value) || 0) : (parseFloat((descuentoInput?.value || '').replace(',', '.')) || 0);
         let descuentoMonto = 0;
         let totalConDescuento = totalAcumulado;
 
@@ -957,8 +966,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Calcular totales (debe ir antes de validar cobros)
         let descuentoMonto = 0;
-        const descuento = parseFloat(descuentoInput?.value) || 0;
         const tipoDescuento = tipoDescuentoSelect?.value || '$';
+        const descuento = tipoDescuento === '$' ? (parsearMoneda(descuentoInput?.value) || 0) : (parseFloat((descuentoInput?.value || '').replace(',', '.')) || 0);
         let totalBase = 0;
         detallesVenta.forEach(item => { totalBase += item.precioVenta * item.cantidad; });
         if (descuento > 0 && totalBase > 0) {
@@ -1560,6 +1569,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const item = detallesVenta[index];
             if (!item) return;
 
+            qtyInput.value = qtyInput.value.replace(/\D/g, '');
             let val = parseInt(qtyInput.value, 10);
             if (isNaN(val) || val < 0) val = 0;
             if (val > item.stockAlAgregar) {
@@ -1762,8 +1772,8 @@ document.addEventListener('DOMContentLoaded', function () {
     function calcularTotalConDescuento() {
         let base = 0;
         detallesVenta.forEach(item => { base += item.precioVenta * item.cantidad; });
-        const descuento = parseFloat(descuentoInput?.value) || 0;
         const tipo = tipoDescuentoSelect?.value || '$';
+        const descuento = tipo === '$' ? (parsearMoneda(descuentoInput?.value) || 0) : (parseFloat((descuentoInput?.value || '').replace(',', '.')) || 0);
         if (descuento > 0) {
             const d = tipo === '%' ? base * (descuento / 100) : descuento;
             base -= Math.min(d, base);
@@ -1847,7 +1857,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Listener paga-con para vuelto
     const pagaConInput = document.getElementById('venta-paga-con');
-    if (pagaConInput) pagaConInput.addEventListener('input', calcularVuelto);
+    if (pagaConInput) {
+        pagaConInput.addEventListener('input', function () {
+            let raw = this.value.replace(/[^0-9]/g, '');
+            if (raw === '') { 
+                this.value = ''; 
+                calcularVuelto(); 
+                return; 
+            }
+            const cursorPos = this.selectionStart;
+            const oldLen = this.value.length;
+            this.value = new Intl.NumberFormat('es-AR').format(parseInt(raw, 10));
+            const diff = this.value.length - oldLen;
+            this.setSelectionRange(cursorPos + diff, cursorPos + diff);
+            calcularVuelto();
+        });
+    }
 
     // Formatear importe al escribir
     if (cobroMontoInput) {
@@ -1955,11 +1980,36 @@ document.addEventListener('DOMContentLoaded', function () {
     // Event listeners para descuento
     if (descuentoInput) {
         descuentoInput.addEventListener('input', function () {
+            if (tipoDescuentoSelect && tipoDescuentoSelect.value === '$') {
+                let raw = this.value.replace(/[^0-9]/g, '');
+                if (raw === '') { 
+                    this.value = ''; 
+                } else {
+                    const cursorPos = this.selectionStart;
+                    const oldLen = this.value.length;
+                    this.value = new Intl.NumberFormat('es-AR').format(parseInt(raw, 10));
+                    const diff = this.value.length - oldLen;
+                    this.setSelectionRange(cursorPos + diff, cursorPos + diff);
+                }
+            } else {
+                this.value = this.value.replace(/[^0-9.,]/g, '');
+            }
             renderDetalleTemporal();
         });
     }
     if (tipoDescuentoSelect) {
         tipoDescuentoSelect.addEventListener('change', function () {
+            if (descuentoInput) {
+                if (this.value === '$') {
+                    let raw = descuentoInput.value.replace(/[^0-9]/g, '');
+                    if (raw !== '') {
+                        descuentoInput.value = new Intl.NumberFormat('es-AR').format(parseInt(raw, 10));
+                    }
+                } else {
+                    let val = parsearMoneda(descuentoInput.value);
+                    descuentoInput.value = val ? val.toString() : '';
+                }
+            }
             renderDetalleTemporal();
         });
     }

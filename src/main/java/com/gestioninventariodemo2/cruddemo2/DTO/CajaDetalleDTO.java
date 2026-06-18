@@ -17,6 +17,7 @@ public class CajaDetalleDTO {
     private Double montoInicial;
     private Double totalVentas;
     private Double totalCompras;
+    private Double totalComprasEfectivo;
     private Double saldoEsperado;
     private LocalDateTime fechaApertura;
 

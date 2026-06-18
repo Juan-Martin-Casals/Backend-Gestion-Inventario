@@ -216,6 +216,7 @@ public class CajaService {
                 .montoInicial(sesion.getMontoInicialReal())
                 .totalVentas(totalVentas)
                 .totalCompras(totalCompras)
+                .totalComprasEfectivo(calcEfectivoCajaPagos)
                 .saldoEsperado(saldoEsperado)
                 .fechaApertura(sesion.getFechaApertura())
                 .cantidadVentas(cantidadVentas)

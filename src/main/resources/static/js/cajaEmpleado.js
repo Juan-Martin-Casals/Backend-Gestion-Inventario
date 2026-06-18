@@ -219,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // 4. Lógica de Fondo Fijo y Retiro
-            const totalEfectivoTeorico = resumenData.saldoEsperado || ((resumenData.montoInicial || 0) + (resumenData.totalEfectivo || 0) - (resumenData.totalCompras || 0));
+            const totalEfectivoTeorico = resumenData.saldoEsperado || ((resumenData.montoInicial || 0) + (resumenData.totalEfectivo || 0) - (resumenData.totalComprasEfectivo || 0));
             
             // Popula Efvo Esperado en el sidebar derecho
             const labelEsperado = document.getElementById('caja-sidebar-efectivo-esperado');
@@ -302,6 +302,17 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Character count para observaciones de apertura
+    const inputObsApertura = document.getElementById('caja-observaciones');
+    if (inputObsApertura) {
+        const charCountAperturaEl = document.getElementById('char-count-obs-apertura');
+        inputObsApertura.addEventListener('input', function() {
+            if (charCountAperturaEl) {
+                charCountAperturaEl.textContent = this.value.length;
+            }
+        });
+    }
+
     // Bloquear caracteres no válidos en monto inicial (solo enteros positivos)
     if (inputMontoInicial) {
         inputMontoInicial.addEventListener('keydown', (e) => {
@@ -344,6 +355,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (response.ok) {
                     showSuccessBanner('Caja abierta exitosamente. Módulo de operaciones habilitado.');
                     cajaEstaAbierta = true;
+                    if (inputObsApertura) {
+                        inputObsApertura.value = '';
+                        const charCountAperturaEl = document.getElementById('char-count-obs-apertura');
+                        if (charCountAperturaEl) charCountAperturaEl.textContent = '0';
+                    }
                     verificarEstadoCaja();
                 } else {
                     const dataError = await response.json();
@@ -490,7 +506,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // 3. Población dinámica del Modal con datos reales
             const data = resumenCajaActual || {};
-            const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalCompras || 0));
+            const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalComprasEfectivo || 0));
             const diferencia = montoFisicoVal - totalEfTeorico;
 
             // Header - Responsable y Sesión
@@ -502,6 +518,11 @@ document.addEventListener('DOMContentLoaded', function () {
             // Tiempos reales
             const horaApertura = data.fechaApertura ? new Date(data.fechaApertura).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
             const horaCierre = new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'});
+            const vtEfNode = document.getElementById('modal-resumen-ventas-efectivo');
+            if (vtEfNode) vtEfNode.textContent = `+${formatter.format(data.totalEfectivo || 0)}`;
+            const gaNode = document.getElementById('modal-resumen-gastos');
+            if (gaNode) gaNode.textContent = `-${formatter.format(data.totalComprasEfectivo || 0)}`;
+            const espNode = document.getElementById('modal-resumen-esperado');
             const apNode = document.getElementById('modal-resumen-apertura');
             if (apNode) apNode.textContent = horaApertura;
             const crNode = document.getElementById('modal-resumen-cierre-hora');
@@ -648,7 +669,7 @@ document.addEventListener('DOMContentLoaded', function () {
         doc.setFont("helvetica", "normal");
         
         y += 8;
-        const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalCompras || 0));
+        const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalComprasEfectivo || 0));
         doc.text(`Efectivo Esperado: ${formatter.format(totalEfTeorico)}`, 5, y);
         y += 6;
         doc.text(`Efectivo Físico Aud: ${formatter.format(montoFisicoReal)}`, 5, y);

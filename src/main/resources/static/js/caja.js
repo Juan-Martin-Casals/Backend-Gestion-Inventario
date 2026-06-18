@@ -217,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function () {
             tbodyDesglose.appendChild(trTotal);
 
             // 4. Lógica de Fondo Fijo y Retiro
-            const totalEfectivoTeorico = resumenData.saldoEsperado || ((resumenData.montoInicial || 0) + (resumenData.totalEfectivo || 0) - (resumenData.totalCompras || 0));
+            const totalEfectivoTeorico = resumenData.saldoEsperado || ((resumenData.montoInicial || 0) + (resumenData.totalEfectivo || 0) - (resumenData.totalComprasEfectivo || 0));
             
             // Popula Efvo Esperado en el KPI hero
             const labelEsperado = document.getElementById('caja-sidebar-efectivo-esperado');
@@ -295,12 +295,48 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Botón Limpiar Cierre
+    const btnLimpiarCierre = document.getElementById('btn-limpiar-cierre');
+    if (btnLimpiarCierre) {
+        btnLimpiarCierre.addEventListener('click', () => {
+            // 1. Limpiar Efectivo
+            if (inputMontoFinalFisico) {
+                inputMontoFinalFisico.value = '';
+                if (warningFinalText) warningFinalText.style.display = 'none';
+            }
+            
+            // 2. Limpiar Observaciones
+            if (inputObsCierre) {
+                inputObsCierre.value = '';
+                const charCountEl = document.getElementById('char-count-observaciones');
+                if (charCountEl) charCountEl.textContent = '0';
+            }
+            
+            // 3. Restaurar Fondo Fijo predeterminado
+            if (inputFondoFijo) {
+                const sugerido = Math.round(resumenCajaActual?.montoInicial || 0);
+                inputFondoFijo.value = new Intl.NumberFormat('es-AR').format(sugerido);
+            }
+        });
+    }
+
     // Character count para observaciones
     if (inputObsCierre) {
         const charCountEl = document.getElementById('char-count-observaciones');
         inputObsCierre.addEventListener('input', function() {
             if (charCountEl) {
                 charCountEl.textContent = this.value.length;
+            }
+        });
+    }
+
+    // Character count para observaciones de apertura
+    const inputObsApertura = document.getElementById('caja-observaciones');
+    if (inputObsApertura) {
+        const charCountAperturaEl = document.getElementById('char-count-obs-apertura');
+        inputObsApertura.addEventListener('input', function() {
+            if (charCountAperturaEl) {
+                charCountAperturaEl.textContent = this.value.length;
             }
         });
     }
@@ -347,6 +383,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (response.ok) {
                     showSuccessBanner('Caja abierta exitosamente. Módulo de operaciones habilitado.');
                     cajaEstaAbierta = true;
+                    if (inputObsApertura) {
+                        inputObsApertura.value = '';
+                        const charCountAperturaEl = document.getElementById('char-count-obs-apertura');
+                        if (charCountAperturaEl) charCountAperturaEl.textContent = '0';
+                    }
                     verificarEstadoCaja();
                 } else {
                     const dataError = await response.json();
@@ -501,7 +542,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // 3. Población dinámica del Modal con datos reales
             const data = resumenCajaActual || {};
-            const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalCompras || 0));
+            const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalComprasEfectivo || 0));
             const diferencia = montoFisicoVal - totalEfTeorico;
 
             // Header - Responsable y Sesión
@@ -524,7 +565,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const vtEfNode = document.getElementById('modal-resumen-ventas-efectivo');
             if (vtEfNode) vtEfNode.textContent = `+${formatter.format(data.totalEfectivo || 0)}`;
             const gaNode = document.getElementById('modal-resumen-gastos');
-            if (gaNode) gaNode.textContent = `-${formatter.format(data.totalCompras || 0)}`;
+            if (gaNode) gaNode.textContent = `-${formatter.format(data.totalComprasEfectivo || 0)}`;
             const espNode = document.getElementById('modal-resumen-esperado');
             if (espNode) espNode.textContent = formatter.format(totalEfTeorico);
 
@@ -722,7 +763,7 @@ document.addEventListener('DOMContentLoaded', function () {
         doc.setFont("helvetica", "normal");
         
         y += 8;
-        const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalCompras || 0));
+        const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalComprasEfectivo || 0));
         doc.text(`Efectivo Esperado: ${formatter.format(totalEfTeorico)}`, 5, y);
         y += 6;
         doc.text(`Efectivo Físico Aud: ${formatter.format(montoFisicoReal)}`, 5, y);
