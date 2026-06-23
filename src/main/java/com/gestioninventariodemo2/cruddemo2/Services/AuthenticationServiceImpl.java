@@ -77,6 +77,8 @@ public class AuthenticationServiceImpl implements AuthenticationService{
                 return "ADMINISTRADOR";
             }else if (rol.equals("ROL_EMPLEADO")){
                 return "EMPLEADO";
+            }else if (rol.equals("ROL_CAJERO")){
+                return "CAJERO";
             }
         }
         return "DESCONOCIDO";

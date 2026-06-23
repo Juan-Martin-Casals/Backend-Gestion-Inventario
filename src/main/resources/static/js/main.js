@@ -173,6 +173,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     window.location.href = "admin.html";
                 } else if (userRole === "EMPLEADO") {
                     window.location.href = "empleado.html";
+                } else if (userRole === "CAJERO") {
+                    window.location.href = "cajero.html";
                 } else {
                     console.warn("Rol desconocido:", userRole);
                 }
