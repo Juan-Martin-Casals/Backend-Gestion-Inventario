@@ -30,4 +30,11 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     List<Object[]> obtenerTotalPorMetodoPagoEntreFechas(
             @Param("inicio") LocalDateTime inicio,
             @Param("fin") LocalDateTime fin);
+
+    // Total por método de pago por sesión específica (Arqueo Cajero)
+    @Query("SELECT p.metodoPago.nombre, SUM(p.importe), COUNT(p) " +
+            "FROM Pago p " +
+            "WHERE p.sesionCaja.idSesion = :idSesion " +
+            "GROUP BY p.metodoPago.nombre")
+    List<Object[]> obtenerTotalPorMetodoPagoPorSesion(@Param("idSesion") Long idSesion);
 }

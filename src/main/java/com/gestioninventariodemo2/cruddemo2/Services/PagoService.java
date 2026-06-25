@@ -10,8 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.gestioninventariodemo2.cruddemo2.Model.Compra;
 import com.gestioninventariodemo2.cruddemo2.Model.MetodoPago;
 import com.gestioninventariodemo2.cruddemo2.Model.Pago;
+import com.gestioninventariodemo2.cruddemo2.Model.SesionCaja;
 import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
 import com.gestioninventariodemo2.cruddemo2.Repository.PagoRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.SesionCajaRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -20,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 public class PagoService {
 
     private final PagoRepository pagoRepository;
+    private final SesionCajaRepository sesionCajaRepository;
 
     /**
      * Registrar un nuevo pago de compra
@@ -40,6 +43,11 @@ public class PagoService {
         pago.setFechaVencimiento(fechaVencimiento);
         pago.setUsuario(usuario);
 
+        if (usuario != null) {
+            sesionCajaRepository.findByUsuarioIdUsuarioAndEstado(usuario.getIdUsuario(), "ABIERTA")
+                    .ifPresent(pago::setSesionCaja);
+        }
+
         return pagoRepository.save(pago);
     }
 
@@ -54,6 +62,12 @@ public class PagoService {
         pago.setEstado(estado != null ? estado : "PAGADO");
         pago.setFechaVencimiento(null);
         pago.setUsuario(usuario);
+        
+        if (usuario != null) {
+            sesionCajaRepository.findByUsuarioIdUsuarioAndEstado(usuario.getIdUsuario(), "ABIERTA")
+                    .ifPresent(pago::setSesionCaja);
+        }
+
         return pagoRepository.save(pago);
     }
 

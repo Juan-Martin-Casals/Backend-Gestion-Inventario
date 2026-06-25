@@ -152,7 +152,7 @@ public class CajaService {
             totalCompras = 0.0;
 
         // Desglose por Método de Pago (Cobros -> Ingresos por Ventas)
-        List<Object[]> resultadosCobros = cobroRepository.obtenerTotalPorMetodoPagoEntreFechas(inicio, fin);
+        List<Object[]> resultadosCobros = cobroRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());
         List<DesgloseCobroDTO> desglose = new ArrayList<>();
 
         Double calcEfectivo = 0.0;
@@ -188,7 +188,7 @@ public class CajaService {
         }
 
         // Obtener Total por tipo de Pago de Compras
-        List<Object[]> resultadosPagos = pagoRepository.obtenerTotalPorMetodoPagoEntreFechas(inicio, fin);
+        List<Object[]> resultadosPagos = pagoRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());
         Double calcEfectivoCajaPagos = 0.0;
         for (Object[] row : resultadosPagos) {
             String metodo = (String) row[0];
@@ -224,6 +224,97 @@ public class CajaService {
                 .totalTarjeta(calcTarjeta)
                 .totalTransferencia(calcTransferencia)
                 .desgloseCobros(desglose)
+                .build();
+    }
+
+    public CajaDetalleDTO obtenerResumenGlobalActivo() {
+        List<SesionCaja> sesionesAbiertas = sesionCajaRepository.findAllByEstado("ABIERTA");
+
+        Double totalVentasGlobal = 0.0;
+        Long cantidadVentasGlobal = 0L;
+        Double totalComprasGlobal = 0.0;
+        Double calcEfectivoGlobal = 0.0;
+        Double calcTarjetaGlobal = 0.0;
+        Double calcTransferenciaGlobal = 0.0;
+        Double calcEfectivoCajaPagosGlobal = 0.0;
+        
+        Map<String, DesgloseCobroDTO> desgloseGlobalMap = new LinkedHashMap<>();
+
+        for (SesionCaja sesion : sesionesAbiertas) {
+            LocalDateTime inicio = sesion.getFechaApertura();
+            LocalDateTime fin = LocalDateTime.now();
+
+            Double totalVentas = ventaRepository.sumTotalVentasEnRango(inicio, fin);
+            if (totalVentas != null) totalVentasGlobal += totalVentas;
+
+            Long cantidadVentas = ventaRepository.countVentasEnRango(inicio, fin);
+            if (cantidadVentas != null) cantidadVentasGlobal += cantidadVentas;
+
+            Double totalCompras = compraRepository.sumTotalComprasEnRango(inicio, fin);
+            if (totalCompras != null) totalComprasGlobal += totalCompras;
+
+            List<Object[]> resultadosCobros = cobroRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());
+            for (Object[] row : resultadosCobros) {
+                String metodo = (String) row[0];
+                Double sumImporte = 0.0;
+                if (row[1] instanceof BigDecimal) {
+                    sumImporte = ((BigDecimal) row[1]).doubleValue();
+                } else if (row[1] instanceof Double) {
+                    sumImporte = (Double) row[1];
+                }
+                Long countOp = ((Number) row[2]).longValue();
+
+                DesgloseCobroDTO existente = desgloseGlobalMap.getOrDefault(metodo, 
+                    DesgloseCobroDTO.builder().metodoPago(metodo).cantidadOperaciones(0L).totalIngresado(0.0).build());
+                
+                existente.setCantidadOperaciones(existente.getCantidadOperaciones() + countOp);
+                existente.setTotalIngresado(existente.getTotalIngresado() + sumImporte);
+                desgloseGlobalMap.put(metodo, existente);
+
+                if (metodo != null) {
+                    String m = metodo.toLowerCase();
+                    if (m.contains("efectivo") && !m.contains("aporte externo")) {
+                        calcEfectivoGlobal += sumImporte;
+                    } else if (m.contains("tarjeta")) {
+                        calcTarjetaGlobal += sumImporte;
+                    } else if (m.contains("transferencia") || m.contains("mp") || m.contains("mercado")) {
+                        calcTransferenciaGlobal += sumImporte;
+                    }
+                }
+            }
+
+            List<Object[]> resultadosPagos = pagoRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());
+            for (Object[] row : resultadosPagos) {
+                String metodo = (String) row[0];
+                Double sumImporte = 0.0;
+                if (row[1] instanceof BigDecimal) {
+                    sumImporte = ((BigDecimal) row[1]).doubleValue();
+                } else if (row[1] instanceof Double) {
+                    sumImporte = (Double) row[1];
+                }
+
+                if (metodo != null) {
+                    String m = metodo.toLowerCase();
+                    if (m.contains("efectivo") && !m.contains("aporte externo")) {
+                        calcEfectivoCajaPagosGlobal += sumImporte;
+                    }
+                }
+            }
+        }
+
+        return CajaDetalleDTO.builder()
+                .idSesion(null)
+                .montoInicial(0.0) // Not applicable globally
+                .totalVentas(totalVentasGlobal)
+                .totalCompras(totalComprasGlobal)
+                .totalComprasEfectivo(calcEfectivoCajaPagosGlobal)
+                .saldoEsperado(0.0) // Not applicable globally
+                .fechaApertura(null)
+                .cantidadVentas(cantidadVentasGlobal)
+                .totalEfectivo(calcEfectivoGlobal)
+                .totalTarjeta(calcTarjetaGlobal)
+                .totalTransferencia(calcTransferenciaGlobal)
+                .desgloseCobros(new ArrayList<>(desgloseGlobalMap.values()))
                 .build();
     }
 

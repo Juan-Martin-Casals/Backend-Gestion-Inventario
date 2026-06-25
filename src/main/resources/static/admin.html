@@ -121,8 +121,10 @@
                             class="fas fa-chevron-down arrow-icon"></i>
                     </a>
                     <ul class="submenu">
+                        <li><a href="#" data-section="caja" data-subsection="caja-dashboard"><span
+                                    class="text">Dashboard General</span></a></li>
                         <li><a href="#" data-section="caja" data-subsection="caja-operaciones"><span
-                                    class="text">Operaciones</span></a></li>
+                                    class="text">Operaciones / Mi Caja</span></a></li>
                         <li><a href="#" data-section="caja" data-subsection="caja-historial"><span
                                     class="text">Historial de Sesiones</span></a></li>
                     </ul>
@@ -3092,8 +3094,8 @@
                                                     style="font-size: 0.85rem; margin-bottom: 4px;">Descuento <span
                                                         style="color:#999; font-weight:normal;">(opcional)</span></label>
                                                 <div style="display: flex; gap: 8px;">
-                                                    <input type="text" inputmode="numeric" id="descuento-venta" class="form-control"
-                                                        placeholder="0" maxlength="9"
+                                                    <input type="text" inputmode="numeric" id="descuento-venta"
+                                                        class="form-control" placeholder="0" maxlength="9"
                                                         style="flex: 2; padding: 8px 12px; font-size: 0.9rem;">
                                                     <select id="tipo-descuento-venta" class="form-control"
                                                         style="flex: 1; padding: 8px 12px; font-size: 0.9rem;">
@@ -3806,8 +3808,91 @@
 
             <section id="caja-section" class="spa-section" style="display:none; padding: 40px;">
 
-                <!-- Contenedor Operaciones (subsección por defecto) -->
-                <div id="caja-operaciones-container">
+                <!-- TAB 1: DASHBOARD GLOBAL -->
+                <div id="caja-global-container" class="caja-tab-content"
+                    style="display: block; width: 100%; max-width: 1600px; margin: 0 auto;">
+                    <!-- STATS ROW: 5 mini cards -->
+                    <div class="caja-stats-row">
+                        <div class="caja-stat-mini">
+                            <div class="stat-mini-icon green"><i class="fas fa-dollar-sign"></i></div>
+                            <span class="stat-mini-value" id="caja-global-total-ventas">$0,00</span>
+                            <span class="stat-mini-label">Facturación Total</span>
+                        </div>
+                        <div class="caja-stat-mini">
+                            <div class="stat-mini-icon blue"><i class="fas fa-shopping-cart"></i></div>
+                            <span class="stat-mini-value" id="caja-global-cantidad-ventas">0</span>
+                            <span class="stat-mini-label">Ventas Totales</span>
+                        </div>
+                        <div class="caja-stat-mini">
+                            <div class="stat-mini-icon green"><i class="fas fa-money-bill-wave"></i></div>
+                            <span class="stat-mini-value" id="caja-global-efectivo">$0,00</span>
+                            <span class="stat-mini-label">Efectivo Total</span>
+                        </div>
+                        <div class="caja-stat-mini">
+                            <div class="stat-mini-icon purple"><i class="fas fa-credit-card"></i></div>
+                            <span class="stat-mini-value" id="caja-global-tarjeta">$0,00</span>
+                            <span class="stat-mini-label">Tarjeta Total</span>
+                        </div>
+                        <div class="caja-stat-mini">
+                            <div class="stat-mini-icon amber"><i class="fas fa-exchange-alt"></i></div>
+                            <span class="stat-mini-value" id="caja-global-transferencia">$0,00</span>
+                            <span class="stat-mini-label">Transferencia Total</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; flex-direction: column; gap: 24px; margin-top: 24px; width: 100%;">
+                        <!-- DESGLOSE TABLE GLOBAL -->
+                        <div class="caja-card" style="flex: 1; margin: 0;">
+                            <div class="caja-card-header">
+                                <h4><i class="fas fa-list"></i> Desglose por Método de Pago (Global)</h4>
+                            </div>
+                            <div class="table-container">
+                                <table class="data-table" style="margin: 0; width: 100%;">
+                                    <thead>
+                                        <tr>
+                                            <th>Método de Pago</th>
+                                            <th style="text-align: center;">Operaciones</th>
+                                            <th style="text-align: right;">Total</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="caja-global-tabla-desglose"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- INGRESOS GLOBAL -->
+                        <div class="caja-card" style="flex: 1; margin: 0;">
+                            <div class="caja-card-header" style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 15px;">
+                                <h4 style="margin: 0;"><i class="fas fa-receipt" style="margin-right: 8px;"></i> Ingresos de las Sesiones (Global)</h4>
+                                <div style="display: flex; gap: 10px; align-items: center;">
+                                    <div style="position: relative;">
+                                        <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
+                                        <input type="text" id="caja-global-buscar-ingresos" placeholder="Buscar por producto, monto o método..." style="padding: 8px 12px 8px 30px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; color: #475569; outline: none; width: 280px;">
+                                    </div>
+                                    <select id="caja-global-filtro-ingresos" style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; color: #475569; outline: none;">
+                                        <option value="Todos">Todos los métodos</option>
+                                        <option value="Efectivo">Efectivo</option>
+                                        <option value="Débito">Débito</option>
+                                        <option value="Crédito">Crédito</option>
+                                        <option value="Transferencia">Transferencia</option>
+                                    </select>
+                                    <button type="button" id="caja-global-limpiar-ingresos" class="btn-outline" style="padding: 8px 12px; font-size: 13px; border-radius: 8px; display: flex; align-items: center; gap: 6px;">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
+                                </div>
+                            </div>
+                            <div id="caja-global-lista-ingresos"
+                                style="padding: 16px; background: #f8fafc; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; max-height: 300px; overflow-y: auto; overflow-x: hidden;">
+                                <div style="text-align: center; padding: 25px; color: #94a3b8; font-size: 13px;">
+                                    No hay ingresos recientes globales.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: MI CAJA -->
+                <div id="caja-operaciones-container" class="caja-tab-content" style="display: none;">
 
                     <!-- Tarjeta Principal Hero -->
                     <div id="caja-panel-apertura"
@@ -3899,7 +3984,8 @@
                                     <div style="position: relative; width: 100%; max-width: 400px;">
                                         <i class="fas fa-dollar-sign"
                                             style="position: absolute; left: 20px; top: 50%; transform: translateY(-50%); font-size: 24px; color: #94a3b8; font-weight: 600;"></i>
-                                        <input type="text" id="caja-monto-inicial" autocomplete="off" required maxlength="13"
+                                        <input type="text" id="caja-monto-inicial" autocomplete="off" required
+                                            maxlength="13"
                                             style="width: 100%; padding: 20px 20px 20px 56px; font-size: 24px; font-weight: 800; color: #0f172a; background: #f8fafc; border: 2px solid #cbd5e1; border-radius: 12px; outline: none; transition: all 0.2s; letter-spacing: -0.5px;"
                                             onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 4px rgba(30, 58, 95, 0.1)';"
                                             onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
@@ -3929,7 +4015,8 @@
                                             style="width: 100%; padding: 16px 16px 16px 44px; border: 1px solid #cbd5e1; border-radius: 12px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none; resize: none; color: #334155; font-family: inherit;"
                                             onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                             onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';"></textarea>
-                                        <div style="text-align: right; font-size: 12px; color: #64748b; margin-top: 4px;">
+                                        <div
+                                            style="text-align: right; font-size: 12px; color: #64748b; margin-top: 4px;">
                                             <span id="char-count-obs-apertura">0</span>/255
                                         </div>
                                     </div>
@@ -3963,13 +4050,12 @@
                     </div>
 
                     <div id="caja-panel-cierre" style="display: none; width: 100%;">
-
-                        <!-- HERO KPI: Efectivo Esperado en Caja (Consolidated) -->
+                        <!-- HERO KPI: Estado de Caja Admin -->
                         <div class="caja-kpi-hero">
                             <div class="caja-kpi-hero-main">
                                 <span class="kpi-label">
                                     <i class="fas fa-cash-register" style="margin-right: 8px;"></i>
-                                    Efectivo Esperado en Caja
+                                    Efectivo Disponible en Caja
                                 </span>
                                 <span class="kpi-value" id="caja-sidebar-efectivo-esperado">$ 0,00</span>
                             </div>
@@ -3992,174 +4078,129 @@
                             </div>
                         </div>
 
-                        <!-- STATS ROW: 5 mini cards -->
-                        <div class="caja-stats-row">
-                            <div class="caja-stat-mini">
-                                <div class="stat-mini-icon green">
-                                    <i class="fas fa-dollar-sign"></i>
-                                </div>
-                                <span class="stat-mini-value" id="caja-card-total-ventas">$0,00</span>
-                                <span class="stat-mini-label">Facturación</span>
-                            </div>
-                            <div class="caja-stat-mini">
-                                <div class="stat-mini-icon blue">
-                                    <i class="fas fa-shopping-cart"></i>
-                                </div>
-                                <span class="stat-mini-value" id="caja-card-cantidad-ventas">0</span>
-                                <span class="stat-mini-label">Ventas</span>
-                            </div>
-                            <div class="caja-stat-mini">
-                                <div class="stat-mini-icon green">
-                                    <i class="fas fa-money-bill-wave"></i>
-                                </div>
-                                <span class="stat-mini-value" id="caja-card-efectivo">$0,00</span>
-                                <span class="stat-mini-label">Efectivo</span>
-                            </div>
-                            <div class="caja-stat-mini">
-                                <div class="stat-mini-icon purple">
-                                    <i class="fas fa-credit-card"></i>
-                                </div>
-                                <span class="stat-mini-value" id="caja-card-tarjeta">$0,00</span>
-                                <span class="stat-mini-label">Tarjeta</span>
-                            </div>
-                            <div class="caja-stat-mini">
-                                <div class="stat-mini-icon amber">
-                                    <i class="fas fa-exchange-alt"></i>
-                                </div>
-                                <span class="stat-mini-value" id="caja-card-transferencia">$0,00</span>
-                                <span class="stat-mini-label">Transferencia</span>
-                            </div>
-                        </div>
+                        <!-- Formulario de Cierre Seguro Expandido -->
+                        <div class="caja-card" style="max-width: 1100px; margin: 20px auto; padding: 40px 50px;">
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center;">
 
-                        <!-- DESGLOSE TABLE -->
-                        <div class="caja-card">
-                            <div class="caja-card-header">
-                                <h4><i class="fas fa-list"></i> Desglose por Método de Pago</h4>
-                            </div>
-                            <div class="table-container">
-                                <table class="data-table" style="margin: 0; width: 100%;">
-                                    <thead>
-                                        <tr>
-                                            <th>Método de Pago</th>
-                                            <th style="text-align: center;">Operaciones</th>
-                                            <th style="text-align: right;">Total</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="caja-tabla-desglose"></tbody>
-                                </table>
-                            </div>
-                        </div>
-
-                        <!-- INGRESOS COLLAPSIBLE -->
-                        <div class="caja-ingresos-toggle" id="caja-ingresos-toggle-btn">
-                            <div class="toggle-left">
-                                <i class="fas fa-receipt icon"></i>
-                                <span>Ingresos de la Sesión</span>
-                            </div>
-                            <i class="fas fa-chevron-down toggle-chevron"></i>
-                        </div>
-                        <div class="caja-ingresos-body" id="caja-ingresos-body">
-                            <div class="caja-ingresos-body-inner">
-                                <div class="caja-ingresos-filters">
-                                    <div class="search-wrap">
-                                        <i class="fas fa-search"></i>
-                                        <input type="text" id="caja-buscar-ingresos"
-                                            placeholder="Buscar por producto, monto o método...">
+                                <!-- Columna de Instrucciones -->
+                                <div>
+                                    <div
+                                        style="width: 64px; height: 64px; background: #e0e7ff; border-radius: 16px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;">
+                                        <i class="fas fa-shield-alt" style="font-size: 28px; color: #6366f1;"></i>
                                     </div>
-                                    <select id="caja-filtro-ingresos">
-                                        <option value="Todos">Todos</option>
-                                        <option value="Efectivo">Efectivo</option>
-                                        <option value="Tarjeta">Tarjeta</option>
-                                        <option value="Transferencia">Transferencia</option>
-                                    </select>
-                                    <button id="caja-limpiar-filtros" type="button" class="btn-filter-clear">
-                                        <i class="fas fa-eraser"></i> Limpiar
-                                    </button>
-                                </div>
-                                <div id="caja-lista-ingresos">
-                                    <div style="text-align: center; padding: 25px; color: #94a3b8; font-size: 13px;">
-                                        No hay ingresos recientes en esta sesión.
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ACTION BAR -->
-                        <div class="caja-action-bar">
-                            <button type="button" id="btn-abrir-drawer-cierre" class="btn-cerrar-turno">
-                                <i class="fas fa-lock"></i> Cerrar Turno
-                            </button>
-                        </div>
-
-                    </div>
-
-                    <!-- DRAWER: Cierre de Caja (Slide-in Panel) -->
-                    <div class="caja-drawer-overlay" id="caja-drawer-overlay"></div>
-                    <div class="caja-drawer" id="caja-drawer-cierre">
-                        <div class="caja-drawer-header">
-                            <h3><i class="fas fa-lock"></i> Cerrar Caja</h3>
-                            <button type="button" class="drawer-close" id="btn-cerrar-drawer">
-                                <i class="fas fa-times"></i>
-                            </button>
-                        </div>
-                        <div class="caja-drawer-body">
-                            <!-- Efectivo Esperado -->
-                            <div class="drawer-esperado-box">
-                                <p class="esperado-label">Efectivo Esperado</p>
-                                <p class="esperado-value" id="drawer-efectivo-esperado">$0,00</p>
-                                <p class="esperado-hint">(Fondo Inicial + Ventas Efectivo)</p>
-                            </div>
-
-                            <form id="form-cierre-caja">
-                                <div class="drawer-form-group">
-                                    <label for="caja-monto-final">Efectivo Real (Físico)</label>
-                                    <div class="input-wrap">
-                                        <span class="prefix">$</span>
-                                        <input type="text" id="caja-monto-final" class="has-prefix" required
-                                            placeholder="Ingrese el efectivo contado" maxlength="13">
-                                    </div>
-                                    <div id="caja-monto-final-warning" class="input-warning">
-                                        <i class="fas fa-exclamation-triangle"></i> El monto difiere del esperado. Se
-                                        registrará una diferencia.
-                                    </div>
+                                    <h3
+                                        style="margin: 0 0 16px 0; font-size: 28px; color: #0f172a; font-weight: 800; letter-spacing: -0.5px;">
+                                        Cierre de Turno Seguro
+                                    </h3>
+                                    <p style="font-size: 15px; color: #64748b; line-height: 1.7; margin: 0 0 24px 0;">
+                                        Para finalizar el turno, cuenta cuidadosamente todo el dinero físico disponible
+                                        en la caja registradora e ingresa el monto total. Indica también el fondo fijo
+                                        que dejarás para mañana.
+                                    </p>
+                                    <ul
+                                        style="list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px;">
+                                        <li
+                                            style="display: flex; align-items: center; gap: 12px; font-size: 15px; color: #475569; font-weight: 500;">
+                                            <i class="fas fa-check-circle" style="color: #10b981; font-size: 18px;"></i>
+                                            Incluye todos los billetes
+                                        </li>
+                                        <li
+                                            style="display: flex; align-items: center; gap: 12px; font-size: 15px; color: #475569; font-weight: 500;">
+                                            <i class="fas fa-check-circle" style="color: #10b981; font-size: 18px;"></i>
+                                            El sistema validará el arqueo automáticamente
+                                        </li>
+                                        <li
+                                            style="display: flex; align-items: center; gap: 12px; font-size: 15px; color: #475569; font-weight: 500;">
+                                            <i class="fas fa-check-circle" style="color: #10b981; font-size: 18px;"></i>
+                                            Reporta cualquier anomalía en observaciones
+                                        </li>
+                                    </ul>
                                 </div>
 
-                                <div class="drawer-form-group">
-                                    <label for="caja-fondo-fijo">Fondo Fijo para Mañana</label>
-                                    <div class="input-wrap">
-                                        <span class="prefix">$</span>
-                                        <input type="text" id="caja-fondo-fijo" class="has-prefix" required
-                                            placeholder="50.000" maxlength="13">
-                                    </div>
-                                </div>
+                                <!-- Columna del Formulario -->
+                                <div
+                                    style="background: #f8fafc; padding: 36px; border-radius: 20px; border: 1px solid #f1f5f9;">
+                                    <form id="form-cierre-caja">
+                                        <div class="form-group" style="margin-bottom: 24px;">
+                                            <label for="caja-monto-final"
+                                                style="font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 12px; display:block;">
+                                                Efectivo Físico Total en Caja
+                                            </label>
+                                            <div style="position: relative;">
+                                                <span
+                                                    style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-size: 18px; color: #64748b; font-weight: bold;">$</span>
+                                                <input type="text" id="caja-monto-final" required placeholder="0"
+                                                    maxlength="13"
+                                                    style="padding-left: 45px; font-size: 22px; height: 60px; font-weight: 800; background: white; border-color: #cbd5e1; border-radius: 14px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); width: 100%;">
+                                            </div>
+                                            <div id="caja-monto-final-error"
+                                                style="display: none; color: #ef4444; font-size: 13px; margin-top: 8px; font-weight: 600;">
+                                                <i class="fas fa-exclamation-circle"></i> Por favor ingresa el "Efectivo
+                                                Real (Físico)".
+                                            </div>
+                                            <div id="caja-monto-final-warning"
+                                                style="display: none; color: #c2410c; margin-top: 8px; font-size: 13px;">
+                                                <i class="fas fa-exclamation-triangle"></i> El monto difiere del
+                                                esperado.
+                                            </div>
+                                        </div>
 
-                                <div class="drawer-form-group">
-                                    <label for="caja-observaciones-cierre">Observaciones</label>
-                                    <textarea id="caja-observaciones-cierre" rows="3" maxlength="255"
-                                        placeholder="Escriba cualquier discrepancia o nota relevante aquí... (Máx 255 caracteres)"></textarea>
-                                    <div style="text-align: right; font-size: 11px; color: #94a3b8; margin-top: 4px;">
-                                        <span id="char-count-observaciones">0</span>/255
-                                    </div>
+                                        <div class="form-group" style="margin-bottom: 24px;">
+                                            <label for="caja-fondo-fijo"
+                                                style="font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 12px; display:block;">
+                                                Fondo Fijo para Mañana
+                                            </label>
+                                            <div style="position: relative;">
+                                                <span
+                                                    style="position: absolute; left: 18px; top: 50%; transform: translateY(-50%); font-size: 18px; color: #64748b; font-weight: bold;">$</span>
+                                                <input type="text" id="caja-fondo-fijo" required placeholder="0"
+                                                    maxlength="13"
+                                                    style="padding-left: 45px; font-size: 18px; height: 50px; font-weight: 700; background: white; border-color: #cbd5e1; border-radius: 14px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); width: 100%;">
+                                            </div>
+                                            <div id="caja-fondo-fijo-error"
+                                                style="display: none; color: #ef4444; font-size: 13px; margin-top: 8px; font-weight: 600;">
+                                                <i class="fas fa-exclamation-circle"></i> Por favor ingresa un fondo
+                                                fijo válido.
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group" style="margin-bottom: 32px;">
+                                            <label for="caja-observaciones-cierre"
+                                                style="font-size: 14px; font-weight: 700; color: #334155; margin-bottom: 12px; display:block;">Observaciones
+                                                (Opcional)</label>
+                                            <textarea id="caja-observaciones-cierre" rows="3" maxlength="255"
+                                                placeholder="Escriba cualquier discrepancia o nota relevante aquí..."
+                                                style="font-size: 14px; background: white; border-radius: 14px; padding: 16px; border-color: #cbd5e1; width: 100%; font-family: inherit; resize: none;"></textarea>
+                                            <div
+                                                style="text-align: right; font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                                                <span id="char-count-observaciones">0</span>/255
+                                            </div>
+                                        </div>
+
+                                        <div id="caja-error-cierre" class="error-message"
+                                            style="display: none; text-align: center; margin-bottom: 15px; font-size: 14px; color: #ef4444; font-weight: 600;">
+                                        </div>
+
+                                        <div style="display: flex; gap: 10px;">
+                                            <button type="button" id="btn-cerrar-caja" class="btn-cerrar-turno"
+                                                style="flex: 2; height: 56px; font-size: 16px; justify-content: center;">
+                                                <i class="fas fa-lock"></i> Cerrar Turno
+                                            </button>
+                                            <button type="button" id="btn-limpiar-cierre" class="btn-outline"
+                                                style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 14px; height: 56px;">
+                                                <i class="fas fa-eraser"></i>
+                                            </button>
+                                        </div>
+                                    </form>
                                 </div>
-                            </form>
-                        </div>
-                        <div class="caja-drawer-footer" style="display: flex; flex-direction: column; gap: 10px;">
-                            <div id="caja-error-cierre" class="drawer-error"></div>
-                            <div style="display: flex; gap: 10px;">
-                                <button type="button" id="btn-cerrar-caja" class="caja-btn-cerrar" style="flex: 2;">
-                                    <i class="fas fa-lock"></i> Cerrar Caja
-                                </button>
-                                <button type="button" id="btn-limpiar-cierre" class="btn-outline" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px; border-radius: 8px;">
-                                    <i class="fas fa-eraser"></i> Limpiar
-                                </button>
                             </div>
                         </div>
                     </div>
 
-                </div> <!-- fin caja-operaciones-container -->
+                </div> <!-- fin caja-operaciones-container (Tab Mi Caja) -->
 
-                <!-- Contenedor Historial de Sesiones (oculto por defecto) -->
-                <div id="caja-historial-container" style="display: none;">
+                <!-- TAB 3: HISTORIAL -->
+                <div id="caja-historial-container" class="caja-tab-content" style="display: none;">
                     <div
                         style="width: 100%; background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.04);">
                         <div
@@ -4773,107 +4814,110 @@
                     <div id="pdm-tab-info" class="pdm-tab-content">
                         <!-- INFO CARDS -->
                         <div class="pdm-info-grid" id="pdm-info-grid">
-                        <div class="pdm-info-card">
-                            <div class="pdm-info-card-icon"><i class="fas fa-calendar-day"></i></div>
-                            <div class="pdm-info-card-content">
-                                <span class="pdm-info-label">Fecha de Compra</span>
-                                <span id="modal-compra-fecha" class="pdm-info-value"></span>
+                            <div class="pdm-info-card">
+                                <div class="pdm-info-card-icon"><i class="fas fa-calendar-day"></i></div>
+                                <div class="pdm-info-card-content">
+                                    <span class="pdm-info-label">Fecha de Compra</span>
+                                    <span id="modal-compra-fecha" class="pdm-info-value"></span>
+                                </div>
+                            </div>
+                            <div class="pdm-info-card">
+                                <div class="pdm-info-card-icon pdm-icon-proveedor"><i class="fas fa-building"></i></div>
+                                <div class="pdm-info-card-content">
+                                    <span class="pdm-info-label">Proveedor</span>
+                                    <span id="modal-compra-proveedor" class="pdm-info-value"></span>
+                                </div>
+                            </div>
+                            <div class="pdm-info-card" id="modal-compra-vencimiento-container" style="display: none;">
+                                <div class="pdm-info-card-icon pdm-icon-vencimiento"><i class="fas fa-clock"></i></div>
+                                <div class="pdm-info-card-content">
+                                    <span class="pdm-info-label">Vencimiento</span>
+                                    <span id="modal-compra-vencimiento" class="pdm-info-value"></span>
+                                </div>
                             </div>
                         </div>
-                        <div class="pdm-info-card">
-                            <div class="pdm-info-card-icon pdm-icon-proveedor"><i class="fas fa-building"></i></div>
-                            <div class="pdm-info-card-content">
-                                <span class="pdm-info-label">Proveedor</span>
-                                <span id="modal-compra-proveedor" class="pdm-info-value"></span>
-                            </div>
-                        </div>
-                        <div class="pdm-info-card" id="modal-compra-vencimiento-container" style="display: none;">
-                            <div class="pdm-info-card-icon pdm-icon-vencimiento"><i class="fas fa-clock"></i></div>
-                            <div class="pdm-info-card-content">
-                                <span class="pdm-info-label">Vencimiento</span>
-                                <span id="modal-compra-vencimiento" class="pdm-info-value"></span>
-                            </div>
-                        </div>
-                    </div>
 
-                    <!-- RESUMEN DE PAGO -->
-                    <div id="modal-compra-resumen-pago" class="pdm-pago-section">
-                        <h4 class="pdm-section-title"><i class="fas fa-coins"></i> Resumen de Pago</h4>
-                        <div class="pdm-pago-cards">
-                            <div class="pdm-pago-card">
-                                <span class="pdm-pago-label">Monto Total</span>
-                                <span id="modal-compra-monto-pagar" class="pdm-pago-valor">$0</span>
-                            </div>
-                            <div class="pdm-pago-card" id="modal-compra-card-pendiente">
-                                <span class="pdm-pago-label">Monto Pendiente</span>
-                                <span id="modal-compra-monto-pendiente"
-                                    class="pdm-pago-valor pdm-pendiente-valor">$0</span>
-                                <div id="modal-compra-vence-el" class="pdm-vence-info" style="display: none;"></div>
+                        <!-- RESUMEN DE PAGO -->
+                        <div id="modal-compra-resumen-pago" class="pdm-pago-section">
+                            <h4 class="pdm-section-title"><i class="fas fa-coins"></i> Resumen de Pago</h4>
+                            <div class="pdm-pago-cards">
+                                <div class="pdm-pago-card">
+                                    <span class="pdm-pago-label">Monto Total</span>
+                                    <span id="modal-compra-monto-pagar" class="pdm-pago-valor">$0</span>
+                                </div>
+                                <div class="pdm-pago-card" id="modal-compra-card-pendiente">
+                                    <span class="pdm-pago-label">Monto Pendiente</span>
+                                    <span id="modal-compra-monto-pendiente"
+                                        class="pdm-pago-valor pdm-pendiente-valor">$0</span>
+                                    <div id="modal-compra-vence-el" class="pdm-vence-info" style="display: none;"></div>
+                                </div>
                             </div>
                         </div>
-                    </div>
                     </div>
 
                     <!-- TAB 2: PRODUCTOS COMPRADOS -->
                     <div id="pdm-tab-productos" class="pdm-tab-content" style="display: none;">
                         <div class="pdm-productos-section" style="margin-bottom: 24px;">
                             <div class="pdm-productos-header"
-                            style="flex-direction: column; align-items: stretch; gap: 16px;">
-                            <h4 class="pdm-section-title" style="margin-bottom: 0;"><i class="fas fa-boxes"></i>
-                                Productos Comprados</h4>
-                            <div class="pdm-productos-actions-bar"
-                                style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                <!-- Búsqueda -->
-                                <div class="pdm-search-box" style="flex: 2; min-width: 200px;">
-                                    <i class="fas fa-search pdm-search-icon"></i>
-                                    <input type="text" id="modal-compra-productos-search"
-                                        placeholder="Buscar producto..." class="pdm-search-input" style="width: 100%;">
+                                style="flex-direction: column; align-items: stretch; gap: 16px;">
+                                <h4 class="pdm-section-title" style="margin-bottom: 0;"><i class="fas fa-boxes"></i>
+                                    Productos Comprados</h4>
+                                <div class="pdm-productos-actions-bar"
+                                    style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <!-- Búsqueda -->
+                                    <div class="pdm-search-box" style="flex: 2; min-width: 200px;">
+                                        <i class="fas fa-search pdm-search-icon"></i>
+                                        <input type="text" id="modal-compra-productos-search"
+                                            placeholder="Buscar producto..." class="pdm-search-input"
+                                            style="width: 100%;">
+                                    </div>
+
+                                    <!-- Separador visual -->
+                                    <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                    <!-- Ordenamiento -->
+                                    <button type="button" id="modal-compra-sort-cantidad" data-sort-field="cantidad"
+                                        class="pdm-filter-btn">
+                                        Cantidad <i class="fas fa-sort sort-arrow"></i>
+                                    </button>
+                                    <button type="button" id="modal-compra-sort-subtotal" data-sort-field="subtotal"
+                                        class="pdm-filter-btn">
+                                        Subtotal <i class="fas fa-sort sort-arrow"></i>
+                                    </button>
+
+                                    <!-- Separador visual -->
+                                    <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
+                                    <!-- Limpiar -->
+                                    <button type="button" id="modal-compra-clean-filters" class="pdm-filter-btn"
+                                        title="Limpiar Filtros y Ordenamiento">
+                                        <i class="fas fa-eraser"></i> Limpiar
+                                    </button>
                                 </div>
-
-                                <!-- Separador visual -->
-                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
-
-                                <!-- Ordenamiento -->
-                                <button type="button" id="modal-compra-sort-cantidad" data-sort-field="cantidad"
-                                    class="pdm-filter-btn">
-                                    Cantidad <i class="fas fa-sort sort-arrow"></i>
-                                </button>
-                                <button type="button" id="modal-compra-sort-subtotal" data-sort-field="subtotal"
-                                    class="pdm-filter-btn">
-                                    Subtotal <i class="fas fa-sort sort-arrow"></i>
-                                </button>
-
-                                <!-- Separador visual -->
-                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
-
-                                <!-- Limpiar -->
-                                <button type="button" id="modal-compra-clean-filters" class="pdm-filter-btn"
-                                    title="Limpiar Filtros y Ordenamiento">
-                                    <i class="fas fa-eraser"></i> Limpiar
-                                </button>
+                            </div>
+                            <div class="compra-productos-wrapper">
+                                <table class="data-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Producto</th>
+                                            <th>Cantidad</th>
+                                            <th style="text-align: right;">Costo Unitario</th>
+                                            <th style="text-align: right;">Subtotal</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="modal-compra-productos"></tbody>
+                                </table>
                             </div>
                         </div>
-                        <div class="compra-productos-wrapper">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Producto</th>
-                                        <th>Cantidad</th>
-                                        <th style="text-align: right;">Costo Unitario</th>
-                                        <th style="text-align: right;">Subtotal</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="modal-compra-productos"></tbody>
-                            </table>
-                        </div>
-                    </div>
                     </div>
 
                     <!-- TAB 3: HISTORIAL DE PAGOS -->
                     <div id="pdm-tab-pagos" class="pdm-tab-content" style="display: none;">
                         <div class="pdm-productos-section" style="margin-bottom: 24px;">
-                            <div class="pdm-productos-header" style="flex-direction: column; align-items: stretch; gap: 16px;">
-                                <h4 class="pdm-section-title" style="margin-bottom: 0;"><i class="fas fa-history"></i> Pagos Realizados</h4>
+                            <div class="pdm-productos-header"
+                                style="flex-direction: column; align-items: stretch; gap: 16px;">
+                                <h4 class="pdm-section-title" style="margin-bottom: 0;"><i class="fas fa-history"></i>
+                                    Pagos Realizados</h4>
                             </div>
                             <div class="compra-productos-wrapper" style="margin-top: 16px;">
                                 <div id="modal-compra-pagos-list"></div>

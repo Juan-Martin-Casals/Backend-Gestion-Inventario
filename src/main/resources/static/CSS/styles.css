@@ -1180,7 +1180,7 @@ body {
     top: 20px;
     left: 50%;
     transform: translateX(-50%);
-
+    background-color: #10b981;
     color: white;
     padding: 20px 40px;
     border-radius: 12px;

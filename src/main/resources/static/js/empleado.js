@@ -156,23 +156,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         confirmLogoutBtn.addEventListener('click', () => {
-            // Verificar si la caja está abierta antes de salir
-            if (typeof window.isCajaAbierta === 'function' && window.isCajaAbierta()) {
-                logoutModal.style.display = 'none';
-                
-                // Redirigir a la sección Caja
-                const cajaLink = document.querySelector('.sidebar-menu a[data-subsection="caja-operaciones"]') || 
-                                 document.querySelector('.sidebar-menu a[data-section="caja"]');
-                if (cajaLink) {
-                    cajaLink.click();
-                }
-                
-                // Mostrar banner de error
-                if (typeof window.showErrorBannerCaja === 'function') {
-                    window.showErrorBannerCaja('Tu turno sigue en curso. Ciérralo para poder salir.');
-                }
-                return;
-            }
 
             // Limpiar sesión
             document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";

@@ -3,6 +3,8 @@ package com.gestioninventariodemo2.cruddemo2.Controller;
 import com.gestioninventariodemo2.cruddemo2.DTO.AperturaCajaRequestDTO;
 import com.gestioninventariodemo2.cruddemo2.DTO.CajaResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.Services.CajaService;
+import com.gestioninventariodemo2.cruddemo2.Repository.UsuarioRepository;
+import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
@@ -20,6 +22,7 @@ import java.util.Map;
 public class CajaController {
 
     private final CajaService cajaService;
+    private final UsuarioRepository usuarioRepository;
 
     @GetMapping("/estado/{idUsuario}")
     public ResponseEntity<Map<String, Object>> estadoCaja(@PathVariable Long idUsuario) {
@@ -49,6 +52,26 @@ public class CajaController {
     public ResponseEntity<com.gestioninventariodemo2.cruddemo2.DTO.CajaDetalleDTO> resumenCaja(@PathVariable Long idUsuario) {
         try {
             return ResponseEntity.ok(cajaService.obtenerResumenCaja(idUsuario));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    @GetMapping("/sesion-activa/me")
+    public ResponseEntity<com.gestioninventariodemo2.cruddemo2.DTO.CajaDetalleDTO> resumenCajaMe(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+        try {
+            Usuario usuario = usuarioRepository.findByEmail(userDetails.getUsername())
+                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            return ResponseEntity.ok(cajaService.obtenerResumenCaja(usuario.getIdUsuario()));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+    }
+
+    @GetMapping("/resumen-global")
+    public ResponseEntity<com.gestioninventariodemo2.cruddemo2.DTO.CajaDetalleDTO> resumenGlobal() {
+        try {
+            return ResponseEntity.ok(cajaService.obtenerResumenGlobalActivo());
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }

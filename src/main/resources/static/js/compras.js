@@ -16,6 +16,111 @@ document.addEventListener('DOMContentLoaded', function () {
     const API_PRODUCTOS_URL_BASE = '/api/productos';
 
     // ===============================
+    // VALIDACIÓN DE EFECTIVO EN CAJA
+    // ===============================
+    let saldoCajaActual = 0;
+    const styleAlerta = document.createElement('style');
+    styleAlerta.textContent = `
+        .inline-alert-efectivo {
+            display: none;
+            background-color: rgba(220, 38, 38, 0.1);
+            color: #dc2626;
+            border-left: 4px solid #dc2626;
+            padding: 10px 14px;
+            margin-top: 8px;
+            border-radius: 6px;
+            font-family: 'Inter', system-ui, sans-serif;
+            font-weight: 500;
+            font-size: 0.9rem;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 6px -1px rgba(220, 38, 38, 0.05);
+            animation: slideDownFade 0.3s ease-out;
+        }
+        .inline-alert-efectivo.show {
+            display: flex;
+        }
+        @keyframes slideDownFade {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    `;
+    document.head.appendChild(styleAlerta);
+
+    async function fetchSaldoCajaActual() {
+        try {
+            const response = await fetch('/api/caja/sesion-activa/me');
+            if (response.ok) {
+                const data = await response.json();
+                saldoCajaActual = data.saldoEsperado || 0;
+            } else {
+                saldoCajaActual = 0;
+            }
+        } catch (error) {
+            console.error('Error obteniendo saldo de caja:', error);
+            saldoCajaActual = 0;
+        }
+    }
+
+    function validarEfectivoEnTiempoReal() {
+        const metodoPagoSelect = document.getElementById('compra-metodo-pago');
+        const inputMonto = document.getElementById('compra-pago-monto');
+        const btnAgregarPago = document.getElementById('compra-btn-agregar-pago') || document.querySelector('.btn-add-pago'); 
+        const btnRegistrarCompra = document.querySelector('#compra-form button[type="submit"]');
+
+        if (!metodoPagoSelect || !inputMonto) return;
+        
+        let alertaDiv = document.getElementById('alerta-efectivo-compra');
+        if (!alertaDiv) {
+            alertaDiv = document.createElement('div');
+            alertaDiv.id = 'alerta-efectivo-compra';
+            alertaDiv.className = 'inline-alert-efectivo';
+            alertaDiv.innerHTML = `<i class="fas fa-exclamation-triangle"></i> <span></span>`;
+            const paymentRow = document.getElementById('compra-payment-row');
+            if (paymentRow) {
+                paymentRow.parentNode.insertBefore(alertaDiv, paymentRow.nextSibling);
+            } else {
+                inputMonto.parentNode.insertBefore(alertaDiv, inputMonto.nextSibling);
+            }
+        }
+
+        const spanMensaje = alertaDiv.querySelector('span');
+        const metodoSeleccionado = metodoPagoSelect.options[metodoPagoSelect.selectedIndex];
+        const esEfectivoCaja = metodoSeleccionado && 
+                             metodoSeleccionado.text.toLowerCase().includes('efectivo') && 
+                             !metodoSeleccionado.text.toLowerCase().includes('aporte externo');
+
+        if (esEfectivoCaja) {
+            const montoIngresadoStr = inputMonto.value ? inputMonto.value.replace(/\./g, '').replace(',', '.') : '0';
+            const montoIngresado = parseFloat(montoIngresadoStr) || 0;
+            
+            let totalEfectivoPrevio = 0;
+            if (typeof pagosMixtos !== 'undefined' && pagosMixtos) {
+                pagosMixtos.forEach(p => {
+                    if (p.nombreMetodo && p.nombreMetodo.toLowerCase().includes('efectivo') && !p.nombreMetodo.toLowerCase().includes('aporte externo')) {
+                        totalEfectivoPrevio += parseFloat(p.importe) || 0;
+                    }
+                });
+            }
+
+            if ((montoIngresado + totalEfectivoPrevio) > saldoCajaActual) {
+                spanMensaje.textContent = `El monto total en efectivo supera el disponible en caja ($${typeof formatoMoneda !== 'undefined' ? formatoMoneda.format(saldoCajaActual) : saldoCajaActual}).`;
+                alertaDiv.classList.add('show');
+                if (btnAgregarPago) btnAgregarPago.disabled = true;
+                if (btnRegistrarCompra) btnRegistrarCompra.disabled = true;
+            } else {
+                alertaDiv.classList.remove('show');
+                if (btnAgregarPago) btnAgregarPago.disabled = false;
+                if (btnRegistrarCompra) btnRegistrarCompra.disabled = false;
+            }
+        } else {
+            alertaDiv.classList.remove('show');
+            if (btnAgregarPago) btnAgregarPago.disabled = false;
+            if (btnRegistrarCompra) btnRegistrarCompra.disabled = false;
+        }
+    }
+
+    // ===============================
     // CONFIGURACIÓN DE FORMATO
     // ===============================    // Utilidad: Formatear a moneda sin decimales
     // Utilidad: Formateador manual estricto para evitar fallos de locale en navegadores
@@ -1141,6 +1246,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================================
     const metodoPagoSelect = document.getElementById('compra-metodo-pago');
     const tipoTarjetaContainer = document.getElementById('compra-tipo-tarjeta-container');
+    const inputMontoRealTime = document.getElementById('compra-pago-monto');
+
+    if (inputMontoRealTime) {
+        inputMontoRealTime.addEventListener('input', validarEfectivoEnTiempoReal);
+    }
+    if (metodoPagoSelect) {
+        metodoPagoSelect.addEventListener('change', validarEfectivoEnTiempoReal);
+    }
 
     /**
      * Cargar métodos de pago activos desde la API
@@ -1200,6 +1313,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (productoSearchInput) { productoSearchInput.disabled = true; productoSearchInput.placeholder = "Seleccione un proveedor primero"; }
 
     window.cargarDatosCompras = async function () {
+        await fetchSaldoCajaActual();
         await loadProveedoresParaCompra();
         if (historialCurrentPage === 0) { loadComprasHistorial(); }
         const idProveedorSeleccionado = proveedorHiddenInput.value;
@@ -2751,6 +2865,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 btnAddPago.style.opacity = '1';
                 btnAddPago.style.cursor = 'pointer';
             }
+        }
+        
+        if (typeof validarEfectivoEnTiempoReal === 'function') {
+            validarEfectivoEnTiempoReal();
         }
     }
 

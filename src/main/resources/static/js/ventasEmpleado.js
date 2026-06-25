@@ -18,6 +18,13 @@ document.addEventListener('DOMContentLoaded', function () {
         maximumFractionDigits: 2
     });
 
+    // Función para parsear valores Monetarios (ej: "1.500" o "1500,50")
+    function parsearMoneda(valor) {
+        if (!valor) return NaN;
+        const limpio = valor.toString().replace(/\./g, '').replace(',', '.');
+        return parseFloat(limpio);
+    }
+
     // ===============================
     // SELECTORES FORMULARIO VENTA
     // ===============================

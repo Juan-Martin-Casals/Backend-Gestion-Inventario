@@ -51,4 +51,8 @@ public class Pago {
     @ManyToOne
     @JoinColumn(name = "id_usuario")
     private Usuario usuario;
+
+    @ManyToOne
+    @JoinColumn(name = "id_sesion", nullable = true)
+    private SesionCaja sesionCaja;
 }

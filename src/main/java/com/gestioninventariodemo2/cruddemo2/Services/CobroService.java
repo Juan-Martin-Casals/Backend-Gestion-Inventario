@@ -12,9 +12,11 @@ import org.springframework.transaction.annotation.Transactional;
 import com.gestioninventariodemo2.cruddemo2.DTO.CobroResponseDTO;
 import com.gestioninventariodemo2.cruddemo2.Model.MetodoPago;
 import com.gestioninventariodemo2.cruddemo2.Model.Cobro;
+import com.gestioninventariodemo2.cruddemo2.Model.SesionCaja;
 import com.gestioninventariodemo2.cruddemo2.Model.Usuario;
 import com.gestioninventariodemo2.cruddemo2.Model.Venta;
 import com.gestioninventariodemo2.cruddemo2.Repository.CobroRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.SesionCajaRepository;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +25,7 @@ import lombok.RequiredArgsConstructor;
 public class CobroService {
 
     private final CobroRepository cobroRepository;
+    private final SesionCajaRepository sesionCajaRepository;
 
     /**
      * Registrar un nuevo cobro
@@ -43,6 +46,12 @@ public class CobroService {
         cobro.setVuelto(vuelto);
         cobro.setFechaCobro(LocalDateTime.now());
         cobro.setUsuario(usuario);
+
+        // Asignar sesión de caja si existe una abierta
+        if (usuario != null) {
+            sesionCajaRepository.findByUsuarioIdUsuarioAndEstado(usuario.getIdUsuario(), "ABIERTA")
+                    .ifPresent(cobro::setSesionCaja);
+        }
 
         return cobroRepository.save(cobro);
     }

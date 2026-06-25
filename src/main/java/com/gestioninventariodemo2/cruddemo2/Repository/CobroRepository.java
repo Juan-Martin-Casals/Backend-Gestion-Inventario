@@ -36,4 +36,11 @@ public interface CobroRepository extends JpaRepository<Cobro, Long> {
     List<Object[]> obtenerTotalPorMetodoPagoEntreFechas(
             @Param("inicio") LocalDateTime inicio,
             @Param("fin") LocalDateTime fin);
+
+    // Total por método de pago por sesión específica (Arqueo Cajero)
+    @Query("SELECT c.metodoPago.nombre, SUM(c.importe), COUNT(c) " +
+            "FROM Cobro c " +
+            "WHERE c.sesionCaja.idSesion = :idSesion " +
+            "GROUP BY c.metodoPago.nombre")
+    List<Object[]> obtenerTotalPorMetodoPagoPorSesion(@Param("idSesion") Long idSesion);
 }

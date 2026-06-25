@@ -149,15 +149,21 @@ document.addEventListener('DOMContentLoaded', function () {
             if (elEsperado) elEsperado.textContent = formatter.format(resumenData.saldoEsperado || 0);
             
             // 2. Poblamos Tarjetas del Nuevo Dashboard Analítico
-            document.getElementById('caja-card-total-ventas').textContent = formatter.format(resumenData.totalVentas || 0);
-            document.getElementById('caja-card-cantidad-ventas').textContent = resumenData.cantidadVentas || 0;
-            document.getElementById('caja-card-efectivo').textContent = formatter.format(resumenData.totalEfectivo || 0);
-            document.getElementById('caja-card-tarjeta').textContent = formatter.format(resumenData.totalTarjeta || 0);
-            document.getElementById('caja-card-transferencia').textContent = formatter.format(resumenData.totalTransferencia || 0);
+            const elTVentas = document.getElementById('caja-card-total-ventas');
+            if (elTVentas) elTVentas.textContent = formatter.format(resumenData.totalVentas || 0);
+            const elCVentas = document.getElementById('caja-card-cantidad-ventas');
+            if (elCVentas) elCVentas.textContent = resumenData.cantidadVentas || 0;
+            const elCEfectivo = document.getElementById('caja-card-efectivo');
+            if (elCEfectivo) elCEfectivo.textContent = formatter.format(resumenData.totalEfectivo || 0);
+            const elCTarjeta = document.getElementById('caja-card-tarjeta');
+            if (elCTarjeta) elCTarjeta.textContent = formatter.format(resumenData.totalTarjeta || 0);
+            const elCTransferencia = document.getElementById('caja-card-transferencia');
+            if (elCTransferencia) elCTransferencia.textContent = formatter.format(resumenData.totalTransferencia || 0);
 
             // 3. Poblamos Tabla de Desglose (siempre mostramos los 3 métodos por defecto)
             const tbodyDesglose = document.getElementById('caja-tabla-desglose');
-            tbodyDesglose.innerHTML = '';
+            if (tbodyDesglose) {
+                tbodyDesglose.innerHTML = '';
 
             const metodosDefault = [
                 { nombre: 'Efectivo',      iconoClass: 'fas fa-money-bill',   spanClass: 'icon-efectivo' },
@@ -165,56 +171,83 @@ document.addEventListener('DOMContentLoaded', function () {
                 { nombre: 'Transferencia', iconoClass: 'fas fa-exchange-alt', spanClass: 'icon-transferencia' }
             ];
 
-            // Crear mapa de datos reales del backend indexado por nombre normalizado
-            const datosReales = {};
-            if (resumenData.desgloseCobros && resumenData.desgloseCobros.length > 0) {
-                resumenData.desgloseCobros.forEach(cobro => {
-                    const key = (cobro.metodoPago || '').toLowerCase();
-                    datosReales[key] = cobro;
-                });
-            }
-
             let totalOperacionesGlobal = 0;
             let totalGananciasGlobal = 0;
 
-            metodosDefault.forEach(metodo => {
-                const key = metodo.nombre.toLowerCase();
-                const datoReal = datosReales[key] || null;
-                const operaciones = datoReal ? datoReal.cantidadOperaciones : 0;
-                const total = datoReal ? datoReal.totalIngresado : 0;
+            if (resumenData.desgloseCobros && resumenData.desgloseCobros.length > 0) {
+                resumenData.desgloseCobros.forEach(cobro => {
+                    const nombre = cobro.metodoPago || 'Desconocido';
+                    const operaciones = cobro.cantidadOperaciones || 0;
+                    const total = cobro.totalIngresado || 0;
 
-                totalOperacionesGlobal += operaciones;
-                totalGananciasGlobal += total;
+                    totalOperacionesGlobal += operaciones;
+                    totalGananciasGlobal += total;
 
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>
-                        <div class="metodo-pago-label">
-                            <div class="metodo-icon ${metodo.spanClass}">
-                                <i class="${metodo.iconoClass}"></i>
+                    let iconoClass = 'fas fa-wallet';
+                    let spanClass = '';
+                    const mLower = nombre.toLowerCase();
+
+                    if (mLower.includes('efectivo')) {
+                        iconoClass = 'fas fa-money-bill';
+                        spanClass = 'icon-efectivo';
+                    } else if (mLower.includes('tarjeta')) {
+                        iconoClass = 'fas fa-credit-card';
+                        spanClass = 'icon-tarjeta';
+                    } else if (mLower.includes('transferencia') || mLower.includes('mp') || mLower.includes('mercado')) {
+                        iconoClass = 'fas fa-exchange-alt';
+                        spanClass = 'icon-transferencia';
+                    } else {
+                        spanClass = 'icon-transferencia'; // default style
+                    }
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <div class="metodo-pago-label">
+                                <div class="metodo-icon ${spanClass}">
+                                    <i class="${iconoClass}"></i>
+                                </div>
+                                ${nombre}
                             </div>
-                            ${metodo.nombre}
+                        </td>
+                        <td style="text-align: center; font-weight: 600;">${operaciones}</td>
+                        <td style="text-align: right; font-weight: 800;">${formatter.format(total)}</td>
+                    `;
+                    tbodyDesglose.appendChild(tr);
+                });
+            } else {
+                metodosDefault.forEach(metodo => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <div class="metodo-pago-label">
+                                <div class="metodo-icon ${metodo.spanClass}">
+                                    <i class="${metodo.iconoClass}"></i>
+                                </div>
+                                ${metodo.nombre}
+                            </div>
+                        </td>
+                        <td style="text-align: center; font-weight: 600;">0</td>
+                        <td style="text-align: right; font-weight: 800;">${formatter.format(0)}</td>
+                    `;
+                    tbodyDesglose.appendChild(tr);
+                });
+            }
+
+                // Fila de TOTALES
+                const trTotal = document.createElement('tr');
+                trTotal.style.backgroundColor = '#f8fafc';
+                trTotal.innerHTML = `
+                    <td>
+                        <div style="font-weight: 800; color: #1e293b; padding-left: 10px;">
+                            TOTALES
                         </div>
                     </td>
-                    <td style="text-align: center; font-weight: 600;">${operaciones}</td>
-                    <td style="text-align: right; font-weight: 800;">${formatter.format(total)}</td>
+                    <td style="text-align: center; font-weight: 800; color: #1e293b;">${totalOperacionesGlobal}</td>
+                    <td style="text-align: right; font-weight: 900; color: #10b981; font-size: 15px;">${formatter.format(totalGananciasGlobal)}</td>
                 `;
-                tbodyDesglose.appendChild(tr);
-            });
-
-            // Fila de TOTALES
-            const trTotal = document.createElement('tr');
-            trTotal.style.backgroundColor = '#f8fafc';
-            trTotal.innerHTML = `
-                <td>
-                    <div style="font-weight: 800; color: #1e293b; padding-left: 10px;">
-                        TOTALES
-                    </div>
-                </td>
-                <td style="text-align: center; font-weight: 800; color: #1e293b;">${totalOperacionesGlobal}</td>
-                <td style="text-align: right; font-weight: 900; color: #10b981; font-size: 15px;">${formatter.format(totalGananciasGlobal)}</td>
-            `;
-            tbodyDesglose.appendChild(trTotal);
+                tbodyDesglose.appendChild(trTotal);
+            }
 
             // 4. Lógica de Fondo Fijo y Retiro
             const totalEfectivoTeorico = resumenData.saldoEsperado || ((resumenData.montoInicial || 0) + (resumenData.totalEfectivo || 0) - (resumenData.totalComprasEfectivo || 0));
@@ -317,6 +350,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 const sugerido = Math.round(resumenCajaActual?.montoInicial || 0);
                 inputFondoFijo.value = new Intl.NumberFormat('es-AR').format(sugerido);
             }
+            
+            // 4. Limpiar Errores Inline
+            const montoError = document.getElementById('caja-monto-final-error');
+            const fondoError = document.getElementById('caja-fondo-fijo-error');
+            if (montoError) montoError.style.display = 'none';
+            if (fondoError) fondoError.style.display = 'none';
+            if (panelErrorCierre) panelErrorCierre.style.display = 'none';
         });
     }
 
@@ -503,32 +543,45 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnCerrarCaja) {
         btnCerrarCaja.addEventListener('click', async () => {
             // 1. Validaciones iniciales
+            const montoError = document.getElementById('caja-monto-final-error');
+            const fondoError = document.getElementById('caja-fondo-fijo-error');
+            if (montoError) montoError.style.display = 'none';
+            if (fondoError) fondoError.style.display = 'none';
+            if (panelErrorCierre) panelErrorCierre.style.display = 'none';
+
             const parseAmount = (valStr) => {
                 if (!valStr) return NaN;
                 let cleanStr = valStr.replace(/\./g, '').replace(',', '.');
                 return parseFloat(cleanStr);
             };
 
-            const fondoFijoVal = parseAmount(inputFondoFijo.value) || 0;
             const montoFisicoVal = parseAmount(inputMontoFinalFisico.value);
 
-            if (isNaN(fondoFijoVal) || fondoFijoVal < 0) {
-                if (panelErrorCierre) {
-                    panelErrorCierre.textContent = 'Por favor ingresa un fondo fijo válido.';
-                    panelErrorCierre.style.display = 'block';
-                }
-                inputFondoFijo.focus();
-                return;
-            }
-
-            if (isNaN(montoFisicoVal) || montoFisicoVal < 0) {
-                if (panelErrorCierre) {
+            if (isNaN(montoFisicoVal) || montoFisicoVal < 0 || inputMontoFinalFisico.value.trim() === '') {
+                if (montoError) {
+                    montoError.style.display = 'block';
+                } else if (panelErrorCierre) {
                     panelErrorCierre.textContent = 'Por favor ingresa el "Efectivo Real (Físico)".';
                     panelErrorCierre.style.display = 'block';
                 }
                 inputMontoFinalFisico.focus();
                 return;
             }
+
+            const fondoFijoRaw = parseAmount(inputFondoFijo.value);
+            
+            if (isNaN(fondoFijoRaw) || fondoFijoRaw < 0 || inputFondoFijo.value.trim() === '') {
+                if (fondoError) {
+                    fondoError.style.display = 'block';
+                } else if (panelErrorCierre) {
+                    panelErrorCierre.textContent = 'Por favor ingresa un fondo fijo válido.';
+                    panelErrorCierre.style.display = 'block';
+                }
+                inputFondoFijo.focus();
+                return;
+            }
+            
+            const fondoFijoVal = fondoFijoRaw || 0;
 
             // 2. Traer datos FRESCOS del backend antes de abrir el modal
             try {
@@ -950,32 +1003,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const handleDrawerEsc = (e) => { if (e.key === 'Escape') closeDrawer(); };
 
     function openDrawer() {
-        // Refresh esperado value in drawer before opening (without decimals)
-        const heroEsperado = document.getElementById('caja-sidebar-efectivo-esperado');
-        const drawerEsp = document.getElementById('drawer-efectivo-esperado');
-        if (heroEsperado && drawerEsp) {
-            // Parse "$ 28.000,00" -> 28000
-            let rawStr = heroEsperado.textContent.replace('$', '').replace(/\./g, '').replace(',', '.').trim();
-            let parsedVal = Math.round(parseFloat(rawStr)) || 0;
-            drawerEsp.textContent = "$ " + new Intl.NumberFormat('es-AR').format(parsedVal);
-        }
-
-        if (drawerOverlay) drawerOverlay.classList.add('active');
-        if (drawerPanel) drawerPanel.classList.add('open');
-        document.body.style.overflow = 'hidden';
-        document.addEventListener('keydown', handleDrawerEsc);
+        // Drawer has been removed. Logic migrated to inline form.
     }
 
     function closeDrawer() {
-        if (drawerOverlay) drawerOverlay.classList.remove('active');
-        if (drawerPanel) drawerPanel.classList.remove('open');
-        document.body.style.overflow = '';
-        document.removeEventListener('keydown', handleDrawerEsc);
+        // Drawer has been removed. Logic migrated to inline form.
     }
-
-    if (btnAbrirDrawer) btnAbrirDrawer.addEventListener('click', openDrawer);
-    if (btnCerrarDrawer) btnCerrarDrawer.addEventListener('click', closeDrawer);
-    if (drawerOverlay) drawerOverlay.addEventListener('click', closeDrawer);
 
     // ==========================================
     // INGRESOS COLLAPSIBLE TOGGLE
@@ -1352,4 +1385,305 @@ document.addEventListener('DOMContentLoaded', function () {
             if (historialCurrentPage + 1 < historialTotalPages) filtrarYRenderHistorial(historialCurrentPage + 1);
         });
     }
+
+    window.showCajaSubsection = function(subsectionId) {
+        const globalContainer = document.getElementById('caja-global-container');
+        const operacionesContainer = document.getElementById('caja-operaciones-container');
+        const historialContainer = document.getElementById('caja-historial-container');
+
+        if (globalContainer) globalContainer.style.display = 'none';
+        if (operacionesContainer) operacionesContainer.style.display = 'none';
+        if (historialContainer) historialContainer.style.display = 'none';
+
+        if (subsectionId === 'caja-dashboard' && globalContainer) {
+            globalContainer.style.display = 'block';
+            cargarDashboardGlobal();
+        } else if (subsectionId === 'caja-operaciones' && operacionesContainer) {
+            operacionesContainer.style.display = 'block';
+        } else if (subsectionId === 'caja-historial' && historialContainer) {
+            historialContainer.style.display = 'block';
+            cargarHistorialSesiones(0);
+        }
+    };
+
+    window.cargarDatosCaja = function() {
+        // Solo mostramos el dashboard por defecto si no hay ninguna subsección visible actualmente
+        const globalContainer = document.getElementById('caja-global-container');
+        const operacionesContainer = document.getElementById('caja-operaciones-container');
+        const historialContainer = document.getElementById('caja-historial-container');
+        
+        const isAnyVisible = 
+            (globalContainer && globalContainer.style.display === 'block') ||
+            (operacionesContainer && operacionesContainer.style.display === 'block') ||
+            (historialContainer && historialContainer.style.display === 'block');
+
+        if (!isAnyVisible) {
+            window.showCajaSubsection('caja-dashboard');
+        }
+    };
+
+    async function cargarDashboardGlobal() {
+        try {
+            const res = await fetch('/api/caja/resumen-global');
+            if (!res.ok) throw new Error('Error al cargar dashboard global');
+            const data = await res.json();
+            
+            const formatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+            document.getElementById('caja-global-total-ventas').textContent = formatter.format(data.totalVentas || 0);
+            document.getElementById('caja-global-cantidad-ventas').textContent = data.cantidadVentas || 0;
+            document.getElementById('caja-global-efectivo').textContent = formatter.format(data.totalEfectivo || 0);
+            document.getElementById('caja-global-tarjeta').textContent = formatter.format(data.totalTarjeta || 0);
+            document.getElementById('caja-global-transferencia').textContent = formatter.format(data.totalTransferencia || 0);
+
+            const tbodyDesglose = document.getElementById('caja-global-tabla-desglose');
+            if (tbodyDesglose) {
+                tbodyDesglose.innerHTML = '';
+                const metodosBase = ['Efectivo', 'Débito', 'Crédito', 'Transferencia'];
+                const cobros = data.desgloseCobros || [];
+                
+                // Mapear los base
+                const cobrosCompletos = metodosBase.map(m => {
+                    let encontrado = cobros.find(c => {
+                        const cm = c.metodoPago.toLowerCase();
+                        if (m === 'Débito' && (cm.includes('débito') || cm.includes('debito'))) return true;
+                        if (m === 'Crédito' && (cm.includes('crédito') || cm.includes('credito'))) return true;
+                        if (m === 'Transferencia' && cm.includes('transferencia')) return true;
+                        if (m === 'Efectivo' && cm.includes('efectivo')) return true;
+                        return false;
+                    });
+                    if (encontrado) {
+                        // Forzamos el nombre capitalizado para que se vea bien
+                        return { ...encontrado, metodoPago: m };
+                    }
+                    return { metodoPago: m, cantidadOperaciones: 0, totalIngresado: 0 };
+                });
+                
+                // Agregar otros métodos que no estén en la base
+                cobros.forEach(c => {
+                    const cm = c.metodoPago.toLowerCase();
+                    const esBase = metodosBase.some(m => {
+                        if (m === 'Débito' && (cm.includes('débito') || cm.includes('debito'))) return true;
+                        if (m === 'Crédito' && (cm.includes('crédito') || cm.includes('credito'))) return true;
+                        if (m === 'Transferencia' && cm.includes('transferencia')) return true;
+                        if (m === 'Efectivo' && cm.includes('efectivo')) return true;
+                        return false;
+                    });
+                    if (!esBase) cobrosCompletos.push(c);
+                });
+
+                if (cobrosCompletos.length > 0) {
+                    let sumTotal = 0;
+                    let sumOps = 0;
+
+                    cobrosCompletos.forEach(item => {
+                        sumTotal += (item.totalIngresado || 0);
+                        sumOps += (item.cantidadOperaciones || 0);
+
+                        let iconHtml = '<i class="fas fa-money-check-alt" style="color: #64748b; margin-right: 8px;"></i>';
+                        const nombreMetodo = (item.metodoPago || '').toLowerCase();
+                        if (nombreMetodo.includes('efectivo')) {
+                            iconHtml = '<i class="fas fa-money-bill-wave" style="color: #10b981; margin-right: 8px;"></i>';
+                        } else if (nombreMetodo.includes('débito') || nombreMetodo.includes('debito') || nombreMetodo.includes('crédito') || nombreMetodo.includes('credito') || nombreMetodo.includes('tarjeta')) {
+                            iconHtml = '<i class="fas fa-credit-card" style="color: #a855f7; margin-right: 8px;"></i>';
+                        } else if (nombreMetodo.includes('transferencia')) {
+                            iconHtml = '<i class="fas fa-exchange-alt" style="color: #f59e0b; margin-right: 8px;"></i>';
+                        }
+
+                        tbodyDesglose.innerHTML += `
+                            <tr>
+                                <td>
+                                    <div class="metodo-pago-label">
+                                        ${iconHtml}
+                                        ${item.metodoPago || 'Desconocido'}
+                                    </div>
+                                </td>
+                                <td style="text-align: center;">
+                                    <span style="background: #f1f5f9; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; color: #475569;">
+                                        ${item.cantidadOperaciones || 0}
+                                    </span>
+                                </td>
+                                <td style="text-align: right; font-weight: 600; color: #0f172a;">
+                                    ${formatter.format(item.totalIngresado || 0)}
+                                </td>
+                            </tr>
+                        `;
+                    });
+
+                    // Fila de TOTAL
+                    tbodyDesglose.innerHTML += `
+                        <tr style="background-color: #f8fafc; border-top: 2px solid #e2e8f0;">
+                            <td>
+                                <div class="metodo-pago-label" style="font-weight: 800; color: #0f172a;">
+                                    Total
+                                </div>
+                            </td>
+                            <td style="text-align: center;">
+                                <span style="background: #e2e8f0; padding: 3px 10px; border-radius: 12px; font-size: 13px; font-weight: 700; color: #334155;">
+                                    ${sumOps}
+                                </span>
+                            </td>
+                            <td style="text-align: right; font-weight: 800; color: #10b981; font-size: 15px;">
+                                ${formatter.format(sumTotal)}
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    tbodyDesglose.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #94a3b8;">No hay operaciones registradas</td></tr>';
+                }
+            }
+            
+            // Llamamos a cargar los ingresos globales (ventas de hoy)
+            cargarIngresosGlobales();
+            
+        } catch (e) {
+            console.error('Error dashboard global:', e);
+        }
+    }
+
+    async function cargarIngresosGlobales() {
+        const listaIngresosGlobal = document.getElementById('caja-global-lista-ingresos');
+        const filtroSelect = document.getElementById('caja-global-filtro-ingresos');
+        const buscarInput = document.getElementById('caja-global-buscar-ingresos');
+
+        if (!listaIngresosGlobal) return;
+
+        try {
+            listaIngresosGlobal.innerHTML = '<div style="text-align: center; padding: 25px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Cargando ingresos...</div>';
+            
+            const response = await fetch('/api/ventas/all');
+            if(!response.ok) throw new Error('Error obteniendo ventas globales');
+            const ventas = await response.json();
+
+            // Filtrar las ventas de hoy (desde las 00:00)
+            const hoyInicio = new Date();
+            hoyInicio.setHours(0,0,0,0);
+            
+            let ingresosHoy = ventas.filter(v => new Date(v.fecha).getTime() >= hoyInicio.getTime());
+            // Ordenar de más reciente a más antigua
+            ingresosHoy.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+            // Mostrar hasta los últimos 50 ingresos para no saturar la vista
+            ingresosHoy = ingresosHoy.slice(0, 50);
+
+            function renderLista(data) {
+                listaIngresosGlobal.innerHTML = '';
+                if(data.length === 0) {
+                    listaIngresosGlobal.innerHTML = '<div style="text-align: center; padding: 25px; color: #94a3b8; font-size: 13px;">No hay ingresos globales que coincidan.</div>';
+                    return;
+                }
+
+                const formatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+
+                data.forEach(venta => {
+                    const item = document.createElement('div');
+                    item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #f1f5f9; border-radius: 12px; background: white; transition: all 0.2s; margin-bottom: 10px;';
+                    item.onmouseover = () => item.style.borderColor = '#e2e8f0';
+                    item.onmouseout = () => item.style.borderColor = '#f1f5f9';
+                    
+                    let iconoClass = 'fas fa-money-bill';
+                    let iconColor = '#10b981';
+                    let iconBg = '#ecfdf5';
+                    
+                    const mx = venta.metodoPago ? venta.metodoPago.toLowerCase() : '';
+                    if (mx.includes('tarjeta')) {
+                        iconoClass = 'fas fa-credit-card';
+                        iconColor = '#6366f1';
+                        iconBg = '#e0e7ff';
+                    } else if (mx.includes('transferencia') || mx.includes('mp') || mx.includes('mercado')) {
+                        iconoClass = 'fas fa-exchange-alt';
+                        iconColor = '#f59e0b';
+                        iconBg = '#fffbeb';
+                    }
+
+                    // Nombre del producto representativo
+                    let nombreDetalle = 'Venta Varios';
+                    if(venta.productos && venta.productos.length > 0) {
+                        const firstProd = venta.productos[0];
+                        nombreDetalle = firstProd.nombreProducto || firstProd.nombre || 'Producto';
+                        if(venta.productos.length > 1) nombreDetalle += ` (+${venta.productos.length - 1})`;
+                    } else if (venta.idVenta || venta.id) {
+                        nombreDetalle = `Venta #${venta.idVenta || venta.id}`;
+                    }
+
+                    const hora = new Date(venta.fecha).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'}) + ' hrs';
+
+                    item.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="width: 44px; height: 44px; border-radius: 12px; background: ${iconBg}; color: ${iconColor}; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                                <i class="${iconoClass}"></i>
+                            </div>
+                            <div>
+                                <h5 style="margin: 0 0 4px 0; font-size: 14px; color: #1e293b; font-weight: 700;">${nombreDetalle}</h5>
+                                <span style="color: #64748b; font-size: 12px;"><i class="far fa-clock" style="margin-right: 4px;"></i>${hora} &bull; ${venta.metodoPago || 'Efectivo'}</span>
+                            </div>
+                        </div>
+                        <div style="text-align: right;">
+                            <span style="display: block; font-weight: 800; color: #10b981; font-size: 16px;">+${formatter.format(venta.total)}</span>
+                            ${venta.cliente ? `<span style="font-size: 11px; color: #94a3b8;"><i class="far fa-user" style="margin-right:3px;"></i>${venta.cliente.nombre}</span>` : ''}
+                        </div>
+                    `;
+                    listaIngresosGlobal.appendChild(item);
+                });
+            }
+
+            renderLista(ingresosHoy);
+
+            function aplicarFiltros() {
+                const metodo = filtroSelect ? filtroSelect.value : 'Todos';
+                const texto = buscarInput ? buscarInput.value.toLowerCase().trim() : '';
+
+                let resultado = ingresosHoy;
+
+                if (metodo !== 'Todos') {
+                    resultado = resultado.filter(v => v.metodoPago && v.metodoPago.toLowerCase().includes(metodo.toLowerCase()));
+                }
+
+                if (texto) {
+                    resultado = resultado.filter(v => {
+                        const clienteMatch = v.cliente && v.cliente.nombre && v.cliente.nombre.toLowerCase().includes(texto);
+                        const idMatch = (v.idVenta || v.id || '').toString().includes(texto);
+                        const totalMatch = v.total && v.total.toString().includes(texto);
+                        const metodoMatch = v.metodoPago && v.metodoPago.toLowerCase().includes(texto);
+                        
+                        let productoMatch = false;
+                        if (v.productos && Array.isArray(v.productos)) {
+                            productoMatch = v.productos.some(p => {
+                                const nom = p.nombreProducto || p.nombre || '';
+                                return nom.toLowerCase().includes(texto);
+                            });
+                        }
+                        
+                        return clienteMatch || idMatch || totalMatch || metodoMatch || productoMatch;
+                    });
+                }
+                
+                renderLista(resultado);
+            }
+
+            if (filtroSelect) {
+                // remove listener to avoid duplicates if called again
+                filtroSelect.removeEventListener('change', aplicarFiltros);
+                filtroSelect.addEventListener('change', aplicarFiltros);
+            }
+
+            if (buscarInput) {
+                buscarInput.removeEventListener('input', aplicarFiltros);
+                buscarInput.addEventListener('input', aplicarFiltros);
+            }
+
+            const btnLimpiar = document.getElementById('caja-global-limpiar-ingresos');
+            if (btnLimpiar) {
+                btnLimpiar.onclick = () => {
+                    if (filtroSelect) filtroSelect.value = 'Todos';
+                    if (buscarInput) buscarInput.value = '';
+                    aplicarFiltros();
+                };
+            }
+
+        } catch(e) {
+            listaIngresosGlobal.innerHTML = '<div style="text-align: center; padding: 25px; color: #ef4444; font-size: 13px;">Error al cargar ingresos globales.</div>';
+            console.error('Error cargando ingresos globales:', e);
+        }
+    }
+
 });

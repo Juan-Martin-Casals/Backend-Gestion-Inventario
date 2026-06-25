@@ -185,12 +185,28 @@ public class CompraService {
         }
 
         double totalPagado = 0;
+        double totalEfectivoCaja = 0;
 
+        // Validar saldo de efectivo antes de registrar
         for (com.gestioninventariodemo2.cruddemo2.DTO.PagoRequestDTO pagoDto : dto.getPagos()) {
             if (pagoDto.getIdMetodoPago() == null) {
                 throw new IllegalArgumentException("Todos los pagos deben tener un método seleccionado");
             }
+            var metodoPago = metodoPagoService.obtenerPorId(pagoDto.getIdMetodoPago());
+            String mName = metodoPago.getNombre() != null ? metodoPago.getNombre().toLowerCase() : "";
+            if (mName.contains("efectivo") && !mName.contains("aporte externo")) {
+                totalEfectivoCaja += pagoDto.getImporte() != null ? pagoDto.getImporte().doubleValue() : 0.0;
+            }
+        }
 
+        if (totalEfectivoCaja > 0) {
+            com.gestioninventariodemo2.cruddemo2.DTO.CajaDetalleDTO resumen = cajaService.obtenerResumenCaja(usuario.getIdUsuario());
+            if (resumen != null && totalEfectivoCaja > resumen.getSaldoEsperado()) {
+                throw new RuntimeException("ERROR_FONDOS_INSUFICIENTES: Efectivo en caja insuficiente. Disponible: $" + resumen.getSaldoEsperado());
+            }
+        }
+
+        for (com.gestioninventariodemo2.cruddemo2.DTO.PagoRequestDTO pagoDto : dto.getPagos()) {
             var metodoPago = metodoPagoService.obtenerPorId(pagoDto.getIdMetodoPago());
 
             pagoService.registrarPago(
@@ -225,6 +241,14 @@ public class CompraService {
                 .orElseThrow(() -> new RuntimeException("Compra no encontrada con ID: " + compraId));
 
         var metodoPago = metodoPagoService.obtenerPorId(dto.getIdMetodoPago());
+
+        String mName = metodoPago.getNombre() != null ? metodoPago.getNombre().toLowerCase() : "";
+        if (mName.contains("efectivo") && !mName.contains("aporte externo")) {
+            com.gestioninventariodemo2.cruddemo2.DTO.CajaDetalleDTO resumen = cajaService.obtenerResumenCaja(usuario.getIdUsuario());
+            if (resumen != null && dto.getImporte() != null && dto.getImporte().doubleValue() > resumen.getSaldoEsperado()) {
+                throw new RuntimeException("ERROR_FONDOS_INSUFICIENTES: Efectivo en caja insuficiente. Disponible: $" + resumen.getSaldoEsperado());
+            }
+        }
         
         java.time.LocalDateTime fechaP = dto.getFechaPago() != null ? dto.getFechaPago().atTime(java.time.LocalTime.now()) : java.time.LocalDateTime.now();
         // Se registra el pago. El estado del pago se marca como PAGADO ya que es un pago efectivo.

@@ -124,6 +124,47 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 500);
 
     // =========================================
+    // USER INFO Y SIDEBAR TOGGLE
+    // =========================================
+    async function loadUserInfo() {
+        const userNameEl = document.getElementById('header-user-name');
+        const userRoleEl = document.getElementById('header-user-role');
+        if (!userNameEl || !userRoleEl) return;
+        try {
+            const response = await fetch('/api/auth/perfil');
+            if (response.status === 401) { window.location.href = 'index.html'; return; }
+            if (!response.ok) throw new Error('Error al cargar perfil');
+            const perfil = await response.json();
+            userNameEl.textContent = perfil.nombreCompleto;
+            userRoleEl.textContent = perfil.rol;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+    loadUserInfo();
+
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+
+    if (localStorage.getItem('sidebarCollapsed') === 'true' && sidebar) {
+        sidebar.classList.add('collapsed');
+    }
+    if (sidebarToggleBtn && sidebar) {
+        sidebarToggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed');
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed') ? 'true' : 'false');
+        });
+    }
+    document.querySelectorAll('.submenu-toggle').forEach(toggle => {
+        toggle.addEventListener('click', function () {
+            if (sidebar && sidebar.classList.contains('collapsed')) {
+                sidebar.classList.remove('collapsed');
+                localStorage.setItem('sidebarCollapsed', 'false');
+            }
+        });
+    });
+
+    // =========================================
     // LOGOUT
     // =========================================
     const logoutBtn = document.getElementById('logout-btn');
@@ -142,25 +183,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         confirmLogoutBtn.addEventListener('click', () => {
-            // Verificar si la caja está abierta antes de salir
-            if (typeof window.isCajaAbierta === 'function' && window.isCajaAbierta()) {
-                logoutModal.style.display = 'none';
-                
-                // Redirigir a la sección Caja
-                const cajaLink = document.querySelector('.sidebar-menu a[data-subsection="caja-operaciones"]') || 
-                                 document.querySelector('.sidebar-menu a[data-section="caja"]');
-                if (cajaLink) {
-                    cajaLink.click();
-                }
-                
-                // Mostrar banner de error
-                if (typeof window.showErrorBannerCaja === 'function') {
-                    window.showErrorBannerCaja('Tu turno sigue en curso. Ciérralo para poder salir.');
-                }
-                return;
-            }
-
-            // Limpiar sesión
+            // Si no está abierta o la validación pasó, cerrar sesión
             document.cookie = "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
             localStorage.removeItem('lastSectionCajero');
             localStorage.removeItem('isAuthenticated');
