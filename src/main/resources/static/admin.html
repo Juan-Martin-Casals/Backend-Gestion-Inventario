@@ -73,6 +73,9 @@
                         <li><a href="#" data-section="compras" data-subsection="compras-create"><span
                                     class="text">Registrar Compra</span></a>
                         </li>
+                        <li><a href="#" data-section="compras" data-subsection="compras-orden"><span
+                                    class="text">Generar Orden</span></a>
+                        </li>
                         <li><a href="#" data-section="compras" data-subsection="compras-list"><span class="text">Ver
                                     Compras</span></a></li>
                     </ul>
@@ -1092,7 +1095,12 @@
                 <!-- Subsección: Ver Productos (ahora Gestión de Inventario) -->
                 <div id="productos-list-container" class="subsection-container">
                     <div class="table-section">
-                        <h4>Productos registrados</h4>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h4 style="margin: 0;">Productos registrados</h4>
+                            <button type="button" class="btn-primary" onclick="abrirModalOrdenCompra()" style="padding: 10px 20px; border-radius: 8px; font-weight: 600; display: flex; align-items: center; gap: 8px; background: #4f46e5; border-color: #4f46e5; box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);">
+                                <i class="fas fa-file-invoice-dollar"></i> Generar Orden de Compra
+                            </button>
+                        </div>
 
 
                         <!-- Búsqueda de Productos y Filtros -->
@@ -2136,6 +2144,142 @@
             </section>
 
             <section id="compras-section" class="spa-section" style="display:none">
+
+                <!-- Subsección: Generar Orden de Compra -->
+                <div id="compras-orden-container" class="subsection-container" style="display: none;">
+                    <div style="padding: 30px;">
+
+                        <form id="orden-compra-form" class="sale-form" novalidate>
+                            <div class="dashboard-layout"
+                                style="display: flex; gap: 24px; align-items: stretch; min-height: 70vh;">
+                                <!-- Columna Izquierda: Carga -->
+                                <div class="col-left"
+                                    style="flex: 1 1 60%; display: flex; flex-direction: column; gap: 20px;">
+                                    <div class="card-modern">
+                                        <h5 class="section-title"><i class="fas fa-info-circle"></i> Información General</h5>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="oc-proveedor-search">Proveedor</label>
+                                                <div class="search-with-add">
+                                                    <input type="text" id="oc-proveedor-search" placeholder="Buscar proveedor..." class="product-search-input" autocomplete="off">
+                                                </div>
+                                                <input type="hidden" id="oc-proveedor-id-hidden">
+                                                <div id="oc-proveedor-results" class="product-results" style="display: none;"></div><div class="error-message" id="error-oc-proveedor-search"></div>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="oc-fecha-emision">Fecha Emisión</label>
+                                                <input type="date" id="oc-fecha-emision"><div class="error-message" id="error-oc-fecha-emision"></div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="oc-fecha-entrega">Fecha Entrega Esperada</label>
+                                                <input type="date" id="oc-fecha-entrega"><div class="error-message" id="error-oc-fecha-entrega"></div>
+                                            </div>
+                                        </div>
+                                        <div class="form-row">
+                                            <div class="form-group">
+                                                <label for="oc-condicion-pago">Condición de Pago</label>
+                                                <input type="text" id="oc-condicion-pago" placeholder="Ej: Cheque a 30 días" maxlength="50" oninput="window.checkMaxLength(this, 50)"><div class="error-message" id="error-oc-condicion-pago"></div>
+                                            </div>
+                                            <div class="form-group">
+                                                <label for="oc-direccion-entrega">Dirección de Entrega</label>
+                                                <textarea id="oc-direccion-entrega" class="auto-expand" placeholder="Lugar de entrega" maxlength="100" oninput="window.checkMaxLength(this, 100); this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';" rows="1"></textarea><div class="error-message" id="error-oc-direccion-entrega"></div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group" style="margin-top: 15px;">
+                                            <label for="oc-observaciones">Observaciones (Opcional)</label>
+                                            <textarea id="oc-observaciones" class="auto-expand" placeholder="Notas adicionales" maxlength="200" oninput="window.checkMaxLength(this, 200); this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';" rows="1"></textarea><div class="error-message" id="error-oc-observaciones"></div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Buscador de Productos -->
+                                    <div class="card-modern">
+                                        <h5 class="section-title"><i class="fas fa-box-open"></i> Agregar Productos</h5>
+                                        <div class="form-group">
+                                            <input type="text" id="oc-producto-search" placeholder="Primero seleccione un proveedor..." class="product-search-input" autocomplete="off" disabled>
+                                            <input type="hidden" id="oc-producto-id-hidden">
+                                            <div id="oc-producto-results" class="product-results" style="display: none;"></div>
+                                        </div>
+                                        
+                                        <!-- Tabla de detalle -->
+                                        <div class="table-responsive" style="margin-top: 15px;">
+                                            <table class="data-table" id="oc-tabla-productos">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Producto</th>
+                                                        <th style="text-align: center;">Cantidad</th>
+                                                        <th style="text-align: right;">Costo Unit.</th>
+                                                        <th style="text-align: right;">Subtotal</th>
+                                                        <th></th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr class="empty-row">
+                                                        <td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">Busque y seleccione un producto</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Columna Derecha: Resumen -->
+                                <div class="col-right" style="flex: 1 1 35%; display: flex; flex-direction: column; gap: 20px;">
+                                    <div class="card-modern summary-card" style="position: sticky; top: 20px;">
+                                        <h5 class="section-title"><i class="fas fa-file-invoice-dollar"></i> Resumen de Orden</h5>
+                                        
+                                        <div class="summary-details">
+                                            <div class="summary-row">
+                                                <span>Subtotal</span>
+                                                <span id="oc-resumen-subtotal" style="font-weight: 600;">$0.00</span>
+                                            </div>
+                                            
+                                            <div class="form-row" style="margin-top: 15px; margin-bottom: 15px;">
+                                                <div class="form-group" style="margin-bottom: 0;">
+                                                    <label for="oc-descuento">Descuento (%)</label>
+                                                    <input type="number" id="oc-descuento" min="0" max="100" value="0" onkeydown="return event.key !== '-'" oninput="if(this.value < 0){this.value = 0; mostrarErrorInline('oc-descuento', 'El descuento no puede ser negativo')}else{window.checkMaxLength(this, 5)}"><div class="error-message" id="error-oc-descuento"></div>
+                                                </div>
+                                                <div class="form-group" style="margin-bottom: 0;">
+                                                    <label for="oc-iva">IVA (%)</label>
+                                                    <select id="oc-iva">
+                                                        <option value="0">0%</option>
+                                                        <option value="10.5">10.5%</option>
+                                                        <option value="21" selected>21%</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="summary-row" style="color: #10b981;">
+                                                <span>Descuento</span>
+                                                <span id="oc-resumen-descuento">-$0.00</span>
+                                            </div>
+                                            
+                                            <div class="summary-row" style="color: #64748b;">
+                                                <span>IVA</span>
+                                                <span id="oc-resumen-monto-iva">+$0.00</span>
+                                            </div>
+                                            
+                                            <div class="summary-total" style="margin-top: 20px; padding-top: 15px; border-top: 2px dashed #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
+                                                <span style="font-size: 18px; font-weight: 700;">Total Final</span>
+                                                <span id="oc-resumen-total" style="font-size: 24px; font-weight: 800; color: #0f172a;">$0.00</span>
+                                            </div>
+                                        </div>
+
+                                        <div style="margin-top: 30px; display: flex; flex-direction: column; gap: 12px;">
+                                            <button type="button" class="btn-primary" id="btn-guardar-orden" style="padding: 16px; font-size: 16px; border-radius: 8px;">
+                                                <i class="fas fa-save"></i> Guardar y Generar PDF
+                                            </button>
+                                            <button type="button" class="btn-outline" onclick="window.limpiarFormularioOrdenCompra()" style="padding: 16px; font-size: 16px; border-radius: 8px;">
+                                                <i class="fas fa-eraser"></i> Limpiar Formulario
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
 
                 <!-- Subsección: Registrar Compra -->
                 <div id="compras-create-container" class="subsection-container" style="display: none;">
@@ -5453,6 +5597,7 @@
         <script src="js/usuarios.js"></script>
         <script src="js/ventas.js"></script>
         <script src="js/informes.js"></script>
+        <script src="js/ordenCompra.js"></script>
         <script src="js/stock.js"></script>
         <script src="js/cliente.js"></script>
 
@@ -5476,6 +5621,16 @@
             </div>
         </div>
 
+    <!-- Global UI Toast Container -->
+    <div id="ui-toast-container" class="ui-toast-container"></div>
 </body>
 
 </html>
+
+
+
+
+
+
+
+
