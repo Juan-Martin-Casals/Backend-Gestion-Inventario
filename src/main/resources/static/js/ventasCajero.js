@@ -530,8 +530,71 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // ==========================================================
-    // LÓGICA DEL MODAL DE CREACIÓN RÁPIDA DE CLIENTES
-    // ==========================================================
+    function formatDni(digits) {
+        digits = digits.slice(0, 8);
+        if (digits.length <= 3) return digits;
+        if (digits.length <= 6) return digits.slice(0, -3) + '.' + digits.slice(-3);
+        return digits.slice(0, -6) + '.' + digits.slice(-6, -3) + '.' + digits.slice(-3);
+    }
+
+    function restrictDniInput(input) {
+        if (!input) return;
+        input.addEventListener('keydown', function (e) {
+            if (e.ctrlKey || e.metaKey) return;
+            const allowed = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
+            if (allowed.includes(e.key)) return;
+            if (!/^\d$/.test(e.key)) e.preventDefault();
+        });
+        input.addEventListener('input', function () {
+            const pos = this.selectionStart;
+            const digitsBeforeCursor = this.value.slice(0, pos).replace(/\D/g, '').length;
+            const digits = this.value.replace(/\D/g, '').slice(0, 9);
+            const formatted = formatDni(digits);
+            this.value = formatted;
+            let count = 0, newPos = formatted.length;
+            for (let i = 0; i < formatted.length; i++) {
+                if (/\d/.test(formatted[i])) count++;
+                if (count === digitsBeforeCursor) { newPos = i + 1; break; }
+            }
+            this.selectionStart = this.selectionEnd = newPos;
+        });
+        input.addEventListener('paste', function (e) {
+            e.preventDefault();
+            const pasted = (e.clipboardData || window.clipboardData).getData('text');
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const beforeDigits = this.value.slice(0, start).replace(/\D/g, '');
+            const afterDigits = this.value.slice(end).replace(/\D/g, '');
+            const newDigits = (beforeDigits + pasted.replace(/\D/g, '') + afterDigits).slice(0, 9);
+            this.value = formatDni(newDigits);
+            this.dispatchEvent(new Event('input'));
+        });
+    }
+
+    function bindLimitCliente(input, max) {
+        if (!input) return;
+        input.addEventListener('input', () => {
+            if (input.value.length >= max) {
+                if(window.mostrarErrorInline) window.mostrarErrorInline(input.id, `Límite de ${max} caracteres alcanzado.`);
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline(input.id);
+            }
+        });
+    }
+
+    const modalAddClienteInputs = [
+        { id: 'addClienteNombre', max: 70 },
+        { id: 'addClienteApellido', max: 70 },
+        { id: 'addClienteDNI', max: 10 },
+        { id: 'addClienteTelefono', max: 20 },
+        { id: 'addClienteDireccion', max: 200 },
+        { id: 'addClienteEmail', max: 255 }
+    ];
+    modalAddClienteInputs.forEach(item => {
+        bindLimitCliente(document.getElementById(item.id), item.max);
+    });
+
+    restrictDniInput(document.getElementById('addClienteDNI'));
 
     const handleAddClienteEsc = (e) => {
         if (e.key === 'Escape') closeAddClienteModal();
@@ -543,8 +606,7 @@ document.addEventListener('DOMContentLoaded', function () {
             addClienteMessage.textContent = '';
             addClienteMessage.className = 'form-message';
         }
-        document.querySelectorAll('#add-cliente-form .error-message')
-            .forEach(el => el.textContent = '');
+        if(window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('addCliente');
     }
 
     function openAddClienteModal() {
@@ -564,13 +626,6 @@ document.addEventListener('DOMContentLoaded', function () {
     async function handleAddClienteSubmit(event) {
         event.preventDefault();
 
-        // Limpiar errores previos
-        document.getElementById('errorAddClienteNombre').textContent = '';
-        document.getElementById('errorAddClienteApellido').textContent = '';
-        document.getElementById('errorAddClienteDNI').textContent = '';
-        document.getElementById('errorAddClienteTelefono').textContent = '';
-        document.getElementById('errorAddClienteDireccion').textContent = '';
-        document.getElementById('errorAddClienteEmail').textContent = '';
         if (addClienteMessage) {
             addClienteMessage.textContent = '';
             addClienteMessage.classList.remove('error', 'success');
@@ -588,24 +643,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Validación: campos obligatorios
         if (!nombre) {
-            document.getElementById('errorAddClienteNombre').textContent = 'El nombre es obligatorio.';
+            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteNombre', 'El nombre es obligatorio.');
             isValid = false;
+        } else {
+            if(window.limpiarErroresInline) window.limpiarErroresInline('addClienteNombre');
         }
 
         if (!apellido) {
-            document.getElementById('errorAddClienteApellido').textContent = 'El apellido es obligatorio.';
+            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteApellido', 'El apellido es obligatorio.');
             isValid = false;
+        } else {
+            if(window.limpiarErroresInline) window.limpiarErroresInline('addClienteApellido');
         }
 
         if (!dni) {
-            document.getElementById('errorAddClienteDNI').textContent = 'El DNI es obligatorio.';
+            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteDNI', 'El DNI es obligatorio.');
             isValid = false;
         } else {
+            if(window.limpiarErroresInline) window.limpiarErroresInline('addClienteDNI');
             try {
                 const dniCheckResponse = await fetch(`/api/clientes/existe/dni/${encodeURIComponent(dni)}`);
                 const dniExiste = await dniCheckResponse.json();
                 if (dniExiste) {
-                    document.getElementById('errorAddClienteDNI').textContent = 'Ya existe un cliente con ese DNI.';
+                    if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteDNI', 'Ya existe un cliente con ese DNI.');
                     isValid = false;
                 }
             } catch (err) {
@@ -614,18 +674,27 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (!telefono) {
-            document.getElementById('errorAddClienteTelefono').textContent = 'El teléfono es obligatorio.';
+            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteTelefono', 'El teléfono es obligatorio.');
             isValid = false;
+        } else {
+            if(window.limpiarErroresInline) window.limpiarErroresInline('addClienteTelefono');
         }
 
         if (!direccion) {
-            document.getElementById('errorAddClienteDireccion').textContent = 'La dirección es obligatoria.';
+            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteDireccion', 'La dirección es obligatoria.');
             isValid = false;
+        } else {
+            if(window.limpiarErroresInline) window.limpiarErroresInline('addClienteDireccion');
         }
 
         if (!email) {
-            document.getElementById('errorAddClienteEmail').textContent = 'El email es obligatorio.';
+            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteEmail', 'El email es obligatorio.');
             isValid = false;
+        } else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
+            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteEmail', 'El formato del email no es válido.');
+            isValid = false;
+        } else {
+            if(window.limpiarErroresInline) window.limpiarErroresInline('addClienteEmail');
         }
 
         if (!isValid) return;
@@ -823,6 +892,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 previousClienteNombre = nombreCompleto;
                 clienteResultsContainer.style.display = 'none';
                 if (clienteError) clienteError.textContent = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline('venta-cliente-search');
             }
         }
     }
@@ -916,20 +986,22 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        // Agregar al detalle con cantidad 0
+        // Agregar al detalle con cantidad 1
         detallesVenta.push({
             idProducto: producto.idProducto,
             nombreProducto: producto.nombreProducto,
             precioVenta: producto.precioVenta,
-            cantidad: 0,
+            cantidad: 1,
             stockAlAgregar: producto.stockActual || 0
         });
         renderDetalleTemporal();
 
+        // Limpiar error previo
         if (errorDetalleGeneral) {
             errorDetalleGeneral.textContent = '';
             errorDetalleGeneral.style.display = 'none';
         }
+        if (window.limpiarErroresInline) window.limpiarErroresInline('product-search');
     }
 
     // ==========================================================
@@ -941,17 +1013,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!item) return;
         const nueva = item.cantidad + delta;
         if (nueva < 0) return;
+        
+        const fila = ventaDetalleTemporalBody.querySelector(`tr[data-id="${item.idProducto}"]`);
+        const qtyInput = fila ? fila.querySelector('.qty-input') : null;
+
         if (nueva > item.stockAlAgregar) {
-            if (errorDetalleGeneral) {
-                errorDetalleGeneral.textContent = `Stock disponible: ${item.stockAlAgregar} unidades.`;
-                errorDetalleGeneral.className = 'form-message error';
-                errorDetalleGeneral.style.display = 'block';
+            if (qtyInput) {
+                window.mostrarTooltipStock(qtyInput, `Stock disponible: ${item.stockAlAgregar} unidades.`);
             }
             return;
-        }
-        if (errorDetalleGeneral) {
-            errorDetalleGeneral.textContent = '';
-            errorDetalleGeneral.style.display = 'none';
         }
         item.cantidad = nueva;
         renderDetalleTemporal();
@@ -1058,11 +1128,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
         generalMessage.textContent = '';
         generalMessage.className = 'form-message';
-        if (clienteError) clienteError.textContent = '';
-        if (errorDetalleGeneral) {
-            errorDetalleGeneral.textContent = '';
-            errorDetalleGeneral.style.display = 'none';
-        }
+        window.limpiarTodosErroresInline('venta-cliente-search');
+        window.limpiarTodosErroresInline('product-search');
+        window.limpiarTodosErroresInline('descuento-venta');
+        window.limpiarTodosErroresInline('venta-cobro-metodo');
+        window.limpiarTodosErroresInline('venta-cobro-monto');
+        window.limpiarTodosErroresInline('venta-paga-con');
 
         const fechaVenta = getFechaActual();
         const idCliente = clienteHiddenInput.value;
@@ -1070,24 +1141,24 @@ document.addEventListener('DOMContentLoaded', function () {
         let isValid = true;
 
         if (!idCliente) {
-            if (clienteError) clienteError.textContent = 'Debe seleccionar un cliente.';
+            window.mostrarErrorInline('venta-cliente-search', 'Debe seleccionar un cliente.');
             isValid = false;
         }
 
         if (detallesVenta.length === 0) {
-            if (errorProducto) {
-                errorProducto.textContent = 'Debe agregar al menos un producto.';
-            }
+            window.mostrarErrorInline('product-search', 'Debe agregar al menos un producto.');
             isValid = false;
         }
 
         const itemsSinCantidad = detallesVenta.filter(d => d.cantidad < 1);
         if (itemsSinCantidad.length > 0) {
-            if (errorDetalleGeneral) {
-                errorDetalleGeneral.textContent = 'Todos los productos deben tener cantidad mayor a 0.';
-                errorDetalleGeneral.className = 'form-message error';
-                errorDetalleGeneral.style.display = 'block';
-            }
+            itemsSinCantidad.forEach(item => {
+                const fila = ventaDetalleTemporalBody.querySelector(`tr[data-id="${item.idProducto}"]`);
+                const qtyInput = fila ? fila.querySelector('.qty-input') : null;
+                if (qtyInput) {
+                    window.mostrarTooltipStock(qtyInput, 'La cantidad debe ser mayor a 0.');
+                }
+            });
             isValid = false;
         }
 
@@ -1103,24 +1174,25 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         const totalFinal = totalBase - descuentoMonto;
 
-        if (totalFinal <= 0 && totalBase > 0) {
-            if (errorDescuento) errorDescuento.textContent = 'El total con descuento debe ser mayor a $0.';
-            isValid = false;
+        // Auto-registro de cobro pendiente en inputs
+        const cobroMetodoVal = cobroMetodoSelect?.value;
+        if (cobroMetodoVal) {
+            const added = intentarAgregarCobroAutomatico(totalFinal);
+            if (!added) {
+                isValid = false;
+            }
         }
 
-        // Auto-registro de cobro si el usuario no tocó el botón +
-        if (cobrosMixtos.length === 0) {
-            intentarAgregarCobroAutomatico(totalFinal);
-        }
+        if (!isValid) return;
 
         // Validar cobros
         if (cobrosMixtos.length === 0) {
-            if (errorMetodoPago) errorMetodoPago.textContent = 'Debe agregar al menos un cobro.';
+            window.mostrarErrorInline('venta-cobro-metodo', 'Debe agregar al menos un cobro.');
             isValid = false;
         } else {
             const sumaCobros = cobrosMixtos.reduce((acc, c) => acc + parseFloat(c.importe), 0);
             if (Math.abs(sumaCobros - totalFinal) > 0.05) {
-                if (errorMetodoPago) errorMetodoPago.textContent = `Los cobros ($${formatoMoneda.format(sumaCobros)}) no cubren el total ($${formatoMoneda.format(totalFinal)}).`;
+                window.mostrarErrorInline('venta-cobro-monto', `Los cobros no cubren el total.`);
                 isValid = false;
             }
         }
@@ -1131,13 +1203,12 @@ document.addEventListener('DOMContentLoaded', function () {
         if (totalFinal <= 0) {
             if (errorDescuento) {
                 errorDescuento.textContent = 'El total con descuento debe ser mayor a $0.';
+                errorDescuento.style.display = 'block';
                 isValid = false;
             }
         }
 
         if (!isValid) {
-            generalMessage.textContent = 'Por favor, complete todos los campos obligatorios.';
-            generalMessage.classList.add('error');
             return;
         }
 
@@ -1530,13 +1601,26 @@ document.addEventListener('DOMContentLoaded', function () {
         const tipoTarjeta  = cobroTipoTarjetaSelect?.value || null;
         const esEfectivo   = nombreMetodo.toLowerCase().includes('efectivo');
 
-        if (!idMetodo) { if (errorMetodoPagoEl) errorMetodoPagoEl.textContent = 'Seleccione un método de pago.'; return false; }
-        if (isNaN(monto) || monto <= 0) { if (errorMetodoPagoEl) errorMetodoPagoEl.textContent = 'Ingrese un monto válido.'; return false; }
+        if (!idMetodo) {
+            window.mostrarErrorInline('venta-cobro-metodo', 'Seleccione un método de pago.');
+            return false;
+        } else {
+            window.limpiarErroresInline('venta-cobro-metodo');
+        }
+
+        if (isNaN(monto) || monto <= 0) {
+            window.mostrarErrorInline('venta-cobro-monto', 'Debe ingresar un importe para este cobro.');
+            return false;
+        } else {
+            window.limpiarErroresInline('venta-cobro-monto');
+        }
 
         const pendiente = calcularPendiente();
         if (monto > pendiente + 0.05) {
-            if (errorMetodoPagoEl) errorMetodoPagoEl.textContent = `Monto excede. Pendiente: $${formatoMoneda.format(pendiente)}`;
+            window.mostrarErrorInline('venta-cobro-monto', `Monto excede. Pendiente: $${formatoMoneda.format(pendiente)}`);
             return false;
+        } else {
+            window.limpiarErroresInline('venta-cobro-monto');
         }
 
         let montoPagado = null, vueltoVal = null;
@@ -1566,14 +1650,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const idMetodo = cobroMetodoSelect?.value;
         if (!idMetodo) return;
 
-        const montoRaw = cobroMontoInput?.value?.replace(/\./g, '') || '';
-        const montoActual = parseFloat(montoRaw);
-        if (!montoRaw || isNaN(montoActual) || montoActual <= 0) {
-            if (cobroMontoInput && totalFinal > 0) {
-                cobroMontoInput.value = new Intl.NumberFormat('es-AR').format(Math.round(totalFinal));
-            }
-        }
-
+        // No realizar autocompletado de montos
         const nombreMetodo = cobroMetodoSelect.options[cobroMetodoSelect.selectedIndex]?.text || '';
         const esEfectivo = nombreMetodo.toLowerCase().includes('efectivo');
         if (esEfectivo) {
@@ -1583,13 +1660,40 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        agregarCobroDesdeInputs();
+        return agregarCobroDesdeInputs();
     }
 
     // Botón Agregar Cobro
     const btnAddCobroMixto = document.getElementById('btn-add-cobro-mixto');
-    if (btnAddCobroMixto) {
-        btnAddCobroMixto.addEventListener('click', agregarCobroDesdeInputs);
+     if (btnAddCobroMixto) {
+        btnAddCobroMixto.addEventListener('click', function () {
+            const metodoInput = document.getElementById('venta-cobro-metodo');
+            const montoInput = document.getElementById('venta-cobro-monto');
+            const ventaTipoTarjetaContainer = document.getElementById('venta-tipo-tarjeta-container');
+            
+            const metodo = metodoInput ? metodoInput.value : '';
+            const importe = montoInput ? parseFloat(montoInput.value.replace(/\./g, '')) : 0;
+            const tarjetaTipo = ventaTipoTarjetaContainer && ventaTipoTarjetaContainer.style.display !== 'none' ? document.getElementById('venta-cobro-tipo-tarjeta').value : null;
+
+            let valid = true;
+            if (!metodo) {
+                window.mostrarErrorInline('venta-cobro-metodo', 'Seleccione un método.');
+                valid = false;
+            } else {
+                window.limpiarErroresInline('venta-cobro-metodo');
+            }
+
+            if (!importe || importe <= 0 || isNaN(importe)) {
+                window.mostrarErrorInline('venta-cobro-monto', 'Debe ingresar un importe para este cobro.');
+                valid = false;
+            } else {
+                window.limpiarErroresInline('venta-cobro-monto');
+            }
+            
+            if (!valid) return;
+
+            agregarCobroDesdeInputs();
+        });
     }
 
     // Event listeners para descuento
@@ -1715,16 +1819,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (val > item.stockAlAgregar) {
                 val = item.stockAlAgregar;
                 qtyInput.value = val;
-                if (errorDetalleGeneral) {
-                    errorDetalleGeneral.textContent = `Stock disponible: ${item.stockAlAgregar} unidades.`;
-                    errorDetalleGeneral.className = 'form-message error';
-                    errorDetalleGeneral.style.display = 'block';
-                }
-            } else {
-                if (errorDetalleGeneral) {
-                    errorDetalleGeneral.textContent = '';
-                    errorDetalleGeneral.style.display = 'none';
-                }
+                window.mostrarTooltipStock(qtyInput, `Stock disponible: ${item.stockAlAgregar} unidades.`);
             }
             item.cantidad = val;
             actualizarSubtotalesYTotales();
@@ -1825,11 +1920,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================================
 
     function limpiarFormularioVenta() {
-        // Limpiar campos del formulario
         if (ventaForm) ventaForm.reset();
 
-        // Limpiar errores
-        document.querySelectorAll('#venta-form .error-message').forEach(el => el.textContent = '');
+        window.limpiarTodosErroresInline('venta-cliente-search');
+        window.limpiarTodosErroresInline('product-search');
+        window.limpiarTodosErroresInline('descuento-venta');
+        window.limpiarTodosErroresInline('venta-cobro-metodo');
+        window.limpiarTodosErroresInline('venta-cobro-monto');
+        window.limpiarTodosErroresInline('venta-paga-con');
+
         if (errorDetalleGeneral) {
             errorDetalleGeneral.textContent = '';
             errorDetalleGeneral.style.display = 'none';
@@ -1987,9 +2086,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
-
-
-
+    // --- Limpieza dinámica de errores inline ---
+    ['venta-cliente-search', 'product-search', 'descuento-venta', 'venta-cobro-metodo', 'venta-cobro-monto', 'venta-paga-con'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', () => {
+                if (window.limpiarErroresInline) window.limpiarErroresInline(id);
+            });
+            el.addEventListener('change', () => {
+                if (window.limpiarErroresInline) window.limpiarErroresInline(id);
+            });
+        }
+    });
     // Exponer globalmente
     window.showVentasSubsection = showSubsection;
     window.mostrarDetalleVenta = mostrarDetalleVenta;

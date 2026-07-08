@@ -84,12 +84,12 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÍMITES DE CARACTERES EN TIEMPO REAL
     // ===============================
     function bindLimit(input, errorEl, max) {
-        if (!input || !errorEl) return;
+        if (!input) return;
         input.addEventListener('input', () => {
             if (input.value.length >= max) {
-                errorEl.textContent = `Límite de ${max} caracteres alcanzado`;
-            } else if (errorEl.textContent.startsWith('Límite de')) {
-                errorEl.textContent = '';
+                if(window.mostrarErrorInline) window.mostrarErrorInline(input.id, `Límite de ${max} caracteres alcanzado.`);
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline(input.id);
             }
         });
     }
@@ -100,9 +100,26 @@ document.addEventListener('DOMContentLoaded', function () {
     bindLimit(passwordInput,       document.getElementById('error-user-password'),         100);
     bindLimit(confirmPasswordInput,document.getElementById('error-user-confirm-password'), 100);
 
-    bindLimit(editNombreInput,   document.getElementById('errorEditUsuarioNombre'),   70);
-    bindLimit(editApellidoInput, document.getElementById('errorEditUsuarioApellido'), 70);
-    bindLimit(editEmailInput,    document.getElementById('errorEditUsuarioEmail'),    255);
+    bindLimit(editNombreInput,   document.getElementById('error-editUsuarioNombre'),   70);
+    bindLimit(editApellidoInput, document.getElementById('error-editUsuarioApellido'), 70);
+    bindLimit(editEmailInput,    document.getElementById('error-editUsuarioEmail'),    255);
+
+    // Limpiar error al seleccionar un rol
+    if (rolSelect) {
+        rolSelect.addEventListener('change', function() {
+            if (this.value) {
+                if(window.limpiarErroresInline) window.limpiarErroresInline(this.id);
+            }
+        });
+    }
+
+    if (editRolSelect) {
+        editRolSelect.addEventListener('change', function() {
+            if (this.value) {
+                if(window.limpiarErroresInline) window.limpiarErroresInline(this.id);
+            }
+        });
+    }
 
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS (TABLA Y ROLES)
@@ -313,7 +330,7 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
 
             // 1. Limpiar mensajes
-            document.querySelectorAll('#user-form .error-message').forEach(el => el.textContent = '');
+            if(window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('user');
             generalMessage.textContent = '';
             generalMessage.className = 'form-message';
 
@@ -329,59 +346,60 @@ document.addEventListener('DOMContentLoaded', function () {
             let isValid = true;
 
             // Validación de nombre
-            if (!nombre) {
-                document.getElementById('error-user-nombre').textContent = 'El nombre es obligatorio';
-                isValid = false;
-            }
+            if (!nombre) { if(window.mostrarErrorInline) window.mostrarErrorInline('user-nombre', 'El nombre es obligatorio'); isValid = false; }
+            else { if(window.limpiarErroresInline) window.limpiarErroresInline('user-nombre'); }
 
             // Validación de apellido
-            if (!apellido) {
-                document.getElementById('error-user-apellido').textContent = 'El apellido es obligatorio';
-                isValid = false;
-            }
+            if (!apellido) { if(window.mostrarErrorInline) window.mostrarErrorInline('user-apellido', 'El apellido es obligatorio'); isValid = false; }
+            else { if(window.limpiarErroresInline) window.limpiarErroresInline('user-apellido'); }
 
             // Validación de email
             if (!email) {
-                document.getElementById('error-user-email').textContent = 'El email es obligatorio';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('user-email', 'El email es obligatorio');
                 isValid = false;
             } else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                document.getElementById('error-user-email').textContent = 'El formato del email no es válido';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('user-email', 'El formato del email no es válido');
                 isValid = false;
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline('user-email');
             }
 
             // Validación de rol
             if (!idRol) {
-                document.getElementById('error-user-rol').textContent = 'Debe seleccionar un rol';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('user-rol', 'Debe seleccionar un rol');
                 isValid = false;
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline('user-rol');
             }
 
             // Validación de contraseña
             if (!password) {
-                document.getElementById('error-user-password').textContent = 'La contraseña es obligatoria';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('user-password', 'La contraseña es obligatoria');
                 isValid = false;
             } else {
                 const hasNumber = /\d/.test(password);
                 const isCorrectLength = password.length >= 8;
 
-                // La checklist ya muestra los requisitos en tiempo real,
-                // solo bloqueamos el envío si no se cumplen.
                 if (!isCorrectLength || !hasNumber) {
+                    if(window.mostrarErrorInline) window.mostrarErrorInline('user-password', 'La contraseña no cumple los requisitos');
                     isValid = false;
+                } else {
+                    if(window.limpiarErroresInline) window.limpiarErroresInline('user-password');
                 }
             }
 
             // Validación de confirmación de contraseña
             if (!confirmPassword) {
-                document.getElementById('error-user-confirm-password').textContent = 'Debe confirmar la contraseña';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('user-confirm-password', 'Debe confirmar la contraseña');
                 isValid = false;
             } else if (password !== confirmPassword) {
-                document.getElementById('error-user-confirm-password').textContent = 'Las contraseñas no coinciden';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('user-confirm-password', 'Las contraseñas no coinciden');
                 isValid = false;
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline('user-confirm-password');
             }
 
             if (!isValid) {
-                generalMessage.textContent = "Por favor, complete todos los campos correctamente.";
-                generalMessage.classList.add('error');
                 return;
             }
 
@@ -442,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function () {
         btnLimpiarFormUsuario.addEventListener('click', function () {
             if (userForm) userForm.reset();
             // Limpiar mensajes de error
-            document.querySelectorAll('#user-form .error-message').forEach(el => el.textContent = '');
+            if(window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('user');
             if (generalMessage) {
                 generalMessage.textContent = '';
                 generalMessage.className = 'form-message';
@@ -584,7 +602,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Limpiar todos los mensajes de error
-        document.querySelectorAll('#edit-usuario-form .error-message').forEach(el => el.textContent = '');
+        if(window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('editUsuario');
 
         // Limpiar mensaje general
         if (editGeneralMessage) {
@@ -607,39 +625,37 @@ document.addEventListener('DOMContentLoaded', function () {
             };
 
             // Limpiar mensajes previos
-            document.querySelectorAll('#edit-usuario-form .error-message').forEach(el => el.textContent = '');
+            if(window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('editUsuario');
             editGeneralMessage.textContent = '';
             editGeneralMessage.className = 'form-message';
 
             // Validaciones
             let isValid = true;
 
-            if (!dto.nombre) {
-                document.getElementById('errorEditUsuarioNombre').textContent = 'El nombre es obligatorio';
-                isValid = false;
-            }
+            if (!dto.nombre) { if(window.mostrarErrorInline) window.mostrarErrorInline('editUsuarioNombre', 'El nombre es obligatorio'); isValid = false; }
+            else { if(window.limpiarErroresInline) window.limpiarErroresInline('editUsuarioNombre'); }
 
-            if (!dto.apellido) {
-                document.getElementById('errorEditUsuarioApellido').textContent = 'El apellido es obligatorio';
-                isValid = false;
-            }
+            if (!dto.apellido) { if(window.mostrarErrorInline) window.mostrarErrorInline('editUsuarioApellido', 'El apellido es obligatorio'); isValid = false; }
+            else { if(window.limpiarErroresInline) window.limpiarErroresInline('editUsuarioApellido'); }
 
             if (!dto.email) {
-                document.getElementById('errorEditUsuarioEmail').textContent = 'El email es obligatorio';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('editUsuarioEmail', 'El email es obligatorio');
                 isValid = false;
             } else if (!dto.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                document.getElementById('errorEditUsuarioEmail').textContent = 'El formato del email no es válido';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('editUsuarioEmail', 'El formato del email no es válido');
                 isValid = false;
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline('editUsuarioEmail');
             }
 
             if (!dto.idRol) {
-                document.getElementById('errorEditUsuarioRol').textContent = 'Debe seleccionar un rol';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('editUsuarioRol', 'Debe seleccionar un rol');
                 isValid = false;
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline('editUsuarioRol');
             }
 
             if (!isValid) {
-                editGeneralMessage.textContent = "Por favor, complete todos los campos correctamente.";
-                editGeneralMessage.classList.add('error');
                 return;
             }
 

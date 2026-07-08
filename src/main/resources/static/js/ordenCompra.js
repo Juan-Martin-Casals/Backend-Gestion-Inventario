@@ -25,6 +25,21 @@ document.addEventListener('DOMContentLoaded', () => {
     // Cargar proveedores al iniciar
     cargarProveedoresOC();
     setFechaActualOC();
+
+    // Limpiar errores de fechas al cambiar
+    const ocFechaEmision = document.getElementById('oc-fecha-emision');
+    const ocFechaEntrega = document.getElementById('oc-fecha-entrega');
+    if (ocFechaEmision) {
+        ocFechaEmision.addEventListener('change', () => {
+            if (window.limpiarErroresInline) window.limpiarErroresInline('oc-fecha-emision');
+        });
+    }
+    if (ocFechaEntrega) {
+        ocFechaEntrega.addEventListener('change', () => {
+            if (window.limpiarErroresInline) window.limpiarErroresInline('oc-fecha-entrega');
+            if (window.limpiarErroresInline) window.limpiarErroresInline('oc-fecha-emision');
+        });
+    }
 });
 
 function setFechaActualOC() {
@@ -297,7 +312,7 @@ function renderTablaProductosOC() {
               <td class="col-num col-qty" style="vertical-align: middle;">
                   <div class="qty-stepper">
                       <button type="button" class="btn-qty btn-qty-minus" onclick="actualizarLineaOC(${index}, 'cantidad', ${linea.cantidad - 1})">-</button>
-                      <input type="number" value="${linea.cantidad}" id="oc-cantidad-${index}" class="qty-input responsive-input" maxlength="7" oninput="window.checkMaxLength(this, 7)" onkeydown="return event.key !== '-' && event.key !== '.' && event.key !== ','" onchange="actualizarLineaOC(${index}, 'cantidad', this.value)">
+                      <input type="number" value="${linea.cantidad}" id="oc-cantidad-${index}" class="qty-input responsive-input" maxlength="7" oninput="window.checkMaxLength(this, 7)" onkeydown="return event.key !== '-' && event.key !== '.' && event.key !== ',' && event.key !== 'e' && event.key !== 'E'" onchange="actualizarLineaOC(${index}, 'cantidad', this.value)">
                       <button type="button" class="btn-qty btn-qty-plus" onclick="actualizarLineaOC(${index}, 'cantidad', ${linea.cantidad + 1})">+</button>
                   </div>
                   <div class="error-message" id="error-oc-cantidad-${index}"></div>
@@ -305,7 +320,7 @@ function renderTablaProductosOC() {
               <td class="col-num" style="vertical-align: middle;">
                   <div class="input-money" style="position: relative;">
                       <span class="money-prefix">$</span>
-                      <input type="text" value="${linea.costoUnitario}" id="oc-costo-${index}" class="inline-edit-input responsive-input" maxlength="10" oninput="window.checkMaxLength(this, 10)" onkeydown="return event.key !== '-'" onchange="actualizarLineaOC(${index}, 'costo', this.value)">
+                      <input type="number" step="0.01" min="0" value="${linea.costoUnitario}" id="oc-costo-${index}" class="inline-edit-input responsive-input" oninput="window.checkMaxLength(this, 10)" onkeydown="return event.key !== '-' && event.key !== '+' && event.key !== 'e' && event.key !== 'E'" onchange="actualizarLineaOC(${index}, 'costo', this.value)">
                   </div>
                   <div class="error-message" id="error-oc-costo-${index}"></div>
               </td>
@@ -394,6 +409,14 @@ async function guardarYGenerarOrdenCompra() {
     if (!fechaEntrega) {
         if(window.mostrarErrorInline) window.mostrarErrorInline('oc-fecha-entrega', 'Debe seleccionar la Fecha de Entrega Esperada');
         hasError = true;
+    }
+
+    if (fechaEmision && fechaEntrega) {
+        if (fechaEmision > fechaEntrega) {
+            if (window.mostrarErrorInline) window.mostrarErrorInline('oc-fecha-emision', 'La fecha de emisión no puede ser posterior a la de entrega');
+            if (window.mostrarErrorInline) window.mostrarErrorInline('oc-fecha-entrega', 'La fecha de entrega debe ser posterior o igual a la de emisión');
+            hasError = true;
+        }
     }
     
     const condicionPago = document.getElementById('oc-condicion-pago').value;

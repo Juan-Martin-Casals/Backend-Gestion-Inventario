@@ -4,7 +4,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const hoyParaVencimientos = new Date().toISOString().split('T')[0];
     const inputFechaProg = document.getElementById('compra-fecha-programada-pago');
     const inputProxFecha = document.getElementById('pago-compra-proxima-fecha');
-    if (inputFechaProg) inputFechaProg.setAttribute('min', hoyParaVencimientos);
+    if (inputFechaProg) {
+        inputFechaProg.setAttribute('min', hoyParaVencimientos);
+        inputFechaProg.addEventListener('change', () => {
+            if (window.limpiarErroresInline) window.limpiarErroresInline('compra-fecha-programada-pago');
+        });
+    }
     if (inputProxFecha) inputProxFecha.setAttribute('min', hoyParaVencimientos);
 
     // ===============================
@@ -327,12 +332,17 @@ document.addEventListener('DOMContentLoaded', function () {
     // Función para establecer la fecha actual en el campo de fecha
     function establecerFechaActual() {
         const fechaInput = document.getElementById('compra-fecha');
-        if (fechaInput && !fechaInput.value) {
-            const hoy = new Date();
-            const year = hoy.getFullYear();
-            const month = String(hoy.getMonth() + 1).padStart(2, '0');
-            const day = String(hoy.getDate()).padStart(2, '0');
-            fechaInput.value = `${year}-${month}-${day}`;
+        if (fechaInput) {
+            fechaInput.addEventListener('change', () => {
+                if (window.limpiarErroresInline) window.limpiarErroresInline('compra-fecha');
+            });
+            if (!fechaInput.value) {
+                const hoy = new Date();
+                const year = hoy.getFullYear();
+                const month = String(hoy.getMonth() + 1).padStart(2, '0');
+                const day = String(hoy.getDate()).padStart(2, '0');
+                fechaInput.value = `${year}-${month}-${day}`;
+            }
         }
     }
 
@@ -506,7 +516,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         previousProveedorNombre = newProveedorNombre;
                         fetchAllProductosParaCompra();
                         proveedorResultsContainer.style.display = 'none';
-                        if (proveedorError) proveedorError.textContent = '';
+                        if (window.limpiarErroresInline) window.limpiarErroresInline('compra-proveedor-search');
                         productoSearchInput.value = '';
                         productoHiddenInput.value = '';
                     },
@@ -525,7 +535,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 previousProveedorNombre = newProveedorNombre;
                 fetchAllProductosParaCompra();
                 proveedorResultsContainer.style.display = 'none';
-                if (proveedorError) proveedorError.textContent = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline('compra-proveedor-search');
                 productoSearchInput.value = '';
                 productoHiddenInput.value = '';
             }
@@ -535,7 +545,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (proveedorSearchInput) {
         proveedorSearchInput.addEventListener('input', () => {
             proveedorHiddenInput.value = '';
-            if (proveedorError) proveedorError.textContent = '';
+            if (window.limpiarErroresInline) window.limpiarErroresInline('compra-proveedor-search');
             filtrarProveedores();
             if (proveedorSearchInput.value.trim() === '') {
                 todosLosProductos = [];
@@ -613,7 +623,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 productoResultsContainer.style.display = 'none';
                 return;
             }
-            if (productoError) productoError.textContent = '';
+            if (window.limpiarErroresInline) window.limpiarErroresInline('compra-producto-search');
             if (errorDetalleGeneral) errorDetalleGeneral.textContent = '';
 
             detalleItems.push({
@@ -635,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (productoSearchInput) {
         productoSearchInput.addEventListener('input', () => {
             productoHiddenInput.value = '';
-            if (productoError) productoError.textContent = '';
+            if (window.limpiarErroresInline) window.limpiarErroresInline('compra-producto-search');
             filtrarProductos();
         });
         productoSearchInput.addEventListener('focus', filtrarProductos);
@@ -690,21 +700,24 @@ document.addEventListener('DOMContentLoaded', function () {
                 <td class="col-num col-qty">
                     <div class="qty-stepper">
                         <button type="button" class="btn-qty btn-qty-minus" data-index="${index}">−</button>
-                        <input type="number" class="qty-input" data-index="${index}" value="${item.cantidad}" min="1" max="999999" step="1" inputmode="numeric" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
+                        <input type="number" id="compra-detalle-qty-${index}" class="qty-input" data-index="${index}" value="${item.cantidad}" min="1" max="999999" step="1" inputmode="numeric" oninput="window.checkMaxLength(this, 6)" onkeypress="return event.charCode >= 48 && event.charCode <= 57">
                         <button type="button" class="btn-qty btn-qty-plus" data-index="${index}">+</button>
                     </div>
+                    <div class="error-message" id="error-compra-detalle-qty-${index}" style="margin-top: 4px; font-size: 0.75rem; text-align: center;"></div>
                 </td>
                 <td class="col-num">
                     <div class="input-money" style="position: relative;">
                         <span class="money-prefix">$</span>
-                        <input type="text" class="inline-edit-input" data-index="${index}" data-field="precioUnitario" value="${formatoMoneda.format(item.precioUnitario)}" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46 || event.charCode === 44">
+                        <input type="text" id="compra-detalle-costo-${index}" class="inline-edit-input" data-index="${index}" data-field="precioUnitario" value="${formatoMoneda.format(item.precioUnitario)}" oninput="window.checkMaxLength(this, 10)" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46 || event.charCode === 44">
                     </div>
+                    <div class="error-message" id="error-compra-detalle-costo-${index}" style="margin-top: 4px; font-size: 0.75rem; text-align: right;"></div>
                 </td>
                 <td class="col-num">
                     <div class="input-money" style="position: relative;">
                         <span class="money-prefix">$</span>
-                        <input type="text" class="inline-edit-input" data-index="${index}" data-field="nuevoPrecioVenta" value="${formatoMoneda.format(item.nuevoPrecioVenta)}" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46 || event.charCode === 44">
+                        <input type="text" id="compra-detalle-venta-${index}" class="inline-edit-input" data-index="${index}" data-field="nuevoPrecioVenta" value="${formatoMoneda.format(item.nuevoPrecioVenta)}" oninput="window.checkMaxLength(this, 10)" onkeypress="return (event.charCode >= 48 && event.charCode <= 57) || event.charCode === 46 || event.charCode === 44">
                     </div>
+                    <div class="error-message" id="error-compra-detalle-venta-${index}" style="margin-top: 4px; font-size: 0.75rem; text-align: right;"></div>
                 </td>
                 <td class="col-num" id="subtotal-cell-${index}">$${formatoMoneda.format(subtotal)}</td>
                 <td>
@@ -822,16 +835,16 @@ document.addEventListener('DOMContentLoaded', function () {
     if (compraForm) {
         compraForm.addEventListener('submit', async function (event) {
             event.preventDefault();
-            document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
-            if (generalMessageCompra) { generalMessageCompra.textContent = ''; generalMessageCompra.className = 'form-message'; }
+            if (window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('compra-');
+            if (generalMessageCompra) { generalMessageCompra.textContent = ''; generalMessageCompra.classList.remove('error', 'success'); }
 
             let isValid = true;
             const fecha = document.getElementById('compra-fecha').value;
             const idProveedor = proveedorHiddenInput.value;
 
-            if (!fecha) { document.getElementById('errorCompraFecha').textContent = 'La fecha es obligatoria.'; isValid = false; }
-            if (!idProveedor) { document.getElementById('errorCompraProveedor').textContent = 'El proveedor es obligatorio.'; isValid = false; }
-            if (detalleItems.length === 0) { const errProd = document.getElementById('errorCompraProducto'); if (errProd) errProd.textContent = 'Debe agregar al menos un producto al detalle.'; isValid = false; }
+            if (!fecha) { if(window.mostrarErrorInline) window.mostrarErrorInline('compra-fecha', 'La fecha es obligatoria.'); isValid = false; }
+            if (!idProveedor) { if(window.mostrarErrorInline) window.mostrarErrorInline('compra-proveedor-search', 'El proveedor es obligatorio.'); isValid = false; }
+            if (detalleItems.length === 0) { if(window.mostrarErrorInline) window.mostrarErrorInline('compra-producto-search', 'Debe agregar al menos un producto al detalle.'); isValid = false; }
 
             // Auto-absorber cuotas sueltas si el usuario tipeó el pago pero no tocó el botón +
             const selectMetodoSuelto = document.getElementById('compra-metodo-pago');
@@ -900,24 +913,14 @@ document.addEventListener('DOMContentLoaded', function () {
             let fechaVencimientoGlobal = null;
             if (diff > 0.05 && isValid) {
                 if (!scheduledDateInput || !scheduledDateInput.value) {
-                    if (generalMessageCompra) {
-                        generalMessageCompra.textContent = "Debe seleccionar una fecha de pago para el saldo pendiente.";
-                        generalMessageCompra.classList.add('error');
-                    }
-                    // Hacer reset visual rapido para que el usuario se de cuenta
-                    if (scheduledDateInput) scheduledDateInput.style.border = '2px solid red';
+                    if (window.mostrarErrorInline) window.mostrarErrorInline('compra-fecha-programada-pago', 'Debe seleccionar una fecha de pago para el saldo pendiente.');
                     return;
                 } else {
                     const hoyStr = new Date().toISOString().split('T')[0];
                     if (scheduledDateInput.value < hoyStr) {
-                        if (generalMessageCompra) {
-                            generalMessageCompra.textContent = "La fecha de pago programada no puede ser en el pasado.";
-                            generalMessageCompra.classList.add('error');
-                        }
-                        if (scheduledDateInput) scheduledDateInput.style.border = '2px solid red';
+                        if (window.mostrarErrorInline) window.mostrarErrorInline('compra-fecha-programada-pago', 'La fecha de pago programada no puede ser en el pasado.');
                         return;
                     }
-                    if (scheduledDateInput) scheduledDateInput.style.border = '1px solid #ced4da';
                 }
 
                 // Extraer la fecha para la compra entera
@@ -925,10 +928,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (!isValid) {
-                if (generalMessageCompra) {
-                    generalMessageCompra.textContent = "Debe completar todos los campos y pagos correctamente.";
-                    generalMessageCompra.classList.add('error');
-                }
                 return;
             }
 
@@ -1196,10 +1195,14 @@ document.addEventListener('DOMContentLoaded', function () {
         if (compraForm) compraForm.reset();
 
         // Limpiar errores
-        document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
+        if (window.limpiarTodosErroresInline) {
+            window.limpiarTodosErroresInline('compra-');
+        } else {
+            document.querySelectorAll('#compra-form .error-message').forEach(el => el.textContent = '');
+        }
         if (generalMessageCompra) {
             generalMessageCompra.textContent = '';
-            generalMessageCompra.className = 'form-message';
+            generalMessageCompra.classList.remove('error', 'success');
         }
 
         // Limpiar inputs ocultos y búsquedas
@@ -1249,10 +1252,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputMontoRealTime = document.getElementById('compra-pago-monto');
 
     if (inputMontoRealTime) {
-        inputMontoRealTime.addEventListener('input', validarEfectivoEnTiempoReal);
+        inputMontoRealTime.addEventListener('input', () => {
+            // Se quitó limpiarErroresInline porque checkMaxLength ya lo maneja,
+            // si no, el error de límite de caracteres se borra instantáneamente.
+            validarEfectivoEnTiempoReal();
+        });
     }
     if (metodoPagoSelect) {
-        metodoPagoSelect.addEventListener('change', validarEfectivoEnTiempoReal);
+        metodoPagoSelect.addEventListener('change', () => {
+            if (window.limpiarErroresInline) window.limpiarErroresInline('compra-metodo-pago');
+            validarEfectivoEnTiempoReal();
+        });
     }
 
     /**
@@ -2194,9 +2204,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!input || !errorEl) return;
         input.addEventListener('input', () => {
             if (input.value.length >= max) {
-                errorEl.textContent = `Límite de ${max} caracteres alcanzado`;
-            } else if (errorEl.textContent.startsWith('Límite de')) {
-                errorEl.textContent = '';
+                if(window.mostrarErrorInline) window.mostrarErrorInline(input.id, `Límite de ${max} caracteres alcanzado.`);
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline(input.id);
             }
         });
     }
@@ -2204,14 +2214,15 @@ document.addEventListener('DOMContentLoaded', function () {
     // Aplicar restricciones y límites al modal rápido
     restrictTelefonoInputCompra(document.getElementById('addProveedorComprasTelefono'));
     restrictCuitInputCompra(document.getElementById('addProveedorComprasCuit'));
-    bindLimitCompra(document.getElementById('addProveedorComprasNombre'), document.getElementById('errorAddProveedorComprasNombre'), 150);
-    bindLimitCompra(document.getElementById('addProveedorComprasTelefono'), document.getElementById('errorAddProveedorComprasTelefono'), 20);
-    bindLimitCompra(document.getElementById('addProveedorComprasEmail'), document.getElementById('errorAddProveedorComprasEmail'), 255);
-    bindLimitCompra(document.getElementById('addProveedorComprasDireccion'), document.getElementById('errorAddProveedorComprasDireccion'), 200);
+    bindLimitCompra(document.getElementById('addProveedorComprasNombre'), document.getElementById('error-addProveedorComprasNombre'), 150);
+    bindLimitCompra(document.getElementById('addProveedorComprasCuit'), document.getElementById('error-addProveedorComprasCuit'), 13);
+    bindLimitCompra(document.getElementById('addProveedorComprasTelefono'), document.getElementById('error-addProveedorComprasTelefono'), 20);
+    bindLimitCompra(document.getElementById('addProveedorComprasEmail'), document.getElementById('error-addProveedorComprasEmail'), 255);
+    bindLimitCompra(document.getElementById('addProveedorComprasDireccion'), document.getElementById('error-addProveedorComprasDireccion'), 200);
 
     if (btnAddProveedorCompra) {
         btnAddProveedorCompra.addEventListener('click', () => {
-            document.querySelectorAll('#add-proveedor-compras-form .error-message').forEach(el => el.textContent = '');
+            if(window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('addProveedorCompras');
             if (formMsgAddProveedorCompras) {
                 formMsgAddProveedorCompras.textContent = '';
                 formMsgAddProveedorCompras.className = 'form-message';
@@ -2251,7 +2262,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnLimpiarProveedorCompra) {
         btnLimpiarProveedorCompra.addEventListener('click', () => {
             addProveedorComprasForm.reset();
-            document.querySelectorAll('#add-proveedor-compras-form .error-message').forEach(el => el.textContent = '');
+            if(window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('addProveedorCompras');
             if (formMsgAddProveedorCompras) {
                 formMsgAddProveedorCompras.textContent = '';
                 formMsgAddProveedorCompras.className = 'form-message';
@@ -2263,7 +2274,6 @@ document.addEventListener('DOMContentLoaded', function () {
         addProveedorComprasForm.addEventListener('submit', async (e) => {
             e.preventDefault();
 
-            document.querySelectorAll('#add-proveedor-compras-form .error-message').forEach(el => el.textContent = '');
             if (formMsgAddProveedorCompras) {
                 formMsgAddProveedorCompras.textContent = '';
                 formMsgAddProveedorCompras.className = 'form-message';
@@ -2278,38 +2288,50 @@ document.addEventListener('DOMContentLoaded', function () {
             let isValid = true;
 
             if (!nombre) {
-                document.getElementById('errorAddProveedorComprasNombre').textContent = 'El nombre del proveedor es obligatorio';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('addProveedorComprasNombre', 'El nombre del proveedor es obligatorio');
                 isValid = false;
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline('addProveedorComprasNombre');
             }
+
             if (!telefono) {
-                document.getElementById('errorAddProveedorComprasTelefono').textContent = 'El teléfono del proveedor es obligatorio';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('addProveedorComprasTelefono', 'El teléfono del proveedor es obligatorio');
                 isValid = false;
             } else if (telefono.length < 6) {
-                document.getElementById('errorAddProveedorComprasTelefono').textContent = 'El teléfono debe tener al menos 6 caracteres';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('addProveedorComprasTelefono', 'El teléfono debe tener al menos 6 caracteres');
                 isValid = false;
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline('addProveedorComprasTelefono');
             }
+
             if (!email) {
-                document.getElementById('errorAddProveedorComprasEmail').textContent = 'El email del proveedor es obligatorio';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('addProveedorComprasEmail', 'El email del proveedor es obligatorio');
                 isValid = false;
             } else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                document.getElementById('errorAddProveedorComprasEmail').textContent = 'El formato del email no es válido';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('addProveedorComprasEmail', 'El formato del email no es válido');
                 isValid = false;
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline('addProveedorComprasEmail');
             }
+
             if (!direccion) {
-                document.getElementById('errorAddProveedorComprasDireccion').textContent = 'La dirección del proveedor es obligatoria';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('addProveedorComprasDireccion', 'La dirección del proveedor es obligatoria');
                 isValid = false;
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline('addProveedorComprasDireccion');
             }
+
             if (!cuit) {
-                document.getElementById('errorAddProveedorComprasCuit').textContent = 'El CUIT es obligatorio';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('addProveedorComprasCuit', 'El CUIT es obligatorio');
                 isValid = false;
             } else if (!cuit.match(/^\d{2}-\d{8}-\d{1}$/)) {
-                document.getElementById('errorAddProveedorComprasCuit').textContent = 'El formato de CUIT debe ser XX-XXXXXXXX-X';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('addProveedorComprasCuit', 'El formato de CUIT debe ser XX-XXXXXXXX-X');
                 isValid = false;
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline('addProveedorComprasCuit');
             }
 
             if (!isValid) {
-                formMsgAddProveedorCompras.textContent = 'Debe completar todos los campos obligatorios.';
-                formMsgAddProveedorCompras.className = 'form-message error';
                 return;
             }
 
@@ -2322,16 +2344,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const nombreExiste = await nombreRes.json();
                 const emailExiste = await emailRes.json();
                 if (nombreExiste) {
-                    document.getElementById('errorAddProveedorComprasNombre').textContent = 'Ya existe un proveedor con ese nombre';
+                    if(window.mostrarErrorInline) window.mostrarErrorInline('addProveedorComprasNombre', 'Ya existe un proveedor con ese nombre');
                     isValid = false;
                 }
                 if (emailExiste) {
-                    document.getElementById('errorAddProveedorComprasEmail').textContent = 'Ya existe un proveedor con ese email';
+                    if(window.mostrarErrorInline) window.mostrarErrorInline('addProveedorComprasEmail', 'Ya existe un proveedor con ese email');
                     isValid = false;
                 }
                 if (!isValid) {
-                    formMsgAddProveedorCompras.textContent = 'Corrija los errores antes de continuar.';
-                    formMsgAddProveedorCompras.className = 'form-message error';
                     return;
                 }
             } catch (err) {
@@ -2676,10 +2696,18 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
 
-        // Evento input para recalcular el balance inferior orgánicamente y formatear en miles
         inputMontoGlobal.addEventListener('input', function () {
             let cursorPosition = this.selectionStart;
             let oldLength = this.value.length;
+
+            // Revisar manualmente si excedió los 10 dígitos enteros para lanzar el error inline
+            let cleanVal = this.value.replace(/[^0-9,]/g, '');
+            let parts = cleanVal.split(',');
+            if (parts[0] && parts[0].length > 10) {
+                if (window.mostrarErrorInline) window.mostrarErrorInline('compra-pago-monto', 'Límite de 10 dígitos enteros alcanzado.');
+            } else {
+                if (window.limpiarErroresInline) window.limpiarErroresInline('compra-pago-monto');
+            }
 
             let newValue = formatearInputMonedaDecimales(this.value);
             if (newValue === '') {
@@ -2701,20 +2729,18 @@ document.addEventListener('DOMContentLoaded', function () {
         btnAddPagoMixto.addEventListener('click', () => {
             const selectMetodo = document.getElementById('compra-metodo-pago');
             const inputMonto = document.getElementById('compra-pago-monto');
-            const errorMonto = document.getElementById('errorCompraPagoMonto');
-
-            errorMonto.textContent = '';
+            if (window.limpiarErroresInline) window.limpiarErroresInline('compra-pago-monto');
 
             const idMetodo = selectMetodo.value;
             const nombreMetodo = selectMetodo.options[selectMetodo.selectedIndex]?.text;
-            const monto = parsearMoneda(inputMonto.value) || 0;
+            let monto = parsearMoneda(inputMonto.value) || 0;
 
             if (!idMetodo) {
-                errorMonto.textContent = 'Seleccione un método de pago.';
+                if (window.mostrarErrorInline) window.mostrarErrorInline('compra-metodo-pago', 'Seleccione un método de pago.');
                 return;
             }
             if (isNaN(monto) || monto <= 0) {
-                errorMonto.textContent = 'Ingrese un monto válido mayor a 0.';
+                if (window.mostrarErrorInline) window.mostrarErrorInline('compra-pago-monto', 'Ingrese un monto válido mayor a 0.');
                 return;
             }
 
@@ -2730,7 +2756,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 vueltoCalc = monto - saldoPendiente;
 
                 if (saldoPendiente <= 0) {
-                    errorMonto.textContent = 'La compra ya está saldada en su totalidad.';
+                    if (window.mostrarErrorInline) window.mostrarErrorInline('compra-pago-monto', 'La compra ya está saldada en su totalidad.');
                     return;
                 }
 

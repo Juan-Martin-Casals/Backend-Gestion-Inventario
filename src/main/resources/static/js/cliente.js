@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function clearEditErrors() {
-        document.querySelectorAll('#edit-cliente-form .error-message').forEach(el => el.textContent = '');
+        if(window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('edit-cliente');
         if (editMsg) {
             editMsg.textContent = '';
             editMsg.className = 'form-message';
@@ -408,22 +408,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // ====== Validaciones Inline ======
         let isValid = true;
-        if (!dto.nombre) { document.getElementById('error-edit-cliente-nombre').textContent = 'El nombre es obligatorio'; isValid = false; }
-        if (!dto.apellido) { document.getElementById('error-edit-cliente-apellido').textContent = 'El apellido es obligatorio'; isValid = false; }
-        if (!dto.dni) { document.getElementById('error-edit-cliente-dni').textContent = 'El DNI es obligatorio'; isValid = false; }
-        if (!dto.telefono) { document.getElementById('error-edit-cliente-telefono').textContent = 'El teléfono es obligatorio'; isValid = false; }
-        if (!dto.direccion) { document.getElementById('error-edit-cliente-direccion').textContent = 'La dirección es obligatoria'; isValid = false; }
+        if (!dto.nombre) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-cliente-nombre', 'El nombre es obligatorio'); isValid = false; }
+        else { if(window.limpiarErroresInline) window.limpiarErroresInline('edit-cliente-nombre'); }
+        
+        if (!dto.apellido) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-cliente-apellido', 'El apellido es obligatorio'); isValid = false; }
+        else { if(window.limpiarErroresInline) window.limpiarErroresInline('edit-cliente-apellido'); }
+        
+        if (!dto.dni) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-cliente-dni', 'El DNI es obligatorio'); isValid = false; }
+        else { if(window.limpiarErroresInline) window.limpiarErroresInline('edit-cliente-dni'); }
+        
+        if (!dto.telefono) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-cliente-telefono', 'El teléfono es obligatorio'); isValid = false; }
+        else { if(window.limpiarErroresInline) window.limpiarErroresInline('edit-cliente-telefono'); }
+        
+        if (!dto.direccion) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-cliente-direccion', 'La dirección es obligatoria'); isValid = false; }
+        else { if(window.limpiarErroresInline) window.limpiarErroresInline('edit-cliente-direccion'); }
+        
         if (!dto.email) {
-            document.getElementById('error-edit-cliente-email').textContent = 'El email es obligatorio';
+            if(window.mostrarErrorInline) window.mostrarErrorInline('edit-cliente-email', 'El email es obligatorio');
             isValid = false;
         } else if (!dto.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-            document.getElementById('error-edit-cliente-email').textContent = 'El formato del email no es válido';
+            if(window.mostrarErrorInline) window.mostrarErrorInline('edit-cliente-email', 'El formato del email no es válido');
             isValid = false;
+        } else {
+            if(window.limpiarErroresInline) window.limpiarErroresInline('edit-cliente-email');
         }
 
         if (!isValid) {
-            editMsg.textContent = 'Por favor, complete todos los campos correctamente.';
-            editMsg.className = 'form-message error';
             return;
         }
 
@@ -596,23 +606,24 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÍMITES DE CARACTERES EN TIEMPO REAL
     // ===============================
     function bindLimit(input, errorEl, max) {
-        if (!input || !errorEl) return;
+        if (!input) return;
         input.addEventListener('input', () => {
             if (input.value.length >= max) {
-                errorEl.textContent = `Límite de ${max} caracteres alcanzado`;
-            } else if (errorEl.textContent.startsWith('Límite de')) {
-                errorEl.textContent = '';
+                if(window.mostrarErrorInline) window.mostrarErrorInline(input.id, `Límite de ${max} caracteres alcanzado.`);
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline(input.id);
             }
         });
     }
 
     restrictTelefonoInput(document.getElementById('crearClienteTelefono'));
     restrictDniInput(document.getElementById('crearClienteDNI'));
-    bindLimit(document.getElementById('crearClienteNombre'), document.getElementById('errorCrearClienteNombre'), 70);
-    bindLimit(document.getElementById('crearClienteApellido'), document.getElementById('errorCrearClienteApellido'), 70);
-    bindLimit(document.getElementById('crearClienteTelefono'), document.getElementById('errorCrearClienteTelefono'), 20);
-    bindLimit(document.getElementById('crearClienteDireccion'), document.getElementById('errorCrearClienteDireccion'), 200);
-    bindLimit(document.getElementById('crearClienteEmail'), document.getElementById('errorCrearClienteEmail'), 255);
+    bindLimit(document.getElementById('crearClienteNombre'), document.getElementById('error-crearClienteNombre'), 70);
+    bindLimit(document.getElementById('crearClienteApellido'), document.getElementById('error-crearClienteApellido'), 70);
+    bindLimit(document.getElementById('crearClienteTelefono'), document.getElementById('error-crearClienteTelefono'), 20);
+    bindLimit(document.getElementById('crearClienteDireccion'), document.getElementById('error-crearClienteDireccion'), 200);
+    bindLimit(document.getElementById('crearClienteEmail'), document.getElementById('error-crearClienteEmail'), 255);
+    bindLimit(document.getElementById('crearClienteDNI'), document.getElementById('error-crearClienteDNI'), 11);
 
     restrictTelefonoInput(document.getElementById('edit-cliente-telefono'));
     restrictDniInput(document.getElementById('edit-cliente-dni'));
@@ -621,6 +632,7 @@ document.addEventListener('DOMContentLoaded', function () {
     bindLimit(document.getElementById('edit-cliente-telefono'), document.getElementById('error-edit-cliente-telefono'), 20);
     bindLimit(document.getElementById('edit-cliente-direccion'), document.getElementById('error-edit-cliente-direccion'), 200);
     bindLimit(document.getElementById('edit-cliente-email'), document.getElementById('error-edit-cliente-email'), 255);
+    bindLimit(document.getElementById('edit-cliente-dni'), document.getElementById('error-edit-cliente-dni'), 11);
 
     // ===============================
     // LÓGICA DEL FORMULARIO DE REGISTRO
@@ -633,7 +645,7 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
 
             // 1. Limpiar mensajes
-            document.querySelectorAll('#crear-cliente-form .error-message').forEach(el => el.textContent = '');
+            if(window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('crearCliente');
             if (crearGeneralMessage) {
                 crearGeneralMessage.textContent = '';
                 crearGeneralMessage.className = 'form-message';
@@ -651,24 +663,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // 3. Validaciones
             let isValid = true;
-            if (!dto.nombre) { document.getElementById('errorCrearClienteNombre').textContent = 'El nombre es obligatorio'; isValid = false; }
-            if (!dto.apellido) { document.getElementById('errorCrearClienteApellido').textContent = 'El apellido es obligatorio'; isValid = false; }
-            if (!dto.dni) { document.getElementById('errorCrearClienteDNI').textContent = 'El DNI es obligatorio'; isValid = false; }
-            if (!dto.telefono) { document.getElementById('errorCrearClienteTelefono').textContent = 'El teléfono es obligatorio'; isValid = false; }
-            if (!dto.direccion) { document.getElementById('errorCrearClienteDireccion').textContent = 'La dirección es obligatoria'; isValid = false; }
+            if (!dto.nombre) { if(window.mostrarErrorInline) window.mostrarErrorInline('crearClienteNombre', 'El nombre es obligatorio'); isValid = false; }
+            else { if(window.limpiarErroresInline) window.limpiarErroresInline('crearClienteNombre'); }
+            
+            if (!dto.apellido) { if(window.mostrarErrorInline) window.mostrarErrorInline('crearClienteApellido', 'El apellido es obligatorio'); isValid = false; }
+            else { if(window.limpiarErroresInline) window.limpiarErroresInline('crearClienteApellido'); }
+            
+            if (!dto.dni) { if(window.mostrarErrorInline) window.mostrarErrorInline('crearClienteDNI', 'El DNI es obligatorio'); isValid = false; }
+            else { if(window.limpiarErroresInline) window.limpiarErroresInline('crearClienteDNI'); }
+            
+            if (!dto.telefono) { if(window.mostrarErrorInline) window.mostrarErrorInline('crearClienteTelefono', 'El teléfono es obligatorio'); isValid = false; }
+            else { if(window.limpiarErroresInline) window.limpiarErroresInline('crearClienteTelefono'); }
+            
+            if (!dto.direccion) { if(window.mostrarErrorInline) window.mostrarErrorInline('crearClienteDireccion', 'La dirección es obligatoria'); isValid = false; }
+            else { if(window.limpiarErroresInline) window.limpiarErroresInline('crearClienteDireccion'); }
+            
             if (!dto.email) {
-                document.getElementById('errorCrearClienteEmail').textContent = 'El email es obligatorio';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('crearClienteEmail', 'El email es obligatorio');
                 isValid = false;
             } else if (!dto.email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                document.getElementById('errorCrearClienteEmail').textContent = 'El formato del email no es válido';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('crearClienteEmail', 'El formato del email no es válido');
                 isValid = false;
+            } else {
+                if(window.limpiarErroresInline) window.limpiarErroresInline('crearClienteEmail');
             }
 
             if (!isValid) {
-                if (crearGeneralMessage) {
-                    crearGeneralMessage.textContent = "Por favor, complete todos los campos correctamente.";
-                    crearGeneralMessage.classList.add('error');
-                }
                 return;
             }
 
@@ -718,7 +738,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnLimpiarCrear) {
         btnLimpiarCrear.addEventListener('click', () => {
             if (crearClienteForm) crearClienteForm.reset();
-            document.querySelectorAll('#crear-cliente-form .error-message').forEach(el => el.textContent = '');
+            if(window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('crearCliente');
             if (crearGeneralMessage) {
                 crearGeneralMessage.textContent = '';
                 crearGeneralMessage.className = 'form-message';

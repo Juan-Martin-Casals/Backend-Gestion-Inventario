@@ -127,6 +127,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (typeof window.showComprasSubsection === 'function') {
                     window.showComprasSubsection(subsectionId);
                 }
+                if (subsectionId === 'compras-orden' && typeof window.setFechaActualOC === 'function') {
+                    window.setFechaActualOC();
+                }
             }
             // Manejo de Subsecciones (Usuarios)
             else if (sectionId === 'usuarios' && subsectionId) {

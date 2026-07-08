@@ -160,13 +160,65 @@ window.limpiarTodosErroresInline = function(prefix) {
  * Valida el Limite de caracteres en tiempo real.
  * Se debe usar en el evento oninput del input.
  */
-window.checkMaxLength = function(input, limite, idError) {
-    // Para type number el maxlength html a veces no funciona, lo forzamos por js
-    if(input.value.length >= limite) {
-        input.value = input.value.slice(0, limite);
-        window.mostrarErrorInline(input.id, 'Limite de ' + limite + ' caracteres alcanzado');
+window.checkMaxLength = function(input, limit) {
+    const errorId = input.id;
+    if (input.value.length >= limit) {
+        input.value = input.value.substring(0, limit);
+        window.mostrarErrorInline(errorId, `Límite de ${limit} caracteres alcanzado.`);
     } else {
-        window.limpiarErroresInline(input.id);
+        window.limpiarErroresInline(errorId);
     }
 };
 
+/**
+ * Muestra un tooltip para errores de stock dentro de la tabla de detalle
+ */
+window.mostrarTooltipStock = function(inputElement, mensaje) {
+    let tooltip = inputElement.parentElement.querySelector('.stock-tooltip');
+    if (!tooltip) {
+        tooltip = document.createElement('div');
+        tooltip.className = 'stock-tooltip';
+        tooltip.style.position = 'absolute';
+        tooltip.style.bottom = '100%';
+        tooltip.style.left = '50%';
+        tooltip.style.transform = 'translateX(-50%)';
+        tooltip.style.backgroundColor = '#ef4444';
+        tooltip.style.color = 'white';
+        tooltip.style.padding = '4px 8px';
+        tooltip.style.borderRadius = '4px';
+        tooltip.style.fontSize = '11px';
+        tooltip.style.whiteSpace = 'nowrap';
+        tooltip.style.zIndex = '10';
+        tooltip.style.marginBottom = '6px';
+        tooltip.style.boxShadow = '0 2px 4px rgba(0,0,0,0.2)';
+        tooltip.style.pointerEvents = 'none';
+        
+        const arrow = document.createElement('div');
+        arrow.style.position = 'absolute';
+        arrow.style.top = '100%';
+        arrow.style.left = '50%';
+        arrow.style.transform = 'translateX(-50%)';
+        arrow.style.borderWidth = '4px';
+        arrow.style.borderStyle = 'solid';
+        arrow.style.borderColor = '#ef4444 transparent transparent transparent';
+        tooltip.appendChild(arrow);
+        
+        const textSpan = document.createElement('span');
+        tooltip.appendChild(textSpan);
+        
+        inputElement.parentElement.style.position = 'relative';
+        inputElement.parentElement.appendChild(tooltip);
+    }
+    
+    tooltip.querySelector('span').textContent = mensaje;
+    tooltip.style.display = 'block';
+    inputElement.classList.add('input-error');
+    
+    if(inputElement.tooltipTimeout) {
+        clearTimeout(inputElement.tooltipTimeout);
+    }
+    inputElement.tooltipTimeout = setTimeout(() => {
+        tooltip.style.display = 'none';
+        inputElement.classList.remove('input-error');
+    }, 3000);
+};

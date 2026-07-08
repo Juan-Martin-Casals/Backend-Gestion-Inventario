@@ -175,26 +175,49 @@ document.addEventListener('DOMContentLoaded', function () {
     // ===============================
     // LÍMITES DE CARACTERES EN TIEMPO REAL
     // ===============================
-    function bindLimit(input, errorEl, max) {
-        if (!input || !errorEl) return;
+    function bindLimit(input, max) {
+        if (!input) return;
         input.addEventListener('input', () => {
-            if (input.value.length >= max) {
-                errorEl.textContent = `Límite de ${max} caracteres alcanzado`;
-            } else if (errorEl.textContent.startsWith('Límite de')) {
-                errorEl.textContent = '';
+            if (window.checkMaxLength) {
+                window.checkMaxLength(input, max);
             }
         });
     }
 
-    bindLimit(nombreInput,    document.getElementById('errorNombre'),    150);
-    bindLimit(telefonoInput,  document.getElementById('errorTelefono'),  20);
-    bindLimit(emailInput,     document.getElementById('errorEmail'),     255);
-    bindLimit(direccionInput, document.getElementById('errorDireccion'), 200);
+    bindLimit(nombreInput,    150);
+    bindLimit(telefonoInput,  20);
+    bindLimit(emailInput,     255);
+    bindLimit(direccionInput, 200);
 
-    bindLimit(editNombreInput,    document.getElementById('errorEditNombre'),    150);
-    bindLimit(editTelefonoInput,  document.getElementById('errorEditTelefono'),  20);
-    bindLimit(editEmailInput,     document.getElementById('errorEditEmail'),     255);
-    bindLimit(editDireccionInput, document.getElementById('errorEditDireccion'), 200);
+    bindLimit(editNombreInput,    150);
+    bindLimit(editTelefonoInput,  20);
+    bindLimit(editEmailInput,     255);
+    bindLimit(editDireccionInput, 200);
+
+    // ===============================
+    // LIMPIEZA DE ERRORES AL ESCRIBIR
+    // ===============================
+    const camposFormulario = [
+        'proveedorNombre', 'proveedorTelefono', 'proveedorEmail', 'proveedorDireccion', 'proveedorCuit',
+        'editProveedorNombre', 'editProveedorTelefono', 'editProveedorEmail', 'editProveedorDireccion', 'editProveedorCuit'
+    ];
+    camposFormulario.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.addEventListener('input', () => {
+                const errorEl = document.getElementById('error-' + id);
+                // Si el mensaje actual es de límite, no lo limpiamos genéricamente,
+                // dejamos que checkMaxLength se encargue de limpiarlo cuando corresponda.
+                if (errorEl && errorEl.textContent.includes('Limite de')) {
+                    return; 
+                }
+                if(window.limpiarErroresInline) window.limpiarErroresInline(id);
+            });
+            el.addEventListener('change', () => {
+                if(window.limpiarErroresInline) window.limpiarErroresInline(id);
+            });
+        }
+    });
 
     // ==========================================================
     // LÓGICA DE CARGA DE DATOS (TABLA Y PAGINACIÓN)
@@ -415,24 +438,22 @@ document.addEventListener('DOMContentLoaded', function () {
             const cuit = cuitInput.value.trim();
             const productosIds = [];
 
-            if (!nombre) { nombreError.textContent = 'El nombre del proveedor es obligatorio'; isValid = false; }
-            if (!telefono) { telefonoError.textContent = 'El teléfono del proveedor es obligatorio'; isValid = false; }
-            else if (telefono.length < 6) { telefonoError.textContent = 'El teléfono debe tener al menos 6 caracteres'; isValid = false; }
-            if (!email) { emailError.textContent = 'El email del proveedor es obligatorio'; isValid = false; }
+            if (!nombre) { if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorNombre', 'El nombre del proveedor es obligatorio'); isValid = false; }
+            if (!telefono) { if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorTelefono', 'El teléfono del proveedor es obligatorio'); isValid = false; }
+            else if (telefono.length < 6) { if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorTelefono', 'El teléfono debe tener al menos 6 caracteres'); isValid = false; }
+            if (!email) { if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorEmail', 'El email del proveedor es obligatorio'); isValid = false; }
             else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                emailError.textContent = 'El formato del email no es válido';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorEmail', 'El formato del email no es válido');
                 isValid = false;
             }
-            if (!direccion) { direccionError.textContent = 'La dirección del proveedor es obligatoria'; isValid = false; }
-            if (!cuit) { cuitError.textContent = 'El CUIT es obligatorio'; isValid = false; }
+            if (!direccion) { if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorDireccion', 'La dirección del proveedor es obligatoria'); isValid = false; }
+            if (!cuit) { if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorCuit', 'El CUIT es obligatorio'); isValid = false; }
             else if (!cuit.match(/^\d{2}-\d{8}-\d{1}$/)) {
-                cuitError.textContent = 'El formato de CUIT debe ser XX-XXXXXXXX-X';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorCuit', 'El formato de CUIT debe ser XX-XXXXXXXX-X');
                 isValid = false;
             }
 
             if (!isValid) {
-                generalMessage.textContent = "Debe completar todos los campos obligatorios.";
-                generalMessage.classList.add('error');
                 return;
             }
 
@@ -446,16 +467,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 const emailExiste = await emailRes.json();
 
                 if (nombreExiste) {
-                    nombreError.textContent = 'Ya existe un proveedor con ese nombre';
+                    if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorNombre', 'Ya existe un proveedor con ese nombre');
                     isValid = false;
                 }
                 if (emailExiste) {
-                    emailError.textContent = 'Ya existe un proveedor con ese email';
+                    if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorEmail', 'Ya existe un proveedor con ese email');
                     isValid = false;
                 }
                 if (!isValid) {
-                    generalMessage.textContent = "Corrija los errores antes de continuar.";
-                    generalMessage.classList.add('error');
                     return;
                 }
             } catch (error) {
@@ -865,6 +884,10 @@ document.addEventListener('DOMContentLoaded', function () {
         editDireccionInput.value = data.direccion;
         editCuitInput.value = data.cuit || '';
 
+        if (window.limpiarTodosErroresInline) {
+            window.limpiarTodosErroresInline('editProveedor');
+        }
+
         // Mostrar nombre del proveedor en el header
         const headerName = document.getElementById('edit-prov-header-name');
         if (headerName) headerName.textContent = data.nombre || '';
@@ -1178,42 +1201,40 @@ document.addEventListener('DOMContentLoaded', function () {
             let isValid = true;
 
             if (!nombre) {
-                document.getElementById('errorEditNombre').textContent = 'El nombre es obligatorio';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorNombre', 'El nombre es obligatorio');
                 isValid = false;
             }
 
             if (!telefono) {
-                document.getElementById('errorEditTelefono').textContent = 'El teléfono es obligatorio';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorTelefono', 'El teléfono es obligatorio');
                 isValid = false;
             } else if (telefono.length < 6) {
-                document.getElementById('errorEditTelefono').textContent = 'El teléfono debe tener al menos 6 caracteres';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorTelefono', 'El teléfono debe tener al menos 6 caracteres');
                 isValid = false;
             }
 
             if (!email) {
-                document.getElementById('errorEditEmail').textContent = 'El email es obligatorio';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorEmail', 'El email es obligatorio');
                 isValid = false;
             } else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                document.getElementById('errorEditEmail').textContent = 'El formato del email no es válido';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorEmail', 'El formato del email no es válido');
                 isValid = false;
             }
 
             if (!direccion) {
-                document.getElementById('errorEditDireccion').textContent = 'La dirección es obligatoria';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorDireccion', 'La dirección es obligatoria');
                 isValid = false;
             }
             
             if (!cuit) {
-                document.getElementById('errorEditCuit').textContent = 'El CUIT es obligatorio';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorCuit', 'El CUIT es obligatorio');
                 isValid = false;
             } else if (!cuit.match(/^\d{2}-\d{8}-\d{1}$/)) {
-                document.getElementById('errorEditCuit').textContent = 'El formato de CUIT debe ser XX-XXXXXXXX-X';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorCuit', 'El formato de CUIT debe ser XX-XXXXXXXX-X');
                 isValid = false;
             }
 
             if (!isValid) {
-                editGeneralMessage.textContent = 'Por favor complete todos los campos correctamente';
-                editGeneralMessage.classList.add('error');
                 return;
             }
 
@@ -1554,12 +1575,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (cuitInput) cuitInput.value = '';
 
         // Limpiar todos los mensajes de error
-        if (nombreError) nombreError.textContent = '';
-        if (telefonoError) telefonoError.textContent = '';
-        if (emailError) emailError.textContent = '';
-        if (direccionError) direccionError.textContent = '';
-        const cuitErrorEl = document.getElementById('errorCuit');
-        if (cuitErrorEl) cuitErrorEl.textContent = '';
+        if (window.limpiarTodosErroresInline) {
+            window.limpiarTodosErroresInline('proveedor');
+        }
+
         if (generalMessage) {
             generalMessage.textContent = '';
             generalMessage.className = 'form-message';

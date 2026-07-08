@@ -75,54 +75,35 @@ document.addEventListener('DOMContentLoaded', function () {
     const deleteConfirmBtn = document.getElementById('confirm-delete-btn');
     let deleteProductId = null;  // Variable para guardar el ID del producto a eliminar
 
+
+
+
+
     // ===============================
-    // VALIDACIÓN EN TIEMPO REAL
+    // RESTRICCIONES DE TECLADO (NÚMEROS)
     // ===============================
-    nameInput.addEventListener('input', () => {
-        if (nameInput.value.length >= 150) {
-            nameError.textContent = 'Límite de 150 caracteres alcanzado';
-        } else {
-            nameError.textContent = '';
-        }
-    });
-
-    descriptionInput.addEventListener('input', () => {
-        if (descriptionInput.value.length >= 650) {
-            descriptionError.textContent = 'Límite de 650 caracteres alcanzado';
-        } else {
-            descriptionError.textContent = '';
-        }
-    });
-
-    editNameInput.addEventListener('input', () => {
-        const editNameError = document.getElementById('edit-name-error');
-        if (editNameInput.value.length >= 150) {
-            editNameError.textContent = 'Límite de 150 caracteres alcanzado';
-        } else {
-            editNameError.textContent = '';
-        }
-    });
-
-    editDescriptionInput.addEventListener('input', () => {
-        const editDescError = document.getElementById('edit-description-error');
-        if (editDescriptionInput.value.length >= 650) {
-            editDescError.textContent = 'Límite de 650 caracteres alcanzado';
-        } else {
-            editDescError.textContent = '';
-        }
-    });
-
-    const addCategoriaNombreInput = document.getElementById('addCategoriaNombre');
-    if (addCategoriaNombreInput) {
-        addCategoriaNombreInput.addEventListener('input', () => {
-            const errorEl = document.getElementById('errorAddCategoriaNombre');
-            if (addCategoriaNombreInput.value.length >= 50) {
-                errorEl.textContent = 'Límite de 50 caracteres alcanzado';
-            } else {
-                errorEl.textContent = '';
-            }
+    function restrictToNumbers(inputEl, allowDecimals = false) {
+        if (!inputEl) return;
+        ['keydown', 'paste', 'drop'].forEach(eventType => {
+            inputEl.addEventListener(eventType, function(e) {
+                if (e.type === 'keydown') {
+                    const invalidKeys = ['e', 'E', '-', '+'];
+                    if (!allowDecimals) { invalidKeys.push('.', ','); }
+                    if (invalidKeys.includes(e.key)) {
+                        e.preventDefault();
+                    }
+                } else if (e.type === 'paste' || e.type === 'drop') {
+                    e.preventDefault();
+                }
+            });
         });
     }
+
+    restrictToNumbers(stockMinInput, false);
+    restrictToNumbers(stockMaxInput, false);
+    restrictToNumbers(editStockMinInput, false);
+    restrictToNumbers(editStockMaxInput, false);
+    restrictToNumbers(editPriceInput, true);
 
     // ===============================
     // VALIDACIÓN DE DECIMALES (STOCK)
@@ -647,7 +628,7 @@ document.addEventListener('DOMContentLoaded', function () {
             addCategoriaMessage.textContent = '';
             addCategoriaMessage.className = 'form-message';
         }
-        document.getElementById('errorAddCategoriaNombre').textContent = '';
+        if (window.limpiarErroresInline) window.limpiarErroresInline('addCategoriaNombre');
     }
 
     function openAddCategoriaModal() {
@@ -667,7 +648,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function handleAddCategoriaSubmit(event) {
         event.preventDefault();
 
-        document.getElementById('errorAddCategoriaNombre').textContent = '';
+        if (window.limpiarErroresInline) window.limpiarErroresInline('addCategoriaNombre');
         if (addCategoriaMessage) {
             addCategoriaMessage.textContent = '';
             addCategoriaMessage.classList.remove('error', 'success');
@@ -676,7 +657,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const nombre = document.getElementById('addCategoriaNombre').value.trim();
 
         if (!nombre) {
-            document.getElementById('errorAddCategoriaNombre').textContent = 'El nombre es obligatorio.';
+            if (window.mostrarErrorInline) window.mostrarErrorInline('addCategoriaNombre', 'El nombre es obligatorio.');
             return;
         }
 
@@ -717,9 +698,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (error) {
             console.error('Error al crear categoría:', error);
-            if (addCategoriaMessage) {
-                addCategoriaMessage.textContent = error.message;
-                addCategoriaMessage.classList.add('error');
+            if (window.mostrarErrorInline) {
+                window.mostrarErrorInline('addCategoriaNombre', error.message);
             }
         }
     }
@@ -937,7 +917,7 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
 
             // 1. Limpiar mensajes
-            document.querySelectorAll('#product-form .error-message').forEach(el => el.textContent = '');
+            if (window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('product-');
             generalMessage.textContent = '';
             generalMessage.className = 'form-message';
 
@@ -950,26 +930,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // 3. Validaciones
             let isValid = true;
-            if (!nombre) { nameError.textContent = 'El nombre del producto es obligatorio'; isValid = false; }
-            else if (nombre.length > 150) { nameError.textContent = 'Máximo 150 caracteres'; isValid = false; }
-            if (!idCategoria) { categoryError.textContent = 'Debe seleccionar una categoría'; isValid = false; }
-            if (!descripcion) { descriptionError.textContent = 'La descripcion del producto es obligatoria'; isValid = false; }
-            else if (descripcion.length > 650) { descriptionError.textContent = 'Máximo 650 caracteres'; isValid = false; }
+            if (!nombre) { if(window.mostrarErrorInline) window.mostrarErrorInline('product-name', 'El nombre del producto es obligatorio'); isValid = false; }
+            else if (nombre.length > 150) { if(window.mostrarErrorInline) window.mostrarErrorInline('product-name', 'Máximo 150 caracteres'); isValid = false; }
+            if (!idCategoria) { if(window.mostrarErrorInline) window.mostrarErrorInline('product-category-search', 'Debe seleccionar una categoría'); isValid = false; }
+            if (!descripcion) { if(window.mostrarErrorInline) window.mostrarErrorInline('product-description', 'La descripcion del producto es obligatoria'); isValid = false; }
+            else if (descripcion.length > 650) { if(window.mostrarErrorInline) window.mostrarErrorInline('product-description', 'Máximo 650 caracteres'); isValid = false; }
             
-            if (stockMinimoRaw.includes(',') || /\.\d{1,2}$/.test(stockMinimoRaw)) { stockMinError.textContent = 'Solo se permiten números enteros'; isValid = false; }
-            if (stockMaximoRaw.includes(',') || /\.\d{1,2}$/.test(stockMaximoRaw)) { stockMaxError.textContent = 'Solo se permiten números enteros'; isValid = false; }
+            if (stockMinimoRaw.includes(',') || /\.\d{1,2}$/.test(stockMinimoRaw)) { if(window.mostrarErrorInline) window.mostrarErrorInline('product-stock-min', 'Solo se permiten números enteros'); isValid = false; }
+            if (stockMaximoRaw.includes(',') || /\.\d{1,2}$/.test(stockMaximoRaw)) { if(window.mostrarErrorInline) window.mostrarErrorInline('product-stock-max', 'Solo se permiten números enteros'); isValid = false; }
             const stockMinimo = parseInt(stockMinimoRaw.replace(/\./g, ''), 10);
             const stockMaximo = parseInt(stockMaximoRaw.replace(/\./g, ''), 10);
 
-            if (isNaN(stockMinimo) || stockMinimo < 0) { stockMinError.textContent = 'Debe ser un número positivo.'; isValid = false; }
-            if (isNaN(stockMaximo) || stockMaximo <= 0) { stockMaxError.textContent = 'Debe ser un número mayor a 0.'; isValid = false; }
+            if (isNaN(stockMinimo) || stockMinimo < 0) { if(window.mostrarErrorInline) window.mostrarErrorInline('product-stock-min', 'Debe ser un número positivo.'); isValid = false; }
+            if (isNaN(stockMaximo) || stockMaximo <= 0) { if(window.mostrarErrorInline) window.mostrarErrorInline('product-stock-max', 'Debe ser un número mayor a 0.'); isValid = false; }
             
             // Validar relación entre stock mínimo y máximo (solo si ambos son números válidos)
             if (!isNaN(stockMinimo) && !isNaN(stockMaximo) && stockMinimo >= stockMaximo) {
-                stockMaxError.textContent = 'El máximo debe ser mayor que el mínimo.';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('product-stock-max', 'El máximo debe ser mayor que el mínimo.');
                 isValid = false;
             }
-            if (!isValid) { generalMessage.textContent = "Complete todos los campos."; generalMessage.classList.add('error'); return; }
+            if (!isValid) { return; }
 
             // 4. Construir DTO
             const productoDTO = {
@@ -1451,7 +1431,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function closeEditModal() {
         editModal.style.display = 'none';
         if (editForm) editForm.reset();
-        document.querySelectorAll('#product-edit-form .error-message').forEach(el => el.textContent = '');
+        if (window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('edit-product-');
         if (editFormMessage) {
             editFormMessage.textContent = '';
             editFormMessage.className = 'form-message';
@@ -1475,7 +1455,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (editSaveBtn) {
         editSaveBtn.addEventListener('click', async () => {
             // Limpiar mensajes de error
-            document.querySelectorAll('#product-edit-form .error-message').forEach(el => el.textContent = '');
+            if (window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('edit-product-');
             if (editFormMessage) {
                 editFormMessage.textContent = '';
                 editFormMessage.className = 'form-message';
@@ -1490,33 +1470,30 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const stockMinimoRaw = editStockMinInput.value;
             const stockMaximoRaw = editStockMaxInput.value;
-            const editStockMinError = document.getElementById('edit-stock-min-error');
-            const editStockMaxError = document.getElementById('edit-stock-max-error');
 
-            if (stockMinimoRaw.includes(',') || /\.\d{1,2}$/.test(stockMinimoRaw)) { editStockMinError.textContent = 'Solo se permiten enteros'; isValid = false; }
-            if (stockMaximoRaw.includes(',') || /\.\d{1,2}$/.test(stockMaximoRaw)) { editStockMaxError.textContent = 'Solo se permiten enteros'; isValid = false; }
+            // Validaciones
+            let isValid = true;
+
+            if (stockMinimoRaw.includes(',') || /\.\d{1,2}$/.test(stockMinimoRaw)) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-stock-min', 'Solo se permiten enteros'); isValid = false; }
+            if (stockMaximoRaw.includes(',') || /\.\d{1,2}$/.test(stockMaximoRaw)) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-stock-max', 'Solo se permiten enteros'); isValid = false; }
 
             const stockMinimo = parseInt(stockMinimoRaw.replace(/\./g, ''), 10);
             const stockMaximo = parseInt(stockMaximoRaw.replace(/\./g, ''), 10);
 
-            // Validaciones
-            let isValid = true;
-            if (!nombre) { document.getElementById('edit-name-error').textContent = 'El nombre es obligatorio'; isValid = false; }
-            else if (nombre.length > 150) { document.getElementById('edit-name-error').textContent = 'Máximo 150 caracteres'; isValid = false; }
-            if (!idCategoria) { document.getElementById('edit-category-error').textContent = 'Debe seleccionar una categoría'; isValid = false; }
-            if (!descripcion) { document.getElementById('edit-description-error').textContent = 'La descripción es obligatoria'; isValid = false; }
-            else if (descripcion.length > 650) { document.getElementById('edit-description-error').textContent = 'Máximo 650 caracteres'; isValid = false; }
-            if (isNaN(precio) || precio < 0) { document.getElementById('edit-price-error').textContent = 'El precio debe ser un número válido'; isValid = false; }
-            if (isNaN(stockMinimo) || stockMinimo < 0) { editStockMinError.textContent = 'Número inválido'; isValid = false; }
-            if (isNaN(stockMaximo) || stockMaximo < 0) { editStockMaxError.textContent = 'Número inválido'; isValid = false; }
+            if (!nombre) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-name', 'El nombre es obligatorio'); isValid = false; }
+            else if (nombre.length > 150) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-name', 'Máximo 150 caracteres'); isValid = false; }
+            if (!idCategoria) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-category-search', 'Debe seleccionar una categoría'); isValid = false; }
+            if (!descripcion) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-description', 'La descripción es obligatoria'); isValid = false; }
+            else if (descripcion.length > 650) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-description', 'Máximo 650 caracteres'); isValid = false; }
+            if (isNaN(precio) || precio < 0) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-price', 'El precio debe ser un número válido'); isValid = false; }
+            if (isNaN(stockMinimo) || stockMinimo < 0) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-stock-min', 'Número inválido'); isValid = false; }
+            if (isNaN(stockMaximo) || stockMaximo < 0) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-stock-max', 'Número inválido'); isValid = false; }
             if (!isNaN(stockMinimo) && !isNaN(stockMaximo) && stockMaximo < stockMinimo) {
-                editStockMaxError.textContent = 'El stock máximo debe ser mayor o igual al mínimo';
+                if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-stock-max', 'El stock máximo debe ser mayor o igual al mínimo');
                 isValid = false;
             }
 
             if (!isValid) {
-                editFormMessage.textContent = 'Por favor complete todos los campos correctamente';
-                editFormMessage.classList.add('error');
                 return;
             }
 
@@ -1868,11 +1845,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (stockMaxInput) stockMaxInput.value = '100';
 
         // Limpiar mensajes de error
-        if (nameError) nameError.textContent = '';
-        if (categoryError) categoryError.textContent = '';
-        if (descriptionError) descriptionError.textContent = '';
-        if (stockMinError) stockMinError.textContent = '';
-        if (stockMaxError) stockMaxError.textContent = '';
+        if (window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('product-');
         if (generalMessage) {
             generalMessage.textContent = '';
             generalMessage.className = 'form-message';
