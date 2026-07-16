@@ -43,12 +43,12 @@ public class Cliente {
     @Column(name = "telefono", length = 20)
     private String telefono;
 
-    @Size(max = 200)
-    @Column(name = "direccion", length = 200)
+    @Size(max = 100)
+    @Column(name = "direccion", length = 100)
     private String direccion;
 
-    @Size(max = 255)
-    @Column(name = "email", length = 255)
+    @Size(max = 80)
+    @Column(name = "email", length = 80)
     private String email;
 
     @Builder.Default

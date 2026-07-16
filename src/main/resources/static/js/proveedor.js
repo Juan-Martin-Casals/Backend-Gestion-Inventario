@@ -184,15 +184,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    bindLimit(nombreInput,    150);
+    bindLimit(nombreInput,    70);
     bindLimit(telefonoInput,  20);
-    bindLimit(emailInput,     255);
-    bindLimit(direccionInput, 200);
+    bindLimit(emailInput,     80);
+    bindLimit(direccionInput, 100);
 
-    bindLimit(editNombreInput,    150);
+    bindLimit(editNombreInput,    70);
     bindLimit(editTelefonoInput,  20);
-    bindLimit(editEmailInput,     255);
-    bindLimit(editDireccionInput, 200);
+    bindLimit(editEmailInput,     80);
+    bindLimit(editDireccionInput, 100);
 
     // ===============================
     // LIMPIEZA DE ERRORES AL ESCRIBIR
@@ -208,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const errorEl = document.getElementById('error-' + id);
                 // Si el mensaje actual es de límite, no lo limpiamos genéricamente,
                 // dejamos que checkMaxLength se encargue de limpiarlo cuando corresponda.
-                if (errorEl && errorEl.textContent.includes('Limite de')) {
+                if (errorEl && (errorEl.textContent.includes('Limite de') || errorEl.textContent.includes('Límite de'))) {
                     return; 
                 }
                 if(window.limpiarErroresInline) window.limpiarErroresInline(id);
@@ -1503,6 +1503,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
             searchInput.value = '';
             proveedoresFiltrados = null;
+            
+            // Limpiar errores visuales
+            if (window.limpiarErroresInline) {
+                window.limpiarErroresInline('proveedor-search-input');
+            }
 
             // Restaurar filtros y ordenamiento por defecto
             if (filtroCompras) filtroCompras.value = '';

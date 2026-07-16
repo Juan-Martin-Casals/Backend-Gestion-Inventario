@@ -1348,7 +1348,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (btnHistorialLimpiar) {
         btnHistorialLimpiar.addEventListener('click', () => {
-            if (historialBusqueda) historialBusqueda.value = '';
+            if (historialBusqueda) {
+                historialBusqueda.value = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline('historial-busqueda');
+            }
             if (historialFechaDesde) historialFechaDesde.value = '';
             if (historialFechaHasta) historialFechaHasta.value = '';
             if (historialFiltroEstado) historialFiltroEstado.value = '';
@@ -1533,15 +1536,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            // Llamamos a cargar los ingresos globales (ventas de hoy)
-            cargarIngresosGlobales();
+            // Llamamos a cargar los ingresos globales (ventas desde la apertura de sesión)
+            cargarIngresosGlobales(data.fechaApertura);
 
         } catch (e) {
             console.error('Error dashboard global:', e);
         }
     }
 
-    async function cargarIngresosGlobales() {
+    async function cargarIngresosGlobales(fechaAperturaGlobal) {
         const listaIngresosGlobal = document.getElementById('caja-global-lista-ingresos');
         const filtroSelect = document.getElementById('caja-global-filtro-ingresos');
         const buscarInput = document.getElementById('caja-global-buscar-ingresos');
@@ -1555,11 +1558,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!response.ok) throw new Error('Error obteniendo ventas globales');
             const ventas = await response.json();
 
-            // Filtrar las ventas de hoy (desde las 00:00)
-            const hoyInicio = new Date();
-            hoyInicio.setHours(0, 0, 0, 0);
+            // Filtrar las ventas desde la fecha de apertura, o desde hoy si no hay sesiones
+            let fechaFiltro = new Date();
+            fechaFiltro.setHours(0, 0, 0, 0);
+            if (fechaAperturaGlobal) {
+                fechaFiltro = new Date(fechaAperturaGlobal);
+            }
 
-            let ingresosHoy = ventas.filter(v => new Date(v.fecha).getTime() >= hoyInicio.getTime());
+            let ingresosHoy = ventas.filter(v => new Date(v.fecha).getTime() >= fechaFiltro.getTime());
             // Ordenar de más reciente a más antigua
             ingresosHoy.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
             // Mostrar hasta los últimos 50 ingresos para no saturar la vista
@@ -1605,7 +1611,10 @@ document.addEventListener('DOMContentLoaded', function () {
                         nombreDetalle = `Venta #${venta.idVenta || venta.id}`;
                     }
 
-                    const hora = new Date(venta.fecha).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) + ' hrs';
+                    const fechaObj = new Date(venta.fecha);
+                    const fechaStr = fechaObj.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                    const horaStr = fechaObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+                    const hora = `${fechaStr} ${horaStr} hrs`;
 
                     item.innerHTML = `
                         <div style="display: flex; align-items: center; gap: 15px;">
@@ -1629,6 +1638,10 @@ document.addEventListener('DOMContentLoaded', function () {
             renderLista(ingresosHoy);
 
             function aplicarFiltros() {
+                if (buscarInput && window.checkMaxLength) {
+                    window.checkMaxLength(buscarInput, 100);
+                }
+
                 const metodo = filtroSelect ? filtroSelect.value : 'Todos';
                 const texto = buscarInput ? buscarInput.value.toLowerCase().trim() : '';
 

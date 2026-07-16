@@ -22,6 +22,8 @@ public interface ProductoRepository extends JpaRepository<Producto, Long> {
     List<Producto> findAllByEstado(String estado);
 
     boolean existsByNombreIgnoreCase(String nombre);
+    
+    boolean existsByNombreIgnoreCaseAndIdProductoNot(String nombre, Long idProducto);
 
     Page<Producto> findAllByEstado(String estado, Pageable pageable);
 

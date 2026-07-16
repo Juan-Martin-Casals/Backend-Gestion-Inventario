@@ -19,9 +19,9 @@ public class ClienteRequestDTO{
     private String dni;
     @Size(max = 20)
     private String telefono;
-    @Size(max = 200)
+    @Size(max = 100)
     private String direccion;
-    @Size(max = 255)
+    @Size(max = 80)
     private String email;
     
 }

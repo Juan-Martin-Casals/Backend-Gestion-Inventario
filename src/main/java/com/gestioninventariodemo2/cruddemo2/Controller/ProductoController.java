@@ -67,6 +67,14 @@ public class ProductoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevo);
     }
 
+    @GetMapping("/existe/nombre/{nombre}")
+    public ResponseEntity<Boolean> verificarNombreExiste(
+            @PathVariable String nombre, 
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Long excludeId) {
+        boolean existe = productoService.existeNombre(nombre, excludeId);
+        return ResponseEntity.ok(existe);
+    }
+
     @GetMapping
     public ResponseEntity<Page<ProductoResponseDTO>> listarProductos(Pageable pageable) { // Spring inyecta Pageable
         Page<ProductoResponseDTO> productos = productoService.listarProductos(pageable);

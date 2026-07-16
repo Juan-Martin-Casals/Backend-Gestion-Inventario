@@ -238,10 +238,14 @@ public class CajaService {
         Double calcTransferenciaGlobal = 0.0;
         Double calcEfectivoCajaPagosGlobal = 0.0;
         
+        LocalDateTime fechaAperturaGlobal = null;
         Map<String, DesgloseCobroDTO> desgloseGlobalMap = new LinkedHashMap<>();
 
         for (SesionCaja sesion : sesionesAbiertas) {
             LocalDateTime inicio = sesion.getFechaApertura();
+            if (fechaAperturaGlobal == null || inicio.isBefore(fechaAperturaGlobal)) {
+                fechaAperturaGlobal = inicio;
+            }
             LocalDateTime fin = LocalDateTime.now();
 
             Double totalVentas = ventaRepository.sumTotalVentasEnRango(inicio, fin);
@@ -309,7 +313,7 @@ public class CajaService {
                 .totalCompras(totalComprasGlobal)
                 .totalComprasEfectivo(calcEfectivoCajaPagosGlobal)
                 .saldoEsperado(0.0) // Not applicable globally
-                .fechaApertura(null)
+                .fechaApertura(fechaAperturaGlobal)
                 .cantidadVentas(cantidadVentasGlobal)
                 .totalEfectivo(calcEfectivoGlobal)
                 .totalTarjeta(calcTarjetaGlobal)

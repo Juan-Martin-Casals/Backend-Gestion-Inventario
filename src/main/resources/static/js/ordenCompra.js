@@ -107,6 +107,8 @@ function initBuscadorProveedorOC() {
     });
 
     searchInput.addEventListener('input', (e) => {
+        if (window.checkMaxLength) window.checkMaxLength(searchInput, 70);
+        else if (window.limpiarErroresInline) window.limpiarErroresInline('oc-proveedor-search');
         renderResultados(e.target.value.toLowerCase());
     });
 
@@ -236,6 +238,8 @@ function initBuscadorProductoOC() {
 
     searchInput.addEventListener('input', (e) => {
         if(!ocEstado.proveedor) return;
+        if (window.checkMaxLength) window.checkMaxLength(searchInput, 70);
+        else if (window.limpiarErroresInline) window.limpiarErroresInline('oc-producto-search');
         renderResultados(e.target.value.toLowerCase());
     });
 

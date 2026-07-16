@@ -329,8 +329,7 @@
                                 style="padding: 4px 8px; border-radius: 6px; border: 1px solid #ced4da; font-size: 12px; color: #495057; outline: none; cursor: pointer; background-color: #f8f9fa;">
                                 <option value="hoy">Hoy</option>
                                 <option value="7dias">Últimos 7 días</option>
-                                <option value="30dias" selected>Últimos 30 días</option>
-                                <option value="esteMes">Este Mes</option>
+                                <option value="esteMes" selected>Este Mes</option>
                                 <option value="mesPasado">Mes Pasado</option>
                             </select>
                         </div>
@@ -480,7 +479,7 @@
                                             <i class="fas fa-map-marker-alt"
                                                 style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
                                             <input type="text" id="crearClienteDireccion"
-                                                placeholder="Argentina, Santa Fe, Aristóbulo 1234" maxlength="200"
+                                                placeholder="Argentina, Santa Fe, Aristóbulo 1234" maxlength="100"
                                                 style="width: 100%; padding: 12px 16px 12px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none;"
                                                 onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                                 onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
@@ -496,7 +495,7 @@
                                             <i class="fas fa-envelope"
                                                 style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
                                             <input type="email" id="crearClienteEmail" placeholder="ejemplo@mail.com"
-                                                maxlength="255"
+                                                maxlength="80"
                                                 style="width: 100%; padding: 12px 16px 12px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none;"
                                                 onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                                 onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
@@ -535,18 +534,19 @@
                         <h4>Clientes Registrados</h4>
                         <p>Historial de clientes</p>
 
-                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px; position: relative; z-index: 1000;">
                             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                 <!-- Búsqueda -->
-                                <div style="flex: 1; min-width: 200px; max-width: 50%;">
+                                <div style="flex: 1; min-width: 200px; max-width: 50%; position: relative;">
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
                                         <input type="text"
                                             placeholder="Buscar por nombre, apellido, DNI, teléfono, email..."
-                                            id="clientes-search-input"
+                                            id="clientes-search-input" maxlength="100" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 100);"
                                             style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                                     </div>
+                                    <div class="error-message" id="error-clientes-search-input" style="position: absolute; top: 100%; left: 0; font-size: 12px; color: #ef4444; margin-top: 4px; display: none; z-index: 10; background: #fee2e2; padding: 4px 8px; border-radius: 4px; border: 1px solid #fca5a5; white-space: nowrap; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.15);"></div>
                                 </div>
 
                                 <!-- Separador visual -->
@@ -983,10 +983,10 @@
                                         <label for="product-name"
                                             style="font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px; display: block; letter-spacing: 0.3px;">Nombre
                                             del Producto</label>
-                                        <input type="text" id="product-name" name="nombre" maxlength="70"
+                                        <input type="text" id="product-name" name="nombre" maxlength="60"
                                             placeholder="Ej. Cuaderno rayado, Bolígrafo azul, etc."
                                             style="width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none;"
-                                            oninput="if(window.checkMaxLength) window.checkMaxLength(this, 70);"
+                                            oninput="if(window.checkMaxLength) window.checkMaxLength(this, 60);"
                                             onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                             onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
                                         <div class="error-message" id="error-product-name"
@@ -1000,6 +1000,7 @@
                                             <i class="fas fa-search"
                                                 style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8; z-index: 2;"></i>
                                             <input type="text" id="product-category-search" autocomplete="off"
+                                                maxlength="40" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 40);"
                                                 placeholder="Buscar categoría..."
                                                 style="width: 100%; padding: 12px 48px 12px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none;"
                                                 onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
@@ -1025,10 +1026,10 @@
                                     <label for="product-description"
                                         style="font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px; display: block; letter-spacing: 0.3px;">Descripción
                                         Detallada</label>
-                                    <textarea id="product-description" name="descripcion" maxlength="200"
+                                    <textarea id="product-description" name="descripcion" maxlength="150"
                                         placeholder="Especificaciones, marca, detalles adicionales..." rows="5"
                                         style="width: 100%; padding: 12px 16px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none; resize: vertical;"
-                                        oninput="if(window.checkMaxLength) window.checkMaxLength(this, 200);"
+                                        oninput="if(window.checkMaxLength) window.checkMaxLength(this, 150);"
                                         onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                         onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';"></textarea>
                                     <div class="error-message" id="error-product-description"
@@ -1043,13 +1044,13 @@
                                     }
                                 </style>
                                 <!-- Fila 3: Stocks -->
-                                <div style="display: grid; grid-template-columns: 200px 200px; gap: 24px; justify-content: start;">
+                                <div style="display: grid; grid-template-columns: 260px 260px; gap: 24px; justify-content: start;">
                                     <div class="form-group" style="margin: 0;">
                                         <label for="product-stock-min"
                                             style="font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px; display: block; letter-spacing: 0.3px;">Stock
                                             Mínimo (Alerta)</label>
                                         <div style="position: relative; display: flex; align-items: center; gap: 8px;">
-                                            <button type="button" class="btn-stock-minus" onclick="const input = document.getElementById('product-stock-min'); input.value = Math.max(0, parseInt(input.value || 0) - 1);"
+                                            <button type="button" class="btn-stock-minus" onclick="var input = document.getElementById('product-stock-min'); input.value = Math.max(0, parseInt(input.value || 0) - 1); if(window.checkMaxLength) window.checkMaxLength(input, 6);"
                                                 style="width: 44px; height: 44px; border: 1px solid #cbd5e1; background: #f1f5f9; border-radius: 8px; cursor: pointer; font-size: 20px; font-weight: bold; color: #475569; transition: all 0.2s; flex-shrink: 0;"
                                                 onmouseenter="this.style.background='#e2e8f0';" onmouseleave="this.style.background='#f1f5f9';">-</button>
                                             
@@ -1058,11 +1059,12 @@
                                                     style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #f59e0b; pointer-events: none;"></i>
                                                 <input type="number" min="0" id="product-stock-min" value="5" class="hide-spinners"
                                                     style="width: 100%; padding: 10px 10px 10px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; font-weight: 700; color: #1e293b; background: #f8fafc; transition: all 0.2s; outline: none; font-family: monospace; text-align: center; height: 44px; margin: 0; -moz-appearance: textfield;"
+                                                    oninput="if(window.checkMaxLength) window.checkMaxLength(this, 6);"
                                                     onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                                     onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
                                             </div>
 
-                                            <button type="button" class="btn-stock-plus" onclick="const input = document.getElementById('product-stock-min'); input.value = parseInt(input.value || 0) + 1;"
+                                            <button type="button" class="btn-stock-plus" onclick="var input = document.getElementById('product-stock-min'); var val = parseInt(input.value || 0) + 1; if(val > 999999) val = 999999; input.value = val; if(window.checkMaxLength) window.checkMaxLength(input, 6);"
                                                 style="width: 44px; height: 44px; border: 1px solid #cbd5e1; background: #f1f5f9; border-radius: 8px; cursor: pointer; font-size: 20px; font-weight: bold; color: #475569; transition: all 0.2s; flex-shrink: 0;"
                                                 onmouseenter="this.style.background='#e2e8f0';" onmouseleave="this.style.background='#f1f5f9';">+</button>
                                         </div>
@@ -1075,7 +1077,7 @@
                                             style="font-size: 13px; font-weight: 600; color: #475569; margin-bottom: 8px; display: block; letter-spacing: 0.3px;">Stock
                                             Máximo (Capacidad)</label>
                                         <div style="position: relative; display: flex; align-items: center; gap: 8px;">
-                                            <button type="button" class="btn-stock-minus" onclick="const input = document.getElementById('product-stock-max'); input.value = Math.max(0, parseInt(input.value || 0) - 1);"
+                                            <button type="button" class="btn-stock-minus" onclick="var input = document.getElementById('product-stock-max'); input.value = Math.max(0, parseInt(input.value || 0) - 1); if(window.checkMaxLength) window.checkMaxLength(input, 6);"
                                                 style="width: 44px; height: 44px; border: 1px solid #cbd5e1; background: #f1f5f9; border-radius: 8px; cursor: pointer; font-size: 20px; font-weight: bold; color: #475569; transition: all 0.2s; flex-shrink: 0;"
                                                 onmouseenter="this.style.background='#e2e8f0';" onmouseleave="this.style.background='#f1f5f9';">-</button>
                                             
@@ -1084,11 +1086,12 @@
                                                     style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #10b981; pointer-events: none;"></i>
                                                 <input type="number" min="0" id="product-stock-max" value="100" class="hide-spinners"
                                                     style="width: 100%; padding: 10px 10px 10px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 16px; font-weight: 700; color: #1e293b; background: #f8fafc; transition: all 0.2s; outline: none; font-family: monospace; text-align: center; height: 44px; margin: 0; -moz-appearance: textfield;"
+                                                    oninput="if(window.checkMaxLength) window.checkMaxLength(this, 6);"
                                                     onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                                     onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
                                             </div>
 
-                                            <button type="button" class="btn-stock-plus" onclick="const input = document.getElementById('product-stock-max'); input.value = parseInt(input.value || 0) + 1;"
+                                            <button type="button" class="btn-stock-plus" onclick="var input = document.getElementById('product-stock-max'); var val = parseInt(input.value || 0) + 1; if(val > 999999) val = 999999; input.value = val; if(window.checkMaxLength) window.checkMaxLength(input, 6);"
                                                 style="width: 44px; height: 44px; border: 1px solid #cbd5e1; background: #f1f5f9; border-radius: 8px; cursor: pointer; font-size: 20px; font-weight: bold; color: #475569; transition: all 0.2s; flex-shrink: 0;"
                                                 onmouseenter="this.style.background='#e2e8f0';" onmouseleave="this.style.background='#f1f5f9';">+</button>
                                         </div>
@@ -1131,17 +1134,19 @@
 
 
                         <!-- Búsqueda de Productos y Filtros -->
-                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px; position: relative; z-index: 1000;">
                             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                 <!-- Búsqueda -->
-                                <div style="flex: 2; min-width: 200px;">
+                                <div style="flex: 2; min-width: 200px; position: relative;">
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
                                         <input type="text" placeholder="Buscar por nombre, categoría o proveedor..."
                                             id="product-search-input"
+                                            maxlength="100" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 100);"
                                             style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                                     </div>
+                                    <div class="error-message" id="error-product-search-input" style="position: absolute; top: 100%; left: 0; font-size: 12px; color: #ef4444; margin-top: 4px; display: none; z-index: 10; background: #fee2e2; padding: 4px 8px; border-radius: 4px; border: 1px solid #fca5a5; white-space: nowrap; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.15);"></div>
                                 </div>
 
                                 <!-- Separador visual -->
@@ -1198,18 +1203,17 @@
                                 style="margin-top: 10px; display: none;"></div>
                         </div>
 
-                        <div class="table-wrapper-flex"
-                            style="display: flex; flex-direction: column; min-height: 550px;">
-                            <div class="table-container-product" style="flex-grow: 1;">
+                        <div>
+                            <div class="table-container-product">
                                 <table class="data-table">
                                     <thead>
                                         <tr>
                                             <th style="text-align: left;">Nombre</th>
                                             <th style="text-align: left;">Categoría</th>
-                                            <th style="text-align: center;">Proveedor</th>
+                                            <th style="text-align: left;">Proveedor</th>
                                             <th id="th-stock" style="text-align: center;">Stock</th>
                                             <th style="text-align: right;">Precio Venta</th>
-                                            <th style="text-align: right;">Acciones</th>
+                                            <th style="text-align: center;">Acciones</th>
                                         </tr>
                                     </thead>
                                     <tbody id="product-table-body">
@@ -1217,8 +1221,7 @@
                                     </tbody>
                                 </table>
                             </div>
-                            <div class="pagination-controls"
-                                style="margin-top: auto; text-align: right; padding: 16px 0; border-top: 1px solid #e2e8f0;">
+                            <div class="pagination-controls" style="text-align: right; padding: 10px 0;">
                                 <span id="product-page-info" style="margin-right: 15px;">Página 1 de 1</span>
                                 <button class="btn-outline" id="product-prev-page" disabled>
                                     <i class="fas fa-arrow-left"></i>
@@ -1573,9 +1576,9 @@
                                         <label for="edit-product-name"
                                             style="font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Nombre
                                             del Producto</label>
-                                        <input type="text" id="edit-product-name" maxlength="150"
+                                        <input type="text" id="edit-product-name" maxlength="60"
                                             placeholder="Ej. Coca Cola 2.25L" class="form-control"
-                                            oninput="if(window.checkMaxLength) window.checkMaxLength(this, 150);"
+                                            oninput="if(window.checkMaxLength) window.checkMaxLength(this, 60);"
                                             style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; transition: all 0.2s;">
                                         <div class="error-message" id="error-edit-product-name"
                                             style="font-size: 12px; color: #ef4444; margin-top: 4px;"></div>
@@ -1589,6 +1592,7 @@
                                             <i class="fas fa-search"
                                                 style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
                                             <input type="text" id="edit-product-category-search"
+                                                maxlength="40" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 40);"
                                                 placeholder="Buscar categoría..." autocomplete="off"
                                                 class="form-control"
                                                 style="width: 100%; padding: 12px 12px 12px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; transition: all 0.2s;">
@@ -1607,7 +1611,7 @@
                                             style="font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Precio
                                             de Venta ($)</label>
                                         <input type="number" id="edit-product-price" placeholder="0.00" step="0.01"
-                                            min="0" class="form-control"
+                                            min="0" class="form-control" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 10);"
                                             style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; transition: all 0.2s; font-family: monospace;">
                                         <div class="error-message" id="error-edit-product-price"
                                             style="font-size: 12px; color: #ef4444; margin-top: 4px;"></div>
@@ -1621,8 +1625,9 @@
                                         <label for="edit-product-stock-min"
                                             style="font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Stock
                                             Mínimo</label>
-                                        <input type="number" min="0" id="edit-product-stock-min" placeholder="0"
+                                        <input type="number" min="0" max="999999" id="edit-product-stock-min" placeholder="0"
                                             class="form-control"
+                                            oninput="if(window.checkMaxLength) window.checkMaxLength(this, 6);"
                                             style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; transition: all 0.2s;">
                                         <div class="error-message" id="error-edit-product-stock-min"
                                             style="font-size: 12px; color: #ef4444; margin-top: 4px;"></div>
@@ -1633,8 +1638,9 @@
                                         <label for="edit-product-stock-max"
                                             style="font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Stock
                                             Máximo</label>
-                                        <input type="number" min="0" id="edit-product-stock-max" placeholder="0"
+                                        <input type="number" min="0" max="999999" id="edit-product-stock-max" placeholder="0"
                                             class="form-control"
+                                            oninput="if(window.checkMaxLength) window.checkMaxLength(this, 6);"
                                             style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; transition: all 0.2s;">
                                         <div class="error-message" id="error-edit-product-stock-max"
                                             style="font-size: 12px; color: #ef4444; margin-top: 4px;"></div>
@@ -1645,9 +1651,9 @@
                                         <label for="edit-product-description"
                                             style="font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px; display: block;">Descripción
                                             General</label>
-                                        <textarea id="edit-product-description" rows="3" maxlength="650"
+                                        <textarea id="edit-product-description" rows="3" maxlength="150"
                                             placeholder="Detalles, marca, formato, etc." class="form-control"
-                                            oninput="if(window.checkMaxLength) window.checkMaxLength(this, 650);"
+                                            oninput="if(window.checkMaxLength) window.checkMaxLength(this, 150);"
                                             style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; transition: all 0.2s; resize: vertical;"></textarea>
                                         <div class="error-message" id="error-edit-product-description"
                                             style="font-size: 12px; color: #ef4444; margin-top: 4px;"></div>
@@ -1692,8 +1698,8 @@
                         <form id="add-categoria-form">
                             <div class="form-group">
                                 <label for="addCategoriaNombre">Nombre de la Categoría</label>
-                                <input type="text" id="addCategoriaNombre" maxlength="50" style="padding: 12px;"
-                                    oninput="if(window.checkMaxLength) window.checkMaxLength(this, 50);">
+                                <input type="text" id="addCategoriaNombre" maxlength="40" style="padding: 12px;"
+                                    oninput="if(window.checkMaxLength) window.checkMaxLength(this, 40);">
                                 <div class="error-message" id="error-addCategoriaNombre"></div>
                             </div>
 
@@ -1974,7 +1980,7 @@
                                             <i class="fas fa-building"
                                                 style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
                                             <input type="text" id="proveedorNombre" name="nombre"
-                                                placeholder="Nombre o Razón Social" maxlength="150"
+                                                placeholder="Nombre o Razón Social" maxlength="70"
                                                 style="width: 100%; padding: 12px 16px 12px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none;"
                                                 onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                                 onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
@@ -2010,7 +2016,7 @@
                                             <i class="fas fa-envelope"
                                                 style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
                                             <input type="email" id="proveedorEmail" name="email"
-                                                placeholder="contacto@empresa.com" maxlength="255"
+                                                placeholder="contacto@empresa.com" maxlength="80"
                                                 style="width: 100%; padding: 12px 16px 12px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none;"
                                                 onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                                 onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
@@ -2046,7 +2052,7 @@
                                         <i class="fas fa-map-marker-alt"
                                             style="position: absolute; left: 14px; top: 22px; transform: translateY(-50%); color: #94a3b8;"></i>
                                         <input type="text" id="proveedorDireccion" name="direccion"
-                                            placeholder="Ej. Av. Corrientes 1234, CABA" maxlength="200"
+                                            placeholder="Ej. Av. Corrientes 1234, CABA" maxlength="100"
                                             style="width: 100%; padding: 12px 16px 12px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none;"
                                             onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                             onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
@@ -2085,18 +2091,20 @@
                         <h4>Proveedores Registrados</h4>
 
                         <!-- Búsqueda y Filtros de Proveedores (estilo unificado con Compras) -->
-                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+                        <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px; position: relative; z-index: 1000;">
                             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                                 <!-- Búsqueda -->
-                                <div style="flex: 2; min-width: 200px;">
+                                <div style="flex: 2; min-width: 200px; position: relative;">
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
                                         <input type="text"
                                             placeholder="Buscar por nombre, email, teléfono, dirección o CUIT..."
                                             id="proveedor-search-input"
+                                            maxlength="100" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 100);"
                                             style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                                     </div>
+                                    <div class="error-message" id="error-proveedor-search-input" style="position: absolute; top: 100%; left: 0; font-size: 12px; color: #ef4444; margin-top: 4px; display: none; z-index: 10; background: #fee2e2; padding: 4px 8px; border-radius: 4px; border: 1px solid #fca5a5; white-space: nowrap; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.15);"></div>
                                 </div>
 
                                 <!-- Separador visual -->
@@ -2128,9 +2136,7 @@
                                     <i class="fas fa-eraser"></i> Limpiar
                                 </button>
                             </div>
-                            <!-- Mensaje de error para búsqueda -->
-                            <div id="proveedor-search-error" class="error-message"
-                                style="margin-top: 10px; display: none;"></div>
+
                         </div>
 
                         <div class="table-container table-container-proveedor"
@@ -2194,7 +2200,7 @@
                                                 <div class="search-with-add">
                                                     <input type="text" id="oc-proveedor-search"
                                                         placeholder="Buscar proveedor..." class="product-search-input"
-                                                        autocomplete="off">
+                                                        autocomplete="off" maxlength="70">
                                                 </div>
                                                 <input type="hidden" id="oc-proveedor-id-hidden">
                                                 <div id="oc-proveedor-results" class="product-results"
@@ -2247,10 +2253,11 @@
                                         <div class="form-group">
                                             <input type="text" id="oc-producto-search"
                                                 placeholder="Primero seleccione un proveedor..."
-                                                class="product-search-input" autocomplete="off" disabled>
+                                                class="product-search-input" autocomplete="off" disabled maxlength="70">
                                             <input type="hidden" id="oc-producto-id-hidden">
                                             <div id="oc-producto-results" class="product-results"
                                                 style="display: none;"></div>
+                                            <div class="error-message" id="error-oc-producto-search"></div>
                                         </div>
 
                                         <!-- Tabla de detalle -->
@@ -2297,7 +2304,7 @@
                                                     <label for="oc-descuento">Descuento (%)</label>
                                                     <input type="number" id="oc-descuento" min="0" max="100" value="0"
                                                         onkeydown="return event.key !== '-' && event.key !== 'e' && event.key !== 'E'"
-                                                        oninput="if(this.value < 0){this.value = 0; mostrarErrorInline('oc-descuento', 'El descuento no puede ser negativo')}else{window.checkMaxLength(this, 5)}">
+                                                        oninput="if(this.value < 0){this.value = 0; if(window.mostrarErrorInline) window.mostrarErrorInline('oc-descuento', 'El descuento no puede ser negativo')}else if(this.value > 100){this.value = 100; if(window.mostrarErrorInline) window.mostrarErrorInline('oc-descuento', 'El máximo descuento es 100%')}else{if(window.checkMaxLength) window.checkMaxLength(this, 5)}">
                                                     <div class="error-message" id="error-oc-descuento"></div>
                                                 </div>
                                                 <div class="form-group" style="margin-bottom: 0;">
@@ -2374,7 +2381,7 @@
                                                 <div class="search-with-add">
                                                     <input type="text" id="compra-proveedor-search"
                                                         placeholder="Buscar proveedor por nombre..."
-                                                        class="product-search-input" autocomplete="off">
+                                                        class="product-search-input" autocomplete="off" maxlength="150">
 
                                                     <button type="button" id="btn-add-proveedor-compra"
                                                         class="btn-icon btn-add-quick" title="Añadir Nuevo Proveedor">
@@ -2398,7 +2405,7 @@
                                                 <i class="fas fa-search search-icon"></i>
                                                 <input type="text" id="compra-producto-search"
                                                     placeholder="Buscar producto por nombre..."
-                                                    class="product-search-input" autocomplete="off">
+                                                    class="product-search-input" autocomplete="off" maxlength="70">
                                                 <input type="hidden" id="compra-producto-id-hidden">
                                                 <div id="compra-producto-results" class="product-results"
                                                     style="display: none;">
@@ -2540,7 +2547,8 @@
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
                                         <input type="text" placeholder="Buscar por proveedor o producto..."
                                             id="compras-search-input"
-                                            style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
+                                            style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;" maxlength="100">
+                                        <div class="error-message" id="error-compras-search-input" style="position: absolute; top: 100%; left: 0; font-size: 12px; color: #ef4444; margin-top: 4px; display: none; z-index: 9999; background: #fee2e2; padding: 4px 8px; border-radius: 4px; border: 1px solid #fca5a5; white-space: nowrap; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.15);"></div>
                                     </div>
                                 </div>
 
@@ -2684,7 +2692,7 @@
                                             <i class="fas fa-user"
                                                 style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
                                             <input type="text" id="addProveedorComprasNombre"
-                                                placeholder="Nombre proveedor" maxlength="150"
+                                                placeholder="Nombre proveedor" maxlength="70"
                                                 style="width: 100%; padding: 12px 16px 12px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none;"
                                                 onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                                 onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
@@ -2719,7 +2727,7 @@
                                             <i class="fas fa-envelope"
                                                 style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
                                             <input type="email" id="addProveedorComprasEmail"
-                                                placeholder="email@ejemplo.com" maxlength="255"
+                                                placeholder="email@ejemplo.com" maxlength="80"
                                                 style="width: 100%; padding: 12px 16px 12px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none;"
                                                 onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                                 onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
@@ -2755,7 +2763,7 @@
                                             <i class="fas fa-map-marker-alt"
                                                 style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
                                             <input type="text" id="addProveedorComprasDireccion"
-                                                placeholder="Argentina, Santa Fe, Aristóbulo 1234" maxlength="200"
+                                                placeholder="Argentina, Santa Fe, Aristóbulo 1234" maxlength="100"
                                                 style="width: 100%; padding: 12px 16px 12px 38px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: #f8fafc; transition: all 0.2s; outline: none;"
                                                 onfocus="this.style.background='white'; this.style.borderColor='#1e3a5f'; this.style.boxShadow='0 0 0 3px rgba(30, 58, 95, 0.1)';"
                                                 onblur="this.style.background='#f8fafc'; this.style.borderColor='#cbd5e1'; this.style.boxShadow='none';">
@@ -2994,17 +3002,18 @@
 
                         <!-- Búsqueda y Filtros de Usuarios -->
                         <div
-                            style="background: #f8fafc; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px; border: 1px solid #e2e8f0;">
+                            style="background: #f8fafc; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px; border: 1px solid #e2e8f0; position: relative; z-index: 1000;">
                             <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
                                 <!-- Búsqueda -->
-                                <div style="flex: 1; min-width: 250px; max-width: 500px;">
+                                <div style="flex: 1; min-width: 250px; max-width: 500px; position: relative;">
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
                                         <input type="text" placeholder="Buscar por usuario, email o rol..."
-                                            id="user-search-input"
+                                            id="user-search-input" maxlength="100" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 100);"
                                             style="width: 100%; padding: 10px 14px 10px 40px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; background: white; transition: all 0.2s; outline: none;">
                                     </div>
+                                    <div class="error-message" id="error-user-search-input" style="position: absolute; top: 100%; left: 0; font-size: 12px; color: #ef4444; margin-top: 4px; display: none; z-index: 10; background: #fee2e2; padding: 4px 8px; border-radius: 4px; border: 1px solid #fca5a5; white-space: nowrap; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.15);"></div>
                                 </div>
 
                                 <!-- Botón ordenamiento por Usuario -->
@@ -3024,9 +3033,6 @@
                                     style="padding: 10px 16px; border-radius: 8px; font-size: 13px; white-space: nowrap;">
                                     <i class="fas fa-eraser"></i> Limpiar
                                 </button>
-                            </div>
-                            <!-- Mensaje de error para búsqueda -->
-                            <div id="user-search-error" class="error-message" style="margin-top: 10px; display: none;">
                             </div>
                         </div>
 
@@ -3219,7 +3225,7 @@
                                                 <label for="venta-cliente-search">Cliente</label>
                                                 <div class="search-with-add">
                                                     <input type="text" id="venta-cliente-search" autocomplete="off"
-                                                        placeholder="Buscar cliente...">
+                                                        placeholder="Buscar cliente..." maxlength="70">
                                                     <button type="button" id="btn-add-cliente"
                                                         class="btn-icon btn-add-quick" title="Crear Nuevo Cliente">
                                                         <i class="fas fa-plus"></i>
@@ -3241,7 +3247,7 @@
                                                 <i class="fas fa-search search-icon"></i>
                                                 <input type="text" id="product-search"
                                                     placeholder="Buscar y hacer click para agregar productos..."
-                                                    class="product-search-input" autocomplete="off">
+                                                    class="product-search-input" autocomplete="off" maxlength="60">
                                                 <div id="product-results" class="product-results"
                                                     style="display: none;"></div>
                                             </div>
@@ -3432,17 +3438,18 @@
             <p>Historial de ventas realizadas</p>
 
             <!-- Búsqueda y Filtros (estilo unificado con Compras) -->
-            <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px;">
+            <div style="background: #f8f9fa; border-radius: 8px; padding: 12px 18px; margin: 0 0 15px; position: relative; z-index: 1000;">
                 <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
                     <!-- Búsqueda -->
-                    <div style="flex: 2; min-width: 200px;">
+                    <div style="flex: 2; min-width: 200px; position: relative;">
                         <div style="position: relative;">
                             <i class="fas fa-search"
                                 style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
                             <input type="text" placeholder="Buscar por cliente, producto o vendedor..."
-                                id="ventas-search-input"
+                                id="ventas-search-input" maxlength="100" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 100);"
                                 style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">
                         </div>
+                        <div class="error-message" id="error-ventas-search-input" style="position: absolute; top: 100%; left: 0; font-size: 12px; color: #ef4444; margin-top: 4px; display: none; z-index: 10; background: #fee2e2; padding: 4px 8px; border-radius: 4px; border: 1px solid #fca5a5; white-space: nowrap; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.15);"></div>
                     </div>
 
                     <!-- Separador visual -->
@@ -4095,9 +4102,10 @@
                             <div style="position: relative;">
                                 <i class="fas fa-search"
                                     style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: #94a3b8; font-size: 13px;"></i>
-                                <input type="text" id="caja-global-buscar-ingresos"
+                                <input type="text" id="caja-global-buscar-ingresos" maxlength="100"
                                     placeholder="Buscar por producto, monto o método..."
                                     style="padding: 8px 12px 8px 30px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; color: #475569; outline: none; width: 280px;">
+                                <div id="error-caja-global-buscar-ingresos" class="error-message" style="display: none; position: absolute; left: 0; bottom: -18px; white-space: nowrap;"></div>
                             </div>
                             <select id="caja-global-filtro-ingresos"
                                 style="padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; color: #475569; outline: none;">
@@ -4442,16 +4450,17 @@
 
                 <!-- Búsqueda y Filtros Historial Modernizados -->
                 <div
-                    style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin: 0 0 20px;">
+                    style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px; margin: 0 0 20px; position: relative; z-index: 1000;">
                     <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap; width: 100%;">
                         <!-- Búsqueda Global -->
-                        <div style="flex: 1; min-width: 250px;">
+                        <div style="flex: 1; min-width: 250px; position: relative;">
                             <div style="position: relative;">
                                 <i class="fas fa-search"
                                     style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #94a3b8;"></i>
-                                <input type="text" placeholder="Buscar por operador o notas..." id="historial-busqueda"
+                                <input type="text" placeholder="Buscar por operador o notas..." id="historial-busqueda" maxlength="100" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 100);"
                                     style="width: 100%; padding: 10px 14px 10px 40px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; background: white; transition: all 0.2s;">
                             </div>
+                            <div class="error-message" id="error-historial-busqueda" style="position: absolute; top: 100%; left: 0; font-size: 12px; color: #ef4444; margin-top: 4px; display: none; z-index: 10; background: #fee2e2; padding: 4px 8px; border-radius: 4px; border: 1px solid #fca5a5; white-space: nowrap; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.15);"></div>
                         </div>
 
                         <!-- Filtros de Fecha -->
@@ -4622,7 +4631,7 @@
                                 <div class="input-icon-wrapper">
                                     <i class="fas fa-building"></i>
                                     <input type="text" id="editProveedorNombre" placeholder="Nombre del proveedor"
-                                        maxlength="150" class="input-with-icon">
+                                        maxlength="70" class="input-with-icon">
                                 </div>
                                 <div class="error-message" id="error-editProveedorNombre"></div>
                             </div>
@@ -4643,7 +4652,7 @@
                                 <div class="input-icon-wrapper">
                                     <i class="fas fa-envelope"></i>
                                     <input type="email" id="editProveedorEmail" placeholder="email@ejemplo.com"
-                                        maxlength="255" class="input-with-icon">
+                                        maxlength="80" class="input-with-icon">
                                 </div>
                                 <div class="error-message" id="error-editProveedorEmail"></div>
                             </div>
@@ -4652,7 +4661,7 @@
                                 <div class="input-icon-wrapper">
                                     <i class="fas fa-map-marker-alt"></i>
                                     <input type="text" id="editProveedorDireccion" placeholder="Dirección completa"
-                                        maxlength="200" class="input-with-icon">
+                                        maxlength="100" class="input-with-icon">
                                 </div>
                                 <div class="error-message" id="error-editProveedorDireccion"></div>
                             </div>

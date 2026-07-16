@@ -87,6 +87,15 @@ public class ProductoService {
     }
 
     @Transactional(readOnly = true)
+    public boolean existeNombre(String nombre, Long excludeId) {
+        if (excludeId == null) {
+            return productoRepository.existsByNombreIgnoreCase(nombre.trim());
+        } else {
+            return productoRepository.existsByNombreIgnoreCaseAndIdProductoNot(nombre.trim(), excludeId);
+        }
+    }
+
+    @Transactional(readOnly = true)
     public Page<ProductoResponseDTO> listarProductos(Pageable pageable) {
 
         Page<Producto> paginaProductos = productoRepository.findAllByEstado("ACTIVO", pageable);

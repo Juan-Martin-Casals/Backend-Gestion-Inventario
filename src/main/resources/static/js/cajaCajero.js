@@ -660,9 +660,12 @@ document.addEventListener('DOMContentLoaded', function () {
                         modalPostCierre.classList.add('post-cierre-visible');
                         
                         // Lógica Botones
-                        document.getElementById('btn-post-cierre-imprimir').onclick = () => {
-                            generarCierrePDF(parseFloat(fondoFijoValStr), montoFisicoVal);
-                        };
+                        const btnImprimir = document.getElementById('btn-post-cierre-imprimir');
+                        if (btnImprimir) {
+                            btnImprimir.onclick = () => {
+                                generarCierrePDF(parseFloat(fondoFijoValStr), montoFisicoVal);
+                            };
+                        }
                         
                         const closePostCierre = () => {
                             modalPostCierre.classList.remove('post-cierre-visible');

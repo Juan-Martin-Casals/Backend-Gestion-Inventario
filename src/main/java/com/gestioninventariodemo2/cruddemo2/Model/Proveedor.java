@@ -29,20 +29,20 @@ public class Proveedor {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long idProveedor;
 
-    @Size(max = 150)
-    @Column(name = "Nombre", length = 150)
+    @Size(max = 70)
+    @Column(name = "Nombre", length = 70)
     private String nombre;
 
     @Size(max = 20)
     @Column(name = "Telefono", length = 20)
     private String telefono;
 
-    @Size(max = 255)
-    @Column(name = "Email", length = 255)
+    @Size(max = 80)
+    @Column(name = "Email", length = 80)
     private String email;
 
-    @Size(max = 200)
-    @Column(name = "Direccion", length = 200)
+    @Size(max = 100)
+    @Column(name = "Direccion", length = 100)
     private String direccion;
 
     @Size(max = 13)

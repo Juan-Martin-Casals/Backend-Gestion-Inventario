@@ -796,7 +796,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (clearSearchBtn) {
         clearSearchBtn.addEventListener('click', () => {
-            if (searchInput) searchInput.value = '';
+            if (searchInput) {
+                searchInput.value = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline('user-search-input');
+            }
             if (selectFiltroRol) selectFiltroRol.value = '';
             sortField = 'apellido';
             sortDirection = 'asc';

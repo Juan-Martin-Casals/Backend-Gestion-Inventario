@@ -249,8 +249,8 @@ document.addEventListener('DOMContentLoaded', function () {
     bindLimit(document.getElementById('addClienteNombre'),    document.getElementById('errorAddClienteNombre'),    70);
     bindLimit(document.getElementById('addClienteApellido'),  document.getElementById('errorAddClienteApellido'),  70);
     bindLimit(document.getElementById('addClienteTelefono'),  document.getElementById('errorAddClienteTelefono'),  20);
-    bindLimit(document.getElementById('addClienteDireccion'), document.getElementById('errorAddClienteDireccion'), 200);
-    bindLimit(document.getElementById('addClienteEmail'),     document.getElementById('errorAddClienteEmail'),     255);
+    bindLimit(document.getElementById('addClienteDireccion'), document.getElementById('errorAddClienteDireccion'), 100);
+    bindLimit(document.getElementById('addClienteEmail'),     document.getElementById('errorAddClienteEmail'),     80);
 
     // ===============================
     // VALIDACIÓN DNI DUPLICADO (en tiempo real al salir del campo)
@@ -587,12 +587,15 @@ document.addEventListener('DOMContentLoaded', function () {
         { id: 'addClienteApellido', max: 70 },
         { id: 'addClienteDNI', max: 10 },
         { id: 'addClienteTelefono', max: 20 },
-        { id: 'addClienteDireccion', max: 200 },
-        { id: 'addClienteEmail', max: 255 }
+        { id: 'addClienteDireccion', max: 100 },
+        { id: 'addClienteEmail', max: 80 }
     ];
     modalAddClienteInputs.forEach(item => {
         bindLimitCliente(document.getElementById(item.id), item.max);
     });
+
+    bindLimitCliente(document.getElementById('venta-cliente-search'), 70);
+    bindLimitCliente(document.getElementById('product-search'), 60);
 
     restrictDniInput(document.getElementById('addClienteDNI'));
 
@@ -1774,7 +1777,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (ventasBtnLimpiar) {
         ventasBtnLimpiar.addEventListener('click', function () {
             ocultarErrorFiltroVentas();
-            if (ventasSearchInput) ventasSearchInput.value = '';
+            if (ventasSearchInput) {
+                ventasSearchInput.value = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline('ventas-search-input');
+            }
             if (ventasFechaInicio) ventasFechaInicio.value = '';
             if (ventasFechaFin) ventasFechaFin.value = '';
             if (filtroMetodoPago) filtroMetodoPago.value = '';
@@ -2089,7 +2095,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // --- Limpieza dinámica de errores inline ---
-    ['venta-cliente-search', 'product-search', 'descuento-venta', 'venta-cobro-metodo', 'venta-cobro-monto', 'venta-paga-con'].forEach(id => {
+    ['descuento-venta', 'venta-cobro-metodo', 'venta-cobro-monto', 'venta-paga-con'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('input', () => {

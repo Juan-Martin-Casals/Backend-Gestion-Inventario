@@ -21,11 +21,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const generalMessage = document.getElementById('form-general-message-producto');
 
     // Selectores de error
-    const nameError = document.getElementById('name-error');
-    const categoryError = document.getElementById('category-error');
-    const descriptionError = document.getElementById('description-error');
-    const stockMinError = document.getElementById('stock-min-error');
-    const stockMaxError = document.getElementById('stock-max-error');
+    const nameError = document.getElementById('error-product-name');
+    const categoryError = document.getElementById('error-product-category-search');
+    const descriptionError = document.getElementById('error-product-description');
+    const stockMinError = document.getElementById('error-product-stock-min');
+    const stockMaxError = document.getElementById('error-product-stock-max');
 
     // Selectores del modal de categoría
     const addCategoriaModal = document.getElementById('modal-add-categoria-overlay');
@@ -114,22 +114,25 @@ document.addEventListener('DOMContentLoaded', function () {
         inputEl.addEventListener('input', () => {
             const val = inputEl.value;
             if (val.includes(',') || /\.\d{1,2}$/.test(val)) {
-                errorEl.textContent = 'Solo se permiten números enteros';
+                if (window.mostrarErrorInline) window.mostrarErrorInline(inputEl.id, 'Solo se permiten números enteros');
+                else errorEl.textContent = 'Solo se permiten números enteros';
                 previousValue = val; // Guardamos el valor para no trabar el borrado
-            } else if (val.replace(/\./g, '').length > 7) {
-                errorEl.textContent = 'El límite máximo es 9.999.999';
+            } else if (val.replace(/\./g, '').length > 9) {
+                if (window.mostrarErrorInline) window.mostrarErrorInline(inputEl.id, 'El límite máximo es de 9 dígitos (999.999.999)');
+                else errorEl.textContent = 'El límite máximo es de 9 dígitos (999.999.999)';
                 inputEl.value = previousValue; // Revertir al último valor válido
             } else {
-                errorEl.textContent = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline(inputEl.id);
+                else errorEl.textContent = '';
                 previousValue = val;
             }
         });
     }
 
-    validateStockInputRealTime(stockMinInput, stockMinError);
-    validateStockInputRealTime(stockMaxInput, stockMaxError);
-    if (editStockMinInput) validateStockInputRealTime(editStockMinInput, document.getElementById('edit-stock-min-error'));
-    if (editStockMaxInput) validateStockInputRealTime(editStockMaxInput, document.getElementById('edit-stock-max-error'));
+    // validateStockInputRealTime(stockMinInput, stockMinError);
+    // validateStockInputRealTime(stockMaxInput, stockMaxError);
+    // if (editStockMinInput) validateStockInputRealTime(editStockMinInput, document.getElementById('error-edit-product-stock-min'));
+    // if (editStockMaxInput) validateStockInputRealTime(editStockMaxInput, document.getElementById('error-edit-product-stock-max'));
 
     // ===============================
     // URLs DE LA API Y ESTADO
@@ -823,11 +826,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 <tr>
                     <td style="text-align: left; font-weight: 500;">${product.nombre || 'N/A'}</td>
                     <td style="text-align: left;">${product.categoria || 'N/A'}</td>
-                    <td style="text-align: center;">${proveedorCell}</td>
+                    <td style="text-align: left;">${proveedorCell}</td>
                     <td style="text-align: center;">${stockBadge}</td>
                     <td style="text-align: right; font-weight: 600;">$${product.precio != null ? product.precio.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}</td>
-                    <td style="text-align: right;">
-                        <div class="action-buttons" style="justify-content: flex-end;">
+                    <td style="text-align: center;">
+                        <div class="action-buttons" style="justify-content: center;">
                             <button class="btn-action view" title="Ver detalles" data-id="${product.idProducto}">
                                 <i class="fas fa-eye"></i>
                             </button>
@@ -1482,6 +1485,20 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (!nombre) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-name', 'El nombre es obligatorio'); isValid = false; }
             else if (nombre.length > 150) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-name', 'Máximo 150 caracteres'); isValid = false; }
+            else {
+                try {
+                    const checkResponse = await fetch(`/api/productos/existe/nombre/${encodeURIComponent(nombre)}?excludeId=${productId}`);
+                    if (checkResponse.ok) {
+                        const existe = await checkResponse.json();
+                        if (existe) {
+                            if (window.mostrarErrorInline) window.mostrarErrorInline('edit-product-name', 'Ya existe un producto con este nombre');
+                            isValid = false;
+                        }
+                    }
+                } catch (error) {
+                    console.error("Error validando nombre:", error);
+                }
+            }
             if (!idCategoria) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-category-search', 'Debe seleccionar una categoría'); isValid = false; }
             if (!descripcion) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-description', 'La descripción es obligatoria'); isValid = false; }
             else if (descripcion.length > 650) { if(window.mostrarErrorInline) window.mostrarErrorInline('edit-product-description', 'Máximo 650 caracteres'); isValid = false; }
@@ -1683,6 +1700,9 @@ document.addEventListener('DOMContentLoaded', function () {
     function limpiarBusqueda() {
         if (productSearchInputElement) {
             productSearchInputElement.value = '';
+        }
+        if (window.limpiarErroresInline) {
+            window.limpiarErroresInline('product-search-input');
         }
         productosBuscados = null;
 

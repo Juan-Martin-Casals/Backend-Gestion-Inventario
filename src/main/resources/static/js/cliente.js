@@ -238,7 +238,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     if (btnClearSearch) {
         btnClearSearch.addEventListener('click', () => {
-            if (inputSearch) inputSearch.value = '';
+            if (inputSearch) {
+                inputSearch.value = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline('clientes-search-input');
+            }
             currentPage = 0;
             loadClientes();
         });
@@ -621,8 +624,8 @@ document.addEventListener('DOMContentLoaded', function () {
     bindLimit(document.getElementById('crearClienteNombre'), document.getElementById('error-crearClienteNombre'), 70);
     bindLimit(document.getElementById('crearClienteApellido'), document.getElementById('error-crearClienteApellido'), 70);
     bindLimit(document.getElementById('crearClienteTelefono'), document.getElementById('error-crearClienteTelefono'), 20);
-    bindLimit(document.getElementById('crearClienteDireccion'), document.getElementById('error-crearClienteDireccion'), 200);
-    bindLimit(document.getElementById('crearClienteEmail'), document.getElementById('error-crearClienteEmail'), 255);
+    bindLimit(document.getElementById('crearClienteDireccion'), document.getElementById('error-crearClienteDireccion'), 100);
+    bindLimit(document.getElementById('crearClienteEmail'), document.getElementById('error-crearClienteEmail'), 80);
     bindLimit(document.getElementById('crearClienteDNI'), document.getElementById('error-crearClienteDNI'), 11);
 
     restrictTelefonoInput(document.getElementById('edit-cliente-telefono'));

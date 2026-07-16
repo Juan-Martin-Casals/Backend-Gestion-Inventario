@@ -1497,7 +1497,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Cargar gráfico de métodos de pago
-    async function loadChartMetodosPago(periodo = '30dias') {
+    async function loadChartMetodosPago(periodo = 'esteMes') {
         const loadingEl = document.getElementById('metodos-pago-loading');
         if (loadingEl) loadingEl.style.display = 'block';
 
@@ -1700,7 +1700,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function loadNewDashboard() {
         await loadDashboardKPIs();
         await loadChartVentasCompras();
-        const metodosFiltroValue = document.getElementById('metodos-pago-filtro') ? document.getElementById('metodos-pago-filtro').value : '30dias';
+        const metodosFiltroValue = document.getElementById('metodos-pago-filtro') ? document.getElementById('metodos-pago-filtro').value : 'esteMes';
         await loadChartMetodosPago(metodosFiltroValue);
         await loadChartEstadoStock();
         await loadTablaProductosProblema();

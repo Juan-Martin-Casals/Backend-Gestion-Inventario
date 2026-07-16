@@ -482,12 +482,15 @@ document.addEventListener('DOMContentLoaded', function () {
         { id: 'addClienteApellido', max: 70 },
         { id: 'addClienteDNI', max: 10 },
         { id: 'addClienteTelefono', max: 20 },
-        { id: 'addClienteDireccion', max: 200 },
-        { id: 'addClienteEmail', max: 255 }
+        { id: 'addClienteDireccion', max: 100 },
+        { id: 'addClienteEmail', max: 80 }
     ];
     modalAddClienteInputs.forEach(item => {
         bindLimitCliente(document.getElementById(item.id), item.max);
     });
+
+    bindLimitCliente(document.getElementById('venta-cliente-search'), 70);
+    bindLimitCliente(document.getElementById('product-search'), 60);
 
     restrictDniInput(document.getElementById('addClienteDNI'));
 
@@ -1437,6 +1440,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function limpiarFiltrosVentas() {
         if (ventasSearchInput) ventasSearchInput.value = '';
+        
+        // Limpiar errores visuales
+        if (window.limpiarErroresInline) {
+            window.limpiarErroresInline('ventas-search-input');
+        }
+
         if (ventasFechaInicio) ventasFechaInicio.value = '';
         if (ventasFechaFin) ventasFechaFin.value = '';
         if (filtroVendedor) filtroVendedor.value = '';
@@ -2214,7 +2223,7 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // --- Limpieza dinámica de errores inline ---
-    ['venta-cliente-search', 'product-search', 'descuento-venta', 'venta-cobro-metodo', 'venta-cobro-monto', 'venta-paga-con'].forEach(id => {
+    ['descuento-venta', 'venta-cobro-metodo', 'venta-cobro-monto', 'venta-paga-con'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('input', () => {

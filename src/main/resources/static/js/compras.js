@@ -545,7 +545,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (proveedorSearchInput) {
         proveedorSearchInput.addEventListener('input', () => {
             proveedorHiddenInput.value = '';
-            if (window.limpiarErroresInline) window.limpiarErroresInline('compra-proveedor-search');
+            if (window.checkMaxLength) window.checkMaxLength(proveedorSearchInput, 150);
+            else if (window.limpiarErroresInline) window.limpiarErroresInline('compra-proveedor-search');
             filtrarProveedores();
             if (proveedorSearchInput.value.trim() === '') {
                 todosLosProductos = [];
@@ -645,7 +646,8 @@ document.addEventListener('DOMContentLoaded', function () {
     if (productoSearchInput) {
         productoSearchInput.addEventListener('input', () => {
             productoHiddenInput.value = '';
-            if (window.limpiarErroresInline) window.limpiarErroresInline('compra-producto-search');
+            if (window.checkMaxLength) window.checkMaxLength(productoSearchInput, 70);
+            else if (window.limpiarErroresInline) window.limpiarErroresInline('compra-producto-search');
             filtrarProductos();
         });
         productoSearchInput.addEventListener('focus', filtrarProductos);
@@ -1452,7 +1454,12 @@ document.addEventListener('DOMContentLoaded', function () {
         fechaFin.value = '';
 
         // Limpiar búsqueda
-        if (comprasSearchInput) comprasSearchInput.value = '';
+        if (comprasSearchInput) {
+            comprasSearchInput.value = '';
+            if (window.limpiarErroresInline) {
+                window.limpiarErroresInline('compras-search-input');
+            }
+        }
 
         // Limpiar filtros adicionales
         if (filtroEstado) filtroEstado.value = '';
@@ -1537,6 +1544,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let comprasSearchTimeout;
     if (comprasSearchInput) {
         comprasSearchInput.addEventListener('input', function () {
+            if (window.checkMaxLength) window.checkMaxLength(this, 100);
             clearTimeout(comprasSearchTimeout);
             comprasSearchTimeout = setTimeout(() => {
                 filtrarComprasPorBusqueda();
@@ -2214,11 +2222,11 @@ document.addEventListener('DOMContentLoaded', function () {
     // Aplicar restricciones y límites al modal rápido
     restrictTelefonoInputCompra(document.getElementById('addProveedorComprasTelefono'));
     restrictCuitInputCompra(document.getElementById('addProveedorComprasCuit'));
-    bindLimitCompra(document.getElementById('addProveedorComprasNombre'), document.getElementById('error-addProveedorComprasNombre'), 150);
+    bindLimitCompra(document.getElementById('addProveedorComprasNombre'), document.getElementById('error-addProveedorComprasNombre'), 70);
     bindLimitCompra(document.getElementById('addProveedorComprasCuit'), document.getElementById('error-addProveedorComprasCuit'), 13);
     bindLimitCompra(document.getElementById('addProveedorComprasTelefono'), document.getElementById('error-addProveedorComprasTelefono'), 20);
-    bindLimitCompra(document.getElementById('addProveedorComprasEmail'), document.getElementById('error-addProveedorComprasEmail'), 255);
-    bindLimitCompra(document.getElementById('addProveedorComprasDireccion'), document.getElementById('error-addProveedorComprasDireccion'), 200);
+    bindLimitCompra(document.getElementById('addProveedorComprasEmail'), document.getElementById('error-addProveedorComprasEmail'), 80);
+    bindLimitCompra(document.getElementById('addProveedorComprasDireccion'), document.getElementById('error-addProveedorComprasDireccion'), 100);
 
     if (btnAddProveedorCompra) {
         btnAddProveedorCompra.addEventListener('click', () => {
