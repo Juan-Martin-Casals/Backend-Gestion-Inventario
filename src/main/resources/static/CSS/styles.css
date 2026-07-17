@@ -17,9 +17,9 @@ body {
 .login-page-body {
     font-family: 'Plus Jakarta Sans', sans-serif;
     background-color: #f8fafc;
-    background-image: 
-        radial-gradient(at 0% 0%, hsla(217,100%,92%,1) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, hsla(213,100%,94%,1) 0px, transparent 50%);
+    background-image:
+        radial-gradient(at 0% 0%, hsla(217, 100%, 92%, 1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, hsla(213, 100%, 94%, 1) 0px, transparent 50%);
     background-attachment: fixed;
     color: #334155;
     line-height: 1.6;
@@ -59,8 +59,13 @@ body {
 }
 
 @keyframes float {
-    0% { transform: translateY(0px) scale(1); }
-    100% { transform: translateY(30px) scale(1.05); }
+    0% {
+        transform: translateY(0px) scale(1);
+    }
+
+    100% {
+        transform: translateY(30px) scale(1.05);
+    }
 }
 
 @keyframes fadeSlideUp {
@@ -68,6 +73,7 @@ body {
         opacity: 0;
         transform: translateY(30px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -229,7 +235,8 @@ body {
     transform: translateY(0);
 }
 
-.login-info, .register-link {
+.login-info,
+.register-link {
     margin-top: 20px;
     color: #64748b;
     font-size: 14px;
@@ -1266,9 +1273,7 @@ body {
 .report-content .amount {
     font-weight: 600;
     color: #333;
-}
-
-/* Mensaje de éxito destacado */
+}/* Mensaje de éxito destacado */
 .success-banner {
     position: fixed;
     top: 20px;
@@ -1307,7 +1312,6 @@ body {
         transform: translateX(-50%) translateY(0);
     }
 }
-
 
 
 /* SPA Sections */
@@ -1504,20 +1508,15 @@ body {
     font-size: 14px;
     color: #666;
     margin: 0;
-}
-
-
-/* --- ESTILOS PARA MENSAJES DE VALIDACIÓN --- */
+}/* --- ESTILOS PARA MENSAJES DE VALIDACIÓN --- */
 
 .input-error {
     border-color: #e74c3c !important;
-    /* Rojo para resaltar el campo con error */
 }
 
-/* Estilo para los mensajes de error debajo de cada campo (ej: "Complete este campo") */
+/* Estilo para los mensajes de error debajo de cada campo */
 .error-message {
     color: #e74c3c;
-    /* Rojo para errores */
     font-size: 12px;
     margin-top: 5px;
     font-weight: 500;
@@ -1536,19 +1535,62 @@ body {
 /* Estilo para el mensaje de éxito (verde) */
 .form-message.success {
     color: #27ae60;
-    /* Verde oscuro */
     background-color: #e9f7ef;
-    /* Fondo verde muy claro */
     border-color: #a3d9b8;
 }
 
 /* Estilo para el mensaje de error general (rojo) */
 .form-message.error {
     color: #c0392b;
-    /* Rojo oscuro */
     background-color: #fbeae9;
-    /* Fondo rojo muy claro */
     border-color: #f1c0bc;
+}
+
+/* --- ESTILOS EXCLUSIVOS PARA ALERTAS DEL LOGIN (PILL) --- */
+.login-pill-message {
+    margin: 15px auto 0 auto;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    border: 1px solid transparent;
+    opacity: 0;
+    animation: popInPill 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes popInPill {
+    0% { opacity: 0; transform: scale(0.9) translateY(10px); }
+    100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.login-pill-message.success {
+    color: #059669;
+    background-color: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+.login-pill-message.success::before {
+    content: '\f058'; /* Check circle */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 16px;
+}
+
+.login-pill-message.error {
+    color: #e11d48;
+    background-color: rgba(225, 29, 72, 0.1);
+    border-color: rgba(225, 29, 72, 0.2);
+}
+
+.login-pill-message.error::before {
+    content: '\f071'; /* Triangle exclamation */
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
+    font-size: 16px;
 }
 
 
@@ -3497,7 +3539,7 @@ body {
     border-color: #e2e8f0;
     border-top: 3px solid #14b8a6;
     border-bottom: 2px solid white;
-    box-shadow: 0 -4px 6px -4px rgba(0,0,0,0.05);
+    box-shadow: 0 -4px 6px -4px rgba(0, 0, 0, 0.05);
 }
 
 .product-detail-tab-badge {
@@ -3633,7 +3675,7 @@ body {
     border-color: #e2e8f0;
     border-top: 3px solid #3b82f6;
     border-bottom: 2px solid white;
-    box-shadow: 0 -4px 6px -4px rgba(0,0,0,0.05);
+    box-shadow: 0 -4px 6px -4px rgba(0, 0, 0, 0.05);
 }
 
 .pdm-tab-badge {
@@ -3665,6 +3707,7 @@ body {
         opacity: 0;
         transform: translateY(10px);
     }
+
     to {
         opacity: 1;
         transform: translateY(0);
@@ -4406,13 +4449,14 @@ body {
     position: fixed;
     bottom: 30px;
     right: 30px;
-    background: #10b981; /* Verde esmeralda para connotar dinero devuelto/éxito */
+    background: #10b981;
+    /* Verde esmeralda para connotar dinero devuelto/éxito */
     color: white;
     padding: 12px 24px;
     border-radius: 8px;
     font-size: 16px;
     font-weight: 600;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transform: translateY(20px);
     opacity: 0;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -4427,6 +4471,7 @@ body {
     transform: translateY(0);
     opacity: 1;
 }
+
 /* ==========================================================================
    UI TOAST NOTIFICATIONS (UX/UI Designer Skill)
    ========================================================================== */
@@ -4447,7 +4492,7 @@ body {
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0,0,0,0.05);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.2);
     display: flex;
     overflow: hidden;
@@ -4488,9 +4533,17 @@ body {
     font-size: 24px;
 }
 
-.ui-toast.success .ui-toast-icon { color: #10b981; }
-.ui-toast.error .ui-toast-icon { color: #ef4444; }
-.ui-toast.info .ui-toast-icon { color: #3b82f6; }
+.ui-toast.success .ui-toast-icon {
+    color: #10b981;
+}
+
+.ui-toast.error .ui-toast-icon {
+    color: #ef4444;
+}
+
+.ui-toast.info .ui-toast-icon {
+    color: #3b82f6;
+}
 
 .ui-toast-content {
     flex: 1;
@@ -4555,6 +4608,7 @@ body {
         opacity: 0;
         transform: translateY(30px) scale(0.95);
     }
+
     to {
         opacity: 1;
         transform: translateY(0) scale(1);
@@ -4566,6 +4620,7 @@ body {
         opacity: 1;
         transform: translateY(0) scale(1);
     }
+
     to {
         opacity: 0;
         transform: translateY(10px) scale(0.95);
@@ -4573,8 +4628,13 @@ body {
 }
 
 @keyframes toastProgress {
-    from { transform: scaleX(1); }
-    to { transform: scaleX(0); }
+    from {
+        transform: scaleX(1);
+    }
+
+    to {
+        transform: scaleX(0);
+    }
 }
 
 /* ==========================================================================
@@ -4589,17 +4649,26 @@ body {
     color: #ef4444;
     font-size: 12.5px;
     margin-top: 4px;
-    display: none; /* hidden by default */
+    display: none;
+    /* hidden by default */
     align-items: center;
     animation: fadeInError 0.3s ease;
 }
+
 .error-message i {
     margin-right: 6px;
 }
 
 @keyframes fadeInError {
-    from { opacity: 0; transform: translateY(-4px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* ==========================================================================

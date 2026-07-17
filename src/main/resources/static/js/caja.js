@@ -550,9 +550,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (panelErrorCierre) panelErrorCierre.style.display = 'none';
 
             const parseAmount = (valStr) => {
-                if (!valStr) return NaN;
-                let cleanStr = valStr.replace(/\./g, '').replace(',', '.');
-                return parseFloat(cleanStr);
+                if (valStr === null || valStr === undefined || valStr === '') return 0;
+                let cleanStr = String(valStr).replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.');
+                let parsed = parseFloat(cleanStr);
+                return isNaN(parsed) ? 0 : parsed;
             };
 
             const montoFisicoVal = parseAmount(inputMontoFinalFisico.value);
@@ -574,7 +575,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (fondoError) {
                     fondoError.style.display = 'block';
                 } else if (panelErrorCierre) {
-                    panelErrorCierre.textContent = 'Por favor ingresa un fondo fijo válido.';
                     panelErrorCierre.style.display = 'block';
                 }
                 inputFondoFijo.focus();
@@ -595,7 +595,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // 3. Población dinámica del Modal con datos reales
             const data = resumenCajaActual || {};
-            const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalComprasEfectivo || 0));
+            
+            const getNum = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+            const saldoEsp = getNum(data.saldoEsperado);
+            const montoIni = getNum(data.montoInicial);
+            const totEf = getNum(data.totalEfectivo);
+            const totComp = getNum(data.totalComprasEfectivo);
+            
+            const totalEfTeorico = (data.saldoEsperado !== undefined && data.saldoEsperado !== null) 
+                ? saldoEsp 
+                : (montoIni + totEf - totComp);
+                
             const diferencia = montoFisicoVal - totalEfTeorico;
 
             // Header - Responsable y Sesión
@@ -700,9 +710,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnConfirmarCierre) {
         btnConfirmarCierre.addEventListener('click', async () => {
             const parseAmount = (valStr) => {
-                if (!valStr) return 0;
-                let cleanStr = valStr.replace(/\./g, '').replace(',', '.');
-                return parseFloat(cleanStr);
+                if (valStr === null || valStr === undefined || valStr === '') return 0;
+                let cleanStr = String(valStr).replace(/[^\d.,-]/g, '').replace(/\./g, '').replace(',', '.');
+                let parsed = parseFloat(cleanStr);
+                return isNaN(parsed) ? 0 : parsed;
             };
 
             const fondoFijoValStr = parseAmount(inputFondoFijo.value).toFixed(2);

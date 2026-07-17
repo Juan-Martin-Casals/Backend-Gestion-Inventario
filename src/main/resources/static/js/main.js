@@ -44,23 +44,7 @@ document.addEventListener('DOMContentLoaded', function () {
     passwordInput.addEventListener('input', () => clearPasswordError());
 
 
-    // Añadimos un botón para limpiar el formulario
-    const clearBtn = document.createElement('button');
-    clearBtn.type = 'button';
-    clearBtn.className = 'clear-btn';
-    clearBtn.textContent = 'Limpiar';
-    clearBtn.addEventListener('click', () => {
-        loginForm.reset();
-        emailInput.style.borderColor = '#ddd';
-        passwordInput.style.borderColor = '#ddd';
-        messageContainer.textContent = '';
-        // Limpiar errores inline
-        const emailErr = document.getElementById('email-error');
-        const passErr = document.getElementById('password-error');
-        if (emailErr) { emailErr.textContent = ''; emailErr.style.display = 'none'; }
-        if (passErr) { passErr.textContent = ''; passErr.style.display = 'none'; }
-    });
-    loginForm.appendChild(clearBtn);
+    // (Botón Limpiar eliminado por UX del Login)
 
 
     // ===============================
@@ -72,36 +56,37 @@ document.addEventListener('DOMContentLoaded', function () {
     function showEmailError(msg) {
         emailError.textContent = msg;
         emailError.style.display = 'block';
-        emailInput.style.borderColor = '#dc3545';
+        emailInput.classList.add('input-error');
     }
 
     function clearEmailError() {
         emailError.textContent = '';
         emailError.style.display = 'none';
-        emailInput.style.borderColor = '#ddd';
+        emailInput.classList.remove('input-error');
     }
 
     function showPasswordError(msg) {
         passwordError.textContent = msg;
         passwordError.style.display = 'block';
-        passwordInput.style.borderColor = '#dc3545';
+        passwordInput.classList.add('input-error');
     }
 
     function clearPasswordError() {
         passwordError.textContent = '';
         passwordError.style.display = 'none';
-        passwordInput.style.borderColor = '#ddd';
+        passwordInput.classList.remove('input-error');
     }
 
     loginForm.addEventListener('submit', async function (e) {
         e.preventDefault();
         messageContainer.textContent = '';
+        messageContainer.className = '';
         clearEmailError();
         clearPasswordError();
 
         // Reseteamos bordes antes de validar
-        emailInput.style.borderColor = '#ddd';
-        passwordInput.style.borderColor = '#ddd';
+        emailInput.classList.remove('input-error');
+        passwordInput.classList.remove('input-error');
 
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -127,13 +112,11 @@ document.addEventListener('DOMContentLoaded', function () {
         // Si el formato de email no es válido, mostrar error general y abortar envío
         if (!emailPattern.test(emailValue)) {
             messageContainer.textContent = "Email o contraseñas incorrectos";
-            messageContainer.style.color = '#dc3545';
-            emailInput.style.borderColor = '#dc3545';
-            passwordInput.style.borderColor = '#dc3545';
+            messageContainer.className = 'login-pill-message error';
+            emailInput.classList.add('input-error');
+            passwordInput.classList.add('input-error');
             return;
         }
-
-
 
         const loginData = {
             email: emailInput.value.trim(),
@@ -158,14 +141,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Éxito:
             messageContainer.textContent = '¡Login exitoso! Redirigiendo...';
-            messageContainer.style.color = '#28a745';
+            messageContainer.className = 'login-pill-message success';
 
             // Guardar flag de sesión para los Route Guards del Frontend
             localStorage.setItem('isAuthenticated', 'true');
 
             // Limpiamos los bordes si el login fue exitoso
-            emailInput.style.borderColor = '#28a745';
-            passwordInput.style.borderColor = '#28a745';
+            emailInput.classList.remove('input-error');
+            passwordInput.classList.remove('input-error');
 
             // Redirigir según rol
             setTimeout(() => {
@@ -183,10 +166,10 @@ document.addEventListener('DOMContentLoaded', function () {
         } catch (error) {
             console.error("Error en el login:", error);
             messageContainer.textContent = error.message;
-            messageContainer.style.color = '#dc3545';
+            messageContainer.className = 'login-pill-message error';
             // Marcamos los campos como incorrectos al fallar el servidor
-            emailInput.style.borderColor = '#dc3545';
-            passwordInput.style.borderColor = '#dc3545';
+            emailInput.classList.add('input-error');
+            passwordInput.classList.add('input-error');
         }
     });
 });

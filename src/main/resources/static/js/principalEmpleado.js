@@ -6,8 +6,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const dashboardFecha = document.getElementById('dashboard-fecha');
     const btnRefreshDashboard = document.getElementById('btn-refresh-dashboard');
-    const kpiIngresos = document.getElementById('kpi-ingresos');
-    const kpiEgresos = document.getElementById('kpi-egresos');
+    const kpiTusVentas = document.getElementById('kpi-tus-ventas');
+
+    let currentUserId = null;
     const kpiStockBajo = document.getElementById('kpi-stock-bajo');
     const kpiAgotados = document.getElementById('kpi-agotados');
 
@@ -63,13 +64,20 @@ document.addEventListener('DOMContentLoaded', function () {
             const agotadosData = resAgotados.ok ? await resAgotados.json() : { totalElements: 0 };
             const stockData = resStock.ok ? await resStock.json() : { productosBajoStock: 0 };
 
-            if (kpiIngresos) kpiIngresos.textContent = `$${(dataHoy.totalVentas || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
-            if (kpiEgresos) kpiEgresos.textContent = `$${(dataHoy.totalCompras || 0).toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+            let countVentasHoy = 0;
+            if (currentUserId) {
+                try {
+                    const resVentas = await fetch(`/api/ventas?inicio=${fechaHoy}&fin=${fechaHoy}&vendedorId=${currentUserId}&size=1`);
+                    if (resVentas.ok) {
+                        const dataVentas = await resVentas.json();
+                        countVentasHoy = dataVentas.totalElements || 0;
+                    }
+                } catch (e) { console.error('Error obteniendo tus ventas', e); }
+            }
+
+            if (kpiTusVentas) kpiTusVentas.textContent = countVentasHoy;
             if (kpiStockBajo) kpiStockBajo.textContent = stockData.productosBajoStock || 0;
             if (kpiAgotados) kpiAgotados.textContent = agotadosData.totalElements || 0;
-
-            renderCompare('kpi-ingresos-compare', calculateChange(dataHoy.totalVentas || 0, dataAyer.totalVentas || 0));
-            renderCompare('kpi-egresos-compare', calculateChange(dataHoy.totalCompras || 0, dataAyer.totalCompras || 0));
 
         } catch (error) {
             console.error('Error cargando KPIs:', error);
@@ -87,6 +95,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const perfil = await response.json();
             userNameEl.textContent = perfil.nombreCompleto;
             userRoleEl.textContent = perfil.rol;
+            currentUserId = perfil.idUsuario;
         } catch (error) {
             console.error(error);
         }
@@ -152,6 +161,10 @@ document.addEventListener('DOMContentLoaded', function () {
         await loadDashboardKPIs();
     };
 
-    loadDashboardKPIs();
-    loadUserInfo();
+    async function init() {
+        await loadUserInfo();
+        await loadDashboardKPIs();
+    }
+
+    init();
 });

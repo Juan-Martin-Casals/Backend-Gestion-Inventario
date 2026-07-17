@@ -586,7 +586,87 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (modalResumen) modalResumen.style.display = 'none';
                     showSuccessBanner('Caja cerrada exitosamente. Sesión finalizada.');
                     cajaEstaAbierta = false;
-                    verificarEstadoCaja();
+                    
+                    // MOSTRAR MODAL POST-CIERRE
+                    const modalPostCierre = document.getElementById('modal-post-cierre');
+                    if (modalPostCierre && resumenCajaActual) {
+                        const data = resumenCajaActual;
+                        
+                        // Poblado de datos
+                        const horaAp = data.fechaApertura ? new Date(data.fechaApertura).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
+                        const horaCr = new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'});
+                        document.getElementById('post-cierre-operador').textContent = window.usuarioNombreActual || 'Empleado';
+                        document.getElementById('post-cierre-apertura').textContent = horaAp;
+                        document.getElementById('post-cierre-hora').textContent = horaCr;
+                        
+                        const inicial = data.montoInicial || 0;
+                        const ventasEf = data.totalEfectivo || 0;
+                        const comprasEf = data.totalComprasEfectivo || 0;
+                        const efTeorico = data.saldoEsperado || (inicial + ventasEf - comprasEf);
+                        
+                        document.getElementById('post-cierre-inicial').textContent = formatter.format(inicial);
+                        document.getElementById('post-cierre-ingresos-ef').textContent = '+' + formatter.format(ventasEf);
+                        document.getElementById('post-cierre-gastos').textContent = '-' + formatter.format(comprasEf);
+                        document.getElementById('post-cierre-efectivo-teorico').textContent = formatter.format(efTeorico);
+                        
+                        document.getElementById('post-cierre-fisico-real').textContent = formatter.format(montoFisicoVal);
+                        document.getElementById('post-cierre-esperado-repetido').textContent = formatter.format(efTeorico);
+                        
+                        const diff = montoFisicoVal - efTeorico;
+                        const diffLabel = document.getElementById('post-cierre-diferencia-label');
+                        const diffMonto = document.getElementById('post-cierre-diferencia-monto');
+                        const diffContainer = document.getElementById('post-cierre-diferencia-container');
+                        
+                        if(Math.abs(diff) < 0.05) {
+                            diffLabel.textContent = "CUADRE EXACTO";
+                            diffMonto.textContent = "$0";
+                            diffContainer.style.background = "#ecfdf5";
+                            diffContainer.style.borderColor = "#a7f3d0";
+                            diffLabel.style.color = "#059669";
+                            diffMonto.style.color = "#059669";
+                        } else if(diff < 0) {
+                            diffLabel.textContent = "FALTANTE";
+                            diffMonto.textContent = formatter.format(diff);
+                            diffContainer.style.background = "#fef2f2";
+                            diffContainer.style.borderColor = "#fecaca";
+                            diffLabel.style.color = "#dc2626";
+                            diffMonto.style.color = "#dc2626";
+                        } else {
+                            diffLabel.textContent = "SOBRANTE";
+                            diffMonto.textContent = '+' + formatter.format(diff);
+                            diffContainer.style.background = "#eff6ff";
+                            diffContainer.style.borderColor = "#bfdbfe";
+                            diffLabel.style.color = "#2563eb";
+                            diffMonto.style.color = "#2563eb";
+                        }
+                        
+                        document.getElementById('post-cierre-facturacion-total').textContent = formatter.format(data.totalVentas || 0);
+                        document.getElementById('post-cierre-tarjetas').textContent = formatter.format(data.totalTarjeta || 0);
+                        document.getElementById('post-cierre-transferencias').textContent = formatter.format(data.totalTransferencia || 0);
+                        document.getElementById('post-cierre-efectivo-operado').textContent = formatter.format(ventasEf);
+                        
+                        // Mostrar Modal con animación
+                        modalPostCierre.style.display = 'flex';
+                        void modalPostCierre.offsetWidth; // trigger reflow
+                        modalPostCierre.classList.add('post-cierre-visible');
+                        
+                        // Lógica Botones
+                        const closePostCierre = () => {
+                            modalPostCierre.classList.remove('post-cierre-visible');
+                            setTimeout(() => {
+                                modalPostCierre.style.display = 'none';
+                                verificarEstadoCaja();
+                            }, 400); // esperar transición
+                        };
+
+                        const btnFinalizar = document.getElementById('btn-post-cierre-finalizar');
+                        if(btnFinalizar) btnFinalizar.onclick = closePostCierre;
+                        
+                        const btnCloseCross = document.getElementById('btn-post-cierre-close');
+                        if (btnCloseCross) btnCloseCross.onclick = closePostCierre;
+                    } else {
+                        verificarEstadoCaja();
+                    }
                 } else {
                     const err = await response.json();
                     throw new Error(err.error || 'Error al cerrar caja.');
