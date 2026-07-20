@@ -3242,7 +3242,8 @@ body {
 /* Botones de ELIMINAR → rojo */
 .btn-delete-proveedor:hover,
 .btn-delete-usuario:hover,
-.btn-delete-producto:hover {
+.btn-delete-producto:hover,
+.btn-unlink-producto:hover {
     color: #dc3545;
 }
 

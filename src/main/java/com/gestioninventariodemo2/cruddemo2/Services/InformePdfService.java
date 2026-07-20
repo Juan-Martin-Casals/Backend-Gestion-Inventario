@@ -96,7 +96,7 @@ public class InformePdfService {
             Cell leftCell = new Cell().setBorder(Border.NO_BORDER).setVerticalAlignment(VerticalAlignment.MIDDLE);
             leftCell.add(new Paragraph("SGI").setBold().setFontSize(24).setFontColor(BRAND_COLOR).setMarginBottom(0));
             leftCell.add(new Paragraph("Informe Global").setBold().setFontSize(14).setFontColor(TEXT_DARK).setMarginBottom(0));
-            leftCell.add(new Paragraph("Sistema de Gestión Integrado").setFontSize(9).setFontColor(TEXT_MUTED));
+            leftCell.add(new Paragraph("Sistema de Gestión de Inventario").setFontSize(9).setFontColor(TEXT_MUTED));
 
             Cell rightCell = new Cell().setBorder(Border.NO_BORDER).setVerticalAlignment(VerticalAlignment.BOTTOM).setTextAlignment(TextAlignment.RIGHT);
             
@@ -136,7 +136,7 @@ public class InformePdfService {
 
             double cajaReal = kpis.getFlujoCajaLibre() != null ? kpis.getFlujoCajaLibre() : 0;
             DeviceRgb colorCaja = cajaReal >= 0 ? new DeviceRgb(41, 98, 255) : new DeviceRgb(220, 53, 69);
-            kpisTable.addCell(crearTarjetaResumen("Dinero en Mano", "$" + formatCurrency(cajaReal), colorCaja));
+            kpisTable.addCell(crearTarjetaResumen("Efectivo Neto", "$" + formatCurrency(cajaReal), colorCaja));
 
             document.add(kpisTable);
 
@@ -145,16 +145,22 @@ public class InformePdfService {
                     .setFontSize(12).setBold().setFontColor(TEXT_DARK).setMarginTop(10).setMarginBottom(10).setKeepWithNext(true);
             document.add(tituloStock);
 
-            Table stockTable = new Table(UnitValue.createPercentArray(new float[] { 1, 1, 1 }))
+            Table stockTable = new Table(UnitValue.createPercentArray(new float[] { 1, 1, 1, 1 }))
                     .useAllAvailableWidth().setMarginBottom(30);
 
+            long total = stock != null ? stock.getTotalProductos() : 0;
             long agotados = stock != null ? stock.getProductosAgotados() : 0;
             DeviceRgb colorAgotados = agotados > 0 ? new DeviceRgb(220, 53, 69) : TEXT_DARK;
 
             long bajoStock = kpis.getProductosStockBajo() != null ? kpis.getProductosStockBajo() : 0;
             DeviceRgb colorBajoStock = bajoStock > 0 ? new DeviceRgb(255, 140, 0) : TEXT_DARK;
 
-            stockTable.addCell(crearTarjetaResumen("Productos en Catálogo", String.valueOf(stock != null ? stock.getTotalProductos() : 0), BRAND_COLOR));
+            long optimos = total - agotados - bajoStock;
+            if (optimos < 0) optimos = 0;
+            DeviceRgb colorOptimos = new DeviceRgb(40, 167, 69); // Verde
+
+            stockTable.addCell(crearTarjetaResumen("Total en Catálogo", String.valueOf(total), BRAND_COLOR));
+            stockTable.addCell(crearTarjetaResumen("Stock Óptimo", String.valueOf(optimos), colorOptimos));
             stockTable.addCell(crearTarjetaResumen("Stock Bajo", String.valueOf(bajoStock), colorBajoStock));
             stockTable.addCell(crearTarjetaResumen("Agotados", String.valueOf(agotados), colorAgotados));
 
@@ -266,7 +272,7 @@ public class InformePdfService {
                       .lineTo(pageSize.getWidth() - 40, 35)
                       .stroke();
 
-                Paragraph footerText = new Paragraph("Informe Global - Sistema de Gestión")
+                Paragraph footerText = new Paragraph("Informe Global - Sistema de Gestión de Inventario")
                         .setFontSize(7)
                         .setFontColor(TEXT_MUTED);
                 

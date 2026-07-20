@@ -1989,7 +1989,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Resetear UI de busqueda y ordenamiento
             const searchInput = document.getElementById('modal-compra-productos-search');
-            if (searchInput) searchInput.value = '';
+            if (searchInput) {
+                searchInput.value = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline(searchInput.id);
+                const errDiv = document.getElementById('error-' + searchInput.id);
+                if (errDiv) errDiv.style.display = 'none';
+            }
             document.querySelectorAll('.pdm-filter-btn').forEach(btn => {
                 btn.classList.remove('active');
                 const icon = btn.querySelector('.sort-arrow');
@@ -2531,6 +2536,28 @@ document.addEventListener('DOMContentLoaded', function () {
         const searchInput = document.getElementById('modal-compra-productos-search');
         if (searchInput) {
             searchInput.addEventListener('input', function () {
+                // Validación del límite de caracteres
+                if (this.value.length >= 100) {
+                    if (window.mostrarErrorInline) {
+                        window.mostrarErrorInline(this.id, 'Límite de 100 caracteres alcanzado.');
+                    } else {
+                        const errorDiv = document.getElementById('error-' + this.id);
+                        if (errorDiv) {
+                            errorDiv.textContent = 'Límite de 100 caracteres alcanzado.';
+                            errorDiv.style.display = 'block';
+                        }
+                    }
+                } else {
+                    if (window.limpiarErroresInline) {
+                        window.limpiarErroresInline(this.id);
+                    } else {
+                        const errorDiv = document.getElementById('error-' + this.id);
+                        if (errorDiv) {
+                            errorDiv.style.display = 'none';
+                        }
+                    }
+                }
+
                 const tbody = document.getElementById('modal-compra-productos');
                 // Añadir clase de animación
                 tbody.classList.add('loading');
@@ -2655,7 +2682,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 tbody.classList.add('loading');
 
                 setTimeout(() => {
-                    if (searchInput) searchInput.value = '';
+                    if (searchInput) {
+                        searchInput.value = '';
+                        if (window.limpiarErroresInline) window.limpiarErroresInline(searchInput.id);
+                        const errDiv = document.getElementById('error-' + searchInput.id);
+                        if (errDiv) errDiv.style.display = 'none';
+                    }
                     modalCompraCurrentSortCol = -1;
                     modalCompraCurrentSortAsc = true;
 

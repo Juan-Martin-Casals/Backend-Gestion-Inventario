@@ -369,16 +369,22 @@ public class CajaService {
 
     @Transactional(readOnly = true)
     public org.springframework.data.domain.Page<HistorialSesionDTO> obtenerHistorialSesiones(
-            LocalDateTime fechaDesde, LocalDateTime fechaHasta,
+            java.time.LocalDate fechaApertura, java.time.LocalDate fechaCierre,
             String estado, Long operadorId, boolean soloDiferencias, String busqueda,
             org.springframework.data.domain.Pageable pageable) {
         String busquedaParam = (busqueda != null && !busqueda.isBlank())
                 ? "%" + busqueda.toLowerCase() + "%"
                 : null;
         String estadoParam = (estado != null && !estado.isBlank()) ? estado : null;
+        
+        LocalDateTime fechaAperturaInicio = fechaApertura != null ? fechaApertura.atStartOfDay() : null;
+        LocalDateTime fechaAperturaFin = fechaApertura != null ? fechaApertura.atTime(23, 59, 59) : null;
+        LocalDateTime fechaCierreInicio = fechaCierre != null ? fechaCierre.atStartOfDay() : null;
+        LocalDateTime fechaCierreFin = fechaCierre != null ? fechaCierre.atTime(23, 59, 59) : null;
+
         org.springframework.data.domain.Page<SesionCaja> sesiones = soloDiferencias
-                ? sesionCajaRepository.findFilteredConDiferencias(fechaDesde, fechaHasta, estadoParam, operadorId, busquedaParam, pageable)
-                : sesionCajaRepository.findFiltered(fechaDesde, fechaHasta, estadoParam, operadorId, busquedaParam, pageable);
+                ? sesionCajaRepository.findFilteredConDiferencias(fechaAperturaInicio, fechaAperturaFin, fechaCierreInicio, fechaCierreFin, estadoParam, operadorId, busquedaParam, pageable)
+                : sesionCajaRepository.findFiltered(fechaAperturaInicio, fechaAperturaFin, fechaCierreInicio, fechaCierreFin, estadoParam, operadorId, busquedaParam, pageable);
 
         return sesiones.map(sesion -> {
             String operador = sesion.getUsuario().getNombre() + " " + sesion.getUsuario().getApellido();

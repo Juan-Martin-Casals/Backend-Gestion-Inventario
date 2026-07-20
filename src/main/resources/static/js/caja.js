@@ -1279,20 +1279,27 @@ document.addEventListener('DOMContentLoaded', function () {
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
-            const params = new URLSearchParams({ page: 0, size: 1000, sort: 'fechaApertura,desc' });
-            const fechaDesde = historialFechaDesde?.value;
-            const fechaHasta = historialFechaHasta?.value;
+            const params = new URLSearchParams({ 
+                page: 0, 
+                size: 1000, 
+                sort: 'fechaApertura,desc',
+                _t: new Date().getTime()
+            });
+            const fechaApertura = document.getElementById('historial-fecha-apertura')?.value;
+            const fechaCierre = document.getElementById('historial-fecha-cierre')?.value;
             const estado = historialFiltroEstado?.value;
             const operadorId = historialFiltroOperador?.value;
             const soloDiferencias = btnHistorialDiferencias?.dataset.active === 'true';
 
-            if (fechaDesde) params.append('fechaDesde', fechaDesde + 'T00:00:00');
-            if (fechaHasta) params.append('fechaHasta', fechaHasta + 'T23:59:59');
+            if (fechaApertura) params.append('fechaApertura', fechaApertura);
+            if (fechaCierre) params.append('fechaCierre', fechaCierre);
             if (estado) params.append('estado', estado);
             if (operadorId) params.append('operadorId', operadorId);
             if (soloDiferencias) params.append('soloDiferencias', 'true');
 
-            const response = await fetch(`/api/caja/historial?${params}`);
+            const response = await fetch(`/api/caja/historial?${params}`, {
+                cache: 'no-store'
+            });
             if (!response.ok) throw new Error('Error al obtener historial');
 
             const data = await response.json();
@@ -1312,16 +1319,18 @@ document.addEventListener('DOMContentLoaded', function () {
 
     function mostrarErrorHistorial(msg) {
         if (!historialFiltroError) return;
-        historialFiltroError.textContent = msg;
-        historialFiltroError.style.display = 'block';
+        const textSpan = document.getElementById('historial-caja-filtro-error-text');
+        if (textSpan) textSpan.textContent = msg;
+        else historialFiltroError.textContent = msg;
+        historialFiltroError.style.display = 'flex';
         setTimeout(() => { historialFiltroError.style.display = 'none'; }, 4000);
     }
 
     function validarFechasHistorial() {
-        const desde = historialFechaDesde?.value;
-        const hasta = historialFechaHasta?.value;
-        if (desde && hasta && desde > hasta) {
-            mostrarErrorHistorial('La fecha de inicio no puede ser mayor que la fecha de fin');
+        const apertura = document.getElementById('historial-fecha-apertura')?.value;
+        const cierre = document.getElementById('historial-fecha-cierre')?.value;
+        if (apertura && cierre && apertura > cierre) {
+            mostrarErrorHistorial('La fecha de apertura no puede ser posterior a la fecha de cierre');
             return false;
         }
         if (historialFiltroError) historialFiltroError.style.display = 'none';
@@ -1363,8 +1372,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 historialBusqueda.value = '';
                 if (window.limpiarErroresInline) window.limpiarErroresInline('historial-busqueda');
             }
-            if (historialFechaDesde) historialFechaDesde.value = '';
-            if (historialFechaHasta) historialFechaHasta.value = '';
+            const historialFechaApertura = document.getElementById('historial-fecha-apertura');
+            const historialFechaCierre = document.getElementById('historial-fecha-cierre');
+            if (historialFechaApertura) historialFechaApertura.value = '';
+            if (historialFechaCierre) historialFechaCierre.value = '';
             if (historialFiltroEstado) historialFiltroEstado.value = '';
             if (historialFiltroOperador) historialFiltroOperador.value = '';
             if (historialFiltroError) historialFiltroError.style.display = 'none';

@@ -184,14 +184,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    bindLimit(nombreInput,    70);
-    bindLimit(telefonoInput,  20);
-    bindLimit(emailInput,     80);
+    bindLimit(nombreInput, 70);
+    bindLimit(telefonoInput, 20);
+    bindLimit(emailInput, 80);
     bindLimit(direccionInput, 100);
 
-    bindLimit(editNombreInput,    70);
-    bindLimit(editTelefonoInput,  20);
-    bindLimit(editEmailInput,     80);
+    bindLimit(editNombreInput, 70);
+    bindLimit(editTelefonoInput, 20);
+    bindLimit(editEmailInput, 80);
     bindLimit(editDireccionInput, 100);
 
     // ===============================
@@ -209,12 +209,12 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Si el mensaje actual es de límite, no lo limpiamos genéricamente,
                 // dejamos que checkMaxLength se encargue de limpiarlo cuando corresponda.
                 if (errorEl && (errorEl.textContent.includes('Limite de') || errorEl.textContent.includes('Límite de'))) {
-                    return; 
+                    return;
                 }
-                if(window.limpiarErroresInline) window.limpiarErroresInline(id);
+                if (window.limpiarErroresInline) window.limpiarErroresInline(id);
             });
             el.addEventListener('change', () => {
-                if(window.limpiarErroresInline) window.limpiarErroresInline(id);
+                if (window.limpiarErroresInline) window.limpiarErroresInline(id);
             });
         }
     });
@@ -438,18 +438,18 @@ document.addEventListener('DOMContentLoaded', function () {
             const cuit = cuitInput.value.trim();
             const productosIds = [];
 
-            if (!nombre) { if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorNombre', 'El nombre del proveedor es obligatorio'); isValid = false; }
-            if (!telefono) { if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorTelefono', 'El teléfono del proveedor es obligatorio'); isValid = false; }
-            else if (telefono.length < 6) { if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorTelefono', 'El teléfono debe tener al menos 6 caracteres'); isValid = false; }
-            if (!email) { if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorEmail', 'El email del proveedor es obligatorio'); isValid = false; }
+            if (!nombre) { if (window.mostrarErrorInline) window.mostrarErrorInline('proveedorNombre', 'El nombre del proveedor es obligatorio'); isValid = false; }
+            if (!telefono) { if (window.mostrarErrorInline) window.mostrarErrorInline('proveedorTelefono', 'El teléfono del proveedor es obligatorio'); isValid = false; }
+            else if (telefono.length < 6) { if (window.mostrarErrorInline) window.mostrarErrorInline('proveedorTelefono', 'El teléfono debe tener al menos 6 caracteres'); isValid = false; }
+            if (!email) { if (window.mostrarErrorInline) window.mostrarErrorInline('proveedorEmail', 'El email del proveedor es obligatorio'); isValid = false; }
             else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorEmail', 'El formato del email no es válido');
+                if (window.mostrarErrorInline) window.mostrarErrorInline('proveedorEmail', 'El formato del email no es válido');
                 isValid = false;
             }
-            if (!direccion) { if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorDireccion', 'La dirección del proveedor es obligatoria'); isValid = false; }
-            if (!cuit) { if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorCuit', 'El CUIT es obligatorio'); isValid = false; }
+            if (!direccion) { if (window.mostrarErrorInline) window.mostrarErrorInline('proveedorDireccion', 'La dirección del proveedor es obligatoria'); isValid = false; }
+            if (!cuit) { if (window.mostrarErrorInline) window.mostrarErrorInline('proveedorCuit', 'El CUIT es obligatorio'); isValid = false; }
             else if (!cuit.match(/^\d{2}-\d{8}-\d{1}$/)) {
-                if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorCuit', 'El formato de CUIT debe ser XX-XXXXXXXX-X');
+                if (window.mostrarErrorInline) window.mostrarErrorInline('proveedorCuit', 'El formato de CUIT debe ser XX-XXXXXXXX-X');
                 isValid = false;
             }
 
@@ -467,11 +467,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 const emailExiste = await emailRes.json();
 
                 if (nombreExiste) {
-                    if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorNombre', 'Ya existe un proveedor con ese nombre');
+                    if (window.mostrarErrorInline) window.mostrarErrorInline('proveedorNombre', 'Ya existe un proveedor con ese nombre');
                     isValid = false;
                 }
                 if (emailExiste) {
-                    if(window.mostrarErrorInline) window.mostrarErrorInline('proveedorEmail', 'Ya existe un proveedor con ese email');
+                    if (window.mostrarErrorInline) window.mostrarErrorInline('proveedorEmail', 'Ya existe un proveedor con ese email');
                     isValid = false;
                 }
                 if (!isValid) {
@@ -633,20 +633,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 <tr style="background: ${bgColor}; transition: background 0.15s;" onmouseenter="this.style.background='#f0f9ff'" onmouseleave="this.style.background='${bgColor}'">
                     <td style="padding: 12px 20px; font-size: 14px; font-weight: 500; color: #1e293b; border-bottom: 1px solid #f1f5f9;">
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <span style="display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: #f1f5f9; border-radius: 8px; flex-shrink: 0;">
-                                <i class="fas fa-cube" style="color: #64748b; font-size: 13px;"></i>
-                            </span>
                             ${prod.nombreProducto || 'N/A'}
                         </div>
                     </td>
                     <td style="padding: 12px 20px; text-align: right; border-bottom: 1px solid #f1f5f9;">
-                        <span style="font-size: 14px; font-weight: 600; color: #059669; background: #f0fdf4; padding: 4px 10px; border-radius: 6px; border: 1px solid #bbf7d0;">${costoFormat}</span>
+                        <span style="font-size: 14px; font-weight: 500; color: #1e293b;">${costoFormat}</span>
                     </td>
                     <td style="padding: 12px 20px; text-align: center; border-bottom: 1px solid #f1f5f9;">
-                        <button class="btn-icon btn-unlink-producto" data-id="${prod.idProducto}" title="Eliminar del proveedor"
-                            style="color: #ef4444; font-size: 14px; padding: 6px 10px; border-radius: 8px; border: 1px solid #fecaca; background: #fef2f2; cursor: pointer; transition: all 0.2s;"
-                            onmouseenter="this.style.background='#fee2e2'; this.style.borderColor='#f87171'"
-                            onmouseleave="this.style.background='#fef2f2'; this.style.borderColor='#fecaca'">
+                        <button class="btn-icon btn-unlink-producto" data-id="${prod.idProducto}" title="Eliminar del proveedor">
                             <i class="fas fa-trash"></i>
                         </button>
                     </td>
@@ -767,6 +761,29 @@ document.addEventListener('DOMContentLoaded', function () {
     if (addProductoSearch) {
         addProductoSearch.addEventListener('input', (e) => {
             clearTimeout(addProductoTimeout);
+
+            // Validación del límite de caracteres
+            if (e.target.value.length >= 100) {
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline(e.target.id, 'Límite de 100 caracteres alcanzado.');
+                } else {
+                    const errorDiv = document.getElementById('error-' + e.target.id);
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Límite de 100 caracteres alcanzado.';
+                        errorDiv.style.display = 'block';
+                    }
+                }
+            } else {
+                if (window.limpiarErroresInline) {
+                    window.limpiarErroresInline(e.target.id);
+                } else {
+                    const errorDiv = document.getElementById('error-' + e.target.id);
+                    if (errorDiv) {
+                        errorDiv.style.display = 'none';
+                    }
+                }
+            }
+
             if (addProductoDropdown) addProductoDropdown.classList.add('loading');
             addProductoTimeout = setTimeout(() => {
                 renderAddProductoDropdown(e.target.value.trim());
@@ -776,6 +793,22 @@ document.addEventListener('DOMContentLoaded', function () {
         addProductoSearch.addEventListener('focus', () => {
             // Mostrar todos los productos disponibles al hacer clic/focus
             renderAddProductoDropdown(addProductoSearch.value.trim());
+        });
+    }
+
+    const btnCleanAddSearchEditProv = document.getElementById('edit-prov-clean-add-search');
+    if (btnCleanAddSearchEditProv) {
+        btnCleanAddSearchEditProv.addEventListener('click', () => {
+            if (addProductoSearch) {
+                addProductoSearch.value = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline(addProductoSearch.id);
+                const errDiv = document.getElementById('error-' + addProductoSearch.id);
+                if (errDiv) errDiv.style.display = 'none';
+                
+                // Mostrar todos los productos disponibles
+                renderAddProductoDropdown('');
+                addProductoSearch.focus();
+            }
         });
     }
 
@@ -792,12 +825,61 @@ document.addEventListener('DOMContentLoaded', function () {
     if (editProvProductosSearch) {
         editProvProductosSearch.addEventListener('input', (e) => {
             clearTimeout(editProvSearchTimeout);
+
+            // Validación del límite de caracteres
+            if (e.target.value.length >= 100) {
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline(e.target.id, 'Límite de 100 caracteres alcanzado.');
+                } else {
+                    const errorDiv = document.getElementById('error-' + e.target.id);
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Límite de 100 caracteres alcanzado.';
+                        errorDiv.style.display = 'block';
+                    }
+                }
+            } else {
+                if (window.limpiarErroresInline) {
+                    window.limpiarErroresInline(e.target.id);
+                } else {
+                    const errorDiv = document.getElementById('error-' + e.target.id);
+                    if (errorDiv) {
+                        errorDiv.style.display = 'none';
+                    }
+                }
+            }
+
             const tbody = document.getElementById('edit-prov-productos-body');
             if (tbody) tbody.classList.add('loading');
             editProvSearchTimeout = setTimeout(() => {
                 editProductosSearchTerm = normalizeText(e.target.value.trim());
                 renderEditProductosCatalog();
                 if (tbody) tbody.classList.remove('loading');
+            }, 200);
+        });
+    }
+
+    const btnCleanSearchEditProv = document.getElementById('edit-prov-clean-search');
+    if (btnCleanSearchEditProv) {
+        btnCleanSearchEditProv.addEventListener('click', () => {
+            if (editProvProductosSearch) {
+                editProvProductosSearch.value = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline(editProvProductosSearch.id);
+                const errDiv = document.getElementById('error-' + editProvProductosSearch.id);
+                if (errDiv) errDiv.style.display = 'none';
+            }
+            editProductosSearchTerm = '';
+            
+            const tbody = document.getElementById('edit-prov-productos-body');
+            if (tbody) {
+                tbody.classList.add('loading');
+            }
+            setTimeout(() => {
+                renderEditProductosCatalog();
+                if (tbody) {
+                    requestAnimationFrame(() => {
+                        tbody.classList.remove('loading');
+                    });
+                }
             }, 200);
         });
     }
@@ -895,8 +977,18 @@ document.addEventListener('DOMContentLoaded', function () {
         // Populate product catalog
         editProductosProveedorActual = data.productos || [];
         editProductosSearchTerm = '';
-        if (editProvProductosSearch) editProvProductosSearch.value = '';
-        if (addProductoSearch) addProductoSearch.value = '';
+        if (editProvProductosSearch) {
+            editProvProductosSearch.value = '';
+            if (window.limpiarErroresInline) window.limpiarErroresInline(editProvProductosSearch.id);
+            const errDiv = document.getElementById('error-' + editProvProductosSearch.id);
+            if (errDiv) errDiv.style.display = 'none';
+        }
+        if (addProductoSearch) {
+            addProductoSearch.value = '';
+            if (window.limpiarErroresInline) window.limpiarErroresInline(addProductoSearch.id);
+            const errDiv = document.getElementById('error-' + addProductoSearch.id);
+            if (errDiv) errDiv.style.display = 'none';
+        }
         if (addProductoDropdown) addProductoDropdown.style.display = 'none';
         renderEditProductosCatalog();
         fetchTodosProductos(); // Pre-cargar productos para el autocompletado
@@ -967,6 +1059,13 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
 
+        // Ordenar alfabéticamente por nombre de producto (de la A a la Z)
+        filteredProducts.sort((a, b) => {
+            const nameA = (a.nombreProducto || '').toLowerCase();
+            const nameB = (b.nombreProducto || '').toLowerCase();
+            return nameA.localeCompare(nameB, 'es', { sensitivity: 'base' });
+        });
+
         // 3. Si no hay productos, mostramos el mensaje
         if (filteredProducts.length === 0) {
             const icon = modalProveedorSearchTerm ? 'fa-search' : 'fa-box-open';
@@ -988,26 +1087,28 @@ document.addEventListener('DOMContentLoaded', function () {
         filteredProducts.forEach((prod, index) => {
             const costoFormat = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(prod.ultimoCosto || 0);
             const stock = prod.stock || 0;
-            const stockColor = stock > 10 ? '#059669' : stock > 0 ? '#d97706' : '#dc2626';
-            const stockBg = stock > 10 ? '#f0fdf4' : stock > 0 ? '#fffbeb' : '#fef2f2';
-            const stockBorder = stock > 10 ? '#bbf7d0' : stock > 0 ? '#fde68a' : '#fecaca';
+            
+            let stockClass = 'good';
+            if (stock <= 0) {
+                stockClass = 'empty';
+            } else if (prod.stockMinimo && stock < prod.stockMinimo) {
+                stockClass = 'low';
+            }
+            
             const bgColor = index % 2 === 0 ? 'white' : '#fafbfc';
 
             const row = `
             <tr style="background: ${bgColor}; transition: background 0.15s;" onmouseenter="this.style.background='#f0f9ff'" onmouseleave="this.style.background='${bgColor}'">
                 <td style="padding: 12px 22px; border-bottom: 1px solid #f1f5f9;">
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; background: #f1f5f9; border-radius: 8px; flex-shrink: 0;">
-                            <i class="fas fa-cube" style="color: #64748b; font-size: 12px;"></i>
-                        </span>
                         <span style="font-size: 14px; font-weight: 500; color: #1e293b;">${prod.nombreProducto || 'N/A'}</span>
                     </div>
                 </td>
                 <td style="padding: 12px 22px; text-align: right; border-bottom: 1px solid #f1f5f9;">
-                    <span style="font-size: 14px; font-weight: 600; color: #059669; background: #f0fdf4; padding: 4px 10px; border-radius: 6px; border: 1px solid #bbf7d0;">${costoFormat}</span>
+                    <span style="font-size: 14px; font-weight: 500; color: #1e293b;">${costoFormat}</span>
                 </td>
                 <td style="padding: 12px 22px; text-align: center; border-bottom: 1px solid #f1f5f9;">
-                    <span style="font-size: 13px; font-weight: 600; color: ${stockColor}; background: ${stockBg}; padding: 4px 10px; border-radius: 6px; border: 1px solid ${stockBorder};">${stock}</span>
+                    <span class="stock-badge ${stockClass}">${stock}</span>
                 </td>
             </tr>
         `;
@@ -1018,11 +1119,33 @@ document.addEventListener('DOMContentLoaded', function () {
     // Configizar listener de búsqueda
     const modalSearchInput = document.getElementById('modal-proveedor-productos-search');
     let modalSearchTimeout;
-    
+
     if (modalSearchInput) {
         modalSearchInput.addEventListener('input', (e) => {
             clearTimeout(modalSearchTimeout);
-            
+
+            // Validación del límite de caracteres
+            if (e.target.value.length >= 100) {
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline(e.target.id, 'Límite de 100 caracteres alcanzado.');
+                } else {
+                    const errorDiv = document.getElementById('error-' + e.target.id);
+                    if (errorDiv) {
+                        errorDiv.textContent = 'Límite de 100 caracteres alcanzado.';
+                        errorDiv.style.display = 'block';
+                    }
+                }
+            } else {
+                if (window.limpiarErroresInline) {
+                    window.limpiarErroresInline(e.target.id);
+                } else {
+                    const errorDiv = document.getElementById('error-' + e.target.id);
+                    if (errorDiv) {
+                        errorDiv.style.display = 'none';
+                    }
+                }
+            }
+
             const tbody = document.getElementById('modal-proveedor-productos-body');
             if (tbody) {
                 tbody.classList.add('loading');
@@ -1031,13 +1154,40 @@ document.addEventListener('DOMContentLoaded', function () {
             modalSearchTimeout = setTimeout(() => {
                 modalProveedorSearchTerm = normalizeText(e.target.value.trim());
                 renderModalProductos();
-                
+
                 if (tbody) {
                     requestAnimationFrame(() => {
                         tbody.classList.remove('loading');
                     });
                 }
             }, 200); // 200ms para empatar con la transición CSS
+        });
+    }
+
+    const btnCleanSearchModalProv = document.getElementById('modal-proveedor-clean-search');
+    if (btnCleanSearchModalProv) {
+        btnCleanSearchModalProv.addEventListener('click', () => {
+            const mSearchInput = document.getElementById('modal-proveedor-productos-search');
+            if (mSearchInput) {
+                mSearchInput.value = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline(mSearchInput.id);
+                const errDiv = document.getElementById('error-' + mSearchInput.id);
+                if (errDiv) errDiv.style.display = 'none';
+            }
+            modalProveedorSearchTerm = '';
+
+            const tbody = document.getElementById('modal-proveedor-productos-body');
+            if (tbody) {
+                tbody.classList.add('loading');
+            }
+            setTimeout(() => {
+                renderModalProductos();
+                if (tbody) {
+                    requestAnimationFrame(() => {
+                        tbody.classList.remove('loading');
+                    });
+                }
+            }, 200);
         });
     }
 
@@ -1071,11 +1221,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Productos Asociados
             productosProveedorActual = proveedor.productos || [];
-            
+
             // Limpiar búsqueda al abrir
             modalProveedorSearchTerm = '';
             const mSearchInput = document.getElementById('modal-proveedor-productos-search');
-            if (mSearchInput) mSearchInput.value = '';
+            if (mSearchInput) {
+                mSearchInput.value = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline(mSearchInput.id);
+                const errDiv = document.getElementById('error-' + mSearchInput.id);
+                if (errDiv) errDiv.style.display = 'none';
+            }
 
             renderModalProductos();
 
@@ -1180,6 +1335,27 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    const btnResetEdit = document.getElementById('edit-prov-reset-btn');
+    if (btnResetEdit) {
+        btnResetEdit.addEventListener('click', () => {
+            if (proveedorActualEditando) {
+                editNombreInput.value = proveedorActualEditando.nombre || '';
+                editTelefonoInput.value = proveedorActualEditando.telefono || '';
+                editEmailInput.value = proveedorActualEditando.email || '';
+                editDireccionInput.value = proveedorActualEditando.direccion || '';
+                editCuitInput.value = proveedorActualEditando.cuit || '';
+                if (window.limpiarTodosErroresInline) {
+                    window.limpiarTodosErroresInline('editProveedor');
+                }
+                if (editGeneralMessage) {
+                    editGeneralMessage.textContent = 'Valores originales restablecidos.';
+                    editGeneralMessage.className = 'form-message success';
+                    setTimeout(() => { editGeneralMessage.textContent = ''; editGeneralMessage.className = 'form-message'; }, 3000);
+                }
+            }
+        });
+    }
+
     if (editForm) {
         editForm.addEventListener('submit', async function (e) {
             e.preventDefault();
@@ -1201,36 +1377,36 @@ document.addEventListener('DOMContentLoaded', function () {
             let isValid = true;
 
             if (!nombre) {
-                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorNombre', 'El nombre es obligatorio');
+                if (window.mostrarErrorInline) window.mostrarErrorInline('editProveedorNombre', 'El nombre es obligatorio');
                 isValid = false;
             }
 
             if (!telefono) {
-                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorTelefono', 'El teléfono es obligatorio');
+                if (window.mostrarErrorInline) window.mostrarErrorInline('editProveedorTelefono', 'El teléfono es obligatorio');
                 isValid = false;
             } else if (telefono.length < 6) {
-                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorTelefono', 'El teléfono debe tener al menos 6 caracteres');
+                if (window.mostrarErrorInline) window.mostrarErrorInline('editProveedorTelefono', 'El teléfono debe tener al menos 6 caracteres');
                 isValid = false;
             }
 
             if (!email) {
-                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorEmail', 'El email es obligatorio');
+                if (window.mostrarErrorInline) window.mostrarErrorInline('editProveedorEmail', 'El email es obligatorio');
                 isValid = false;
             } else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorEmail', 'El formato del email no es válido');
+                if (window.mostrarErrorInline) window.mostrarErrorInline('editProveedorEmail', 'El formato del email no es válido');
                 isValid = false;
             }
 
             if (!direccion) {
-                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorDireccion', 'La dirección es obligatoria');
+                if (window.mostrarErrorInline) window.mostrarErrorInline('editProveedorDireccion', 'La dirección es obligatoria');
                 isValid = false;
             }
-            
+
             if (!cuit) {
-                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorCuit', 'El CUIT es obligatorio');
+                if (window.mostrarErrorInline) window.mostrarErrorInline('editProveedorCuit', 'El CUIT es obligatorio');
                 isValid = false;
             } else if (!cuit.match(/^\d{2}-\d{8}-\d{1}$/)) {
-                if(window.mostrarErrorInline) window.mostrarErrorInline('editProveedorCuit', 'El formato de CUIT debe ser XX-XXXXXXXX-X');
+                if (window.mostrarErrorInline) window.mostrarErrorInline('editProveedorCuit', 'El formato de CUIT debe ser XX-XXXXXXXX-X');
                 isValid = false;
             }
 
@@ -1503,7 +1679,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             searchInput.value = '';
             proveedoresFiltrados = null;
-            
+
             // Limpiar errores visuales
             if (window.limpiarErroresInline) {
                 window.limpiarErroresInline('proveedor-search-input');

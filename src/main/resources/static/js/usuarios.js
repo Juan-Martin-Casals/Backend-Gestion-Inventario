@@ -96,9 +96,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
     bindLimit(nombreInput,         document.getElementById('error-user-nombre'),          70);
     bindLimit(apellidoInput,       document.getElementById('error-user-apellido'),         70);
-    bindLimit(emailInput,          document.getElementById('error-user-email'),            255);
-    bindLimit(passwordInput,       document.getElementById('error-user-password'),         100);
-    bindLimit(confirmPasswordInput,document.getElementById('error-user-confirm-password'), 100);
+    bindLimit(emailInput,          document.getElementById('error-user-email'),            80);
+    bindLimit(passwordInput,       document.getElementById('error-user-password'),         50);
+    bindLimit(confirmPasswordInput,document.getElementById('error-user-confirm-password'), 50);
 
     bindLimit(editNombreInput,   document.getElementById('error-editUsuarioNombre'),   70);
     bindLimit(editApellidoInput, document.getElementById('error-editUsuarioApellido'), 70);
@@ -231,22 +231,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
         usuarios.forEach(user => {
             const nombreCompleto = `${user.nombre || ''} ${user.apellido || ''}`.trim() || 'N/A';
-            const rolKey = user.descripcionRol ? user.descripcionRol.toUpperCase() : '';
-            
-            let badgeStyle = 'background: #e2e8f0; color: #475569; border: 1px solid #cbd5e1;';
-            if (rolKey === 'ADMIN') {
-                badgeStyle = 'background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe;';
-            } else if (rolKey === 'EMPLEADO') {
-                badgeStyle = 'background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0;';
-            }
-            
-            const rolBadge = `<span style="display: inline-block; padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700; ${badgeStyle}">${user.descripcionRol || 'Sin Rol'}</span>`;
+            let rolDisplay = user.descripcionRol || 'Sin Rol';
+            rolDisplay = rolDisplay.charAt(0).toUpperCase() + rolDisplay.slice(1).toLowerCase();
 
             const row = `
                 <tr>
                     <td style="font-weight: 600; color: #0f172a;">${nombreCompleto}</td>
                     <td>${user.email || 'N/A'}</td>
-                    <td>${rolBadge}</td>
+                    <td>${rolDisplay}</td>
                     <td style="text-align: center;">
                         <button class="btn-icon btn-edit-usuario" data-id="${user.id}" title="Editar">
                             <i class="fas fa-edit"></i>

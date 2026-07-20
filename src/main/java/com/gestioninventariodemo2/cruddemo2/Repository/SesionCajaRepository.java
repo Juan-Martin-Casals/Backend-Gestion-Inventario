@@ -22,29 +22,33 @@ public interface SesionCajaRepository extends JpaRepository<SesionCaja, Long> {
     Page<SesionCaja> findAllByOrderByFechaAperturaDesc(Pageable pageable);
 
     @Query("SELECT s FROM SesionCaja s WHERE " +
-        "(CAST(:fechaDesde AS java.time.LocalDateTime) IS NULL OR s.fechaApertura >= :fechaDesde) AND " +
-        "(CAST(:fechaHasta AS java.time.LocalDateTime) IS NULL OR s.fechaApertura <= :fechaHasta) AND " +
+        "(CAST(:fechaAperturaInicio AS java.time.LocalDateTime) IS NULL OR (s.fechaApertura >= :fechaAperturaInicio AND s.fechaApertura <= :fechaAperturaFin)) AND " +
+        "(CAST(:fechaCierreInicio AS java.time.LocalDateTime) IS NULL OR (s.fechaCierre >= :fechaCierreInicio AND s.fechaCierre <= :fechaCierreFin)) AND " +
         "(:estado IS NULL OR s.estado = :estado) AND " +
         "(CAST(:operadorId AS java.lang.Long) IS NULL OR s.usuario.idUsuario = :operadorId) AND " +
         "(:busqueda IS NULL OR LOWER(s.usuario.nombre) LIKE :busqueda OR LOWER(s.usuario.apellido) LIKE :busqueda)")
     Page<SesionCaja> findFiltered(
-        @Param("fechaDesde") LocalDateTime fechaDesde,
-        @Param("fechaHasta") LocalDateTime fechaHasta,
+        @Param("fechaAperturaInicio") LocalDateTime fechaAperturaInicio,
+        @Param("fechaAperturaFin") LocalDateTime fechaAperturaFin,
+        @Param("fechaCierreInicio") LocalDateTime fechaCierreInicio,
+        @Param("fechaCierreFin") LocalDateTime fechaCierreFin,
         @Param("estado") String estado,
         @Param("operadorId") Long operadorId,
         @Param("busqueda") String busqueda,
         Pageable pageable);
 
     @Query("SELECT s FROM SesionCaja s WHERE " +
-        "(CAST(:fechaDesde AS java.time.LocalDateTime) IS NULL OR s.fechaApertura >= :fechaDesde) AND " +
-        "(CAST(:fechaHasta AS java.time.LocalDateTime) IS NULL OR s.fechaApertura <= :fechaHasta) AND " +
+        "(CAST(:fechaAperturaInicio AS java.time.LocalDateTime) IS NULL OR (s.fechaApertura >= :fechaAperturaInicio AND s.fechaApertura <= :fechaAperturaFin)) AND " +
+        "(CAST(:fechaCierreInicio AS java.time.LocalDateTime) IS NULL OR (s.fechaCierre >= :fechaCierreInicio AND s.fechaCierre <= :fechaCierreFin)) AND " +
         "(:estado IS NULL OR s.estado = :estado) AND " +
         "(CAST(:operadorId AS java.lang.Long) IS NULL OR s.usuario.idUsuario = :operadorId) AND " +
         "(:busqueda IS NULL OR LOWER(s.usuario.nombre) LIKE :busqueda OR LOWER(s.usuario.apellido) LIKE :busqueda) AND " +
         "s.montoFinalReal IS NOT NULL AND ABS(s.montoFinalReal - s.montoInicialReal) >= 0.01")
     Page<SesionCaja> findFilteredConDiferencias(
-        @Param("fechaDesde") LocalDateTime fechaDesde,
-        @Param("fechaHasta") LocalDateTime fechaHasta,
+        @Param("fechaAperturaInicio") LocalDateTime fechaAperturaInicio,
+        @Param("fechaAperturaFin") LocalDateTime fechaAperturaFin,
+        @Param("fechaCierreInicio") LocalDateTime fechaCierreInicio,
+        @Param("fechaCierreFin") LocalDateTime fechaCierreFin,
         @Param("estado") String estado,
         @Param("operadorId") Long operadorId,
         @Param("busqueda") String busqueda,

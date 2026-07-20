@@ -354,6 +354,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
     const editForm = document.getElementById('edit-cliente-form');
     const editMsg = document.getElementById('edit-cliente-form-msg');
+    let clienteActualEditando = null;
 
     async function handleEdit(id) {
         editMsg.textContent = '';
@@ -363,6 +364,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const res = await fetch(`${API_CLIENTES_URL}/${id}`);
             if (!res.ok) throw new Error('Cliente no encontrado');
             const data = await res.json();
+            clienteActualEditando = data;
 
             document.getElementById('edit-cliente-id').value = data.idCliente;
             document.getElementById('edit-cliente-nombre').value = data.nombre || '';
@@ -386,14 +388,52 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    document.getElementById('cliente-edit-close').addEventListener('click', () => {
+    const closeEditModal = () => {
         editModal.style.display = 'none';
         clearEditErrors();
-    });
+    };
 
-    document.getElementById('cliente-edit-cancel').addEventListener('click', () => {
-        editModal.style.display = 'none';
-        clearEditErrors();
+    const editCloseBtn = document.getElementById('cliente-edit-close');
+    if (editCloseBtn) {
+        editCloseBtn.addEventListener('click', closeEditModal);
+    }
+
+    const editResetBtn = document.getElementById('cliente-edit-reset');
+    if (editResetBtn) {
+        editResetBtn.addEventListener('click', () => {
+            if (clienteActualEditando) {
+                document.getElementById('edit-cliente-id').value = clienteActualEditando.idCliente;
+                document.getElementById('edit-cliente-nombre').value = clienteActualEditando.nombre || '';
+                document.getElementById('edit-cliente-apellido').value = clienteActualEditando.apellido || '';
+                document.getElementById('edit-cliente-dni').value = clienteActualEditando.dni || '';
+                document.getElementById('edit-cliente-telefono').value = clienteActualEditando.telefono || '';
+                document.getElementById('edit-cliente-email').value = clienteActualEditando.email || '';
+                document.getElementById('edit-cliente-direccion').value = clienteActualEditando.direccion || '';
+                
+                clearEditErrors();
+                if (editMsg) {
+                    editMsg.textContent = 'Valores originales restablecidos.';
+                    editMsg.className = 'form-message success';
+                    setTimeout(() => { editMsg.textContent = ''; editMsg.className = 'form-message'; }, 3000);
+                }
+            }
+        });
+    }
+
+    // Cerrar al hacer clic fuera
+    if (editModal) {
+        editModal.addEventListener('click', (e) => {
+            if (e.target === editModal) {
+                closeEditModal();
+            }
+        });
+    }
+
+    // Cerrar con ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && editModal && editModal.style.display === 'flex') {
+            closeEditModal();
+        }
     });
 
     document.getElementById('cliente-edit-save').addEventListener('click', async () => {
@@ -633,8 +673,8 @@ document.addEventListener('DOMContentLoaded', function () {
     bindLimit(document.getElementById('edit-cliente-nombre'), document.getElementById('error-edit-cliente-nombre'), 70);
     bindLimit(document.getElementById('edit-cliente-apellido'), document.getElementById('error-edit-cliente-apellido'), 70);
     bindLimit(document.getElementById('edit-cliente-telefono'), document.getElementById('error-edit-cliente-telefono'), 20);
-    bindLimit(document.getElementById('edit-cliente-direccion'), document.getElementById('error-edit-cliente-direccion'), 200);
-    bindLimit(document.getElementById('edit-cliente-email'), document.getElementById('error-edit-cliente-email'), 255);
+    bindLimit(document.getElementById('edit-cliente-direccion'), document.getElementById('error-edit-cliente-direccion'), 100);
+    bindLimit(document.getElementById('edit-cliente-email'), document.getElementById('error-edit-cliente-email'), 80);
     bindLimit(document.getElementById('edit-cliente-dni'), document.getElementById('error-edit-cliente-dni'), 11);
 
     // ===============================

@@ -91,15 +91,15 @@ public class CajaController {
 
     @GetMapping("/historial")
     public ResponseEntity<org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.DTO.HistorialSesionDTO>> getHistorial(
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime fechaDesde,
-            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss") LocalDateTime fechaHasta,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") java.time.LocalDate fechaApertura,
+            @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd") java.time.LocalDate fechaCierre,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) Long operadorId,
             @RequestParam(defaultValue = "false") boolean soloDiferencias,
             @RequestParam(required = false) String busqueda,
             org.springframework.data.domain.Pageable pageable) {
         return ResponseEntity.ok(cajaService.obtenerHistorialSesiones(
-                fechaDesde, fechaHasta, estado, operadorId, soloDiferencias, busqueda, pageable));
+                fechaApertura, fechaCierre, estado, operadorId, soloDiferencias, busqueda, pageable));
     }
 
     @GetMapping("/historial/operadores")
