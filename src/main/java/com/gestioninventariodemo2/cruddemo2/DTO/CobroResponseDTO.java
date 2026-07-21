@@ -19,9 +19,7 @@ public class CobroResponseDTO {
     private BigDecimal importe;
     private BigDecimal montoPagado;
     private BigDecimal vuelto;
-    private String nroTransaccion;
     private String tipoTarjeta;
-    private String ultimosDigitos;
     private LocalDate fechaCobro;
     private String nombreUsuario;
 }

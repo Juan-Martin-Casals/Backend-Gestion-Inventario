@@ -50,8 +50,8 @@ document.addEventListener('DOMContentLoaded', function () {
     const generalMessage = document.getElementById('form-general-message-venta');
 
     // --- Selectores Método de Pago ---
-    const cobroMetodoSelect      = document.getElementById('venta-cobro-metodo');
-    const cobroMontoInput        = document.getElementById('venta-cobro-monto');
+    const cobroMetodoSelect = document.getElementById('venta-cobro-metodo');
+    const cobroMontoInput = document.getElementById('venta-cobro-monto');
     const cobroTipoTarjetaSelect = document.getElementById('venta-cobro-tipo-tarjeta');
     let cobrosMixtos = [];
 
@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 const response = await fetch(`/api/ventas/${ultimaVentaId}/ticket`);
                 if (!response.ok) throw new Error('Error al generar ticket');
-                
+
                 const blob = await response.blob();
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -246,11 +246,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
     restrictTelefonoInput(document.getElementById('addClienteTelefono'));
     restrictDniInput(document.getElementById('addClienteDNI'));
-    bindLimit(document.getElementById('addClienteNombre'),    document.getElementById('errorAddClienteNombre'),    70);
-    bindLimit(document.getElementById('addClienteApellido'),  document.getElementById('errorAddClienteApellido'),  70);
-    bindLimit(document.getElementById('addClienteTelefono'),  document.getElementById('errorAddClienteTelefono'),  20);
+    bindLimit(document.getElementById('addClienteNombre'), document.getElementById('errorAddClienteNombre'), 70);
+    bindLimit(document.getElementById('addClienteApellido'), document.getElementById('errorAddClienteApellido'), 70);
+    bindLimit(document.getElementById('addClienteTelefono'), document.getElementById('errorAddClienteTelefono'), 20);
     bindLimit(document.getElementById('addClienteDireccion'), document.getElementById('errorAddClienteDireccion'), 100);
-    bindLimit(document.getElementById('addClienteEmail'),     document.getElementById('errorAddClienteEmail'),     80);
+    bindLimit(document.getElementById('addClienteEmail'), document.getElementById('errorAddClienteEmail'), 80);
 
     // ===============================
     // VALIDACIÓN DNI DUPLICADO (en tiempo real al salir del campo)
@@ -376,7 +376,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const url = `${API_VENTAS_URL}?page=${page}&size=${pageSizeVentas}${sortParam}${searchParam}${fechaParam}${vendedorParam}${metodoParam}`;
 
-            const response = await fetch(url);
+            const response = await fetch(url, { cache: 'no-store' });
             if (!response.ok) throw new Error(`Error HTTP: ${response.status}`);
 
             const pageData = await response.json();
@@ -443,9 +443,9 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function calcularVueltoCajero() {
-        const pagaConInput  = document.getElementById('venta-paga-con');
+        const pagaConInput = document.getElementById('venta-paga-con');
         const vueltoDisplay = document.getElementById('venta-vuelto-display');
-        const vueltoAmount  = document.getElementById('venta-vuelto-amount');
+        const vueltoAmount = document.getElementById('venta-vuelto-amount');
         if (!pagaConInput || !vueltoDisplay || !vueltoAmount) return;
         const montoPagado = parsearMoneda(pagaConInput.value);
         const montoImporte = parsearMoneda(cobroMontoInput?.value) || calcularPendiente();
@@ -459,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function renderCobrosMixtos() {
-        const container        = document.getElementById('cobros-mixtos-container');
+        const container = document.getElementById('cobros-mixtos-container');
         const balanceIndicator = document.getElementById('venta-cobro-balance-indicator');
         if (!container) return;
         container.innerHTML = '';
@@ -484,9 +484,9 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
         const totalVenta = calcularTotalConDescuento();
-        const pendiente  = totalVenta - totalCobrado;
-        const inputPrev  = parsearMoneda(cobroMontoInput?.value) || 0;
-        const diff       = pendiente - inputPrev;
+        const pendiente = totalVenta - totalCobrado;
+        const inputPrev = parsearMoneda(cobroMontoInput?.value) || 0;
+        const diff = pendiente - inputPrev;
         if (balanceIndicator) {
             if (totalVenta === 0 && cobrosMixtos.length === 0) {
                 balanceIndicator.innerHTML = '';
@@ -575,9 +575,9 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!input) return;
         input.addEventListener('input', () => {
             if (input.value.length >= max) {
-                if(window.mostrarErrorInline) window.mostrarErrorInline(input.id, `Límite de ${max} caracteres alcanzado.`);
+                if (window.mostrarErrorInline) window.mostrarErrorInline(input.id, `Límite de ${max} caracteres alcanzado.`);
             } else {
-                if(window.limpiarErroresInline) window.limpiarErroresInline(input.id);
+                if (window.limpiarErroresInline) window.limpiarErroresInline(input.id);
             }
         });
     }
@@ -609,7 +609,7 @@ document.addEventListener('DOMContentLoaded', function () {
             addClienteMessage.textContent = '';
             addClienteMessage.className = 'form-message';
         }
-        if(window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('addCliente');
+        if (window.limpiarTodosErroresInline) window.limpiarTodosErroresInline('addCliente');
     }
 
     function openAddClienteModal() {
@@ -646,29 +646,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Validación: campos obligatorios
         if (!nombre) {
-            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteNombre', 'El nombre es obligatorio.');
+            if (window.mostrarErrorInline) window.mostrarErrorInline('addClienteNombre', 'El nombre es obligatorio.');
             isValid = false;
         } else {
-            if(window.limpiarErroresInline) window.limpiarErroresInline('addClienteNombre');
+            if (window.limpiarErroresInline) window.limpiarErroresInline('addClienteNombre');
         }
 
         if (!apellido) {
-            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteApellido', 'El apellido es obligatorio.');
+            if (window.mostrarErrorInline) window.mostrarErrorInline('addClienteApellido', 'El apellido es obligatorio.');
             isValid = false;
         } else {
-            if(window.limpiarErroresInline) window.limpiarErroresInline('addClienteApellido');
+            if (window.limpiarErroresInline) window.limpiarErroresInline('addClienteApellido');
         }
 
         if (!dni) {
-            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteDNI', 'El DNI es obligatorio.');
+            if (window.mostrarErrorInline) window.mostrarErrorInline('addClienteDNI', 'El DNI es obligatorio.');
             isValid = false;
         } else {
-            if(window.limpiarErroresInline) window.limpiarErroresInline('addClienteDNI');
+            if (window.limpiarErroresInline) window.limpiarErroresInline('addClienteDNI');
             try {
                 const dniCheckResponse = await fetch(`/api/clientes/existe/dni/${encodeURIComponent(dni)}`);
                 const dniExiste = await dniCheckResponse.json();
                 if (dniExiste) {
-                    if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteDNI', 'Ya existe un cliente con ese DNI.');
+                    if (window.mostrarErrorInline) window.mostrarErrorInline('addClienteDNI', 'Ya existe un cliente con ese DNI.');
                     isValid = false;
                 }
             } catch (err) {
@@ -677,27 +677,27 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         if (!telefono) {
-            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteTelefono', 'El teléfono es obligatorio.');
+            if (window.mostrarErrorInline) window.mostrarErrorInline('addClienteTelefono', 'El teléfono es obligatorio.');
             isValid = false;
         } else {
-            if(window.limpiarErroresInline) window.limpiarErroresInline('addClienteTelefono');
+            if (window.limpiarErroresInline) window.limpiarErroresInline('addClienteTelefono');
         }
 
         if (!direccion) {
-            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteDireccion', 'La dirección es obligatoria.');
+            if (window.mostrarErrorInline) window.mostrarErrorInline('addClienteDireccion', 'La dirección es obligatoria.');
             isValid = false;
         } else {
-            if(window.limpiarErroresInline) window.limpiarErroresInline('addClienteDireccion');
+            if (window.limpiarErroresInline) window.limpiarErroresInline('addClienteDireccion');
         }
 
         if (!email) {
-            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteEmail', 'El email es obligatorio.');
+            if (window.mostrarErrorInline) window.mostrarErrorInline('addClienteEmail', 'El email es obligatorio.');
             isValid = false;
         } else if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-            if(window.mostrarErrorInline) window.mostrarErrorInline('addClienteEmail', 'El formato del email no es válido.');
+            if (window.mostrarErrorInline) window.mostrarErrorInline('addClienteEmail', 'El formato del email no es válido.');
             isValid = false;
         } else {
-            if(window.limpiarErroresInline) window.limpiarErroresInline('addClienteEmail');
+            if (window.limpiarErroresInline) window.limpiarErroresInline('addClienteEmail');
         }
 
         if (!isValid) return;
@@ -784,13 +784,13 @@ document.addEventListener('DOMContentLoaded', function () {
         } else {
             return 'N/A';
         }
-        
+
         const d = String(date.getDate()).padStart(2, '0');
         const m = String(date.getMonth() + 1).padStart(2, '0');
         const y = date.getFullYear();
         const hr = String(date.getHours()).padStart(2, '0');
         const min = String(date.getMinutes()).padStart(2, '0');
-        
+
         return `${d}/${m}/${y} ${hr}:${min} hs`;
     }
 
@@ -799,36 +799,36 @@ document.addEventListener('DOMContentLoaded', function () {
             clienteResultsContainer.innerHTML = '<div class="product-result-item">No se encontraron clientes</div>';
         } else {
             // Separar "Consumidor Final" del resto
-            const consumidorFinal = clientes.find(c => 
-                c.nombre && c.nombre.toLowerCase() === 'consumidor' && 
+            const consumidorFinal = clientes.find(c =>
+                c.nombre && c.nombre.toLowerCase() === 'consumidor' &&
                 c.apellido && c.apellido.toLowerCase() === 'final'
             );
-            
-            const otrosClientes = clientes.filter(c => 
-                !(c.nombre && c.nombre.toLowerCase() === 'consumidor' && 
-                  c.apellido && c.apellido.toLowerCase() === 'final')
+
+            const otrosClientes = clientes.filter(c =>
+                !(c.nombre && c.nombre.toLowerCase() === 'consumidor' &&
+                    c.apellido && c.apellido.toLowerCase() === 'final')
             );
-            
+
             // Ordenar el resto alfabéticamente
             const clientesOrdenados = [...otrosClientes].sort((a, b) => {
                 const nombreA = `${a.nombre} ${a.apellido || ''}`.toLowerCase();
                 const nombreB = `${b.nombre} ${b.apellido || ''}`.toLowerCase();
                 return nombreA.localeCompare(nombreB, 'es');
             });
-            
+
             // Consumidor Final primero, luego los demás
-            const clientesFinal = consumidorFinal 
-                ? [consumidorFinal, ...clientesOrdenados] 
+            const clientesFinal = consumidorFinal
+                ? [consumidorFinal, ...clientesOrdenados]
                 : clientesOrdenados;
 
             clienteResultsContainer.innerHTML = clientesFinal.map(c => {
                 const nombre = capitalizarNombre(c.nombre);
                 const apellido = capitalizarNombre(c.apellido);
-                
+
                 // Si es Consumidor Final, no mostrar DNI
-                const esConsumidorFinal = c.nombre && c.nombre.toLowerCase() === 'consumidor' && 
-                                          c.apellido && c.apellido.toLowerCase() === 'final';
-                
+                const esConsumidorFinal = c.nombre && c.nombre.toLowerCase() === 'consumidor' &&
+                    c.apellido && c.apellido.toLowerCase() === 'final';
+
                 let nombreCompleto;
                 if (esConsumidorFinal) {
                     nombreCompleto = `${nombre} ${apellido}`;
@@ -1016,7 +1016,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!item) return;
         const nueva = item.cantidad + delta;
         if (nueva < 0) return;
-        
+
         const fila = ventaDetalleTemporalBody.querySelector(`tr[data-id="${item.idProducto}"]`);
         const qtyInput = fila ? fila.querySelector('.qty-input') : null;
 
@@ -1478,7 +1478,7 @@ document.addEventListener('DOMContentLoaded', function () {
         clienteSearchInput.addEventListener('keydown', (e) => {
             const items = clienteResultsContainer.querySelectorAll('.product-result-item[data-id]');
             if (items.length === 0) return;
-            
+
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 clienteSelectedIndex = Math.min(clienteSelectedIndex + 1, items.length - 1);
@@ -1515,7 +1515,7 @@ document.addEventListener('DOMContentLoaded', function () {
         productSearchInput.addEventListener('keydown', (e) => {
             const items = productResultsContainer.querySelectorAll('.product-result-item[data-id]');
             if (items.length === 0) return;
-            
+
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
                 productoSelectedIndex = Math.min(productoSelectedIndex + 1, items.length - 1);
@@ -1549,9 +1549,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const nombreMetodo = this.options[this.selectedIndex]?.dataset.nombre || '';
             const esEfectivo = nombreMetodo.includes('efectivo');
             const tipoTarjetaContainer = document.getElementById('venta-tipo-tarjeta-container');
-            const pagaConContainer     = document.getElementById('venta-paga-con-container');
-            const vueltoDisplay        = document.getElementById('venta-vuelto-display');
-            const pagaConInput         = document.getElementById('venta-paga-con');
+            const pagaConContainer = document.getElementById('venta-paga-con-container');
+            const vueltoDisplay = document.getElementById('venta-vuelto-display');
+            const pagaConInput = document.getElementById('venta-paga-con');
             if (tipoTarjetaContainer) tipoTarjetaContainer.style.display = 'none';
             if (pagaConContainer) pagaConContainer.style.display = esEfectivo ? 'block' : 'none';
             if (!esEfectivo) { if (vueltoDisplay) vueltoDisplay.style.display = 'none'; if (pagaConInput) pagaConInput.value = ''; }
@@ -1579,10 +1579,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (pagaConInputEl) {
         pagaConInputEl.addEventListener('input', function () {
             let raw = this.value.replace(/[^0-9]/g, '');
-            if (raw === '') { 
-                this.value = ''; 
-                calcularVueltoCajero(); 
-                return; 
+            if (raw === '') {
+                this.value = '';
+                calcularVueltoCajero();
+                return;
             }
             const cursorPos = this.selectionStart;
             const oldLen = this.value.length;
@@ -1597,12 +1597,12 @@ document.addEventListener('DOMContentLoaded', function () {
     function agregarCobroDesdeInputs() {
         const errorMetodoPagoEl = document.getElementById('errorMetodoPago');
         if (errorMetodoPagoEl) errorMetodoPagoEl.textContent = '';
-        const idMetodo     = cobroMetodoSelect?.value;
+        const idMetodo = cobroMetodoSelect?.value;
         const nombreMetodo = cobroMetodoSelect?.options[cobroMetodoSelect.selectedIndex]?.text || '';
-        const montoRaw     = cobroMontoInput?.value?.replace(/\./g, '') || '0';
-        const monto        = parseFloat(montoRaw);
-        const tipoTarjeta  = cobroTipoTarjetaSelect?.value || null;
-        const esEfectivo   = nombreMetodo.toLowerCase().includes('efectivo');
+        const montoRaw = cobroMontoInput?.value?.replace(/\./g, '') || '0';
+        const monto = parseFloat(montoRaw);
+        const tipoTarjeta = cobroTipoTarjetaSelect?.value || null;
+        const esEfectivo = nombreMetodo.toLowerCase().includes('efectivo');
 
         if (!idMetodo) {
             window.mostrarErrorInline('venta-cobro-metodo', 'Seleccione un método de pago.');
@@ -1639,7 +1639,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (cobroTipoTarjetaSelect) cobroTipoTarjetaSelect.value = '';
         const ttc = document.getElementById('venta-tipo-tarjeta-container');
         const pcc = document.getElementById('venta-paga-con-container');
-        const vd  = document.getElementById('venta-vuelto-display');
+        const vd = document.getElementById('venta-vuelto-display');
         const pci = document.getElementById('venta-paga-con');
         if (ttc) ttc.style.display = 'none';
         if (pcc) pcc.style.display = 'none';
@@ -1668,12 +1668,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Botón Agregar Cobro
     const btnAddCobroMixto = document.getElementById('btn-add-cobro-mixto');
-     if (btnAddCobroMixto) {
+    if (btnAddCobroMixto) {
         btnAddCobroMixto.addEventListener('click', function () {
             const metodoInput = document.getElementById('venta-cobro-metodo');
             const montoInput = document.getElementById('venta-cobro-monto');
             const ventaTipoTarjetaContainer = document.getElementById('venta-tipo-tarjeta-container');
-            
+
             const metodo = metodoInput ? metodoInput.value : '';
             const importe = montoInput ? parseFloat(montoInput.value.replace(/\./g, '')) : 0;
             const tarjetaTipo = ventaTipoTarjetaContainer && ventaTipoTarjetaContainer.style.display !== 'none' ? document.getElementById('venta-cobro-tipo-tarjeta').value : null;
@@ -1692,7 +1692,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 window.limpiarErroresInline('venta-cobro-monto');
             }
-            
+
             if (!valid) return;
 
             agregarCobroDesdeInputs();
@@ -1704,8 +1704,8 @@ document.addEventListener('DOMContentLoaded', function () {
         descuentoInput.addEventListener('input', function () {
             if (tipoDescuentoSelect && tipoDescuentoSelect.value === '$') {
                 let raw = this.value.replace(/[^0-9]/g, '');
-                if (raw === '') { 
-                    this.value = ''; 
+                if (raw === '') {
+                    this.value = '';
                 } else {
                     const cursorPos = this.selectionStart;
                     const oldLen = this.value.length;
@@ -1965,7 +1965,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (cobroTipoTarjetaSelect) cobroTipoTarjetaSelect.value = '';
         const ttcL = document.getElementById('venta-tipo-tarjeta-container');
         const pccL = document.getElementById('venta-paga-con-container');
-        const vdL  = document.getElementById('venta-vuelto-display');
+        const vdL = document.getElementById('venta-vuelto-display');
         const pciL = document.getElementById('venta-paga-con');
         if (ttcL) ttcL.style.display = 'none';
         if (pccL) pccL.style.display = 'none';
@@ -2005,7 +2005,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Totales
             document.getElementById('modal-venta-subtotal').textContent = `$${formatoMoneda.format(venta.subtotal || 0)}`;
-            
+
             // Descuento
             const descuentoContainer = document.getElementById('modal-venta-descuento-container');
             if (venta.descuentoMonto && venta.descuentoMonto > 0) {
@@ -2014,7 +2014,7 @@ document.addEventListener('DOMContentLoaded', function () {
             } else {
                 descuentoContainer.style.display = 'none';
             }
-            
+
             document.getElementById('modal-venta-total').textContent = `$${formatoMoneda.format(venta.total)}`;
 
             // Resumen pago efectivo

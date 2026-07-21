@@ -1569,6 +1569,7 @@ document.addEventListener('DOMContentLoaded', function () {
     async function cargarIngresosGlobales(fechaAperturaGlobal) {
         const listaIngresosGlobal = document.getElementById('caja-global-lista-ingresos');
         const filtroSelect = document.getElementById('caja-global-filtro-ingresos');
+        const filtroRol = document.getElementById('caja-global-filtro-rol');
         const buscarInput = document.getElementById('caja-global-buscar-ingresos');
 
         if (!listaIngresosGlobal) return;
@@ -1592,6 +1593,25 @@ document.addEventListener('DOMContentLoaded', function () {
             ingresosHoy.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
             // Mostrar hasta los últimos 50 ingresos para no saturar la vista
             ingresosHoy = ingresosHoy.slice(0, 50);
+
+            if (filtroRol) {
+                try {
+                    const rolesResponse = await fetch('/api/roles');
+                    if (rolesResponse.ok) {
+                        const rolesData = await rolesResponse.json();
+                        filtroRol.innerHTML = '<option value="Todos">Todos los roles</option>';
+                        rolesData.forEach(r => {
+                            const option = document.createElement('option');
+                            const capRole = r.descripcion ? r.descripcion.charAt(0).toUpperCase() + r.descripcion.slice(1) : '';
+                            option.value = r.descripcion;
+                            option.textContent = capRole;
+                            filtroRol.appendChild(option);
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error cargando roles para el filtro", e);
+                }
+            }
 
             function renderLista(data) {
                 listaIngresosGlobal.innerHTML = '';
@@ -1650,7 +1670,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                         <div style="text-align: right;">
                             <span style="display: block; font-weight: 800; color: #10b981; font-size: 16px;">+${formatter.format(venta.total)}</span>
-                            ${venta.cliente ? `<span style="font-size: 11px; color: #94a3b8;"><i class="far fa-user" style="margin-right:3px;"></i>${venta.cliente.nombre}</span>` : ''}
+                            ${venta.cliente ? `<span style="display: block; font-size: 11px; color: #94a3b8; margin-top: 2px;"><i class="far fa-user" style="margin-right:3px;"></i>${venta.cliente.nombre}</span>` : ''}
+                            ${venta.nombreVendedor ? `<span style="display: block; font-size: 11px; color: #64748b; margin-top: 2px;"><i class="fas fa-user-tag" style="margin-right:3px;"></i>Vend: ${venta.nombreVendedor} (${venta.rolVendedor || 'N/A'})</span>` : ''}
                         </div>
                     `;
                     listaIngresosGlobal.appendChild(item);
@@ -1665,6 +1686,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const metodo = filtroSelect ? filtroSelect.value : 'Todos';
+                const rol = filtroRol ? filtroRol.value : 'Todos';
                 const texto = buscarInput ? buscarInput.value.toLowerCase().trim() : '';
 
                 let resultado = ingresosHoy;
@@ -1673,22 +1695,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     resultado = resultado.filter(v => v.metodoPago && v.metodoPago.toLowerCase().includes(metodo.toLowerCase()));
                 }
 
+                if (rol !== 'Todos') {
+                    resultado = resultado.filter(v => v.rolVendedor && v.rolVendedor.toLowerCase() === rol.toLowerCase());
+                }
+
                 if (texto) {
                     resultado = resultado.filter(v => {
                         const clienteMatch = v.cliente && v.cliente.nombre && v.cliente.nombre.toLowerCase().includes(texto);
                         const idMatch = (v.idVenta || v.id || '').toString().includes(texto);
                         const totalMatch = v.total && v.total.toString().includes(texto);
                         const metodoMatch = v.metodoPago && v.metodoPago.toLowerCase().includes(texto);
-
-                        let productoMatch = false;
-                        if (v.productos && Array.isArray(v.productos)) {
-                            productoMatch = v.productos.some(p => {
-                                const nom = p.nombreProducto || p.nombre || '';
-                                return nom.toLowerCase().includes(texto);
-                            });
-                        }
-
-                        return clienteMatch || idMatch || totalMatch || metodoMatch || productoMatch;
+                        const vendedorMatch = v.nombreVendedor && v.nombreVendedor.toLowerCase().includes(texto);
+                        return clienteMatch || idMatch || totalMatch || metodoMatch || vendedorMatch || productoMatch;
                     });
                 }
 
@@ -1701,6 +1719,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 filtroSelect.addEventListener('change', aplicarFiltros);
             }
 
+            if (filtroRol) {
+                filtroRol.removeEventListener('change', aplicarFiltros);
+                filtroRol.addEventListener('change', aplicarFiltros);
+            }
+
             if (buscarInput) {
                 buscarInput.removeEventListener('input', aplicarFiltros);
                 buscarInput.addEventListener('input', aplicarFiltros);
@@ -1710,6 +1733,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (btnLimpiar) {
                 btnLimpiar.onclick = () => {
                     if (filtroSelect) filtroSelect.value = 'Todos';
+                    if (filtroRol) filtroRol.value = 'Todos';
                     if (buscarInput) buscarInput.value = '';
                     aplicarFiltros();
                 };

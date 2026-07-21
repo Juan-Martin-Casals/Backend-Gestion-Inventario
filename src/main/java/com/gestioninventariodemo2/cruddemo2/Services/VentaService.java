@@ -291,8 +291,12 @@ public class VentaService {
 
         // --- ¡LÓGICA SEGURA AÑADIDA PARA EL VENDEDOR! ---
         String nombreVendedor = "N/A"; // O "Sistema", o lo que prefieras
+        String rolVendedor = "";
         if (venta.getUsuario() != null) {
             nombreVendedor = venta.getUsuario().getNombre();
+            if (venta.getUsuario().getRol() != null) {
+                rolVendedor = venta.getUsuario().getRol().getDescripcion();
+            }
         }
         // --- FIN DE LA LÓGICA SEGURA ---
 
@@ -318,6 +322,7 @@ public class VentaService {
                 .fecha(venta.getFecha())
                 .nombreCliente(nombreCliente)
                 .nombreVendedor(nombreVendedor)
+                .rolVendedor(rolVendedor)
                 .total(venta.getTotal())
                 .subtotal(venta.getSubtotal())
                 .descuentoMonto(venta.getDescuentoMonto())
@@ -357,9 +362,7 @@ public class VentaService {
                     venta,
                     metodoPago,
                     item.getImporte(),
-                    null,
                     item.getTipoTarjeta(),
-                    null,
                     item.getMontoPagado(),
                     item.getVuelto(),
                     usuario);
@@ -398,9 +401,7 @@ public class VentaService {
                 venta,
                 metodoPago,
                 BigDecimal.valueOf(venta.getTotal()), // El importe siempre es el total de la venta
-                ventaRequestDTO.getNroTransaccion(),
                 ventaRequestDTO.getTipoTarjeta(),
-                ventaRequestDTO.getUltimosDigitos(),
                 montoPagado,
                 vuelto,
                 usuario);

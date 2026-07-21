@@ -24,6 +24,7 @@ public class VentaResponseDTO {
     private Double descuentoMonto;
     private List<ProductoVentaDTO> productos;
     private String nombreVendedor;
+    private String rolVendedor;
     private String metodoPago;
     private Double montoPagado;
     private Double vuelto;

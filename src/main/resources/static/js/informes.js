@@ -169,9 +169,11 @@ document.addEventListener('DOMContentLoaded', () => {
             const maxValor = Math.max(...ventasData, ...comprasData, 0);
             const chartSuggestedMax = maxValor > 0 ? maxValor * 1.05 : 1000;
 
+            const isSingleDay = data.length === 1;
+
             const ctx = document.getElementById('ventas-compras-chart').getContext('2d');
             ventasComprasChart = new Chart(ctx, {
-                type: 'line',
+                type: isSingleDay ? 'bar' : 'line',
                 data: {
                     labels: labels,
                     datasets: [
@@ -179,17 +181,25 @@ document.addEventListener('DOMContentLoaded', () => {
                             label: 'Ventas',
                             data: ventasData,
                             borderColor: '#28a745',
-                            backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                            backgroundColor: isSingleDay ? 'rgba(40, 167, 69, 0.6)' : 'rgba(40, 167, 69, 0.1)',
+                            borderWidth: isSingleDay ? 1 : 2,
                             tension: 0.4,
-                            fill: true
+                            fill: true,
+                            pointRadius: isSingleDay ? 0 : 4,
+                            pointHoverRadius: 8,
+                            pointBackgroundColor: '#28a745'
                         },
                         {
                             label: 'Compras',
                             data: comprasData,
                             borderColor: '#dc3545',
-                            backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                            backgroundColor: isSingleDay ? 'rgba(220, 53, 69, 0.6)' : 'rgba(220, 53, 69, 0.1)',
+                            borderWidth: isSingleDay ? 1 : 2,
                             tension: 0.4,
-                            fill: true
+                            fill: true,
+                            pointRadius: isSingleDay ? 0 : 4,
+                            pointHoverRadius: 8,
+                            pointBackgroundColor: '#dc3545'
                         }
                     ]
                 },
@@ -228,6 +238,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             }
                         },
                         x: {
+                            offset: true,
                             grid: {
                                 display: true,
                                 color: '#f8f9fa',

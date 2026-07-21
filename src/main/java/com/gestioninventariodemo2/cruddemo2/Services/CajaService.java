@@ -248,15 +248,6 @@ public class CajaService {
             }
             LocalDateTime fin = LocalDateTime.now();
 
-            Double totalVentas = ventaRepository.sumTotalVentasEnRango(inicio, fin);
-            if (totalVentas != null) totalVentasGlobal += totalVentas;
-
-            Long cantidadVentas = ventaRepository.countVentasEnRango(inicio, fin);
-            if (cantidadVentas != null) cantidadVentasGlobal += cantidadVentas;
-
-            Double totalCompras = compraRepository.sumTotalComprasEnRango(inicio, fin);
-            if (totalCompras != null) totalComprasGlobal += totalCompras;
-
             List<Object[]> resultadosCobros = cobroRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());
             for (Object[] row : resultadosCobros) {
                 String metodo = (String) row[0];
@@ -304,6 +295,19 @@ public class CajaService {
                     }
                 }
             }
+        }
+
+        if (fechaAperturaGlobal != null) {
+            LocalDateTime fin = LocalDateTime.now();
+
+            Double totalVentas = ventaRepository.sumTotalVentasEnRango(fechaAperturaGlobal, fin);
+            if (totalVentas != null) totalVentasGlobal = totalVentas;
+
+            Long cantidadVentas = ventaRepository.countVentasEnRango(fechaAperturaGlobal, fin);
+            if (cantidadVentas != null) cantidadVentasGlobal = cantidadVentas;
+
+            Double totalCompras = compraRepository.sumTotalComprasEnRango(fechaAperturaGlobal, fin);
+            if (totalCompras != null) totalComprasGlobal = totalCompras;
         }
 
         return CajaDetalleDTO.builder()

@@ -22,9 +22,7 @@ public class VentaRequestDTO {
 
     // Cobro simple — legacy (solo si cobros == null)
     private Long idMetodoPago;
-    private String nroTransaccion;
     private String tipoTarjeta;
-    private String ultimosDigitos;
     private Double montoPagado;
 
     // Descuento

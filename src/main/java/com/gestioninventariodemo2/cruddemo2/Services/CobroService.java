@@ -32,16 +32,14 @@ public class CobroService {
      */
     @Transactional
     public Cobro registrarCobro(Venta venta, MetodoPago metodoPago, BigDecimal importe,
-            String nroTransaccion, String tipoTarjeta, String ultimosDigitos,
+            String tipoTarjeta,
             BigDecimal montoPagado, BigDecimal vuelto, Usuario usuario) {
 
         Cobro cobro = new Cobro();
         cobro.setVenta(venta);
         cobro.setMetodoPago(metodoPago);
         cobro.setImporte(importe);
-        cobro.setNroTransaccion(nroTransaccion);
         cobro.setTipoTarjeta(tipoTarjeta);
-        cobro.setUltimosDigitos(ultimosDigitos);
         cobro.setMontoPagado(montoPagado);
         cobro.setVuelto(vuelto);
         cobro.setFechaCobro(LocalDateTime.now());
@@ -108,9 +106,7 @@ public class CobroService {
                 .importe(cobro.getImporte())
                 .montoPagado(cobro.getMontoPagado())
                 .vuelto(cobro.getVuelto())
-                .nroTransaccion(cobro.getNroTransaccion())
                 .tipoTarjeta(cobro.getTipoTarjeta())
-                .ultimosDigitos(cobro.getUltimosDigitos())
                 .fechaCobro(cobro.getFechaCobro().toLocalDate())
                 .nombreUsuario(cobro.getUsuario() != null ? cobro.getUsuario().getNombre() : "N/A")
                 .build();
