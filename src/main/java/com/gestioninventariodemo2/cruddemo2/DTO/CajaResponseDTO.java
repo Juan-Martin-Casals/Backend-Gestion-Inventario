@@ -16,6 +16,9 @@ public class CajaResponseDTO {
     private Long idUsuario;
     private String nombreUsuario;
     private String rolUsuario;
+    private Long idUsuarioCierre;
+    private String nombreUsuarioCierre;
+    private String rolUsuarioCierre;
     private LocalDateTime fechaApertura;
     private LocalDateTime fechaCierre;
     private Double saldoAnterior;

@@ -39,10 +39,10 @@ public class CajaService {
     private final PagoRepository pagoRepository;
 
     /**
-     * Verifica estadísticamente si el usuario actual tiene una caja ABIERTA
+     * Verifica si existe alguna caja ABIERTA a nivel global
      */
     public boolean verificarCajaActiva(Long idUsuario) {
-        return sesionCajaRepository.findByUsuarioIdUsuarioAndEstado(idUsuario, "ABIERTA").isPresent();
+        return sesionCajaRepository.findFirstByEstado("ABIERTA").isPresent();
     }
 
     /**
@@ -87,6 +87,14 @@ public class CajaService {
                         detalle.put("operador", "Desconocido");
                         detalle.put("rol", "N/A");
                     }
+                    
+                    if (sesion.getUsuarioCierre() != null) {
+                        detalle.put("operadorCierre", sesion.getUsuarioCierre().getNombre() + " " + sesion.getUsuarioCierre().getApellido());
+                        detalle.put("rolCierre", sesion.getUsuarioCierre().getRol() != null ? sesion.getUsuarioCierre().getRol().getDescripcion() : "N/A");
+                    } else {
+                        detalle.put("operadorCierre", detalle.get("operador"));
+                        detalle.put("rolCierre", detalle.get("rol"));
+                    }
                     return detalle;
                 })
                 .orElseGet(() -> {
@@ -100,21 +108,27 @@ public class CajaService {
      * Ejecuta la apertura de una nueva sesión de caja.
      */
     public CajaResponseDTO abrirCaja(AperturaCajaRequestDTO request) {
-        // 1. Verificación de Seguridad
-        if (verificarCajaActiva(request.getIdUsuario())) {
-            throw new RuntimeException("El usuario ya tiene una sesión de caja abierta.");
-        }
-
         Usuario usuario = usuarioRepository.findById(request.getIdUsuario())
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + request.getIdUsuario()));
 
-        // 2. Traer Saldo Anterior
+        // 1. Verificación de Rol
+        String rol = usuario.getRol() != null ? usuario.getRol().getDescripcion() : "";
+        if (!"CAJERO".equalsIgnoreCase(rol) && !"ADMINISTRADOR".equalsIgnoreCase(rol)) {
+            throw new RuntimeException("No tiene permisos para abrir la caja. Solo CAJERO o ADMINISTRADOR.");
+        }
+
+        // 2. Verificación de Seguridad (Global)
+        if (sesionCajaRepository.findFirstByEstado("ABIERTA").isPresent()) {
+            throw new RuntimeException("Ya existe un turno de caja abierto en el sistema. Debe cerrarlo antes de abrir uno nuevo.");
+        }
+
+        // 3. Traer Saldo Anterior
         Double saldoAnteriorRef = obtenerSaldoUltimoCierre();
 
-        // 3. Evaluar Diferencias de Auditoría
+        // 4. Evaluar Diferencias de Auditoría
         boolean diferencia = !saldoAnteriorRef.equals(request.getMontoInicialReal());
 
-        // 4. Instanciar y Guardar
+        // 5. Instanciar y Guardar
         SesionCaja nuevaSesion = SesionCaja.builder()
                 .usuario(usuario)
                 .fechaApertura(LocalDateTime.now())
@@ -133,8 +147,8 @@ public class CajaService {
     }
 
     public CajaDetalleDTO obtenerResumenCaja(Long idUsuario) {
-        SesionCaja sesion = sesionCajaRepository.findByUsuarioIdUsuarioAndEstado(idUsuario, "ABIERTA")
-                .orElseThrow(() -> new RuntimeException("No hay una caja abierta para este usuario."));
+        SesionCaja sesion = sesionCajaRepository.findFirstByEstado("ABIERTA")
+                .orElseThrow(() -> new RuntimeException("No hay un turno de caja abierto en el sistema."));
 
         LocalDateTime inicio = sesion.getFechaApertura();
         LocalDateTime fin = LocalDateTime.now();
@@ -327,14 +341,25 @@ public class CajaService {
     }
 
     public CajaResponseDTO cerrarCaja(CierreCajaRequestDTO request) {
-        SesionCaja sesion = sesionCajaRepository.findByUsuarioIdUsuarioAndEstado(request.getIdUsuario(), "ABIERTA")
-                .orElseThrow(() -> new RuntimeException("No hay una caja abierta para este usuario."));
+        Usuario usuario = usuarioRepository.findById(request.getIdUsuario())
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + request.getIdUsuario()));
+
+        // 1. Verificación de Rol
+        String rol = usuario.getRol() != null ? usuario.getRol().getDescripcion() : "";
+        if (!"CAJERO".equalsIgnoreCase(rol) && !"ADMINISTRADOR".equalsIgnoreCase(rol)) {
+            throw new RuntimeException("No tiene permisos para cerrar la caja. Solo CAJERO o ADMINISTRADOR.");
+        }
+
+        // 2. Buscar turno de caja global abierto
+        SesionCaja sesion = sesionCajaRepository.findFirstByEstado("ABIERTA")
+                .orElseThrow(() -> new RuntimeException("No hay un turno de caja abierto en el sistema."));
 
         sesion.setEstado("CERRADA");
         sesion.setFechaCierre(LocalDateTime.now());
         sesion.setMontoFinalReal(request.getMontoFinalReal());
         sesion.setObservacionesCierre(request.getObservacionesCierre());
         sesion.setFondoProximaApertura(request.getFondoProximaApertura());
+        sesion.setUsuarioCierre(usuario);
 
         SesionCaja guardada = sesionCajaRepository.save(sesion);
         return mapToDTO(guardada);
@@ -345,7 +370,10 @@ public class CajaService {
                 .idSesion(caja.getIdSesion())
                 .idUsuario(caja.getUsuario().getIdUsuario())
                 .nombreUsuario(caja.getUsuario().getNombre() + " " + caja.getUsuario().getApellido())
-                .rolUsuario(caja.getUsuario().getRol().getDescripcion())
+                .rolUsuario(caja.getUsuario().getRol() != null ? caja.getUsuario().getRol().getDescripcion() : "N/A")
+                .idUsuarioCierre(caja.getUsuarioCierre() != null ? caja.getUsuarioCierre().getIdUsuario() : null)
+                .nombreUsuarioCierre(caja.getUsuarioCierre() != null ? caja.getUsuarioCierre().getNombre() + " " + caja.getUsuarioCierre().getApellido() : null)
+                .rolUsuarioCierre(caja.getUsuarioCierre() != null && caja.getUsuarioCierre().getRol() != null ? caja.getUsuarioCierre().getRol().getDescripcion() : null)
                 .fechaApertura(caja.getFechaApertura())
                 .fechaCierre(caja.getFechaCierre())
                 .saldoAnterior(caja.getSaldoAnterior())
@@ -392,6 +420,15 @@ public class CajaService {
 
         return sesiones.map(sesion -> {
             String operador = sesion.getUsuario().getNombre() + " " + sesion.getUsuario().getApellido();
+            String rolOperador = sesion.getUsuario().getRol() != null 
+                    ? sesion.getUsuario().getRol().getDescripcion() 
+                    : "N/A";
+            String operadorCierre = sesion.getUsuarioCierre() != null 
+                    ? sesion.getUsuarioCierre().getNombre() + " " + sesion.getUsuarioCierre().getApellido()
+                    : operador;
+            String rolCierre = sesion.getUsuarioCierre() != null && sesion.getUsuarioCierre().getRol() != null 
+                    ? sesion.getUsuarioCierre().getRol().getDescripcion() 
+                    : rolOperador;
 
             // Calcular duración
             String duracion = "-";
@@ -414,6 +451,9 @@ public class CajaService {
             return HistorialSesionDTO.builder()
                     .idSesion(sesion.getIdSesion())
                     .operador(operador)
+                    .rolOperador(rolOperador)
+                    .operadorCierre(operadorCierre)
+                    .rolCierre(rolCierre)
                     .fechaApertura(sesion.getFechaApertura())
                     .fechaCierre(sesion.getFechaCierre())
                     .montoInicial(sesion.getMontoInicialReal())

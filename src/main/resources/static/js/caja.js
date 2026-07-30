@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const formatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
     // Verificar el estado de la caja de forma automática al cargar
-    async function verificarEstadoCaja() {
+    async function verificarEstadoCaja(silentRefresh = false) {
         try {
             const userRes = await fetch('/api/auth/perfil');
             if (!userRes.ok) throw new Error('Usuario no autenticado o sesión expirada');
@@ -98,7 +98,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     const fechaObj = info.fecha ? new Date(info.fecha) : new Date();
                     const fechaStr = fechaObj.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
-                    contextoOperador.innerHTML = `<i class="fas fa-user-clock" style="font-size: 10px;"></i> <span>Por ${info.operador} (${info.rol}) el ${fechaStr}</span>`;
+                    let text = `Abierta por ${info.operador} (${info.rol})`;
+                    if (info.operadorCierre && info.operadorCierre !== info.operador) {
+                        text += ` | Cerrada por ${info.operadorCierre} (${info.rolCierre})`;
+                    }
+                    contextoOperador.innerHTML = `<i class="fas fa-user-clock" style="font-size: 10px;"></i> <span>${text} el ${fechaStr}</span>`;
                 }
 
                 panelApertura.style.display = 'block';
@@ -122,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 if (infoEstado) infoEstado.textContent = 'Caja abierta y operando con normalidad. Recuerda cerrarla al final de tu turno.';
 
-                cargarDashboardCierre();
+                cargarDashboardCierre(silentRefresh);
             }
 
         } catch (error) {
@@ -130,7 +134,7 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    async function cargarDashboardCierre() {
+    async function cargarDashboardCierre(silentRefresh = false) {
         try {
             const resumenRes = await fetch(`/api/caja/sesion-activa/${usuarioIdActual}`);
             if (!resumenRes.ok) throw new Error("No se pudo obtener el resumen");
@@ -263,11 +267,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Sugerencia para el monto físico
-            if (inputMontoFinalFisico) {
+            if (!silentRefresh && inputMontoFinalFisico) {
                 inputMontoFinalFisico.value = '';
             }
             // Sugerencia para dejar el monto inicial como fondo fijo para mañana
-            if (inputFondoFijo) {
+            if (!silentRefresh && inputFondoFijo) {
                 const sugerido = Math.round(resumenData.montoInicial || 0);
                 inputFondoFijo.value = new Intl.NumberFormat('es-AR').format(sugerido);
             }
@@ -307,11 +311,17 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     if (inputFondoFijo) {
-        inputFondoFijo.addEventListener('input', formatNumberInput);
+        inputFondoFijo.addEventListener('input', (e) => {
+            if (window.limpiarErroresInline) window.limpiarErroresInline('caja-fondo-fijo');
+            formatNumberInput(e);
+        });
     }
 
     if (inputMontoFinalFisico) {
-        inputMontoFinalFisico.addEventListener('input', formatNumberInput);
+        inputMontoFinalFisico.addEventListener('input', (e) => {
+            if (window.limpiarErroresInline) window.limpiarErroresInline('caja-monto-final');
+            formatNumberInput(e);
+        });
     }
 
     if (warningFinalText && inputMontoFinalFisico) {
@@ -352,10 +362,10 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // 4. Limpiar Errores Inline
-            const montoError = document.getElementById('caja-monto-final-error');
-            const fondoError = document.getElementById('caja-fondo-fijo-error');
-            if (montoError) montoError.style.display = 'none';
-            if (fondoError) fondoError.style.display = 'none';
+            if (window.limpiarErroresInline) {
+                window.limpiarErroresInline('caja-monto-final');
+                window.limpiarErroresInline('caja-fondo-fijo');
+            }
             if (panelErrorCierre) panelErrorCierre.style.display = 'none';
         });
     }
@@ -543,10 +553,10 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnCerrarCaja) {
         btnCerrarCaja.addEventListener('click', async () => {
             // 1. Validaciones iniciales
-            const montoError = document.getElementById('caja-monto-final-error');
-            const fondoError = document.getElementById('caja-fondo-fijo-error');
-            if (montoError) montoError.style.display = 'none';
-            if (fondoError) fondoError.style.display = 'none';
+            if (window.limpiarErroresInline) {
+                window.limpiarErroresInline('caja-monto-final');
+                window.limpiarErroresInline('caja-fondo-fijo');
+            }
             if (panelErrorCierre) panelErrorCierre.style.display = 'none';
 
             const parseAmount = (valStr) => {
@@ -556,26 +566,37 @@ document.addEventListener('DOMContentLoaded', function () {
                 return isNaN(parsed) ? 0 : parsed;
             };
 
-            const montoFisicoVal = parseAmount(inputMontoFinalFisico.value);
-
-            if (isNaN(montoFisicoVal) || montoFisicoVal < 0 || inputMontoFinalFisico.value.trim() === '') {
-                if (montoError) {
-                    montoError.style.display = 'block';
-                } else if (panelErrorCierre) {
-                    panelErrorCierre.textContent = 'Por favor ingresa el "Efectivo Real (Físico)".';
-                    panelErrorCierre.style.display = 'block';
+            const rawMontoFisico = inputMontoFinalFisico.value.trim();
+            if (rawMontoFisico === '') {
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('caja-monto-final', 'El efectivo físico es obligatorio para cerrar la caja.');
+                }
+                inputMontoFinalFisico.focus();
+                return;
+            }
+            
+            const montoFisicoVal = parseAmount(rawMontoFisico);
+            if (isNaN(montoFisicoVal) || montoFisicoVal < 0) {
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('caja-monto-final', 'Por favor ingresa un monto válido para el efectivo físico.');
                 }
                 inputMontoFinalFisico.focus();
                 return;
             }
 
-            const fondoFijoRaw = parseAmount(inputFondoFijo.value);
+            const rawFondoFijo = inputFondoFijo.value.trim();
+            if (rawFondoFijo === '') {
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('caja-fondo-fijo', 'El fondo fijo es obligatorio para continuar.');
+                }
+                inputFondoFijo.focus();
+                return;
+            }
 
-            if (isNaN(fondoFijoRaw) || fondoFijoRaw < 0 || inputFondoFijo.value.trim() === '') {
-                if (fondoError) {
-                    fondoError.style.display = 'block';
-                } else if (panelErrorCierre) {
-                    panelErrorCierre.style.display = 'block';
+            const fondoFijoRaw = parseAmount(rawFondoFijo);
+            if (isNaN(fondoFijoRaw) || fondoFijoRaw < 0) {
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('caja-fondo-fijo', 'Por favor ingresa un fondo fijo válido.');
                 }
                 inputFondoFijo.focus();
                 return;
@@ -650,7 +671,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 } else {
                     const tipo = diferencia > 0 ? 'SOBRANTE' : 'FALTANTE';
                     diffSpan.textContent = `${formatter.format(diferencia)} (${tipo})`;
-                    diffSpan.className = 'diff-pill error';
+                    diffSpan.className = diferencia > 0 ? 'diff-pill warning' : 'diff-pill error';
                 }
             }
 
@@ -664,6 +685,9 @@ document.addEventListener('DOMContentLoaded', function () {
             // 4. Mostrar Modal
             if (modalResumen) {
                 modalResumen.style.display = 'flex';
+                setTimeout(() => {
+                    modalResumen.classList.add('post-cierre-visible');
+                }, 50);
                 document.addEventListener('keydown', handleResumenEsc);
             } else {
                 console.error("No se encontró el modal de cierre (modal-resumen-cierre)");
@@ -674,7 +698,12 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Lógica para cerrar el Modal de Resumen
     const closeModalResumen = () => {
-        if (modalResumen) modalResumen.style.display = 'none';
+        if (modalResumen) {
+            modalResumen.classList.remove('post-cierre-visible');
+            setTimeout(() => {
+                modalResumen.style.display = 'none';
+            }, 400);
+        }
         document.removeEventListener('keydown', handleResumenEsc);
     };
     const handleResumenEsc = (e) => { if (e.key === 'Escape') closeModalResumen(); };
@@ -1008,6 +1037,17 @@ document.addEventListener('DOMContentLoaded', function () {
     window.cargarDatosCaja = verificarEstadoCaja;
     window.isCajaAbierta = () => cajaEstaAbierta;
 
+    // Polling de 10 segundos para actualizar la caja si la vista está activa y no se está cerrando
+    setInterval(() => {
+        const modalResumen = document.getElementById('modal-resumen-cierre');
+        if (modalResumen && modalResumen.style.display === 'flex') return;
+        
+        const sectionCaja = document.getElementById('caja-section');
+        if (sectionCaja && sectionCaja.style.display !== 'none') {
+            verificarEstadoCaja(true);
+        }
+    }, 10000);
+
     // ==========================================
     // DRAWER: Open / Close
     // ==========================================
@@ -1125,7 +1165,10 @@ document.addEventListener('DOMContentLoaded', function () {
                     <td>${offset + index + 1}</td>
                     <td>${aperturaText}</td>
                     <td>${cierreText}</td>
-                    <td>${sesion.operador || '-'}</td>
+                    <td>
+                        ${sesion.operador || '-'} <small style="color: #64748b; font-weight: 500;">(${sesion.rolOperador || 'N/A'})</small>
+                        ${sesion.operadorCierre && sesion.operadorCierre !== sesion.operador ? `<br><small style="color: #475569; font-weight: 500;">Cerró: ${sesion.operadorCierre} (${sesion.rolCierre || 'N/A'})</small>` : ''}
+                    </td>
                     <td style="font-weight: 600; text-align: right;">${sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '-'}</td>
                     <td style="font-weight: 600; text-align: right;">${sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : '-'}</td>
                     <td style="text-align: right;">${difHtml}</td>
@@ -1157,7 +1200,20 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!modalDetalles) return;
 
         // Header (Operador y Estado)
-        document.getElementById('detalle-sesion-operador').textContent = sesion.operador || 'Desconocido';
+        if (sesion.operadorCierre && sesion.operadorCierre !== sesion.operador) {
+            document.getElementById('detalle-sesion-operador').innerHTML = `
+                <div style="font-size: 13px; line-height: 1.4;">
+                    <span style="opacity: 0.85; font-weight: 500;">Apertura:</span> ${sesion.operador} <small style="opacity: 0.8; font-weight: normal;">(${sesion.rolOperador || 'N/A'})</small>
+                </div>
+                <div style="font-size: 13px; line-height: 1.4; margin-top: 2px;">
+                    <span style="opacity: 0.85; font-weight: 500;">Cierre:</span> ${sesion.operadorCierre} <small style="opacity: 0.8; font-weight: normal;">(${sesion.rolCierre || 'N/A'})</small>
+                </div>
+            `;
+        } else {
+            document.getElementById('detalle-sesion-operador').innerHTML = `
+                ${sesion.operador || 'Desconocido'} <small style="opacity: 0.8; font-weight: normal;">(${sesion.rolOperador || 'N/A'})</small>
+            `;
+        }
         const elEstado = document.getElementById('detalle-sesion-estado');
         if (sesion.estado === 'ABIERTA') {
             elEstado.innerHTML = '<i class="fas fa-door-open" style="font-size: 10px;"></i> ABIERTA';
@@ -1744,5 +1800,20 @@ document.addEventListener('DOMContentLoaded', function () {
             console.error('Error cargando ingresos globales:', e);
         }
     }
+
+    // ==========================================
+    // ESCUCHA EVENTOS DE VENTAS Y COMPRAS PARA ACTUALIZAR CAJA
+    // ==========================================
+    document.addEventListener('ventaRegistrada', function () {
+        if (typeof verificarEstadoCaja === 'function') {
+            verificarEstadoCaja();
+        }
+    });
+
+    document.addEventListener('comprasActualizadas', function () {
+        if (typeof verificarEstadoCaja === 'function') {
+            verificarEstadoCaja();
+        }
+    });
 
 });

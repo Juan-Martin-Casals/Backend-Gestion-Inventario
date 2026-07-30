@@ -1871,9 +1871,77 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    async function verificarEstadoCaja() {
+        if (!empleadoUserId) return;
+        try {
+            const res = await fetch(`/api/caja/estado/${empleadoUserId}`);
+            if (!res.ok) throw new Error('Error al conectar con la verificación de Caja.');
+            const data = await res.json();
+            
+            const ventasContainer = document.getElementById('ventas-create-container');
+            const overlayExistente = document.getElementById('caja-cerrada-overlay');
+            
+            if (!data.abierta) {
+                if (ventasContainer && !overlayExistente) {
+                    ventasContainer.style.position = 'relative';
+                    const overlay = document.createElement('div');
+                    overlay.id = 'caja-cerrada-overlay';
+                    overlay.style.position = 'absolute';
+                    overlay.style.top = '0';
+                    overlay.style.left = '0';
+                    overlay.style.width = '100%';
+                    overlay.style.height = '100%';
+                    overlay.style.zIndex = '1000';
+                    overlay.style.backdropFilter = 'blur(12px)';
+                    overlay.style.WebkitBackdropFilter = 'blur(12px)';
+                    overlay.style.backgroundColor = 'rgba(255, 255, 255, 0.5)';
+                    overlay.style.display = 'flex';
+                    overlay.style.alignItems = 'center';
+                    overlay.style.justifyContent = 'center';
+                    overlay.style.borderRadius = 'inherit';
+                    
+                    overlay.innerHTML = `
+                        <div style="background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center; max-width: 450px; border: 1px solid rgba(255,255,255,0.8); animation: fadeIn 0.4s ease-out;">
+                            <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);">
+                                <i class="fas fa-lock" style="font-size: 36px; color: white;"></i>
+                            </div>
+                            <h3 style="margin: 0 0 15px; font-size: 24px; font-weight: 800; color: #1e293b; letter-spacing: -0.5px;">Caja Cerrada</h3>
+                            <p style="margin: 0; color: #64748b; font-size: 15px; line-height: 1.6;">
+                                Por favor, aguarda a que un <strong>Administrador</strong> o <strong>Cajero</strong> realice la apertura de caja para comenzar a operar.
+                            </p>
+                        </div>
+                    `;
+                    ventasContainer.appendChild(overlay);
+                    
+                    const focusables = ventasContainer.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])');
+                    focusables.forEach(el => {
+                        if (el.id !== 'caja-cerrada-overlay' && !overlay.contains(el)) {
+                            el.setAttribute('tabindex', '-1');
+                            el.style.pointerEvents = 'none';
+                        }
+                    });
+                }
+            } else {
+                if (overlayExistente) {
+                    overlayExistente.remove();
+                    const focusables = ventasContainer.querySelectorAll('[tabindex="-1"]');
+                    focusables.forEach(el => {
+                        el.removeAttribute('tabindex');
+                        el.style.pointerEvents = '';
+                    });
+                }
+            }
+        } catch (error) {
+            console.error('Error verificando estado de caja:', error);
+        }
+    }
+
     // Inicialización secuencial: primero cargar userId, luego ventas
     (async function init() {
         await loadEmpleadoUserId();
+        await verificarEstadoCaja();
+        // Polling de 10 segundos para actualizar el bloqueo de caja de forma automática
+        setInterval(verificarEstadoCaja, 10000);
         loadProductosParaSelect();
         loadClientesParaVenta();
         loadMetodosPago();
@@ -1914,6 +1982,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Cargar datos según la subsección
         if (subsectionId === 'ventas-create') {
+            verificarEstadoCaja();
             loadProductosParaSelect();
             loadClientesParaVenta();
             loadMetodosPago();

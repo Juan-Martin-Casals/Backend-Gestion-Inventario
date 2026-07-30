@@ -21,6 +21,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let currentSectionId = 'principal';
     let currentSubsectionId = null;
+    let cajaEstaAbierta = false;
+
+    window.isCajaAbierta = () => cajaEstaAbierta;
+
+    async function checkCajaEstado() {
+        try {
+            const res = await fetch('/api/caja/estado/0');
+            if (res.ok) {
+                const data = await res.json();
+                cajaEstaAbierta = data.abierta;
+            }
+        } catch (e) {
+            console.error("Error al verificar estado de la caja:", e);
+        }
+    }
+    checkCajaEstado();
 
     function clearSection(sectionId) {
         const section = document.getElementById(`${sectionId}-section`);
@@ -44,7 +60,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     sidebarLinks.forEach(link => {
-        link.addEventListener('click', function (e) {
+        link.addEventListener('click', async function (e) {
 
             // Submenú Toggle: solo abre/cierra, no navega
             if (this.classList.contains('submenu-toggle')) {
@@ -83,18 +99,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (sectionId === 'ventas') {
                 const targetSubsection = subsectionId || localStorage.getItem('lastSubsectionEmpleado') || 'ventas-create';
-
-                if (targetSubsection === 'ventas-create' && typeof window.isCajaAbierta === 'function' && !window.isCajaAbierta()) {
-                    // Caja cerrada: redirigir a Caja
-                    sidebarLinks.forEach(l => l.classList.remove('active'));
-                    const cajaLink = document.querySelector('.sidebar-menu a[data-section="caja"]');
-                    if (cajaLink) cajaLink.classList.add('active');
-                    showSection('caja');
-                    if (sectionTitle) sectionTitle.textContent = 'Caja';
-                    if (sectionIcon) sectionIcon.className = sectionIcons['caja'];
-                    if (typeof window.showCajaSubsection === 'function') window.showCajaSubsection('caja-operaciones');
-                    return;
-                }
 
                 if (typeof window.showVentasSubsection === 'function') {
                     window.showVentasSubsection(targetSubsection);

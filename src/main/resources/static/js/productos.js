@@ -6,6 +6,91 @@
  */
 document.addEventListener('DOMContentLoaded', function () {
 
+    // ==========================================
+    // ESTADO PARA INTEGRACIÓN CON ORDEN DE COMPRA
+    // ==========================================
+    window.selectedProductsForOC = new Set();
+    window.activeProviderForOC = null;
+    window.selectedProductsDetailsForOC = {};
+
+    window.updateOCCheckboxesState = function() {
+        const buttons = document.querySelectorAll('.btn-oc-toggle');
+        buttons.forEach(btn => {
+            const providerName = btn.getAttribute('data-provider-name');
+            const productId = btn.getAttribute('data-product-id');
+            
+            // 1. Sincronizar clases visuales de activo/inactivo
+            const isChecked = window.selectedProductsForOC && window.selectedProductsForOC.has(productId.toString());
+            if (isChecked) {
+                btn.classList.add('btn-oc-active');
+                btn.classList.remove('btn-oc-inactive');
+                btn.innerHTML = '<i class="fas fa-check"></i> En Orden';
+            } else {
+                btn.classList.add('btn-oc-inactive');
+                btn.classList.remove('btn-oc-active');
+                btn.innerHTML = '<i class="fas fa-file-invoice"></i> Añadir';
+            }
+
+            // 2. Controlar si está deshabilitado por proveedor
+            if (!providerName) {
+                btn.disabled = true;
+                btn.title = "Este producto no tiene un proveedor asignado";
+                return;
+            }
+
+            if (window.activeProviderForOC && window.activeProviderForOC !== providerName) {
+                btn.disabled = true;
+                btn.title = `Solo se pueden seleccionar productos del proveedor: ${window.activeProviderForOC}`;
+            } else {
+                btn.disabled = false;
+                btn.title = "";
+            }
+        });
+
+        if (filterProveedor) {
+            filterProveedor.disabled = !!window.activeProviderForOC;
+        }
+    };
+
+    window.updateOCActionBar = function() {
+        const bar = document.getElementById('stock-oc-action-bar');
+        const countSpan = document.getElementById('stock-oc-selected-count');
+        const providerSpan = document.getElementById('stock-oc-selected-provider');
+
+        if (!bar) return;
+
+        const count = window.selectedProductsForOC.size;
+        if (count > 0) {
+            countSpan.textContent = `${count} producto${count > 1 ? 's' : ''} seleccionado${count > 1 ? 's' : ''}`;
+            providerSpan.textContent = `Proveedor: ${window.activeProviderForOC}`;
+            bar.classList.add('visible');
+        } else {
+            bar.classList.remove('visible');
+        }
+    };
+
+    window.clearOCSelection = function() {
+        window.selectedProductsForOC.clear();
+        window.activeProviderForOC = null;
+        window.selectedProductsDetailsForOC = {};
+        
+        if (filterProveedor) {
+            filterProveedor.value = 'todos';
+            filtroProveedor = 'todos';
+            filterProveedor.disabled = false;
+        }
+
+        currentPage = 0;
+        window.updateOCActionBar();
+        loadProducts();
+    };
+
+    // Bind clean selection on cancel button click
+    const btnClearOC = document.getElementById('btn-clear-oc-selection');
+    if (btnClearOC) {
+        btnClearOC.addEventListener('click', window.clearOCSelection);
+    }
+
     // ===============================
     // SELECTORES DE ELEMENTOS DEL DOM
     // ===============================
@@ -250,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         } catch (error) {
             console.error('Error al cargar los productos:', error);
-            productTableBody.innerHTML = `<tr><td colspan="6">Error al cargar productos.</td></tr>`;
+            productTableBody.innerHTML = `<tr><td colspan="7">Error al cargar productos.</td></tr>`;
             productTableBody.classList.remove('loading');
         } finally {
             isLoadingProducts = false;
@@ -797,7 +882,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         productTableBody.innerHTML = '';
         if (products.length === 0) {
-            productTableBody.innerHTML = '<tr><td colspan="6">No hay productos registrados.</td></tr>';
+            productTableBody.innerHTML = '<tr><td colspan="7">No hay productos registrados.</td></tr>';
             return;
         }
 
@@ -822,8 +907,29 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
+            // Checkbox logic for Purchase Order (rendered as Toggle Button for better UX)
+            let buttonDisabled = !product.proveedorNombre ? 'disabled title="Este producto no tiene un proveedor asignado"' : '';
+            if (product.proveedorNombre && window.activeProviderForOC && window.activeProviderForOC !== product.proveedorNombre) {
+                buttonDisabled = 'disabled title="Solo se pueden seleccionar productos del proveedor: ' + window.activeProviderForOC + '"';
+            }
+            const isChecked = window.selectedProductsForOC && window.selectedProductsForOC.has(product.idProducto.toString());
+            const btnClass = isChecked ? 'btn-oc-active' : 'btn-oc-inactive';
+            const btnContent = isChecked 
+                ? '<i class="fas fa-check"></i> En Orden' 
+                : '<i class="fas fa-file-invoice"></i> Añadir';
+
             const row = `
                 <tr>
+                    <td class="oc-checkbox-col" style="text-align: center; vertical-align: middle;">
+                        <button type="button" class="btn-oc-toggle ${btnClass}" 
+                                data-product-id="${product.idProducto}" 
+                                data-product-name="${product.nombre || ''}"
+                                data-product-cost="${product.precioCosto || 0}"
+                                data-provider-name="${product.proveedorNombre || ''}"
+                                ${buttonDisabled}>
+                            ${btnContent}
+                        </button>
+                    </td>
                     <td style="text-align: left; font-weight: 500;">${product.nombre || 'N/A'}</td>
                     <td style="text-align: left;">${product.categoria || 'N/A'}</td>
                     <td style="text-align: left;">${proveedorCell}</td>
@@ -855,6 +961,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 // Fila invisible con estructura idéntica para forzar al navegador a calcular la misma altura
                 productTableBody.innerHTML += `
                     <tr style="visibility: hidden; border-bottom: none;">
+                        <td>-</td>
                         <td>-</td>
                         <td>-</td>
                         <td>-</td>
@@ -908,6 +1015,59 @@ document.addEventListener('DOMContentLoaded', function () {
                 const productId = e.currentTarget.getAttribute('data-id');
                 const productName = e.currentTarget.getAttribute('data-name');
                 openDeleteModal(productId, productName);
+            });
+        });
+
+        // Listeners para botones de selección de orden de compra
+        document.querySelectorAll('.btn-oc-toggle').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const target = e.currentTarget;
+                const productId = target.getAttribute('data-product-id');
+                const productName = target.getAttribute('data-product-name');
+                const productCost = parseFloat(target.getAttribute('data-product-cost')) || 0;
+                const providerName = target.getAttribute('data-provider-name');
+
+                const isCurrentlyChecked = window.selectedProductsForOC && window.selectedProductsForOC.has(productId.toString());
+
+                if (!isCurrentlyChecked) {
+                    const isFirstSelection = !window.activeProviderForOC;
+                    if (isFirstSelection) {
+                        window.activeProviderForOC = providerName;
+                    }
+                    window.selectedProductsForOC.add(productId);
+                    window.selectedProductsDetailsForOC[productId] = {
+                        idProducto: productId,
+                        nombre: productName,
+                        costoUnitario: productCost,
+                        proveedorNombre: providerName
+                    };
+
+                    if (isFirstSelection && filterProveedor && filterProveedor.value !== providerName) {
+                        filterProveedor.value = providerName;
+                        filtroProveedor = providerName;
+                        currentPage = 0;
+                        window.updateOCActionBar();
+                        loadProducts();
+                        return;
+                    }
+                } else {
+                    window.selectedProductsForOC.delete(productId);
+                    delete window.selectedProductsDetailsForOC[productId];
+                    if (window.selectedProductsForOC.size === 0) {
+                        window.activeProviderForOC = null;
+                        if (filterProveedor) {
+                            filterProveedor.value = 'todos';
+                            filtroProveedor = 'todos';
+                            currentPage = 0;
+                            window.updateOCActionBar();
+                            loadProducts();
+                            return;
+                        }
+                    }
+                }
+
+                window.updateOCCheckboxesState();
+                window.updateOCActionBar();
             });
         });
     }
@@ -1718,6 +1878,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (filterProveedor) {
             filterProveedor.value = 'todos';
             filtroProveedor = 'todos';
+            filterProveedor.disabled = false;
+        }
+
+        // Limpiar selección de orden de compra
+        if (window.selectedProductsForOC) {
+            window.selectedProductsForOC.clear();
+            window.activeProviderForOC = null;
+            window.selectedProductsDetailsForOC = {};
+            window.updateOCActionBar();
         }
 
         // Restaurar ordenamiento por defecto (estado de stock)

@@ -36,7 +36,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const formatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
     // Verificar el estado de la caja de forma automática al cargar
-    async function verificarEstadoCaja() {
+    async function verificarEstadoCaja(silentRefresh = false) {
         try {
             const userRes = await fetch('/api/auth/perfil');
             if (!userRes.ok) throw new Error('Usuario no autenticado o sesión expirada');
@@ -59,17 +59,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 spanSaldoAnterior.textContent = formatter.format(saldoAnteriorGlobal);
                 inputMontoInicial.value = new Intl.NumberFormat('es-AR').format(Math.round(saldoAnteriorGlobal));
-                
+
                 // Contexto visual del cierre anterior
                 const contextoCierre = document.getElementById('caja-contexto-cierre');
                 const contextoIcono = document.getElementById('caja-contexto-icono');
                 const contextoTexto = document.getElementById('caja-contexto-texto');
                 const contextoOperador = document.getElementById('caja-contexto-operador');
-                
+
                 if (contextoCierre && data.ultimoCierreInfo) {
                     const info = data.ultimoCierreInfo;
                     contextoCierre.style.display = 'block';
-                    
+
                     if (info.esFondoFijo) {
                         contextoIcono.className = 'fas fa-shield-alt';
                         contextoTexto.textContent = 'Fondo Fijo Asignado';
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         contextoTexto.parentElement.style.background = '#ecfdf5';
                         contextoTexto.parentElement.style.borderColor = '#a7f3d0';
                     }
-                    
+
                     const fechaObj = info.fecha ? new Date(info.fecha) : new Date();
                     const fechaStr = fechaObj.toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
                     contextoOperador.innerHTML = `<i class="fas fa-user-clock" style="font-size: 10px;"></i> <span>Por ${info.operador} (${info.rol}) el ${fechaStr}</span>`;
@@ -110,7 +110,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
                 if (infoEstado) infoEstado.textContent = 'Caja abierta y operando con normalidad. Recuerda cerrarla al final de tu turno.';
 
-                cargarDashboardCierre();
+                cargarDashboardCierre(silentRefresh);
             }
 
         } catch (error) {
@@ -118,11 +118,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    async function cargarDashboardCierre() {
+    async function cargarDashboardCierre(silentRefresh = false) {
         try {
             const resumenRes = await fetch(`/api/caja/sesion-activa/${usuarioIdActual}`);
             if (!resumenRes.ok) throw new Error("No se pudo obtener el resumen");
-            
+
             const resumenData = await resumenRes.json();
             resumenCajaActual = resumenData;
 
@@ -132,26 +132,26 @@ document.addEventListener('DOMContentLoaded', function () {
             const elEgresos = document.getElementById('caja-resumen-egresos');
             const elEsperado = document.getElementById('caja-resumen-esperado');
             const elOperador = document.getElementById('caja-kpi-operador');
-            
+
             if (elInicial) elInicial.textContent = formatter.format(resumenData.montoInicial || 0);
             if (elOperador && window.usuarioNombreActual) elOperador.textContent = window.usuarioNombreActual;
             if (elIngresos) elIngresos.textContent = formatter.format(resumenData.totalVentas || 0);
             if (elEgresos) elEgresos.textContent = formatter.format(resumenData.totalCompras || 0);
             if (elEsperado) elEsperado.textContent = formatter.format(resumenData.saldoEsperado || 0);
-            
+
             // 2. Poblamos Tarjetas del Nuevo Dashboard Analítico
             const elTotalVentas = document.getElementById('caja-card-total-ventas');
             if (elTotalVentas) elTotalVentas.textContent = formatter.format(resumenData.totalVentas || 0);
-            
+
             const elCantVentas = document.getElementById('caja-card-cantidad-ventas');
             if (elCantVentas) elCantVentas.textContent = resumenData.cantidadVentas || 0;
-            
+
             const elEfectivo = document.getElementById('caja-card-efectivo');
             if (elEfectivo) elEfectivo.textContent = formatter.format(resumenData.totalEfectivo || 0);
-            
+
             const elTarjeta = document.getElementById('caja-card-tarjeta');
             if (elTarjeta) elTarjeta.textContent = formatter.format(resumenData.totalTarjeta || 0);
-            
+
             const elTransferencia = document.getElementById('caja-card-transferencia');
             if (elTransferencia) elTransferencia.textContent = formatter.format(resumenData.totalTransferencia || 0);
 
@@ -161,8 +161,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 tbodyDesglose.innerHTML = '';
 
                 const metodosDefault = [
-                    { nombre: 'Efectivo',      iconoClass: 'fas fa-money-bill',   spanClass: 'icon-efectivo' },
-                    { nombre: 'Tarjeta',       iconoClass: 'fas fa-credit-card',  spanClass: 'icon-tarjeta' },
+                    { nombre: 'Efectivo', iconoClass: 'fas fa-money-bill', spanClass: 'icon-efectivo' },
+                    { nombre: 'Tarjeta', iconoClass: 'fas fa-credit-card', spanClass: 'icon-tarjeta' },
                     { nombre: 'Transferencia', iconoClass: 'fas fa-exchange-alt', spanClass: 'icon-transferencia' }
                 ];
 
@@ -220,17 +220,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // 4. Lógica de Fondo Fijo y Retiro
             const totalEfectivoTeorico = resumenData.saldoEsperado || ((resumenData.montoInicial || 0) + (resumenData.totalEfectivo || 0) - (resumenData.totalComprasEfectivo || 0));
-            
+
             // Popula Efvo Esperado en el sidebar derecho
             const labelEsperado = document.getElementById('caja-sidebar-efectivo-esperado');
-            if(labelEsperado) labelEsperado.textContent = formatter.format(totalEfectivoTeorico).replace('$', '').trim();
-            
+            if (labelEsperado) labelEsperado.textContent = formatter.format(totalEfectivoTeorico).replace('$', '').trim();
+
             // Sugerencia para el monto físico
-            if(inputMontoFinalFisico) {
+            if (!silentRefresh && inputMontoFinalFisico) {
                 inputMontoFinalFisico.value = '';
             }
             // Sugerencia para dejar el monto inicial como fondo fijo para mañana
-            if(inputFondoFijo) {
+            if (!silentRefresh && inputFondoFijo) {
                 inputFondoFijo.value = (resumenData.montoInicial || 0).toFixed(2);
             }
 
@@ -277,7 +277,10 @@ document.addEventListener('DOMContentLoaded', function () {
     };
 
     if (inputMontoFinalFisico) {
-        inputMontoFinalFisico.addEventListener('input', formatNumberInput);
+        inputMontoFinalFisico.addEventListener('input', (e) => {
+            if (window.limpiarErroresInline) window.limpiarErroresInline('caja-monto-final');
+            formatNumberInput(e);
+        });
     }
 
     if (warningFinalText && inputMontoFinalFisico) {
@@ -285,7 +288,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const rawValueStr = inputMontoFinalFisico.value.replace(/\./g, '');
             const value = parseFloat(rawValueStr) || 0;
             const esperado = resumenCajaActual ? (resumenCajaActual.saldoEsperado || 0) : 0;
-            
+
             if (Math.abs(value - esperado) > 0.01) {
                 warningFinalText.style.display = 'block';
             } else {
@@ -306,7 +309,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputObsApertura = document.getElementById('caja-observaciones');
     if (inputObsApertura) {
         const charCountAperturaEl = document.getElementById('char-count-obs-apertura');
-        inputObsApertura.addEventListener('input', function() {
+        inputObsApertura.addEventListener('input', function () {
             if (charCountAperturaEl) {
                 charCountAperturaEl.textContent = this.value.length;
             }
@@ -384,7 +387,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const esRegistro = (subsectionId === 'ventas-create' || subsectionId === 'compras-create');
             if ((sectionId === 'ventas' || sectionId === 'compras') && esRegistro && !cajaEstaAbierta) {
                 e.preventDefault();
-                e.stopPropagation(); 
+                e.stopPropagation();
                 showErrorBanner('Debe realizar la Apertura de Caja antes de operar.');
                 const cajaLink = document.querySelector('.sidebar-menu a[data-subsection="caja-operaciones"]');
                 if (cajaLink) {
@@ -419,11 +422,11 @@ document.addEventListener('DOMContentLoaded', function () {
     function showSuccessBanner(msg) {
         const banner = document.getElementById('success-banner') || crearBannerExito();
         document.getElementById('success-banner-text').textContent = msg;
-        banner.style.backgroundColor = '#28a745'; 
+        banner.style.backgroundColor = '#28a745';
         banner.classList.add('show');
         setTimeout(() => {
             banner.classList.remove('show');
-            setTimeout(() => { banner.style.backgroundColor = ''; }, 300); 
+            setTimeout(() => { banner.style.backgroundColor = ''; }, 300);
         }, 3500);
     }
 
@@ -432,14 +435,14 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('success-banner-text').textContent = msg;
         const icon = banner.querySelector('i');
         if (icon) icon.className = 'fas fa-times-circle';
-        banner.style.backgroundColor = '#dc3545'; 
+        banner.style.backgroundColor = '#dc3545';
         banner.classList.add('show');
         setTimeout(() => {
             banner.classList.remove('show');
             setTimeout(() => {
                 banner.style.backgroundColor = '';
                 if (icon) icon.className = 'fas fa-check-circle';
-            }, 300); 
+            }, 300);
         }, 3500);
     }
 
@@ -484,8 +487,18 @@ document.addEventListener('DOMContentLoaded', function () {
     if (btnCerrarCaja) {
         btnCerrarCaja.addEventListener('click', async () => {
             // 1. Validaciones iniciales
+            if (window.limpiarErroresInline) window.limpiarErroresInline('caja-monto-final');
+
+            const rawMontoFisico = inputMontoFinalFisico.value.trim();
+            if (rawMontoFisico === '') {
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('caja-monto-final', 'El efectivo físico es obligatorio para cerrar la caja.');
+                }
+                return;
+            }
+
             const fondoFijoVal = parseFloat(inputFondoFijo.value) || 0;
-            const montoFisicoVal = parseFloat(inputMontoFinalFisico.value.replace(/\./g, '')) || 0;
+            const montoFisicoVal = parseFloat(rawMontoFisico.replace(/\./g, '')) || 0;
 
             if (isNaN(fondoFijoVal) || fondoFijoVal < 0) {
                 if (panelErrorCierre) {
@@ -523,10 +536,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (respNode) respNode.textContent = spanOperador ? spanOperador.textContent.split(' (')[0] : 'Usuario';
             const sesionNode = document.getElementById('modal-cierre-sesion');
             if (sesionNode) sesionNode.textContent = `Sesión #${data.idSesion || '---'}`;
-            
+
             // Tiempos reales
-            const horaApertura = data.fechaApertura ? new Date(data.fechaApertura).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
-            const horaCierre = new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'});
+            const horaApertura = data.fechaApertura ? new Date(data.fechaApertura).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+            const horaCierre = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
             const vtEfNode = document.getElementById('modal-resumen-ventas-efectivo');
             if (vtEfNode) vtEfNode.textContent = `+${formatter.format(data.totalEfectivo || 0)}`;
             const gaNode = document.getElementById('modal-resumen-gastos');
@@ -595,45 +608,45 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (modalResumen) modalResumen.style.display = 'none';
                     showSuccessBanner('Caja cerrada exitosamente. Sesión finalizada.');
                     cajaEstaAbierta = false;
-                    
+
                     // MOSTRAR MODAL POST-CIERRE
                     const modalPostCierre = document.getElementById('modal-post-cierre');
                     if (modalPostCierre && resumenCajaActual) {
                         const data = resumenCajaActual;
-                        
+
                         // Poblado de datos
-                        const horaAp = data.fechaApertura ? new Date(data.fechaApertura).toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'}) : '--:--';
-                        const horaCr = new Date().toLocaleTimeString('es-AR', {hour: '2-digit', minute:'2-digit'});
+                        const horaAp = data.fechaApertura ? new Date(data.fechaApertura).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                        const horaCr = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
                         document.getElementById('post-cierre-operador').textContent = window.usuarioNombreActual || 'Cajero';
                         document.getElementById('post-cierre-apertura').textContent = horaAp;
                         document.getElementById('post-cierre-hora').textContent = horaCr;
-                        
+
                         const inicial = data.montoInicial || 0;
                         const ventasEf = data.totalEfectivo || 0;
                         const comprasEf = data.totalComprasEfectivo || 0;
                         const efTeorico = data.saldoEsperado || (inicial + ventasEf - comprasEf);
-                        
+
                         document.getElementById('post-cierre-inicial').textContent = formatter.format(inicial);
                         document.getElementById('post-cierre-ingresos-ef').textContent = '+' + formatter.format(ventasEf);
                         document.getElementById('post-cierre-gastos').textContent = '-' + formatter.format(comprasEf);
                         document.getElementById('post-cierre-efectivo-teorico').textContent = formatter.format(efTeorico);
-                        
+
                         document.getElementById('post-cierre-fisico-real').textContent = formatter.format(montoFisicoVal);
                         document.getElementById('post-cierre-esperado-repetido').textContent = formatter.format(efTeorico);
-                        
+
                         const diff = montoFisicoVal - efTeorico;
                         const diffLabel = document.getElementById('post-cierre-diferencia-label');
                         const diffMonto = document.getElementById('post-cierre-diferencia-monto');
                         const diffContainer = document.getElementById('post-cierre-diferencia-container');
-                        
-                        if(Math.abs(diff) < 0.05) {
+
+                        if (Math.abs(diff) < 0.05) {
                             diffLabel.textContent = "CUADRE EXACTO";
                             diffMonto.textContent = "$0";
                             diffContainer.style.background = "#ecfdf5";
                             diffContainer.style.borderColor = "#a7f3d0";
                             diffLabel.style.color = "#059669";
                             diffMonto.style.color = "#059669";
-                        } else if(diff < 0) {
+                        } else if (diff < 0) {
                             diffLabel.textContent = "FALTANTE";
                             diffMonto.textContent = formatter.format(diff);
                             diffContainer.style.background = "#fef2f2";
@@ -648,17 +661,17 @@ document.addEventListener('DOMContentLoaded', function () {
                             diffLabel.style.color = "#2563eb";
                             diffMonto.style.color = "#2563eb";
                         }
-                        
+
                         document.getElementById('post-cierre-facturacion-total').textContent = formatter.format(data.totalVentas || 0);
                         document.getElementById('post-cierre-tarjetas').textContent = formatter.format(data.totalTarjeta || 0);
                         document.getElementById('post-cierre-transferencias').textContent = formatter.format(data.totalTransferencia || 0);
                         document.getElementById('post-cierre-efectivo-operado').textContent = formatter.format(ventasEf);
-                        
+
                         // Mostrar Modal con animación
                         modalPostCierre.style.display = 'flex';
                         void modalPostCierre.offsetWidth; // trigger reflow
                         modalPostCierre.classList.add('post-cierre-visible');
-                        
+
                         // Lógica Botones
                         const btnImprimir = document.getElementById('btn-post-cierre-imprimir');
                         if (btnImprimir) {
@@ -666,7 +679,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                 generarCierrePDF(parseFloat(fondoFijoValStr), montoFisicoVal);
                             };
                         }
-                        
+
                         const closePostCierre = () => {
                             modalPostCierre.classList.remove('post-cierre-visible');
                             setTimeout(() => {
@@ -696,7 +709,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function generarCierrePDF(fondoFijo, montoFisicoReal) {
-        if(!window.jspdf || !window.jspdf.jsPDF) {
+        if (!window.jspdf || !window.jspdf.jsPDF) {
             console.warn("jsPDF no cargado. Saltando impresión de ticket.");
             return;
         }
@@ -712,16 +725,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
         doc.setFontSize(14);
         doc.setFont("helvetica", "bold");
-        doc.text("CIERRE DE CAJA X", 40, 10, {align: "center"});
-        
+        doc.text("CIERRE DE CAJA X", 40, 10, { align: "center" });
+
         doc.setFontSize(9);
         doc.setFont("helvetica", "normal");
         doc.text(`Fecha: ${new Date().toLocaleString('es-AR')}`, 5, 20);
-        
+
         let y = 30;
-        doc.text("RESUMEN DE OPERACIONES", 40, y, {align: "center"});
-        doc.line(5, y+2, 75, y+2);
-        
+        doc.text("RESUMEN DE OPERACIONES", 40, y, { align: "center" });
+        doc.line(5, y + 2, 75, y + 2);
+
         y += 8;
         doc.text(`Monto Apertura: ${formatter.format(data.montoInicial || 0)}`, 5, y);
         y += 6;
@@ -730,15 +743,15 @@ document.addEventListener('DOMContentLoaded', function () {
         doc.text(`Cnt. Tickets: ${data.cantidadVentas || 0}`, 5, y);
         y += 6;
         doc.text(`Total Egresos (Comp): ${formatter.format(data.totalCompras || 0)}`, 5, y);
-        
+
         y += 10;
         doc.setFont("helvetica", "bold");
-        doc.text("DESGLOSE POR PAGOS", 40, y, {align: "center"});
+        doc.text("DESGLOSE POR PAGOS", 40, y, { align: "center" });
         doc.setFont("helvetica", "normal");
-        
+
         if (data.desgloseCobros && data.desgloseCobros.length > 0) {
             const bodyDatos = data.desgloseCobros.map(p => [
-                p.metodoPago, 
+                p.metodoPago,
                 formatter.format(p.totalIngresado)
             ]);
             doc.autoTable({
@@ -758,21 +771,21 @@ document.addEventListener('DOMContentLoaded', function () {
 
         y += 10;
         doc.setFont("helvetica", "bold");
-        doc.text("ARQUEO DE FONDOS", 40, y, {align: "center"});
-        doc.line(5, y+2, 75, y+2);
+        doc.text("ARQUEO DE FONDOS", 40, y, { align: "center" });
+        doc.line(5, y + 2, 75, y + 2);
         doc.setFont("helvetica", "normal");
-        
+
         y += 8;
         const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalComprasEfectivo || 0));
         doc.text(`Efectivo Esperado: ${formatter.format(totalEfTeorico)}`, 5, y);
         y += 6;
         doc.text(`Efectivo Físico Aud: ${formatter.format(montoFisicoReal)}`, 5, y);
-        
+
         let diff = montoFisicoReal - totalEfTeorico;
         y += 6;
-        if(Math.abs(diff) < 0.05) { // Tolerancia decimal
+        if (Math.abs(diff) < 0.05) { // Tolerancia decimal
             doc.text(`Diferencia: EXACTO ($0.00)`, 5, y);
-        } else if(diff < 0) {
+        } else if (diff < 0) {
             doc.text(`Diferencia: FALTANTE ${formatter.format(diff)}`, 5, y);
         } else {
             doc.text(`Diferencia: SOBRANTE ${formatter.format(diff)}`, 5, y);
@@ -780,7 +793,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         y += 6;
         doc.text(`FONDO FIJO prox día: ${formatter.format(fondoFijo)}`, 5, y);
-        
+
         const retiro = Math.max(0, totalEfTeorico - fondoFijo);
         y += 6;
         doc.setFont("helvetica", "bold");
@@ -789,11 +802,11 @@ document.addEventListener('DOMContentLoaded', function () {
         y += 15;
         doc.setFontSize(8);
         doc.setFont("helvetica", "normal");
-        doc.text("---------------------------------", 40, y, {align: "center"});
+        doc.text("---------------------------------", 40, y, { align: "center" });
         y += 5;
-        doc.text("Firma Responsable", 40, y, {align: "center"});
+        doc.text("Firma Responsable", 40, y, { align: "center" });
 
-        doc.save(`CierreCaja_${new Date().toISOString().slice(0,10)}.pdf`);
+        doc.save(`CierreCaja_${new Date().toISOString().slice(0, 10)}.pdf`);
     }
 
     // ==========================================
@@ -806,22 +819,22 @@ document.addEventListener('DOMContentLoaded', function () {
 
         try {
             listaIngresos.innerHTML = '<div style="text-align: center; padding: 25px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Cargando ingresos...</div>';
-            
+
             const response = await fetch('/api/ventas/all');
-            if(!response.ok) throw new Error('Error obteniendo ventas');
+            if (!response.ok) throw new Error('Error obteniendo ventas');
             const ventas = await response.json();
 
             // Filtrar las ventas que sucedieron despues de la apertura de caja
             const fechaRef = new Date(fechaApertura).getTime();
             let ingresosSesion = ventas.filter(v => new Date(v.fecha).getTime() >= fechaRef);
-            
+
             // Ordenar de más reciente a más antigua
-            ingresosSesion.sort((a,b) => new Date(b.fecha) - new Date(a.fecha));
+            ingresosSesion.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
             // Funcion de renderizado
             function renderLista(data) {
                 listaIngresos.innerHTML = '';
-                if(data.length === 0) {
+                if (data.length === 0) {
                     listaIngresos.innerHTML = '<div style="text-align: center; padding: 25px; color: #94a3b8; font-size: 13px;">No hay ingresos que coincidan con el filtro.</div>';
                     return;
                 }
@@ -835,7 +848,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     let iconoClass = 'fas fa-money-bill';
                     let iconColor = '#10b981';
                     let iconBg = '#ecfdf5';
-                    
+
                     const mx = venta.metodoPago ? venta.metodoPago.toLowerCase() : '';
                     if (mx.includes('tarjeta')) {
                         iconoClass = 'fas fa-credit-card';
@@ -849,14 +862,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
                     // Nombre del producto representativo
                     let nombreDetalle = 'Venta Varios';
-                    if(venta.productos && venta.productos.length > 0) {
+                    if (venta.productos && venta.productos.length > 0) {
                         const firstProd = venta.productos[0];
                         nombreDetalle = firstProd.nombreProducto || firstProd.nombre || 'Producto';
-                        if(venta.productos.length > 1) nombreDetalle += ` (+${venta.productos.length - 1})`;
+                        if (venta.productos.length > 1) nombreDetalle += ` (+${venta.productos.length - 1})`;
                     }
 
                     const fechaVenta = new Date(venta.fecha);
-                    const horaFormatted = fechaVenta.getHours().toString().padStart(2, '0') + ':' + fechaVenta.getMinutes().toString().padStart(2,'0') + ' hrs';
+                    const horaFormatted = fechaVenta.getHours().toString().padStart(2, '0') + ':' + fechaVenta.getMinutes().toString().padStart(2, '0') + ' hrs';
 
                     item.innerHTML = `
                         <div style="display: flex; align-items: center; gap: 15px;">
@@ -910,7 +923,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // Setup Filtro por método de pago
-            if(filtroSelect && filtroSelect.parentNode) {
+            if (filtroSelect && filtroSelect.parentNode) {
                 const newFiltro = filtroSelect.cloneNode(true);
                 filtroSelect.parentNode.replaceChild(newFiltro, filtroSelect);
                 newFiltro.addEventListener('change', aplicarFiltros);
@@ -944,6 +957,17 @@ document.addEventListener('DOMContentLoaded', function () {
     window.cargarDatosCaja = verificarEstadoCaja;
     window.isCajaAbierta = () => cajaEstaAbierta;
 
+    // Polling de 10 segundos para actualizar la caja si la vista está activa y no se está cerrando
+    setInterval(() => {
+        const modalResumen = document.getElementById('modal-resumen-cierre');
+        if (modalResumen && modalResumen.style.display === 'flex') return;
+        
+        const sectionCaja = document.getElementById('caja-section');
+        if (sectionCaja && sectionCaja.style.display !== 'none') {
+            verificarEstadoCaja(true);
+        }
+    }, 10000);
+
     // ==========================================
     // SUBSECCIONES: Operaciones / Historial
     // ==========================================
@@ -964,7 +988,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let historialLoaded = false;
     let todasLasSesiones = [];
 
-    window.showCajaSubsection = function(subsectionId) {
+    window.showCajaSubsection = function (subsectionId) {
         if (subsectionId === 'caja-operaciones') {
             if (cajaOperacionesContainer) cajaOperacionesContainer.style.display = 'block';
             if (cajaHistorialContainer) cajaHistorialContainer.style.display = 'none';
@@ -987,7 +1011,7 @@ document.addEventListener('DOMContentLoaded', function () {
     function fmtFecha(fechaStr) {
         if (!fechaStr) return '-';
         const d = new Date(fechaStr);
-        return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+        return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
 
     function renderHistorialRows(sesiones, offset) {
@@ -1017,7 +1041,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // Separate Apertura and Cierre
             let aperturaText = fmtFecha(sesion.fechaApertura);
-            let cierreText = sesion.fechaCierre 
+            let cierreText = sesion.fechaCierre
                 ? fmtFecha(sesion.fechaCierre)
                 : `<span style="font-size: 11px; color: #64748b;">En curso</span>`;
 
@@ -1091,10 +1115,10 @@ document.addEventListener('DOMContentLoaded', function () {
             if (fechaDesde) params.append('fechaDesde', fechaDesde + 'T00:00:00');
             if (fechaHasta) params.append('fechaHasta', fechaHasta + 'T23:59:59');
             if (estado) params.append('estado', estado);
-            
+
             // FILTRO ESTRICTO POR USUARIO ACTUAL
             if (usuarioIdActual) params.append('operadorId', usuarioIdActual);
-            
+
             if (soloDiferencias) params.append('soloDiferencias', 'true');
 
             const response = await fetch(`/api/caja/historial?${params}`);
@@ -1197,4 +1221,20 @@ document.addEventListener('DOMContentLoaded', function () {
             if (historialCurrentPage + 1 < historialTotalPages) filtrarYRenderHistorial(historialCurrentPage + 1);
         });
     }
+
+    // ==========================================
+    // ESCUCHA EVENTOS DE VENTAS Y COMPRAS PARA ACTUALIZAR CAJA
+    // ==========================================
+    document.addEventListener('ventaRegistrada', function () {
+        if (typeof verificarEstadoCaja === 'function') {
+            verificarEstadoCaja();
+        }
+    });
+
+    document.addEventListener('comprasActualizadas', function () {
+        if (typeof verificarEstadoCaja === 'function') {
+            verificarEstadoCaja();
+        }
+    });
+
 });

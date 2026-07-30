@@ -46,10 +46,8 @@ public class CobroService {
         cobro.setUsuario(usuario);
 
         // Asignar sesión de caja si existe una abierta
-        if (usuario != null) {
-            sesionCajaRepository.findByUsuarioIdUsuarioAndEstado(usuario.getIdUsuario(), "ABIERTA")
-                    .ifPresent(cobro::setSesionCaja);
-        }
+        sesionCajaRepository.findFirstByEstado("ABIERTA")
+                .ifPresent(cobro::setSesionCaja);
 
         return cobroRepository.save(cobro);
     }

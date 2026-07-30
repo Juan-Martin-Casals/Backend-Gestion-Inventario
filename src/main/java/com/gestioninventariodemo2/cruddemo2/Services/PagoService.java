@@ -43,10 +43,8 @@ public class PagoService {
         pago.setFechaVencimiento(fechaVencimiento);
         pago.setUsuario(usuario);
 
-        if (usuario != null) {
-            sesionCajaRepository.findByUsuarioIdUsuarioAndEstado(usuario.getIdUsuario(), "ABIERTA")
-                    .ifPresent(pago::setSesionCaja);
-        }
+        sesionCajaRepository.findFirstByEstado("ABIERTA")
+                .ifPresent(pago::setSesionCaja);
 
         return pagoRepository.save(pago);
     }
@@ -63,10 +61,8 @@ public class PagoService {
         pago.setFechaVencimiento(null);
         pago.setUsuario(usuario);
         
-        if (usuario != null) {
-            sesionCajaRepository.findByUsuarioIdUsuarioAndEstado(usuario.getIdUsuario(), "ABIERTA")
-                    .ifPresent(pago::setSesionCaja);
-        }
+        sesionCajaRepository.findFirstByEstado("ABIERTA")
+                .ifPresent(pago::setSesionCaja);
 
         return pagoRepository.save(pago);
     }

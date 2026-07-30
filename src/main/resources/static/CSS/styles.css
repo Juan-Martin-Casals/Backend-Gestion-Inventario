@@ -4692,3 +4692,397 @@ textarea.auto-expand {
     box-sizing: border-box;
     line-height: 1.5;
 }
+
+/* ==========================================================================
+   FLOATING ACTION BAR FOR STOCK OC
+   ========================================================================== */
+.floating-action-bar {
+    position: fixed;
+    bottom: 24px;
+    left: 55%;
+    transform: translateX(-50%) translateY(120px);
+    background: #0f172a;
+    color: white;
+    padding: 14px 28px;
+    border-radius: 50px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    z-index: 1000;
+    transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s;
+    opacity: 0;
+    display: flex;
+    align-items: center;
+}
+
+.floating-action-bar.visible {
+    transform: translateX(-50%) translateY(0);
+    opacity: 1;
+}
+
+.action-bar-content {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    font-size: 14.5px;
+    font-weight: 500;
+}
+
+.action-bar-separator {
+    color: #475569;
+}
+
+#stock-oc-selected-provider {
+    color: #94a3b8;
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ==========================================================================
+   SLIDE-OVER PANEL FOR OC
+   ========================================================================== */
+
+
+.form-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+/* Botón Toggle de Orden de Compra en Inventario */
+.oc-checkbox-col {
+    width: 150px;
+    text-align: center !important;
+}
+
+.btn-oc-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    border: 1px solid transparent;
+    white-space: nowrap;
+}
+
+.btn-oc-toggle.btn-oc-inactive {
+    background-color: #f1f5f9;
+    color: #475569;
+    border-color: #cbd5e1;
+}
+
+.btn-oc-toggle.btn-oc-inactive:hover {
+    background-color: #e2e8f0;
+    color: #1e293b;
+    border-color: #94a3b8;
+}
+
+.btn-oc-toggle.btn-oc-active {
+    background-color: #10b981;
+    color: white;
+    border-color: #10b981;
+    box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+.btn-oc-toggle.btn-oc-active:hover {
+    background-color: #059669;
+    border-color: #059669;
+}
+
+.btn-oc-toggle:disabled {
+    background-color: #f8fafc;
+    color: #cbd5e1;
+    border-color: #e2e8f0;
+    cursor: not-allowed;
+    box-shadow: none;
+    opacity: 0.6;
+}
+
+/* Selected Items in Slideover Form */
+.oc-productos-selected-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 20px;
+}
+
+.oc-productos-selected-card h5 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: #475569;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.data-table.compact th,
+.data-table.compact td {
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+/* Cost Summary */
+.oc-summary-card {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    padding: 16px;
+    margin-top: 16px;
+}
+
+.oc-summary-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    border-top: 1px dashed #cbd5e1;
+    padding-top: 12px;
+}
+
+.summary-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13.5px;
+    color: #475569;
+}
+
+.summary-line.total-line {
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f172a;
+    border-top: 1px solid #cbd5e1;
+    padding-top: 8px;
+    margin-top: 4px;
+}
+
+/* Rediseño Modal Formato Factura / Documento de Orden de Compra */
+#oc-modal-overlay .modal-content.modal-large {
+    max-width: 1200px;
+    width: 95%;
+    height: 94vh;
+    padding: 24px;
+    border-radius: 16px;
+    overflow: visible; /* Cambiado a visible para que la cruz flotante no sea recortada */
+    position: relative; /* Base de anclaje para posicionamiento absoluto */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+#oc-modal-overlay .modal-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+#oc-modal-overlay #orden-compra-form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Contenedor general del formulario en formato factura - Split Layout */
+#oc-modal-overlay .oc-invoice-container {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Cabecera horizontal del documento */
+#oc-modal-overlay .oc-invoice-header-block {
+    display: grid;
+    grid-template-columns: 1.4fr 0.9fr 0.9fr 1fr;
+    gap: 20px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    padding: 16px 20px;
+    border-radius: 12px;
+}
+
+/* Cuerpo dividido: Tabla de productos a la izquierda, formulario y totales a la derecha */
+#oc-modal-overlay .oc-invoice-split-body {
+    display: grid;
+    grid-template-columns: 1.25fr 0.75fr;
+    gap: 24px;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Columna Izquierda: Tabla */
+#oc-modal-overlay .oc-invoice-table-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0; /* Muro de contención para evitar que la tabla ensanche la columna */
+}
+
+/* Columna Derecha: Dirección, Observaciones y Totales (SIN SCROLL!) */
+#oc-modal-overlay .oc-invoice-details-column {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    min-height: 0;
+    min-width: 0; /* Evita ensanchamiento por inputs */
+}
+
+#oc-modal-overlay .oc-productos-selected-card {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+/* Tarjeta para Dirección y Observaciones */
+#oc-modal-overlay .oc-delivery-info-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px; /* Espacio incrementado para alojar mensajes de error absolutos */
+}
+
+/* Estilos de tabla fija para evitar desbordes */
+#oc-modal-overlay .data-table.compact {
+    table-layout: fixed;
+    width: 100%;
+}
+
+#oc-modal-overlay .data-table.compact td {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
+}
+
+/* Evitar el salto de contenido por mensajes de error en el modal */
+#oc-modal-overlay .form-group {
+    position: relative;
+}
+
+#oc-modal-overlay .error-message {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    font-size: 11px;
+    margin-top: 2px;
+    z-index: 5;
+    background: transparent;
+    line-height: 1.1;
+}
+
+#oc-modal-overlay .qty-stepper .qty-input {
+    width: 55px; /* Reducir ancho para evitar desbordes */
+}
+
+#oc-modal-overlay .data-table td:nth-child(3) {
+    text-align: left;
+    padding-left: 20px; /* Anclar contenedor a la izquierda para que crezca hacia la derecha */
+}
+
+#oc-modal-overlay .input-money .inline-edit-input {
+    width: 110px; /* Más ancho, expandiéndose hacia la derecha */
+    text-align: right !important; /* Forzar alineación a la derecha de las cifras */
+}
+
+/* Tarjeta para Descuento, IVA y totales */
+#oc-modal-overlay .oc-summary-card {
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 16px;
+}
+
+#oc-modal-overlay textarea.auto-expand {
+    min-height: 55px;
+    max-height: 80px;
+    font-size: 13.5px;
+    padding: 10px 12px;
+}
+
+#oc-modal-overlay .table-responsive {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    background: #ffffff;
+}
+
+/* Custom slim scrollbar for table container */
+#oc-modal-overlay .table-responsive::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+#oc-modal-overlay .table-responsive::-webkit-scrollbar-track {
+    background: transparent;
+}
+#oc-modal-overlay .table-responsive::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 10px;
+}
+#oc-modal-overlay .table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
+
+/* Sticky header for the table inside the modal */
+#oc-modal-overlay .data-table.compact th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #f1f5f9;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    color: #475569;
+    font-weight: 600;
+}
+
+/* Footer global del formulario de Orden de Compra */
+#oc-modal-overlay .oc-modal-form-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #e2e8f0;
+    margin-top: 16px;
+    background: transparent;
+}
+
+/* Responsividad para pantallas medianas (notebooks chicas o tablets) */
+@media (max-width: 992px) {
+    #oc-modal-overlay .oc-invoice-container {
+        overflow-y: auto;
+    }
+
+    #oc-modal-overlay .oc-invoice-header-block {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    #oc-modal-overlay .oc-invoice-split-body {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    #oc-modal-overlay .oc-invoice-table-column {
+        min-height: 280px;
+    }
+    
+    #oc-modal-overlay .modal-content.modal-large {
+        max-width: 800px;
+        height: 95vh;
+        max-height: 95vh;
+        padding: 20px;
+    }
+}

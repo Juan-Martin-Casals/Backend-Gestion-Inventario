@@ -16,11 +16,39 @@ const formatterOC = new Intl.NumberFormat('en-US', { style: 'currency', currency
 // INICIALIZACIÓN
 // ===============================================
 document.addEventListener('DOMContentLoaded', () => {
-    initBuscadorProveedorOC();
-    initBuscadorProductoOC();
     initResumenOC();
     
-    document.getElementById('btn-guardar-orden').addEventListener('click', guardarYGenerarOrdenCompra);
+    const btnGuardar = document.getElementById('btn-guardar-orden');
+    if (btnGuardar) {
+        btnGuardar.addEventListener('click', guardarYGenerarOrdenCompra);
+    }
+
+    const btnOpenOC = document.getElementById('btn-open-oc-panel');
+    if (btnOpenOC) {
+        btnOpenOC.addEventListener('click', () => {
+            if (window.inicializarOrdenCompraDesdeStock) {
+                window.inicializarOrdenCompraDesdeStock();
+            }
+        });
+    }
+
+    const btnCloseOC = document.getElementById('btn-close-oc-panel');
+    if (btnCloseOC) {
+        btnCloseOC.addEventListener('click', () => {
+            if (window.cerrarOCPanel) {
+                window.cerrarOCPanel();
+            }
+        });
+    }
+
+    const btnCancelarOC = document.getElementById('btn-cancelar-oc');
+    if (btnCancelarOC) {
+        btnCancelarOC.addEventListener('click', () => {
+            if (window.cerrarOCPanel) {
+                window.cerrarOCPanel();
+            }
+        });
+    }
     
     // Cargar proveedores al iniciar
     cargarProveedoresOC();
@@ -38,6 +66,16 @@ document.addEventListener('DOMContentLoaded', () => {
         ocFechaEntrega.addEventListener('change', () => {
             if (window.limpiarErroresInline) window.limpiarErroresInline('oc-fecha-entrega');
             if (window.limpiarErroresInline) window.limpiarErroresInline('oc-fecha-emision');
+        });
+    }
+
+    // Cerrar modal al hacer clic en el overlay
+    const overlay = document.getElementById('oc-modal-overlay');
+    if (overlay) {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                window.cerrarOCPanel();
+            }
         });
     }
 });
@@ -60,236 +98,63 @@ async function cargarProveedoresOC() {
 }
 
 // ===============================================
-// BUSCADOR PROVEEDOR
+// LÓGICA DE APERTURA DESDE STOCK
 // ===============================================
-function initBuscadorProveedorOC() {
-    const searchInput = document.getElementById('oc-proveedor-search');
-    const resultsContainer = document.getElementById('oc-proveedor-results');
-    
-    if(!searchInput) return;
-
-    function renderResultados(query) {
-        const filtered = query.length === 0 
-            ? ocEstado.proveedoresTodos 
-            : ocEstado.proveedoresTodos.filter(p => p.nombre.toLowerCase().includes(query));
-        
-        resultsContainer.innerHTML = '';
-        if (filtered.length > 0) {
-            filtered.forEach((p, index) => {
-                const div = document.createElement('div');
-                div.className = 'product-result-item';
-                div.innerHTML = `<span style="font-weight: 500;">${p.nombre}</span>`;
-                
-                div.addEventListener('mouseover', () => {
-                    Array.from(resultsContainer.children).forEach(c => c.classList.remove('selected'));
-                    div.classList.add('selected');
-                    activeProvIndexOC = index;
-                });
-                
-                div.addEventListener('click', () => {
-                    seleccionarProveedorOC(p);
-                });
-                
-                resultsContainer.appendChild(div);
-            });
-            resultsContainer.style.display = 'block';
-            activeProvIndexOC = -1;
-        } else {
-            resultsContainer.innerHTML = '<div style="padding: 10px 16px; color: #94a3b8; font-size: 13px;">No se encontraron proveedores.</div>';
-            resultsContainer.style.display = 'block';
-            activeProvIndexOC = -1;
-        }
+window.inicializarOrdenCompraDesdeStock = function() {
+    // 1. Asegurar que tenemos los proveedores cargados
+    if (ocEstado.proveedoresTodos.length === 0) {
+        cargarProveedoresOC();
     }
 
-    searchInput.addEventListener('click', () => {
-        if(ocEstado.proveedoresTodos.length === 0) cargarProveedoresOC();
-        renderResultados(searchInput.value.toLowerCase());
-    });
+    // 2. Buscar el proveedor por nombre
+    const provNombre = window.activeProviderForOC;
+    const proveedorObj = ocEstado.proveedoresTodos.find(p => p.nombre === provNombre) || { id: null, nombre: provNombre };
+    ocEstado.proveedor = proveedorObj;
 
-    searchInput.addEventListener('input', (e) => {
-        if (window.checkMaxLength) window.checkMaxLength(searchInput, 70);
-        else if (window.limpiarErroresInline) window.limpiarErroresInline('oc-proveedor-search');
-        renderResultados(e.target.value.toLowerCase());
-    });
+    // Prefilar en el HTML
+    document.getElementById('oc-proveedor-name-display').value = provNombre;
+    document.getElementById('oc-proveedor-id-hidden').value = proveedorObj.id || '';
 
-    searchInput.addEventListener('keydown', (e) => {
-        if (resultsContainer.style.display !== 'block') return;
-        const items = resultsContainer.querySelectorAll('.product-result-item');
-        if (items.length === 0) return;
+    // 3. Copiar las líneas seleccionadas
+    ocEstado.lineas = Object.values(window.selectedProductsDetailsForOC).map(p => ({
+        idProducto: parseInt(p.idProducto),
+        nombre: p.nombre,
+        cantidad: 1,
+        costoUnitario: p.costoUnitario || 0
+    }));
 
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            activeProvIndexOC = (activeProvIndexOC + 1) % items.length;
-            resaltarItemBusquedaOC(items, activeProvIndexOC);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            activeProvIndexOC = (activeProvIndexOC - 1 + items.length) % items.length;
-            resaltarItemBusquedaOC(items, activeProvIndexOC);
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (activeProvIndexOC >= 0 && activeProvIndexOC < items.length) {
-                items[activeProvIndexOC].click();
-            }
-        }
-    });
-
-    document.addEventListener('click', (e) => {
-        if(resultsContainer && e.target !== searchInput && e.target !== resultsContainer) {
-            resultsContainer.style.display = 'none';
-        }
-    });
-}
-
-function resaltarItemBusquedaOC(items, activeIndex) {
-    items.forEach((item, index) => {
-        if (index === activeIndex) {
-            item.classList.add('selected');
-            item.scrollIntoView({ block: 'nearest' });
-        } else {
-            item.classList.remove('selected');
-        }
-    });
-}
-
-async function seleccionarProveedorOC(proveedor) {
-    document.getElementById('oc-proveedor-search').value = proveedor.nombre;
-    document.getElementById('oc-proveedor-id-hidden').value = proveedor.id;
-    document.getElementById('oc-proveedor-results').style.display = 'none';
-    
-    ocEstado.proveedor = proveedor;
-    ocEstado.lineas = [];
+    // 4. Renderizar la tabla y calcular totales
     renderTablaProductosOC();
-    
-    // Habilitar y cargar productos
-    const prodSearch = document.getElementById('oc-producto-search');
-    prodSearch.disabled = false;
-    prodSearch.placeholder = 'Cargando productos del proveedor...';
-    
-    try {
-        const res = await fetch(`/api/productos/por-proveedor/${proveedor.id}`);
-        if(!res.ok) throw new Error('Error al obtener productos');
-        let productos = await res.json();
-        productos.sort((a, b) => (a.stockActual || 0) - (b.stockActual || 0));
-        ocEstado.productosDelProveedor = productos;
-        prodSearch.placeholder = 'Buscar producto por nombre...';
-    } catch (e) {
-        console.error(e);
-        prodSearch.placeholder = 'Error al cargar productos';
-    }
-}
+    setFechaActualOC();
 
-// ===============================================
-// BUSCADOR PRODUCTOS
-// ===============================================
-function initBuscadorProductoOC() {
-    const searchInput = document.getElementById('oc-producto-search');
-    const resultsContainer = document.getElementById('oc-producto-results');
-    
-    if(!searchInput) return;
-
-    function renderResultados(query) {
-        const filtered = query.length === 0 
-            ? ocEstado.productosDelProveedor 
-            : ocEstado.productosDelProveedor.filter(p => p.nombreProducto.toLowerCase().includes(query));
-        
-        resultsContainer.innerHTML = '';
-        if (filtered.length > 0) {
-            filtered.forEach((p, index) => {
-                const stock = p.stockActual || 0;
-                const stockColor = stock > 10 ? '#28a745' : stock > 0 ? '#e67e22' : '#dc3545';
-                
-                const div = document.createElement('div');
-                div.className = 'product-result-item prod-result-rich';
-                div.innerHTML = `
-                    <div class="prod-info-left">
-                        <div class="prod-nombre">${p.nombreProducto}</div>
-                        <div class="prod-stock" style="color:${stockColor}">Stock: ${stock}</div>
-                    </div>
-                    <div class="prod-info-right">
-                        <div class="prod-costo">Costo: ${formatterOC.format(p.ultimoCosto || 0)}</div>
-                    </div>
-                `;
-                
-                div.addEventListener('mouseover', () => {
-                    Array.from(resultsContainer.children).forEach(c => c.classList.remove('selected'));
-                    div.classList.add('selected');
-                    activeProdIndexOC = index;
-                });
-                
-                div.addEventListener('click', () => {
-                    seleccionarProductoOC(p);
-                });
-                
-                resultsContainer.appendChild(div);
-            });
-            resultsContainer.style.display = 'block';
-            activeProdIndexOC = -1;
-        } else {
-            resultsContainer.innerHTML = '<div style="padding: 10px 16px; color: #94a3b8; font-size: 13px;">No se encontraron productos.</div>';
-            resultsContainer.style.display = 'block';
-            activeProdIndexOC = -1;
-        }
-    }
-
-    searchInput.addEventListener('click', () => {
-        if(!ocEstado.proveedor) return;
-        renderResultados(searchInput.value.toLowerCase());
-    });
-
-    searchInput.addEventListener('input', (e) => {
-        if(!ocEstado.proveedor) return;
-        if (window.checkMaxLength) window.checkMaxLength(searchInput, 70);
-        else if (window.limpiarErroresInline) window.limpiarErroresInline('oc-producto-search');
-        renderResultados(e.target.value.toLowerCase());
-    });
-
-    searchInput.addEventListener('keydown', (e) => {
-        if (resultsContainer.style.display !== 'block') return;
-        const items = resultsContainer.querySelectorAll('.product-result-item');
-        if (items.length === 0) return;
-
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            activeProdIndexOC = (activeProdIndexOC + 1) % items.length;
-            resaltarItemBusquedaOC(items, activeProdIndexOC);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            activeProdIndexOC = (activeProdIndexOC - 1 + items.length) % items.length;
-            resaltarItemBusquedaOC(items, activeProdIndexOC);
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (activeProdIndexOC >= 0 && activeProdIndexOC < items.length) {
-                items[activeProdIndexOC].click();
+    // 5. Mostrar el modal
+    const panel = document.getElementById('oc-modal-overlay');
+    if (panel) {
+        panel.style.display = 'flex';
+        // Cerrar con tecla ESC
+        const escHandler = (e) => {
+            if (e.key === 'Escape') {
+                window.cerrarOCPanel();
             }
-        }
-    });
-
-    document.addEventListener('click', (e) => {
-        if(resultsContainer && e.target !== searchInput && e.target !== resultsContainer) {
-            resultsContainer.style.display = 'none';
-        }
-    });
-}
-
-function seleccionarProductoOC(p) {
-    const searchInput = document.getElementById('oc-producto-search');
-    searchInput.value = '';
-    document.getElementById('oc-producto-results').style.display = 'none';
-    
-    // Verificar si ya existe en la tabla
-    const existente = ocEstado.lineas.find(l => l.idProducto === p.idProducto);
-    if (existente) {
-        existente.cantidad += 1;
-    } else {
-        ocEstado.lineas.push({
-            idProducto: p.idProducto,
-            nombre: p.nombreProducto,
-            cantidad: 1,
-            costoUnitario: p.ultimoCosto || 0
-        });
+        };
+        document.addEventListener('keydown', escHandler);
+        panel._escHandler = escHandler;
     }
-    renderTablaProductosOC();
-}
+};
+
+window.cerrarOCPanel = function() {
+    const panel = document.getElementById('oc-modal-overlay');
+    if (panel) {
+        panel.style.display = 'none';
+        if (panel._escHandler) {
+            document.removeEventListener('keydown', panel._escHandler);
+            delete panel._escHandler;
+        }
+    }
+    if (window.limpiarTodosErroresInline) {
+        window.limpiarTodosErroresInline('oc-');
+    }
+};
 
 // ===============================================
 // TABLA Y RESUMEN
@@ -356,8 +221,28 @@ window.actualizarLineaOC = function(index, campo, valor) {
 }
 
 window.eliminarLineaOC = function(index) {
+    const line = ocEstado.lineas[index];
+    if (line) {
+        const idStr = line.idProducto.toString();
+        if (window.selectedProductsForOC) window.selectedProductsForOC.delete(idStr);
+        if (window.selectedProductsDetailsForOC) delete window.selectedProductsDetailsForOC[idStr];
+        
+        // If no products left, reset active provider
+        if (window.selectedProductsForOC && window.selectedProductsForOC.size === 0) {
+            window.activeProviderForOC = null;
+        }
+    }
     ocEstado.lineas.splice(index, 1);
     renderTablaProductosOC();
+    
+    // Update checkboxes state and action bar in case the stock table is still visible
+    if (window.updateOCCheckboxesState) window.updateOCCheckboxesState();
+    if (window.updateOCActionBar) window.updateOCActionBar();
+    
+    // If no lines left, close panel
+    if (ocEstado.lineas.length === 0) {
+        window.cerrarOCPanel();
+    }
 }
 
 function initResumenOC() {
@@ -731,19 +616,20 @@ window.limpiarFormularioOrdenCompra = function() {
     
     document.getElementById('orden-compra-form').reset();
     
-    // Resetear altura de textareas auto-expandibles
-    const textareas = document.querySelectorAll('.auto-expand');
-    textareas.forEach(ta => ta.style.height = '45px');
+    // Clear selection
+    if (window.clearOCSelection) {
+        window.clearOCSelection();
+    }
     
-    // El reset del formulario limpia los inputs de texto y fecha automáticamente.
-    
-    document.getElementById('oc-proveedor-search').value = '';
-    document.getElementById('oc-proveedor-id-hidden').value = '';
-    
-    const prodSearch = document.getElementById('oc-producto-search');
-    prodSearch.value = '';
-    prodSearch.disabled = true;
-    prodSearch.placeholder = 'Primero seleccione un proveedor...';
+    // Close modal
+    const panel = document.getElementById('oc-modal-overlay');
+    if (panel) {
+        panel.style.display = 'none';
+        if (panel._escHandler) {
+            document.removeEventListener('keydown', panel._escHandler);
+            delete panel._escHandler;
+        }
+    }
     
     renderTablaProductosOC();
     setFechaActualOC();

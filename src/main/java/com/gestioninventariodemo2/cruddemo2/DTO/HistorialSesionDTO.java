@@ -14,6 +14,9 @@ import java.time.LocalDateTime;
 public class HistorialSesionDTO {
     private Long idSesion;
     private String operador;
+    private String rolOperador;
+    private String operadorCierre;
+    private String rolCierre;
     private LocalDateTime fechaApertura;
     private LocalDateTime fechaCierre;
     private Double montoInicial;

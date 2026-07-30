@@ -24,6 +24,10 @@ public class SesionCaja {
     @JoinColumn(name = "id_usuario", nullable = false)
     private Usuario usuario;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario_cierre")
+    private Usuario usuarioCierre;
+
     @Column(nullable = false)
     private LocalDateTime fechaApertura;
 

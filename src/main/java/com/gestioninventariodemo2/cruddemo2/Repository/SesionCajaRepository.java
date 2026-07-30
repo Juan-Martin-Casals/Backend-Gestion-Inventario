@@ -17,6 +17,7 @@ import java.util.Optional;
 public interface SesionCajaRepository extends JpaRepository<SesionCaja, Long> {
 
     Optional<SesionCaja> findByUsuarioIdUsuarioAndEstado(Long idUsuario, String estado);
+    Optional<SesionCaja> findFirstByEstado(String estado);
     Optional<SesionCaja> findFirstByEstadoOrderByFechaCierreDesc(String estado);
     List<SesionCaja> findAllByEstado(String estado);
     Page<SesionCaja> findAllByOrderByFechaAperturaDesc(Pageable pageable);
