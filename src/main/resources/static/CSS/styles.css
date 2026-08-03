@@ -5086,3 +5086,90 @@ textarea.auto-expand {
         padding: 20px;
     }
 }
+
+/* Modo compacto por altura para notebooks y pantallas chicas (sin scroll) */
+@media (max-height: 850px) {
+    #oc-modal-overlay .modal-content.modal-large {
+        padding: 16px;
+        height: 96vh;
+        max-height: 96vh;
+    }
+
+    #oc-modal-overlay .modal-header {
+        margin-bottom: 8px;
+    }
+
+    #oc-modal-overlay .modal-header h3 {
+        font-size: 1.1rem;
+    }
+
+    #oc-modal-overlay .oc-invoice-container {
+        gap: 12px;
+    }
+
+    #oc-modal-overlay .oc-invoice-header-block {
+        padding: 10px 14px;
+        gap: 12px;
+    }
+
+    #oc-modal-overlay .oc-invoice-split-body {
+        gap: 14px;
+    }
+
+    #oc-modal-overlay .oc-delivery-info-card {
+        padding: 10px 12px;
+        gap: 8px;
+    }
+
+    #oc-modal-overlay .oc-delivery-info-card .form-group label {
+        margin-bottom: 4px;
+        font-size: 12px;
+    }
+
+    #oc-modal-overlay textarea.auto-expand {
+        min-height: 38px;
+        max-height: 55px;
+        padding: 6px 10px;
+        font-size: 12.5px;
+    }
+
+    #oc-modal-overlay .oc-summary-card {
+        padding: 10px 12px;
+        margin-top: 0;
+    }
+
+    #oc-modal-overlay .oc-summary-card .form-row-2 {
+        margin-bottom: 6px;
+        gap: 10px;
+    }
+
+    #oc-modal-overlay .oc-summary-rows {
+        gap: 4px;
+        margin-top: 6px;
+        padding-top: 6px;
+    }
+
+    #oc-modal-overlay .summary-line {
+        font-size: 12.5px;
+    }
+
+    #oc-modal-overlay .summary-line.total-line {
+        font-size: 14.5px;
+        margin-top: 2px;
+        padding-top: 4px;
+    }
+
+    #oc-modal-overlay .oc-modal-form-footer {
+        padding-top: 10px;
+        margin-top: 10px;
+    }
+
+    #oc-modal-overlay .oc-productos-selected-card {
+        padding: 10px 12px;
+    }
+
+    #oc-modal-overlay .oc-productos-selected-card h5 {
+        margin-bottom: 8px;
+        font-size: 12.5px;
+    }
+}
