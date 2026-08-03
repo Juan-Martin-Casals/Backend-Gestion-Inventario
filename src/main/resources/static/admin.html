@@ -1360,16 +1360,18 @@
                                                 <div class="oc-invoice-details-column">
                                                     <!-- Datos de entrega -->
                                                     <div class="oc-delivery-info-card">
-                                                        <div class="form-group">
-                                                            <label for="oc-direccion-entrega">Dirección de Entrega</label>
-                                                            <textarea id="oc-direccion-entrega" class="auto-expand" placeholder="Lugar de entrega" maxlength="100" rows="2" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 100); this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';" style="resize: none;"></textarea>
-                                                            <div class="error-message" id="error-oc-direccion-entrega"></div>
-                                                        </div>
-                                                        
-                                                        <div class="form-group" style="margin-bottom: 0;">
-                                                            <label for="oc-observaciones">Observaciones (Opcional)</label>
-                                                            <textarea id="oc-observaciones" class="auto-expand" placeholder="Notas adicionales" maxlength="200" rows="2" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 200); this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';" style="resize: none;"></textarea>
-                                                            <div class="error-message" id="error-oc-observaciones"></div>
+                                                        <div class="form-row-2" style="margin-bottom: 0;">
+                                                            <div class="form-group" style="margin-bottom: 0;">
+                                                                <label for="oc-direccion-entrega">Dirección de Entrega</label>
+                                                                <input type="text" id="oc-direccion-entrega" placeholder="Lugar de entrega" maxlength="100" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 100);" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; background: white;">
+                                                                <div class="error-message" id="error-oc-direccion-entrega"></div>
+                                                            </div>
+                                                            
+                                                            <div class="form-group" style="margin-bottom: 0;">
+                                                                <label for="oc-observaciones">Observaciones (Opcional)</label>
+                                                                <input type="text" id="oc-observaciones" placeholder="Notas adicionales" maxlength="200" oninput="if(window.checkMaxLength) window.checkMaxLength(this, 200);" style="width: 100%; padding: 8px 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13.5px; background: white;">
+                                                                <div class="error-message" id="error-oc-observaciones"></div>
+                                                            </div>
                                                         </div>
                                                     </div>
 

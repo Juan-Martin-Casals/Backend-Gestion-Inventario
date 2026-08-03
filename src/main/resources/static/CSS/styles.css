@@ -5087,12 +5087,24 @@ textarea.auto-expand {
     }
 }
 
-/* Modo compacto por altura para notebooks y pantallas chicas (sin scroll) */
+/* Optimización responsive para el modal de Orden de Compra (compatible con 100% zoom) */
+#oc-modal-overlay .modal-content.modal-large {
+    max-height: 94vh;
+}
+
+#oc-modal-overlay .oc-delivery-info-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
 @media (max-height: 850px) {
     #oc-modal-overlay .modal-content.modal-large {
-        padding: 16px;
-        height: 96vh;
-        max-height: 96vh;
+        padding: 16px 20px;
     }
 
     #oc-modal-overlay .modal-header {
@@ -5112,35 +5124,42 @@ textarea.auto-expand {
         gap: 12px;
     }
 
+    #oc-modal-overlay .oc-invoice-header-block .form-group label {
+        font-size: 12px;
+        margin-bottom: 3px;
+    }
+
+    #oc-modal-overlay .oc-invoice-header-block .form-group input {
+        padding: 8px 12px;
+        font-size: 13px;
+    }
+
     #oc-modal-overlay .oc-invoice-split-body {
         gap: 14px;
     }
 
     #oc-modal-overlay .oc-delivery-info-card {
-        padding: 10px 12px;
+        padding: 10px 14px;
         gap: 8px;
     }
 
-    #oc-modal-overlay .oc-delivery-info-card .form-group label {
-        margin-bottom: 4px;
+    #oc-modal-overlay .oc-delivery-info-card label {
         font-size: 12px;
-    }
-
-    #oc-modal-overlay textarea.auto-expand {
-        min-height: 38px;
-        max-height: 55px;
-        padding: 6px 10px;
-        font-size: 12.5px;
+        margin-bottom: 3px;
     }
 
     #oc-modal-overlay .oc-summary-card {
-        padding: 10px 12px;
-        margin-top: 0;
+        padding: 12px 14px;
     }
 
     #oc-modal-overlay .oc-summary-card .form-row-2 {
         margin-bottom: 6px;
         gap: 10px;
+    }
+
+    #oc-modal-overlay .oc-summary-card label {
+        font-size: 12px;
+        margin-bottom: 3px;
     }
 
     #oc-modal-overlay .oc-summary-rows {
@@ -5154,22 +5173,13 @@ textarea.auto-expand {
     }
 
     #oc-modal-overlay .summary-line.total-line {
-        font-size: 14.5px;
+        font-size: 15px;
         margin-top: 2px;
-        padding-top: 4px;
+        padding-top: 6px;
     }
 
     #oc-modal-overlay .oc-modal-form-footer {
         padding-top: 10px;
         margin-top: 10px;
-    }
-
-    #oc-modal-overlay .oc-productos-selected-card {
-        padding: 10px 12px;
-    }
-
-    #oc-modal-overlay .oc-productos-selected-card h5 {
-        margin-bottom: 8px;
-        font-size: 12.5px;
     }
 }
