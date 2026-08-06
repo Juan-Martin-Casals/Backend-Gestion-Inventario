@@ -1176,30 +1176,8 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         const totalFinal = totalBase - descuentoMonto;
 
-        // Auto-registro de cobro pendiente en inputs
-        const cobroMetodoVal = cobroMetodoSelect?.value;
-        if (cobroMetodoVal) {
-            const added = intentarAgregarCobroAutomatico(totalFinal);
-            if (!added) {
-                isValid = false;
-            }
-        }
-
-        if (!isValid) return;
-
-        // Validar cobros
-        if (cobrosMixtos.length === 0) {
-            window.mostrarErrorInline('venta-cobro-metodo', 'Debe agregar al menos un cobro.');
-            isValid = false;
-        } else {
-            const sumaCobros = cobrosMixtos.reduce((acc, c) => acc + parseFloat(c.importe), 0);
-            if (Math.abs(sumaCobros - totalFinal) > 0.05) {
-                window.mostrarErrorInline('venta-cobro-monto', `Los cobros no cubren el total.`);
-                isValid = false;
-            }
-        }
-
-        const totalFinalCalc = totalFinal; // alias para el DTO
+        // En el flujo de Empleado, el cobro se realiza en caja. Solo enviamos el método sugerido.
+        const idMetodoPago = cobroMetodoSelect?.value ? parseInt(cobroMetodoSelect.value) : null;
 
         // Validar que el total no sea <= 0
         if (totalFinal <= 0) {
@@ -1213,7 +1191,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        showConfirmationModal("¿Estás seguro de que deseas registrar esta venta?", async () => {
+        showConfirmationModal("¿Estás seguro de que deseas enviar esta venta a caja?", async () => {
 
             try {
                 const detallesParaBackend = detallesVenta.map(item => {
@@ -1227,13 +1205,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     fecha: fechaVenta,
                     idCliente: parseInt(idCliente),
                     detalles: detallesParaBackend,
-                    cobros: cobrosMixtos.map(c => ({
-                        idMetodoPago: c.idMetodoPago,
-                        importe: c.importe,
-                        tipoTarjeta: c.tipoTarjeta || null,
-                        montoPagado: c.montoPagado || null,
-                        vuelto: c.vuelto || null
-                    })),
+                    cobros: null, // No cobros aún
+                    idMetodoPago: idMetodoPago, // Método de pago sugerido
                     descuento: descuento,
                     tipoDescuento: tipoDescuento
                 };

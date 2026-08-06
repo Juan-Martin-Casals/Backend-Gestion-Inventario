@@ -45,13 +45,13 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
             @Param("inicio") LocalDateTime inicio,
             @Param("fin") LocalDateTime fin);
 
-    @Query("SELECT COUNT(v) FROM Venta v WHERE v.fecha BETWEEN :inicio AND :fin")
+    @Query("SELECT COUNT(v) FROM Venta v WHERE v.fecha BETWEEN :inicio AND :fin AND (v.estado IS NULL OR v.estado = 'COBRADA')")
     Long countVentasEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
-    @Query("SELECT SUM(dv.cantidad) FROM DetalleVenta dv JOIN dv.venta v WHERE v.fecha BETWEEN :inicio AND :fin")
+    @Query("SELECT SUM(dv.cantidad) FROM DetalleVenta dv JOIN dv.venta v WHERE v.fecha BETWEEN :inicio AND :fin AND (v.estado IS NULL OR v.estado = 'COBRADA')")
     Long sumProductosEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
-    @Query("SELECT SUM(v.total) FROM Venta v WHERE v.fecha BETWEEN :inicio AND :fin")
+    @Query("SELECT SUM(v.total) FROM Venta v WHERE v.fecha BETWEEN :inicio AND :fin AND (v.estado IS NULL OR v.estado = 'COBRADA')")
     Double sumRecaudacionEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
     @Query("""
@@ -86,7 +86,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
     // NUEVAS QUERIES PARA DASHBOARD DE INFORMES
     // ==========================================================
 
-    @Query("SELECT SUM(v.total) FROM Venta v WHERE v.fecha BETWEEN :inicio AND :fin")
+    @Query("SELECT SUM(v.total) FROM Venta v WHERE v.fecha BETWEEN :inicio AND :fin AND (v.estado IS NULL OR v.estado = 'COBRADA')")
     Double sumTotalVentasEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
     @Query(value = """
@@ -164,4 +164,6 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
             @Param("inicio") LocalDateTime inicio,
             @Param("fin") LocalDateTime fin,
             @Param("limit") Integer limit);
+
+    List<Venta> findByEstadoOrderByFechaDesc(String estado);
 }

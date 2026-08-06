@@ -1288,4 +1288,464 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
 
+    // ==========================================
+    // LÓGICA DE COBRANZA DE VENTAS (POS) - PREMIUM
+    // ==========================================
+    let ventaSeleccionada = null;
+    let metodosPagoList = [];
+
+    // Cargar métodos de pago activos en el selector del POS
+    async function loadMetodosPagoActivos() {
+        const select = document.getElementById('pos-metodo-pago');
+        if (!select) return;
+        try {
+            const res = await fetch('/api/metodos-pago/activos');
+            if (!res.ok) throw new Error('Error al cargar métodos de pago');
+            metodosPagoList = await res.json();
+            
+            select.innerHTML = '<option value="">Seleccionar método</option>';
+            metodosPagoList.forEach(m => {
+                if (!m.nombre.toLowerCase().includes('caja') && !m.nombre.toLowerCase().includes('aporte externo')) {
+                    const opt = document.createElement('option');
+                    opt.value = m.idMetodoPago;
+                    opt.textContent = m.nombre;
+                    opt.dataset.nombre = m.nombre.toLowerCase();
+                    select.appendChild(opt);
+                }
+            });
+        } catch (e) {
+            console.error('Error cargando métodos de pago:', e);
+        }
+    }
+
+    // Cargar ventas pendientes desde el backend
+    async function loadVentasPendientes() {
+        const lista = document.getElementById('cajero-lista-pendientes');
+        const countBadge = document.getElementById('cajero-pendientes-count');
+        const container = document.getElementById('cajero-ventas-container');
+        if (!lista) return;
+
+        // Verificar si la caja está abierta
+        const overlayExistente = document.getElementById('pos-caja-cerrada-overlay');
+        if (!cajaEstaAbierta) {
+            if (container && !overlayExistente) {
+                const overlay = document.createElement('div');
+                overlay.id = 'pos-caja-cerrada-overlay';
+                overlay.style.cssText = 'position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); background-color: rgba(255, 255, 255, 0.4); display: flex; align-items: center; justify-content: center; border-radius: 16px;';
+                overlay.innerHTML = `
+                    <div style="background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center; max-width: 450px; border: 1px solid rgba(0,0,0,0.05);">
+                        <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px; box-shadow: 0 10px 20px rgba(239, 68, 68, 0.3);">
+                            <i class="fas fa-lock" style="font-size: 32px; color: white;"></i>
+                        </div>
+                        <h3 style="margin: 0 0 12px; font-size: 22px; font-weight: 800; color: #1e293b;">Caja Cerrada</h3>
+                        <p style="margin: 0; color: #64748b; font-size: 14px; line-height: 1.6;">
+                            Debes abrir la caja desde la sección de <strong>Caja</strong> antes de poder cobrar órdenes de venta.
+                        </p>
+                    </div>
+                `;
+                container.appendChild(overlay);
+            }
+            if (countBadge) countBadge.textContent = '0 Órdenes';
+            lista.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px 20px;">Caja cerrada.</div>';
+            return;
+        } else {
+            if (overlayExistente) overlayExistente.remove();
+        }
+
+        try {
+            lista.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px 20px;"><i class="fas fa-spinner fa-spin" style="font-size: 20px; margin-bottom: 8px;"></i><p style="margin: 0; font-size: 13px;">Buscando órdenes...</p></div>';
+            const res = await fetch('/api/ventas/pendientes', { cache: 'no-store' });
+            if (!res.ok) throw new Error('Error al cargar pendientes');
+            const pendientes = await res.json();
+            
+            if (countBadge) countBadge.textContent = `${pendientes.length} Órdenes`;
+
+            if (pendientes.length === 0) {
+                lista.innerHTML = `
+                    <div style="text-align: center; padding: 60px 20px; color: #64748b;">
+                        <div style="width: 48px; height: 48px; background: #e0f2fe; color: #0284c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
+                            <i class="fas fa-check-circle" style="font-size: 20px;"></i>
+                        </div>
+                        <h5 style="margin: 0 0 4px; font-weight: 700; color: #334155;">Cola de espera vacía</h5>
+                        <p style="margin: 0; font-size: 12px;">No hay órdenes pendientes de cobro en este momento.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            lista.innerHTML = '';
+            pendientes.forEach(venta => {
+                const date = new Date(venta.fecha);
+                const timeStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0') + ' hs';
+                
+                const card = document.createElement('div');
+                card.style.cssText = 'background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 8px;';
+                if (ventaSeleccionada && ventaSeleccionada.idVenta === venta.idVenta) {
+                    card.style.borderColor = '#4f46e5';
+                    card.style.backgroundColor = '#f5f3ff';
+                    card.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.05)';
+                }
+
+                card.onmouseover = () => {
+                    if (!ventaSeleccionada || ventaSeleccionada.idVenta !== venta.idVenta) {
+                        card.style.borderColor = '#cbd5e1';
+                        card.style.transform = 'translateY(-1px)';
+                    }
+                };
+                card.onmouseout = () => {
+                    if (!ventaSeleccionada || ventaSeleccionada.idVenta !== venta.idVenta) {
+                        card.style.borderColor = '#e2e8f0';
+                        card.style.transform = 'translateY(0)';
+                    }
+                };
+
+                const metodoSugerido = venta.metodoPago || 'Efectivo';
+                let methodBadgeBg = '#f3f4f6', methodBadgeColor = '#374151';
+                if (metodoSugerido.toLowerCase().includes('efectivo')) {
+                    methodBadgeBg = '#dcfce7'; methodBadgeColor = '#15803d';
+                } else if (metodoSugerido.toLowerCase().includes('tarjeta')) {
+                    methodBadgeBg = '#e0e7ff'; methodBadgeColor = '#4338ca';
+                } else {
+                    methodBadgeBg = '#fffbeb'; methodBadgeColor = '#b45309';
+                }
+
+                card.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>
+                            <strong style="color: #0f172a; font-size: 14px;">Orden #${venta.idVenta}</strong>
+                            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">${timeStr} &bull; Vendedor: ${venta.nombreVendedor || '-'}</div>
+                        </div>
+                        <span style="font-size: 11px; font-weight: 700; background: ${methodBadgeBg}; color: ${methodBadgeColor}; padding: 2px 8px; border-radius: 20px;">${metodoSugerido}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 8px; border-top: 1px dashed #f1f5f9;">
+                        <span style="font-size: 12px; color: #475569;">Cliente: <strong>${venta.nombreCliente || 'N/A'}</strong></span>
+                        <strong style="color: #1e3a8a; font-size: 16px;">${formatter.format(venta.total)}</strong>
+                    </div>
+                `;
+
+                card.addEventListener('click', () => seleccionarVenta(venta));
+                lista.appendChild(card);
+            });
+
+        } catch (e) {
+            console.error('Error cargando ventas pendientes:', e);
+            lista.innerHTML = '<div style="text-align: center; color: #ef4444; padding: 40px 20px;">Error al conectar con la base de datos.</div>';
+        }
+    }
+
+    // Seleccionar una venta de la lista
+    function seleccionarVenta(venta) {
+        ventaSeleccionada = venta;
+        
+        // Cargar datos en el panel POS
+        document.getElementById('pos-orden-id').textContent = `#${venta.idVenta}`;
+        document.getElementById('pos-orden-cliente').textContent = venta.nombreCliente || 'Cliente N/A';
+        document.getElementById('pos-orden-vendedor').textContent = venta.nombreVendedor || '-';
+        document.getElementById('pos-total-display').textContent = formatter.format(venta.total);
+        document.getElementById('pos-sugerido-metodo-text').textContent = venta.metodoPago || 'Efectivo';
+        
+        // Mostrar descuento si aplica
+        const descDiv = document.getElementById('pos-descuento-detalle');
+        const descMonto = document.getElementById('pos-descuento-monto');
+        if (venta.descuentoMonto && venta.descuentoMonto > 0) {
+            descDiv.style.display = 'block';
+            descMonto.textContent = `-${formatter.format(venta.descuentoMonto)}`;
+        } else {
+            descDiv.style.display = 'none';
+        }
+
+        // Renderizar tabla de productos
+        const tbody = document.getElementById('pos-productos-body');
+        if (tbody) {
+            tbody.innerHTML = '';
+            if (venta.productos && venta.productos.length > 0) {
+                venta.productos.forEach(p => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td style="padding: 6px 12px; border-bottom: 1px solid #f1f5f9; font-weight: 500;">${p.nombreProducto || p.nombre || 'Producto'}</td>
+                        <td style="padding: 6px 12px; border-bottom: 1px solid #f1f5f9; text-align: center; font-weight: bold; color: #475569;">${p.cantidad}</td>
+                        <td style="padding: 6px 12px; border-bottom: 1px solid #f1f5f9; text-align: right; color: #475569;">${formatter.format(p.precioUnitario)}</td>
+                        <td style="padding: 6px 12px; border-bottom: 1px solid #f1f5f9; text-align: right; font-weight: 600; color: #1e293b;">${formatter.format(p.precioUnitario * p.cantidad)}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        }
+
+        // Seleccionar método de pago equivalente
+        const selectMetodo = document.getElementById('pos-metodo-pago');
+        if (selectMetodo) {
+            selectMetodo.value = '';
+            for (let i = 0; i < selectMetodo.options.length; i++) {
+                const opt = selectMetodo.options[i];
+                if (opt.text.toLowerCase().includes((venta.metodoPago || 'efectivo').toLowerCase())) {
+                    selectMetodo.value = opt.value;
+                    break;
+                }
+            }
+            // Trigger change event to set visibility of payment details panels
+            selectMetodo.dispatchEvent(new Event('change'));
+        }
+
+        // Resetear campos
+        const inputRecibido = document.getElementById('pos-monto-recibido');
+        if (inputRecibido) inputRecibido.value = '';
+        document.getElementById('pos-error-message').style.display = 'none';
+        
+        // Auto-calcular vuelto inicial
+        actualizarVueltoPOS();
+
+        // Alternar paneles
+        document.getElementById('pos-vacio-state').style.display = 'none';
+        document.getElementById('pos-activo-panel').style.display = 'flex';
+
+        // Re-render list to highlight selected card
+        const countBadge = document.getElementById('cajero-pendientes-count');
+        const lista = document.getElementById('cajero-lista-pendientes');
+        if (lista) {
+            const cards = lista.querySelectorAll('div[style*="cursor: pointer"]');
+            const pendientesText = countBadge ? countBadge.textContent : '';
+            // Just refresh list highlights
+            loadVentasPendientes();
+        }
+    }
+
+    // Resetear POS a vacío
+    function deseleccionarVenta() {
+        ventaSeleccionada = null;
+        document.getElementById('pos-activo-panel').style.display = 'none';
+        document.getElementById('pos-vacio-state').style.display = 'flex';
+        loadVentasPendientes();
+    }
+
+    // Escuchar cambios de método de pago en el POS
+    const selectMetodo = document.getElementById('pos-metodo-pago');
+    if (selectMetodo) {
+        selectMetodo.addEventListener('change', function () {
+            const nombre = this.options[this.selectedIndex]?.text?.toLowerCase() || '';
+            const esEfectivo = nombre.includes('efectivo');
+            const esTarjeta = nombre.includes('tarjeta');
+            
+            document.getElementById('pos-efectivo-panel').style.display = esEfectivo ? 'flex' : 'none';
+            document.getElementById('pos-vuelto-container').style.display = esEfectivo ? 'flex' : 'none';
+            document.getElementById('pos-tarjeta-container').style.display = esTarjeta ? 'block' : 'none';
+            
+            // Auto-calcular vuelto
+            actualizarVueltoPOS();
+        });
+    }
+
+    // Auto-calcular el vuelto del POS
+    function actualizarVueltoPOS() {
+        const inputRecibido = document.getElementById('pos-monto-recibido');
+        const vueltoText = document.getElementById('pos-vuelto-display');
+        const vueltoContainer = document.getElementById('pos-vuelto-container');
+        if (!inputRecibido || !vueltoText || !ventaSeleccionada) return;
+
+        const metodo = selectMetodo ? selectMetodo.options[selectMetodo.selectedIndex]?.text?.toLowerCase() || '' : '';
+        const esEfectivo = metodo.includes('efectivo');
+        if (!esEfectivo) {
+            vueltoContainer.style.display = 'none';
+            return;
+        }
+
+        const montoRecibidoRaw = inputRecibido.value.replace(/\D/g, '');
+        const montoRecibido = parseFloat(montoRecibidoRaw) || 0;
+        const total = ventaSeleccionada.total;
+        const vuelto = montoRecibido - total;
+
+        if (montoRecibido > 0) {
+            vueltoText.textContent = vuelto >= 0 ? formatter.format(vuelto) : 'Monto insuficiente';
+            vueltoText.style.color = vuelto >= 0 ? '#15803d' : '#b91c1c';
+            vueltoContainer.style.background = vuelto >= 0 ? '#ecfdf5' : '#fef2f2';
+            vueltoContainer.style.borderColor = vuelto >= 0 ? '#a7f3d0' : '#fecaca';
+        } else {
+            vueltoText.textContent = '$0';
+            vueltoText.style.color = '#15803d';
+            vueltoContainer.style.background = '#ecfdf5';
+            vueltoContainer.style.borderColor = '#a7f3d0';
+        }
+    }
+
+    // Input change listener for money format
+    const posMontoRecibido = document.getElementById('pos-monto-recibido');
+    if (posMontoRecibido) {
+        posMontoRecibido.addEventListener('input', function () {
+            let raw = this.value.replace(/[^0-9]/g, '');
+            if (raw === '') {
+                this.value = '';
+                actualizarVueltoPOS();
+                return;
+            }
+            this.value = new Intl.NumberFormat('es-AR').format(parseInt(raw, 10));
+            actualizarVueltoPOS();
+        });
+    }
+
+    // Billetes Rápidos del POS
+    document.querySelectorAll('.btn-pos-bill').forEach(btn => {
+        btn.addEventListener('click', function () {
+            const bill = parseInt(this.dataset.amount);
+            const input = document.getElementById('pos-monto-recibido');
+            if (!input) return;
+
+            let currentRaw = input.value.replace(/\D/g, '');
+            let current = parseFloat(currentRaw) || 0;
+            
+            // Sumar el billete
+            let nuevo = current + bill;
+            input.value = new Intl.NumberFormat('es-AR').format(nuevo);
+            actualizarVueltoPOS();
+        });
+    });
+
+    // Botón Pago Exacto
+    const btnPosExacto = document.getElementById('btn-pos-exacto');
+    if (btnPosExacto) {
+        btnPosExacto.addEventListener('click', function () {
+            const input = document.getElementById('pos-monto-recibido');
+            if (!input || !ventaSeleccionada) return;
+
+            input.value = new Intl.NumberFormat('es-AR').format(Math.ceil(ventaSeleccionada.total));
+            actualizarVueltoPOS();
+        });
+    }
+
+    // Botón Descartar (Cancelar checkout de POS)
+    const btnPosDescartar = document.getElementById('btn-pos-descartar');
+    if (btnPosDescartar) {
+        btnPosDescartar.addEventListener('click', deseleccionarVenta);
+    }
+
+    // Botón Registrar Cobro en POS
+    const btnPosCobrar = document.getElementById('btn-pos-cobrar');
+    if (btnPosCobrar) {
+        btnPosCobrar.addEventListener('click', async function () {
+            const errorMsg = document.getElementById('pos-error-message');
+            if (errorMsg) errorMsg.style.display = 'none';
+
+            if (!ventaSeleccionada) return;
+            if (!cajaEstaAbierta) {
+                showErrorPOS('Debe abrir la caja antes de registrar movimientos.');
+                return;
+            }
+
+            const idMetodo = selectMetodo?.value;
+            const nombreMetodo = selectMetodo ? selectMetodo.options[selectMetodo.selectedIndex]?.text || '' : '';
+            if (!idMetodo) {
+                showErrorPOS('Debe seleccionar un método de pago.');
+                return;
+            }
+
+            const esEfectivo = nombreMetodo.toLowerCase().includes('efectivo');
+            const esTarjeta = nombreMetodo.toLowerCase().includes('tarjeta');
+            
+            let tipoTarjeta = null;
+            if (esTarjeta) {
+                tipoTarjeta = document.getElementById('pos-tipo-tarjeta')?.value || null;
+                if (!tipoTarjeta) {
+                    showErrorPOS('Debe seleccionar el tipo de tarjeta (Débito/Crédito).');
+                    return;
+                }
+            }
+
+            let montoPagado = null;
+            let vuelto = null;
+
+            if (esEfectivo) {
+                const input = document.getElementById('pos-monto-recibido');
+                const raw = input ? input.value.replace(/\D/g, '') : '';
+                montoPagado = parseFloat(raw);
+                if (isNaN(montoPagado) || montoPagado <= 0) {
+                    showErrorPOS('Debe ingresar un monto entregado por el cliente.');
+                    return;
+                }
+
+                if (montoPagado < ventaSeleccionada.total - 0.05) {
+                    showErrorPOS(`El monto entregado es insuficiente. Faltan ${formatter.format(ventaSeleccionada.total - montoPagado)}`);
+                    return;
+                }
+
+                vuelto = montoPagado - ventaSeleccionada.total;
+            }
+
+            // Construir el Request Body
+            const cobroRequest = {
+                idMetodoPago: parseInt(idMetodo),
+                tipoTarjeta: tipoTarjeta,
+                montoPagado: montoPagado,
+                vuelto: vuelto
+            };
+
+            btnPosCobrar.disabled = true;
+            btnPosCobrar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando Pago...';
+
+            try {
+                const res = await fetch(`/api/ventas/${ventaSeleccionada.idVenta}/cobrar`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cobroRequest)
+                });
+
+                if (!res.ok) {
+                    const text = await res.text();
+                    let errMsg = `Error ${res.status}`;
+                    try { errMsg = JSON.parse(text).message || text; } catch { errMsg = text; }
+                    throw new Error(errMsg);
+                }
+
+                const ventaCobrada = await res.json();
+                
+                showSuccessBanner('Venta cobrada con éxito. Imprimiendo ticket...');
+                
+                // Descargar el ticket en PDF automáticamente
+                try {
+                    const ticketRes = await fetch(`/api/ventas/${ventaCobrada.idVenta}/ticket`);
+                    if (ticketRes.ok) {
+                        const blob = await ticketRes.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `Ticket_Venta_${ventaCobrada.idVenta}.pdf`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                    }
+                } catch (ticketError) {
+                    console.error('Error al descargar ticket automáticamente:', ticketError);
+                }
+
+                // Notificar al dashboard de caja de forma global
+                document.dispatchEvent(new CustomEvent('ventaRegistrada'));
+
+                // Limpiar estado
+                deseleccionarVenta();
+
+            } catch (err) {
+                console.error('Error al procesar cobro:', err);
+                showErrorPOS(err.message);
+            } finally {
+                btnPosCobrar.disabled = false;
+                btnPosCobrar.innerHTML = '<i class="fas fa-check-circle"></i> Confirmar y Cobrar Venta';
+            }
+        });
+    }
+
+    function showErrorPOS(msg) {
+        const errorMsg = document.getElementById('pos-error-message');
+        if (errorMsg) {
+            errorMsg.textContent = msg;
+            errorMsg.style.display = 'block';
+            errorMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    // Inicializar métodos de pago y ventas pendientes
+    loadMetodosPagoActivos();
+    loadVentasPendientes();
+
+    // Exponer función de recarga global
+    window.loadVentasPendientes = loadVentasPendientes;
+
 });

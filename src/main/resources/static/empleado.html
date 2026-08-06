@@ -1093,86 +1093,43 @@
                                             <h5 style="font-size: 1rem; color: #334155; margin-bottom: 12px;"><i
                                                     class="fas fa-cash-register"></i> Cobro</h5>
 
-                                            <!-- 3. Fila Agregar Cobro -->
+                                            <!-- 3. Fila Agregar Cobro (Modificado para Empleado: Solo muestra selector de método sugerido) -->
                                             <div id="venta-cobro-row"
                                                 style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
                                                 <div class="form-group"
-                                                    style="flex: 2; margin: 0; min-width: 120px; position: relative; margin-bottom: 15px;">
+                                                    style="flex: 1; margin: 0; min-width: 100%; position: relative; margin-bottom: 15px;">
                                                     <label for="venta-cobro-metodo"
-                                                        style="font-size: 0.85rem; margin-bottom: 4px;">Método</label>
+                                                        style="font-size: 0.85rem; margin-bottom: 4px;">Método de Pago Sugerido</label>
                                                     <select id="venta-cobro-metodo" class="form-control"
-                                                        style="padding: 6px 10px; font-size: 0.9rem; height: 36px;">
+                                                        style="padding: 6px 10px; font-size: 0.9rem; height: 36px; width: 100%;">
                                                         <option value="">Seleccionar</option>
                                                     </select>
                                                     <div class="error-message" id="error-venta-cobro-metodo"
                                                         style="position: absolute; top: 100%; left: 0; margin-top: 4px; z-index: 10; white-space: nowrap;">
                                                     </div>
                                                 </div>
-                                                <div class="form-group" id="venta-tipo-tarjeta-container"
-                                                    style="flex: 2; margin: 0; min-width: 110px; display: none; position: relative; margin-bottom: 15px;">
-                                                    <label for="venta-cobro-tipo-tarjeta"
-                                                        style="font-size: 0.85rem; margin-bottom: 4px;">Tipo
-                                                        Tarjeta</label>
-                                                    <select id="venta-cobro-tipo-tarjeta" class="form-control"
-                                                        style="padding: 6px 10px; font-size: 0.9rem; height: 36px;">
-                                                        <option value="">Seleccionar</option>
-                                                        <option value="Débito">Débito</option>
-                                                        <option value="Crédito">Crédito</option>
-                                                    </select>
+                                                <!-- Ocultados para el empleado -->
+                                                <div class="form-group" id="venta-tipo-tarjeta-container" style="display: none;"></div>
+                                                <div class="form-group" style="display: none;">
+                                                    <input type="text" id="venta-cobro-monto" value="0">
                                                 </div>
-                                                <div class="form-group"
-                                                    style="flex: 2; margin: 0; min-width: 100px; position: relative; margin-bottom: 15px;">
-                                                    <label for="venta-cobro-monto"
-                                                        style="font-size: 0.85rem; margin-bottom: 4px;">Importe</label>
-                                                    <input type="text" id="venta-cobro-monto" class="form-control"
-                                                        placeholder="0" maxlength="10"
-                                                        oninput="if(window.checkMaxLength) window.checkMaxLength(this, 10);"
-                                                        style="padding: 6px 10px; font-size: 0.9rem; height: 36px;">
-                                                    <div class="error-message" id="error-venta-cobro-monto"
-                                                        style="position: absolute; top: 100%; left: 0; margin-top: 4px; z-index: 10; white-space: nowrap;">
-                                                    </div>
-                                                </div>
-                                                <button type="button" id="btn-add-cobro-mixto" class="btn-primary"
-                                                    style="padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; height: 36px; min-width: 36px; max-width: 36px; flex-shrink: 0; margin-bottom: 15px;"
-                                                    title="Añadir Cobro">
-                                                    <i class="fas fa-plus" style="margin: 0;"></i>
-                                                </button>
+                                                <button type="button" id="btn-add-cobro-mixto" style="display: none;"></button>
                                             </div>
 
-                                            <!-- Efectivo: Paga con + Vuelto -->
-                                            <div id="venta-paga-con-container" style="display: none; margin-top: 10px;">
-                                                <label for="venta-paga-con"
-                                                    style="font-size: 0.85rem; margin-bottom: 4px; display: block;">Paga
-                                                    con
-                                                    (efectivo)</label>
-                                                <input type="text" id="venta-paga-con" placeholder="0" maxlength="10"
-                                                    oninput="if(window.checkMaxLength) window.checkMaxLength(this, 10);"
-                                                    style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
-                                                <div class="error-message" id="error-venta-paga-con"
-                                                    style="margin-top: 4px;"></div>
-                                            </div>
-                                            <div id="venta-vuelto-display"
-                                                style="display: none; text-align: center; padding: 10px 12px; background: #e8f5e9; border-radius: 8px; margin-top: 8px;">
-                                                <div
-                                                    style="font-size: 0.7rem; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
-                                                    Vuelto</div>
-                                                <div id="venta-vuelto-amount"
-                                                    style="font-size: 1.4rem; font-weight: 700; color: #2e7d32;">$0
-                                                </div>
-                                            </div>
+                                            <!-- Efectivo: Paga con + Vuelto (Ocultado para Empleado) -->
+                                            <div id="venta-paga-con-container" style="display: none;"></div>
+                                            <div id="venta-vuelto-display" style="display: none;"></div>
 
                                         </div>
 
-                                        <!-- 4. Lista de cobros -->
-                                        <div id="cobros-mixtos-container"
-                                            style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
-                                        </div>
+                                        <!-- 4. Lista de cobros (Ocultado para Empleado) -->
+                                        <div id="cobros-mixtos-container" style="display: none;"></div>
 
                                         <div class="action-buttons"
                                             style="flex-direction: column; align-items: center; gap: 12px; border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px;">
                                             <button type="submit" class="btn-primary"
                                                 style="width: 85%; padding: 16px 20px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 8px;">
-                                                <i class="fas fa-check-circle"></i> Registrar Venta
+                                                <i class="fas fa-check-circle"></i> Enviar a Caja
                                             </button>
                                             <button type="button" class="btn-outline" id="limpiar-form-venta"
                                                 style="width: 85%; padding: 16px 20px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 8px;">

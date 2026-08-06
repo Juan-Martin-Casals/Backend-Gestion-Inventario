@@ -1081,3 +1081,49 @@
     from { opacity: 0; transform: translateY(4px); }
     to { opacity: 1; transform: translateY(0); }
 }
+
+/* =============================================
+   PUNTO DE VENTA (POS) - COBRAR VENTAS PENDIENTES
+   ============================================= */
+.pos-layout-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 24px;
+    align-items: start;
+    width: 100%;
+}
+
+.pos-controls-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    gap: 20px;
+}
+
+.pos-bill-keyboard {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+/* Responsive adjustments for POS */
+@media (max-width: 1150px) {
+    .pos-layout-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 650px) {
+    .pos-controls-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .pos-bill-keyboard {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 450px) {
+    .pos-bill-keyboard {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}

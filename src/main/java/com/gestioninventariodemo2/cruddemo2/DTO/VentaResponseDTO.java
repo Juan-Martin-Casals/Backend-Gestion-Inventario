@@ -23,6 +23,8 @@ public class VentaResponseDTO {
     private Double subtotal;
     private Double descuentoMonto;
     private List<ProductoVentaDTO> productos;
+    private String estado;
+
     private String nombreVendedor;
     private String rolVendedor;
     private String metodoPago;

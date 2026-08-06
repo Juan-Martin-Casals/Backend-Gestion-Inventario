@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const sectionIcons = {
         'principal': 'fas fa-home',
         'caja': 'fas fa-cash-register',
-        
+        'ventas-cobrar': 'fas fa-receipt',
     };
 
     let currentSectionId = 'principal';
@@ -84,6 +84,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (sectionId === 'caja') {
                 if (typeof window.showCajaSubsection === 'function') {
                     window.showCajaSubsection('caja-operaciones');
+                }
+            }
+
+            if (sectionId === 'ventas-cobrar') {
+                if (typeof window.loadVentasPendientes === 'function') {
+                    window.loadVentasPendientes();
                 }
             }
 

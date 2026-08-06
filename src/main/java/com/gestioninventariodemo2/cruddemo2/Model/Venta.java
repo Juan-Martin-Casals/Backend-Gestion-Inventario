@@ -50,7 +50,7 @@ public class Venta {
     @JoinColumn(name = "idUsuario")
     private Usuario usuario;
 
-    @ManyToOne(cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @ManyToOne(cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinColumn(name = "idCliente")
     private Cliente cliente;
 
@@ -60,4 +60,12 @@ public class Venta {
     @OneToMany(mappedBy = "venta", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Cobro> cobros;
 
+    @Column(name = "estado")
+    private String estado;
+
+    @ManyToOne
+    @JoinColumn(name = "id_metodo_pago_sugerido", nullable = true)
+    private MetodoPago metodoPagoSugerido;
+
 }
+

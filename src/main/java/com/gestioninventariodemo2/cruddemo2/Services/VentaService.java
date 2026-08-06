@@ -151,6 +151,21 @@ public class VentaService {
 
         double totalFinal = subtotal - descuentoMonto;
 
+        String userRole = usuario.getRol() != null ? usuario.getRol().getDescripcion().toUpperCase() : "";
+        if ("EMPLEADO".equals(userRole)) {
+            venta.setEstado("PENDIENTE");
+            if (ventaRequestDTO.getIdMetodoPago() != null) {
+                try {
+                    var sugerido = metodoPagoService.obtenerPorId(ventaRequestDTO.getIdMetodoPago());
+                    venta.setMetodoPagoSugerido(sugerido);
+                } catch (Exception e) {
+                    // ignorar
+                }
+            }
+        } else {
+            venta.setEstado("COBRADA");
+        }
+
         venta.setSubtotal(subtotal);
         venta.setDescuentoMonto(descuentoMonto);
         venta.setTipoDescuento(ventaRequestDTO.getTipoDescuento());
@@ -158,11 +173,13 @@ public class VentaService {
 
         Venta ventaGuardada = ventaRepository.save(venta);
 
-        // 7. Registrar cobros
-        if (ventaRequestDTO.getCobros() != null && !ventaRequestDTO.getCobros().isEmpty()) {
-            registrarCobrosVenta(ventaRequestDTO.getCobros(), ventaGuardada, usuario, totalFinal);
-        } else {
-            registrarCobroVenta(ventaRequestDTO, ventaGuardada, usuario);
+        // 7. Registrar cobros (solo si no es empleado)
+        if (!"EMPLEADO".equals(userRole)) {
+            if (ventaRequestDTO.getCobros() != null && !ventaRequestDTO.getCobros().isEmpty()) {
+                registrarCobrosVenta(ventaRequestDTO.getCobros(), ventaGuardada, usuario, totalFinal);
+            } else {
+                registrarCobroVenta(ventaRequestDTO, ventaGuardada, usuario);
+            }
         }
 
         return mapToVentaDTO(ventaGuardada);
@@ -302,6 +319,11 @@ public class VentaService {
 
         // Obtener cobros
         String metodoPago = "Desconocido";
+        if (venta.getMetodoPagoSugerido() != null) {
+            metodoPago = venta.getMetodoPagoSugerido().getNombre();
+        } else if ("PENDIENTE".equals(venta.getEstado())) {
+            metodoPago = "Pendiente";
+        }
         Double montoPagado = null;
         Double vuelto = null;
         List<CobroResponseDTO> cobrosDTO = new ArrayList<>();
@@ -327,11 +349,13 @@ public class VentaService {
                 .subtotal(venta.getSubtotal())
                 .descuentoMonto(venta.getDescuentoMonto())
                 .productos(productosDTO)
+                .estado(venta.getEstado())
                 .metodoPago(metodoPago)
                 .montoPagado(montoPagado)
                 .vuelto(vuelto)
                 .cobros(cobrosDTO)
                 .build();
+
     }
 
     /**
@@ -405,6 +429,46 @@ public class VentaService {
                 montoPagado,
                 vuelto,
                 usuario);
+    }
+
+    public List<VentaResponseDTO> obtenerVentasPendientes() {
+        return ventaRepository.findByEstadoOrderByFechaDesc("PENDIENTE").stream()
+                .map(this::mapToVentaDTO)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public VentaResponseDTO cobrarVenta(Long idVenta, VentaRequestDTO cobroRequest, UserDetails userDetails) {
+        // 1. Buscar la Venta
+        Venta venta = ventaRepository.findById(idVenta)
+                .orElseThrow(() -> new EntityNotFoundException("Venta no encontrada con ID: " + idVenta));
+
+        if (!"PENDIENTE".equals(venta.getEstado())) {
+            throw new RuntimeException("La venta no está en estado PENDIENTE.");
+        }
+
+        // 2. Buscar al Cajero (Usuario)
+        String userEmail = userDetails.getUsername();
+        Usuario cajero = usuarioRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new EntityNotFoundException("Cajero no encontrado: " + userEmail));
+
+        // 3. Validar que la Caja esté activa para este usuario/sesión
+        if (!cajaService.verificarCajaActiva(cajero.getIdUsuario())) {
+            throw new RuntimeException("Debe abrir la caja antes de registrar movimientos.");
+        }
+
+        // 4. Registrar los cobros
+        if (cobroRequest.getCobros() != null && !cobroRequest.getCobros().isEmpty()) {
+            registrarCobrosVenta(cobroRequest.getCobros(), venta, cajero, venta.getTotal());
+        } else {
+            registrarCobroVenta(cobroRequest, venta, cajero);
+        }
+
+        // 5. Cambiar el estado a COBRADA
+        venta.setEstado("COBRADA");
+        Venta ventaCobrada = ventaRepository.save(venta);
+
+        return mapToVentaDTO(ventaCobrada);
     }
 
 }
