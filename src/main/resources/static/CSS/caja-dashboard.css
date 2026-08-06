@@ -972,3 +972,112 @@
         gap: 12px;
     }
 }
+
+/* =============================================
+   PREMIUM CUSTOM TOOLTIP
+   ============================================= */
+.custom-tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.custom-tooltip .tooltip-text {
+    visibility: hidden;
+    width: 260px;
+    background-color: #0f172a; /* Slate oscuro */
+    color: #f8fafc;
+    text-align: left;
+    border-radius: 8px;
+    padding: 10px 14px;
+    position: absolute;
+    z-index: 1000;
+    bottom: 130%; /* Posicionado por encima del ícono */
+    left: 50%;
+    transform: translateX(-50%) translateY(6px);
+    opacity: 0;
+    transition: opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1), transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.2s;
+    font-size: 12px;
+    line-height: 1.5;
+    box-shadow: 0 10px 25px -5px rgba(0,0,0,0.25), 0 8px 10px -6px rgba(0,0,0,0.20);
+    pointer-events: none; /* Los clics pasan a través del tooltip */
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Flechita del tooltip */
+.custom-tooltip .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -6px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: #0f172a transparent transparent transparent;
+}
+
+/* Mostrar tooltip al hacer hover */
+.custom-tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* =============================================
+   MODAL TABS REDESIGN
+   ============================================= */
+.modal-tabs {
+    display: flex;
+    gap: 8px;
+    background: #f1f5f9;
+    padding: 6px;
+    border-radius: 10px;
+    margin: 20px 32px 0 32px;
+}
+
+.modal-tabs .tab-btn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    color: #64748b;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    outline: none;
+}
+
+.modal-tabs .tab-btn i {
+    font-size: 14px;
+}
+
+.modal-tabs .tab-btn:hover {
+    color: #334155;
+    background: rgba(255, 255, 255, 0.4);
+}
+
+.modal-tabs .tab-btn.active {
+    background: white;
+    color: #0f172a;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+/* Tab contents styling */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeInTab 0.25s ease-out;
+}
+
+@keyframes fadeInTab {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}

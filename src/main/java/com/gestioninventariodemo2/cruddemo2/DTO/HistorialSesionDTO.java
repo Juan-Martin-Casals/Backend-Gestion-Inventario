@@ -24,6 +24,12 @@ public class HistorialSesionDTO {
     private String estado;
     private String duracion;
     private Double diferencia; // montoFinalReal - saldoEsperado (si aplica)
+    private Double totalFacturado;
+    private Double ingresosEfectivo;
+    private Double egresosEfectivo;
+    private Double saldoEsperado;
+    private Double ventasTarjeta;
+    private Double ventasTransferencia;
     private String observacionesApertura;
     private String observacionesCierre;
 }

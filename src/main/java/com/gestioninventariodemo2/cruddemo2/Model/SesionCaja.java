@@ -41,6 +41,9 @@ public class SesionCaja {
 
     private Double montoFinalReal;
 
+    @Column(name = "diferencia_cierre")
+    private Double diferenciaCierre;
+
     @Column(nullable = false)
     private Boolean diferenciaApertura;
 

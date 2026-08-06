@@ -1023,39 +1023,90 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        function fmtFechaSoloFecha(fechaStr) {
+            if (!fechaStr) return '-';
+            const d = new Date(fechaStr);
+            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        }
+
+        function fmtHoraSoloHora(fechaStr) {
+            if (!fechaStr) return '-';
+            const d = new Date(fechaStr);
+            return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} hs`;
+        }
+
         tbody.innerHTML = sesiones.map((sesion, index) => {
             const estadoBadge = sesion.estado === 'ABIERTA'
-                ? '<span style="background: #dcfce7; color: #16a34a; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">ABIERTA</span>'
-                : '<span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">CERRADA</span>';
+                ? '<span style="background: #dcfce7; color: #16a34a; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">ABIERTA</span>'
+                : '<span style="background: #f1f5f9; color: #64748b; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">CERRADA</span>';
 
             let difHtml = '-';
-            if (sesion.diferencia !== null && sesion.diferencia !== undefined) {
-                if (Math.abs(sesion.diferencia) < 0.01) {
-                    difHtml = '<span style="color: #16a34a; font-weight: 600;">$0,00</span>';
-                } else if (sesion.diferencia > 0) {
-                    difHtml = `<span style="color: #16a34a; font-weight: 600;">+${formatter.format(sesion.diferencia)}</span>`;
-                } else {
-                    difHtml = `<span style="color: #dc3545; font-weight: 600;">${formatter.format(sesion.diferencia)}</span>`;
+            if (sesion.estado === 'CERRADA') {
+                if (sesion.diferencia !== null && sesion.diferencia !== undefined) {
+                    if (Math.abs(sesion.diferencia) < 0.01) {
+                        difHtml = '<span style="display: inline-block; background: #dcfce7; color: #16a34a; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">$0,00</span>';
+                    } else if (sesion.diferencia > 0) {
+                        difHtml = `<span style="display: inline-block; background: #fffbeb; color: #d97706; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">+${formatter.format(sesion.diferencia)}</span>`;
+                    } else {
+                        difHtml = `<span style="display: inline-block; background: #fef2f2; color: #dc3545; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">${formatter.format(sesion.diferencia)}</span>`;
+                    }
                 }
             }
 
-            // Separate Apertura and Cierre
-            let aperturaText = fmtFecha(sesion.fechaApertura);
-            let cierreText = sesion.fechaCierre
-                ? fmtFecha(sesion.fechaCierre)
-                : `<span style="font-size: 11px; color: #64748b;">En curso</span>`;
+            // Merged Turno Column
+            let fechaAperturaVal = fmtFechaSoloFecha(sesion.fechaApertura);
+            let horaAperturaVal = fmtHoraSoloHora(sesion.fechaApertura);
+            let horaCierreVal = sesion.fechaCierre ? fmtHoraSoloHora(sesion.fechaCierre) : 'En curso';
+            
+            let duracionBadge = '';
+            if (sesion.estado === 'CERRADA' && sesion.duracion) {
+                duracionBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 2px 6px; background: #e0e7ff; color: #4f46e5; border-radius: 4px; font-size: 10px; font-weight: 600;">
+                    <i class="far fa-clock"></i> ${sesion.duracion}
+                </span>`;
+            }
+            
+            let turnoDetalleHtml = `
+                <div style="font-weight: 600; color: #1e293b;">${fechaAperturaVal}</div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
+                    <span>${horaAperturaVal} - ${horaCierreVal}</span>
+                    ${duracionBadge}
+                </div>
+            `;
 
-            // En cajero.html no está el botón "Ver Detalles" porque removimos el modal-detalles-sesion para simplificar, 
-            // pero si quieres lo puedes dejar o quitar. Lo quitaremos por ahora y solo mostraremos los datos en tabla.
+            // Notes column
+            const obsAp = (sesion.observacionesApertura || '').trim();
+            const obsMatch = (sesion.observacionesCierre || '').match(/Obs=(.+)$/);
+            const obsCi = obsMatch ? obsMatch[1].trim() : '';
+            
+            let notasHtml = '';
+            if (obsAp || obsCi) {
+                let tooltipText = '';
+                if (obsAp) tooltipText += `<div style="margin-bottom: 6px;"><strong style="color: #fbbf24;"><i class="fas fa-lock-open"></i> Apertura:</strong> ${obsAp}</div>`;
+                if (obsCi) tooltipText += `<div><strong style="color: #f87171;"><i class="fas fa-lock"></i> Cierre:</strong> ${obsCi}</div>`;
+                
+                notasHtml = `
+                    <div class="custom-tooltip" style="cursor: help;">
+                        <i class="fas fa-sticky-note" style="color: #334155; font-size: 16px; transition: all 0.2s;" 
+                           onmouseover="this.style.color='#d97706'; this.style.transform='scale(1.1)';" 
+                           onmouseout="this.style.color='#334155'; this.style.transform='scale(1)';"></i>
+                        <div class="tooltip-text">${tooltipText}</div>
+                    </div>
+                `;
+            } else {
+                notasHtml = '<span style="color: #cbd5e1;">-</span>';
+            }
 
             return `
                 <tr>
-                    <td>${offset + index + 1}</td>
-                    <td>${aperturaText}</td>
-                    <td>${cierreText}</td>
-                    <td style="font-weight: 600; text-align: right;">${sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '-'}</td>
-                    <td style="font-weight: 600; text-align: right;">${sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : '-'}</td>
+                    <td style="font-weight: 600; color: #64748b;">#${sesion.idSesion}</td>
+                    <td>${turnoDetalleHtml}</td>
+                    <td style="font-weight: 700; text-align: right; color: #0f172a;">${formatter.format(sesion.totalFacturado || 0)}</td>
+                    <td style="text-align: right;">
+                        <span style="font-weight: 600; color: #1e293b;">${sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : '-'}</span>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Inició: ${sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '-'}</div>
+                    </td>
                     <td style="text-align: right;">${difHtml}</td>
+                    <td style="text-align: center;">${notasHtml}</td>
                     <td style="text-align: center;">${estadoBadge}</td>
                     <td style="text-align: center;">-</td>
                 </tr>

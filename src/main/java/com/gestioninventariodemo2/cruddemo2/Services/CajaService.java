@@ -361,8 +361,52 @@ public class CajaService {
         sesion.setFondoProximaApertura(request.getFondoProximaApertura());
         sesion.setUsuarioCierre(usuario);
 
+        Double saldoEsperado = calcularSaldoEsperado(sesion);
+        sesion.setDiferenciaCierre(request.getMontoFinalReal() - saldoEsperado);
+
         SesionCaja guardada = sesionCajaRepository.save(sesion);
         return mapToDTO(guardada);
+    }
+
+    private Double calcularSaldoEsperado(SesionCaja sesion) {
+        Double calcEfectivo = 0.0;
+        List<Object[]> resultadosCobros = cobroRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());
+        for (Object[] row : resultadosCobros) {
+            String metodo = (String) row[0];
+            Double sumImporte = 0.0;
+            if (row[1] instanceof BigDecimal) {
+                sumImporte = ((BigDecimal) row[1]).doubleValue();
+            } else if (row[1] instanceof Double) {
+                sumImporte = (Double) row[1];
+            }
+            if (metodo != null) {
+                String m = metodo.toLowerCase();
+                if (m.contains("efectivo") && !m.contains("aporte externo")) {
+                    calcEfectivo += sumImporte;
+                }
+            }
+        }
+
+        Double calcEfectivoCajaPagos = 0.0;
+        List<Object[]> resultadosPagos = pagoRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());
+        for (Object[] row : resultadosPagos) {
+            String metodo = (String) row[0];
+            Double sumImporte = 0.0;
+            if (row[1] instanceof BigDecimal) {
+                sumImporte = ((BigDecimal) row[1]).doubleValue();
+            } else if (row[1] instanceof Double) {
+                sumImporte = (Double) row[1];
+            }
+            if (metodo != null) {
+                String m = metodo.toLowerCase();
+                if (m.contains("efectivo") && !m.contains("aporte externo")) {
+                    calcEfectivoCajaPagos += sumImporte;
+                }
+            }
+        }
+
+        Double montoInicial = sesion.getMontoInicialReal() != null ? sesion.getMontoInicialReal() : 0.0;
+        return montoInicial + calcEfectivo - calcEfectivoCajaPagos;
     }
 
     private CajaResponseDTO mapToDTO(SesionCaja caja) {
@@ -394,6 +438,7 @@ public class CajaService {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("id", u.getIdUsuario());
                     m.put("nombre", u.getNombre() + " " + u.getApellido());
+                    m.put("rol", u.getRol() != null ? u.getRol().getDescripcion() : "Cajero");
                     return m;
                 })
                 .collect(Collectors.toList());
@@ -440,12 +485,70 @@ public class CajaService {
                 duracion = horas + "h " + minutos + "m";
             }
 
+            // Calcular desglose de ingresos y egresos
+            Double ingresosEfectivo = 0.0;
+            Double ventasTarjeta = 0.0;
+            Double ventasTransferencia = 0.0;
+
+            List<Object[]> resultadosCobros = cobroRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());
+            for (Object[] row : resultadosCobros) {
+                String metodo = (String) row[0];
+                Double sumImporte = 0.0;
+                if (row[1] instanceof java.math.BigDecimal) {
+                    sumImporte = ((java.math.BigDecimal) row[1]).doubleValue();
+                } else if (row[1] instanceof Double) {
+                    sumImporte = (Double) row[1];
+                }
+
+                if (metodo != null) {
+                    String m = metodo.toLowerCase();
+                    if (m.contains("efectivo") && !m.contains("aporte externo")) {
+                        ingresosEfectivo += sumImporte;
+                    } else if (m.contains("tarjeta")) {
+                        ventasTarjeta += sumImporte;
+                    } else if (m.contains("transferencia") || m.contains("mp") || m.contains("mercado")) {
+                        ventasTransferencia += sumImporte;
+                    }
+                }
+            }
+
+            Double egresosEfectivo = 0.0;
+            List<Object[]> resultadosPagos = pagoRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());
+            for (Object[] row : resultadosPagos) {
+                String metodo = (String) row[0];
+                Double sumImporte = 0.0;
+                if (row[1] instanceof java.math.BigDecimal) {
+                    sumImporte = ((java.math.BigDecimal) row[1]).doubleValue();
+                } else if (row[1] instanceof Double) {
+                    sumImporte = (Double) row[1];
+                }
+
+                if (metodo != null) {
+                    String m = metodo.toLowerCase();
+                    if (m.contains("efectivo") && !m.contains("aporte externo")) {
+                        egresosEfectivo += sumImporte;
+                    }
+                }
+            }
+
+            Double saldoEsperado = sesion.getMontoInicialReal() + ingresosEfectivo - egresosEfectivo;
+
             // Calcular diferencia (solo si la sesión está cerrada y tiene monto final)
             Double diferencia = null;
             if ("CERRADA".equals(sesion.getEstado()) && sesion.getMontoFinalReal() != null) {
-                // Diferencia = montoFinalReal - montoInicial
-                // (simplificado: comparamos efectivo real vs lo que inició)
-                diferencia = sesion.getMontoFinalReal() - sesion.getMontoInicialReal();
+                if (sesion.getDiferenciaCierre() != null) {
+                    diferencia = sesion.getDiferenciaCierre();
+                } else {
+                    diferencia = sesion.getMontoFinalReal() - saldoEsperado;
+                }
+            }
+
+            // Calcular total facturado (ventas) en el rango de la sesión
+            LocalDateTime inicio = sesion.getFechaApertura();
+            LocalDateTime fin = sesion.getFechaCierre() != null ? sesion.getFechaCierre() : LocalDateTime.now();
+            Double totalFacturado = ventaRepository.sumTotalVentasEnRango(inicio, fin);
+            if (totalFacturado == null) {
+                totalFacturado = 0.0;
             }
 
             return HistorialSesionDTO.builder()
@@ -461,6 +564,12 @@ public class CajaService {
                     .estado(sesion.getEstado())
                     .duracion(duracion)
                     .diferencia(diferencia)
+                    .totalFacturado(totalFacturado)
+                    .ingresosEfectivo(ingresosEfectivo)
+                    .egresosEfectivo(egresosEfectivo)
+                    .saldoEsperado(saldoEsperado)
+                    .ventasTarjeta(ventasTarjeta)
+                    .ventasTransferencia(ventasTransferencia)
                     .observacionesApertura(sesion.getObservacionesApertura())
                     .observacionesCierre(sesion.getObservacionesCierre())
                     .build();

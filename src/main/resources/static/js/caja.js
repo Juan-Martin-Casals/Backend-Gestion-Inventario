@@ -1096,18 +1096,7 @@ document.addEventListener('DOMContentLoaded', function () {
     let historialTotalPages = 1;
     let historialLoaded = false;
 
-    window.showCajaSubsection = function (subsectionId) {
-        if (subsectionId === 'caja-operaciones') {
-            if (cajaOperacionesContainer) cajaOperacionesContainer.style.display = 'block';
-            if (cajaHistorialContainer) cajaHistorialContainer.style.display = 'none';
-            verificarEstadoCaja();
-        } else if (subsectionId === 'caja-historial') {
-            if (cajaOperacionesContainer) cajaOperacionesContainer.style.display = 'none';
-            if (cajaHistorialContainer) cajaHistorialContainer.style.display = 'block';
-            cargarOperadores();
-            cargarHistorialSesiones(0);
-        }
-    };
+    // window.showCajaSubsection is declared below to handle all tabs including global dashboard
 
     // ==========================================
     // HISTORIAL DE SESIONES
@@ -1133,27 +1122,94 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
+        function fmtFechaSoloFecha(fechaStr) {
+            if (!fechaStr) return '-';
+            const d = new Date(fechaStr);
+            return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+        }
+
+        function fmtHoraSoloHora(fechaStr) {
+            if (!fechaStr) return '-';
+            const d = new Date(fechaStr);
+            return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')} hs`;
+        }
+
         tbody.innerHTML = sesiones.map((sesion, index) => {
             const estadoBadge = sesion.estado === 'ABIERTA'
-                ? '<span style="background: #dcfce7; color: #16a34a; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">ABIERTA</span>'
-                : '<span style="background: #f1f5f9; color: #64748b; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">CERRADA</span>';
+                ? '<span style="background: #dcfce7; color: #16a34a; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">ABIERTA</span>'
+                : '<span style="background: #f1f5f9; color: #64748b; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 700;">CERRADA</span>';
 
             let difHtml = '-';
-            if (sesion.diferencia !== null && sesion.diferencia !== undefined) {
-                if (Math.abs(sesion.diferencia) < 0.01) {
-                    difHtml = '<span style="color: #16a34a; font-weight: 600;">$0,00</span>';
-                } else if (sesion.diferencia > 0) {
-                    difHtml = `<span style="color: #16a34a; font-weight: 600;">+${formatter.format(sesion.diferencia)}</span>`;
-                } else {
-                    difHtml = `<span style="color: #dc3545; font-weight: 600;">${formatter.format(sesion.diferencia)}</span>`;
+            if (sesion.estado === 'CERRADA') {
+                if (sesion.diferencia !== null && sesion.diferencia !== undefined) {
+                    if (Math.abs(sesion.diferencia) < 0.01) {
+                        difHtml = '<span style="display: inline-block; background: #dcfce7; color: #16a34a; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">$0,00</span>';
+                    } else if (sesion.diferencia > 0) {
+                        difHtml = `<span style="display: inline-block; background: #fffbeb; color: #d97706; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">+${formatter.format(sesion.diferencia)}</span>`;
+                    } else {
+                        difHtml = `<span style="display: inline-block; background: #fef2f2; color: #dc3545; padding: 4px 8px; border-radius: 6px; font-weight: 700; font-size: 11px;">${formatter.format(sesion.diferencia)}</span>`;
+                    }
                 }
             }
 
-            // Separate Apertura and Cierre
-            let aperturaText = fmtFecha(sesion.fechaApertura);
-            let cierreText = sesion.fechaCierre
-                ? fmtFecha(sesion.fechaCierre)
-                : `<span style="font-size: 11px; color: #64748b;">En curso</span>`;
+            // Merged Turno Column
+            let fechaAperturaVal = fmtFechaSoloFecha(sesion.fechaApertura);
+            let horaAperturaVal = fmtHoraSoloHora(sesion.fechaApertura);
+            let horaCierreVal = sesion.fechaCierre ? fmtHoraSoloHora(sesion.fechaCierre) : 'En curso';
+            
+            let duracionBadge = '';
+            if (sesion.estado === 'CERRADA' && sesion.duracion) {
+                duracionBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 2px 6px; background: #e0e7ff; color: #4f46e5; border-radius: 4px; font-size: 10px; font-weight: 600;">
+                    <i class="far fa-clock"></i> ${sesion.duracion}
+                </span>`;
+            }
+            
+            let turnoDetalleHtml = `
+                <div style="font-weight: 600; color: #1e293b;">${fechaAperturaVal}</div>
+                <div style="font-size: 11px; color: #64748b; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
+                    <span>${horaAperturaVal} - ${horaCierreVal}</span>
+                    ${duracionBadge}
+                </div>
+            `;
+
+            // Operator column
+            let alertCerrador = '';
+            if (sesion.estado === 'CERRADA' && sesion.operadorCierre && sesion.operadorCierre !== sesion.operador) {
+                alertCerrador = `
+                    <div style="font-size: 11px; color: #d97706; margin-top: 2px; display: flex; align-items: center; gap: 4px;" title="Cerrado por: ${sesion.operadorCierre} (${sesion.rolCierre || 'N/A'})">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Cerrado por Admin</span>
+                    </div>
+                `;
+            }
+            let operadorHtml = `
+                <div style="font-weight: 500; color: #334155;">${sesion.operador || '-'}</div>
+                <div style="font-size: 11px; color: #64748b;">${sesion.rolOperador || 'N/A'}</div>
+                ${alertCerrador}
+            `;
+
+            // Notes column
+            const obsAp = (sesion.observacionesApertura || '').trim();
+            const obsMatch = (sesion.observacionesCierre || '').match(/Obs=(.+)$/);
+            const obsCi = obsMatch ? obsMatch[1].trim() : '';
+            
+            let notasHtml = '';
+            if (obsAp || obsCi) {
+                let tooltipText = '';
+                if (obsAp) tooltipText += `<div style="margin-bottom: 6px;"><strong style="color: #fbbf24;"><i class="fas fa-lock-open"></i> Apertura:</strong> ${obsAp}</div>`;
+                if (obsCi) tooltipText += `<div><strong style="color: #f87171;"><i class="fas fa-lock"></i> Cierre:</strong> ${obsCi}</div>`;
+                
+                notasHtml = `
+                    <div class="custom-tooltip btn-ver-detalles" data-id="${sesion.idSesion}" data-tab="tab-observaciones" style="cursor: pointer;">
+                        <i class="fas fa-sticky-note" style="color: #334155; font-size: 16px; transition: all 0.2s;" 
+                           onmouseover="this.style.color='#d97706'; this.style.transform='scale(1.1)';" 
+                           onmouseout="this.style.color='#334155'; this.style.transform='scale(1)';"></i>
+                        <div class="tooltip-text">${tooltipText}</div>
+                    </div>
+                `;
+            } else {
+                notasHtml = '<span style="color: #cbd5e1;">-</span>';
+            }
 
             // Button to open modal
             const btnDetalles = `<button type="button" class="btn-icon btn-ver-detalles" data-id="${sesion.idSesion}" title="Ver Detalles">
@@ -1162,16 +1218,16 @@ document.addEventListener('DOMContentLoaded', function () {
 
             return `
                 <tr>
-                    <td>${offset + index + 1}</td>
-                    <td>${aperturaText}</td>
-                    <td>${cierreText}</td>
-                    <td>
-                        ${sesion.operador || '-'} <small style="color: #64748b; font-weight: 500;">(${sesion.rolOperador || 'N/A'})</small>
-                        ${sesion.operadorCierre && sesion.operadorCierre !== sesion.operador ? `<br><small style="color: #475569; font-weight: 500;">Cerró: ${sesion.operadorCierre} (${sesion.rolCierre || 'N/A'})</small>` : ''}
+                    <td style="font-weight: 600; color: #64748b;">#${sesion.idSesion}</td>
+                    <td>${turnoDetalleHtml}</td>
+                    <td>${operadorHtml}</td>
+                    <td style="font-weight: 700; text-align: right; color: #0f172a;">${formatter.format(sesion.totalFacturado || 0)}</td>
+                    <td style="text-align: right;">
+                        <span style="font-weight: 600; color: #1e293b;">${sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : '-'}</span>
+                        <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Inició: ${sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '-'}</div>
                     </td>
-                    <td style="font-weight: 600; text-align: right;">${sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '-'}</td>
-                    <td style="font-weight: 600; text-align: right;">${sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : '-'}</td>
                     <td style="text-align: right;">${difHtml}</td>
+                    <td style="text-align: center;">${notasHtml}</td>
                     <td style="text-align: center;">${estadoBadge}</td>
                     <td style="text-align: center;">${btnDetalles}</td>
                 </tr>
@@ -1183,9 +1239,10 @@ document.addEventListener('DOMContentLoaded', function () {
         botonesDetalle.forEach(btn => {
             btn.addEventListener('click', (e) => {
                 const idSesion = parseInt(e.currentTarget.getAttribute('data-id'), 10);
+                const initialTab = e.currentTarget.getAttribute('data-tab') || 'tab-arqueo';
                 const sesionData = todasLasSesiones.find(s => s.idSesion === idSesion);
                 if (sesionData) {
-                    abrirModalDetalles(sesionData);
+                    abrirModalDetalles(sesionData, initialTab);
                 }
             });
         });
@@ -1196,8 +1253,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnCerrarModal = document.getElementById('btn-cerrar-modal-detalles');
     const btnEntendidoModal = document.getElementById('btn-entendido-modal-detalles');
 
-    function abrirModalDetalles(sesion) {
+    function abrirModalDetalles(sesion, initialTab = 'tab-arqueo') {
         if (!modalDetalles) return;
+
+        // Resetear pestañas al abrir (mostrar la seleccionada por defecto)
+        const targetBtn = document.querySelector(`#modal-detalles-sesion .tab-btn[onclick*="${initialTab}"]`);
+        cambiarTabModalSesion(initialTab, targetBtn);
 
         // Header (Operador y Estado)
         if (sesion.operadorCierre && sesion.operadorCierre !== sesion.operador) {
@@ -1232,22 +1293,39 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('detalle-sesion-cierre').textContent = sesion.fechaCierre ? new Date(sesion.fechaCierre).toLocaleString('es-AR') : 'Aún abierta';
         document.getElementById('detalle-sesion-duracion').textContent = sesion.duracion || '-';
 
-        // Formatear Montos
-        document.getElementById('detalle-sesion-inicial').textContent = sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '-';
-        document.getElementById('detalle-sesion-fisico').textContent = sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : '-';
+        // Formatear Montos y Cálculos de Efectivo
+        document.getElementById('detalle-sesion-inicial').textContent = sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '$0,00';
+        document.getElementById('detalle-sesion-ingresos-efectivo').textContent = sesion.ingresosEfectivo != null ? `+${formatter.format(sesion.ingresosEfectivo)}` : '+$0,00';
+        document.getElementById('detalle-sesion-egresos-efectivo').textContent = sesion.egresosEfectivo != null ? `-${formatter.format(sesion.egresosEfectivo)}` : '-$0,00';
+        document.getElementById('detalle-sesion-esperado').textContent = sesion.saldoEsperado != null ? formatter.format(sesion.saldoEsperado) : '$0,00';
+        document.getElementById('detalle-sesion-fisico').textContent = sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : 'En curso';
 
-        // Diferencia
+        // Rendimiento Comercial (Facturación)
+        document.getElementById('detalle-sesion-total-facturado').textContent = sesion.totalFacturado != null ? formatter.format(sesion.totalFacturado) : '$0,00';
+        document.getElementById('detalle-sesion-ventas-efectivo').textContent = sesion.ingresosEfectivo != null ? formatter.format(sesion.ingresosEfectivo) : '$0,00';
+        document.getElementById('detalle-sesion-ventas-tarjeta').textContent = sesion.ventasTarjeta != null ? formatter.format(sesion.ventasTarjeta) : '$0,00';
+        document.getElementById('detalle-sesion-ventas-transferencia').textContent = sesion.ventasTransferencia != null ? formatter.format(sesion.ventasTransferencia) : '$0,00';
+
+        // Diferencia de Arqueo Estilizada
         const elDif = document.getElementById('detalle-sesion-diferencia');
-        if (sesion.diferencia !== null && sesion.diferencia !== undefined) {
+        if (sesion.diferencia !== null && sesion.diferencia !== undefined && sesion.estado === 'CERRADA') {
             if (Math.abs(sesion.diferencia) < 0.01) {
-                elDif.innerHTML = '<span style="color: #16a34a; font-weight: 600;">$0,00</span>';
+                elDif.textContent = '$0,00';
+                elDif.style.background = '#dcfce7';
+                elDif.style.color = '#15803d';
             } else if (sesion.diferencia > 0) {
-                elDif.innerHTML = `<span style="color: #16a34a; font-weight: 600;">+${formatter.format(sesion.diferencia)}</span>`;
+                elDif.textContent = `+${formatter.format(sesion.diferencia)}`;
+                elDif.style.background = '#fffbeb';
+                elDif.style.color = '#b45309';
             } else {
-                elDif.innerHTML = `<span style="color: #dc3545; font-weight: 600;">${formatter.format(sesion.diferencia)}</span>`;
+                elDif.textContent = formatter.format(sesion.diferencia);
+                elDif.style.background = '#fee2e2';
+                elDif.style.color = '#b91c1c';
             }
         } else {
             elDif.textContent = '-';
+            elDif.style.background = '#f1f5f9';
+            elDif.style.color = '#475569';
         }
 
         // Observaciones
@@ -1261,6 +1339,21 @@ document.addEventListener('DOMContentLoaded', function () {
         // Mostrar Modal
         modalDetalles.style.display = 'flex';
     }
+
+    function cambiarTabModalSesion(tabId, btn) {
+        // Ocultar todos los contenidos de pestaña
+        const contents = document.querySelectorAll('#modal-detalles-sesion .tab-content');
+        contents.forEach(content => content.classList.remove('active'));
+
+        // Desactivar todos los botones de pestaña
+        const buttons = document.querySelectorAll('#modal-detalles-sesion .tab-btn');
+        buttons.forEach(button => button.classList.remove('active'));
+
+        // Activar el seleccionado
+        document.getElementById(tabId).classList.add('active');
+        if (btn) btn.classList.add('active');
+    }
+    window.cambiarTabModalSesion = cambiarTabModalSesion;
 
     function cerrarModalDetalles() {
         if (modalDetalles) modalDetalles.style.display = 'none';
@@ -1320,7 +1413,7 @@ document.addEventListener('DOMContentLoaded', function () {
             operadores.forEach(op => {
                 const opt = document.createElement('option');
                 opt.value = op.id;
-                opt.textContent = op.nombre;
+                opt.textContent = `${op.nombre} (${op.rol || 'Cajero'})`;
                 historialFiltroOperador.appendChild(opt);
             });
             historialFiltroOperador.value = valorActual;
@@ -1481,8 +1574,10 @@ document.addEventListener('DOMContentLoaded', function () {
             cargarDashboardGlobal();
         } else if (subsectionId === 'caja-operaciones' && operacionesContainer) {
             operacionesContainer.style.display = 'block';
+            verificarEstadoCaja();
         } else if (subsectionId === 'caja-historial' && historialContainer) {
             historialContainer.style.display = 'block';
+            cargarOperadores();
             cargarHistorialSesiones(0);
         }
     };
@@ -1726,7 +1821,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                         <div style="text-align: right;">
                             <span style="display: block; font-weight: 800; color: #10b981; font-size: 16px;">+${formatter.format(venta.total)}</span>
-                            ${venta.cliente ? `<span style="display: block; font-size: 11px; color: #94a3b8; margin-top: 2px;"><i class="far fa-user" style="margin-right:3px;"></i>${venta.cliente.nombre}</span>` : ''}
+                            ${venta.nombreCliente ? `<span style="display: block; font-size: 11px; color: #94a3b8; margin-top: 2px;"><i class="far fa-user" style="margin-right:3px;"></i>Cliente: ${venta.nombreCliente}</span>` : ''}
                             ${venta.nombreVendedor ? `<span style="display: block; font-size: 11px; color: #64748b; margin-top: 2px;"><i class="fas fa-user-tag" style="margin-right:3px;"></i>Vend: ${venta.nombreVendedor} (${venta.rolVendedor || 'N/A'})</span>` : ''}
                         </div>
                     `;
@@ -1743,7 +1838,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const metodo = filtroSelect ? filtroSelect.value : 'Todos';
                 const rol = filtroRol ? filtroRol.value : 'Todos';
-                const texto = buscarInput ? buscarInput.value.toLowerCase().trim() : '';
+                const texto = buscarInput ? normH(buscarInput.value) : '';
 
                 let resultado = ingresosHoy;
 
@@ -1757,12 +1852,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (texto) {
                     resultado = resultado.filter(v => {
-                        const clienteMatch = v.cliente && v.cliente.nombre && v.cliente.nombre.toLowerCase().includes(texto);
-                        const idMatch = (v.idVenta || v.id || '').toString().includes(texto);
-                        const totalMatch = v.total && v.total.toString().includes(texto);
-                        const metodoMatch = v.metodoPago && v.metodoPago.toLowerCase().includes(texto);
-                        const vendedorMatch = v.nombreVendedor && v.nombreVendedor.toLowerCase().includes(texto);
-                        return clienteMatch || idMatch || totalMatch || metodoMatch || vendedorMatch || productoMatch;
+                        const clienteMatch = v.nombreCliente && normH(v.nombreCliente).includes(texto);
+                        const vendedorMatch = v.nombreVendedor && normH(v.nombreVendedor).includes(texto);
+                        const productoMatch = v.productos && v.productos.some(p => normH(p.nombreProducto || p.nombre || '').includes(texto));
+                        return clienteMatch || vendedorMatch || productoMatch;
                     });
                 }
 

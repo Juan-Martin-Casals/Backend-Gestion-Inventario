@@ -44,7 +44,10 @@ public interface SesionCajaRepository extends JpaRepository<SesionCaja, Long> {
         "(:estado IS NULL OR s.estado = :estado) AND " +
         "(CAST(:operadorId AS java.lang.Long) IS NULL OR s.usuario.idUsuario = :operadorId) AND " +
         "(:busqueda IS NULL OR LOWER(s.usuario.nombre) LIKE :busqueda OR LOWER(s.usuario.apellido) LIKE :busqueda) AND " +
-        "s.montoFinalReal IS NOT NULL AND ABS(s.montoFinalReal - s.montoInicialReal) >= 0.01")
+        "s.montoFinalReal IS NOT NULL AND (" +
+        "(s.diferenciaCierre IS NOT NULL AND ABS(s.diferenciaCierre) >= 0.01) OR " +
+        "(s.diferenciaCierre IS NULL AND ABS(s.montoFinalReal - s.montoInicialReal) >= 0.01)" +
+        ")")
     Page<SesionCaja> findFilteredConDiferencias(
         @Param("fechaAperturaInicio") LocalDateTime fechaAperturaInicio,
         @Param("fechaAperturaFin") LocalDateTime fechaAperturaFin,
