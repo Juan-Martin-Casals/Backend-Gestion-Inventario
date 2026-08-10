@@ -1082,15 +1082,14 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* =============================================
-   PUNTO DE VENTA (POS) - COBRAR VENTAS PENDIENTES
-   ============================================= */
 .pos-layout-grid {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+    grid-template-columns: minmax(0, 3fr) minmax(0, 7fr);
     gap: 24px;
-    align-items: start;
+    align-items: stretch;
     width: 100%;
+    height: calc(100vh - 150px);
+    min-height: 550px;
 }
 
 .pos-controls-grid {
@@ -1126,4 +1125,59 @@
     .pos-bill-keyboard {
         grid-template-columns: repeat(2, 1fr);
     }
+}
+
+/* POS Premium Styles */
+.pos-order-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: hidden;
+    border-left: 4px solid transparent;
+}
+.pos-order-card:hover {
+    border-color: #cbd5e1;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
+}
+.pos-order-card.selected {
+    border-color: #e2e8f0;
+    border-left-color: #4f46e5;
+    background-color: #f5f3ff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.05);
+}
+.pos-card-price {
+    color: #1e3a8a;
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'SF Pro Text', -apple-system, system-ui, sans-serif;
+}
+
+/* Animations */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.pos-ticket-effect {
+    background: white;
+    background-image: linear-gradient(to right, #cbd5e1 50%, transparent 50%);
+    background-size: 10px 2px;
+    background-repeat: repeat-x;
+    height: 2px;
+    border: none;
+    margin: 15px 0;
 }

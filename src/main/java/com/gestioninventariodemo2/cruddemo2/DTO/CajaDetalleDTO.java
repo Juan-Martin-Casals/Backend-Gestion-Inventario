@@ -29,4 +29,8 @@ public class CajaDetalleDTO {
 
     // Detalle de métodos de pago (cobros)
     private List<DesgloseCobroDTO> desgloseCobros;
+
+    // Movimientos manuales de caja
+    private Double ingresosManuales;
+    private Double egresosManuales;
 }

@@ -14,6 +14,7 @@ import com.gestioninventariodemo2.cruddemo2.Repository.VentaRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.CompraRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.CobroRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.PagoRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.MovimientoCajaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,6 +38,7 @@ public class CajaService {
     private final CompraRepository compraRepository;
     private final CobroRepository cobroRepository;
     private final PagoRepository pagoRepository;
+    private final MovimientoCajaRepository movimientoCajaRepository;
 
     /**
      * Verifica si existe alguna caja ABIERTA a nivel global
@@ -222,8 +224,14 @@ public class CajaService {
             }
         }
 
-        // Saldo esperado en caja = Monto inicial + Ventas cobradas por Efectivo - Compras pagadas por Efectivo
-        Double saldoEsperado = sesion.getMontoInicialReal() + calcEfectivo - calcEfectivoCajaPagos;
+        // Movimientos manuales
+        Double ingresosManuales = movimientoCajaRepository.sumIngresosBySesion(sesion.getIdSesion());
+        Double egresosManuales = movimientoCajaRepository.sumEgresosBySesion(sesion.getIdSesion());
+        if (ingresosManuales == null) ingresosManuales = 0.0;
+        if (egresosManuales == null) egresosManuales = 0.0;
+
+        // Saldo esperado en caja = Monto inicial + Ventas cobradas por Efectivo - Compras pagadas por Efectivo + Ingresos manuales - Egresos manuales
+        Double saldoEsperado = sesion.getMontoInicialReal() + calcEfectivo - calcEfectivoCajaPagos + ingresosManuales - egresosManuales;
 
         return CajaDetalleDTO.builder()
                 .idSesion(sesion.getIdSesion())
@@ -238,6 +246,8 @@ public class CajaService {
                 .totalTarjeta(calcTarjeta)
                 .totalTransferencia(calcTransferencia)
                 .desgloseCobros(desglose)
+                .ingresosManuales(ingresosManuales)
+                .egresosManuales(egresosManuales)
                 .build();
     }
 
@@ -405,8 +415,13 @@ public class CajaService {
             }
         }
 
+        Double ingresosManuales = movimientoCajaRepository.sumIngresosBySesion(sesion.getIdSesion());
+        Double egresosManuales = movimientoCajaRepository.sumEgresosBySesion(sesion.getIdSesion());
+        if (ingresosManuales == null) ingresosManuales = 0.0;
+        if (egresosManuales == null) egresosManuales = 0.0;
+
         Double montoInicial = sesion.getMontoInicialReal() != null ? sesion.getMontoInicialReal() : 0.0;
-        return montoInicial + calcEfectivo - calcEfectivoCajaPagos;
+        return montoInicial + calcEfectivo - calcEfectivoCajaPagos + ingresosManuales - egresosManuales;
     }
 
     private CajaResponseDTO mapToDTO(SesionCaja caja) {
@@ -531,7 +546,12 @@ public class CajaService {
                 }
             }
 
-            Double saldoEsperado = sesion.getMontoInicialReal() + ingresosEfectivo - egresosEfectivo;
+            Double ingresosManuales = movimientoCajaRepository.sumIngresosBySesion(sesion.getIdSesion());
+            Double egresosManuales = movimientoCajaRepository.sumEgresosBySesion(sesion.getIdSesion());
+            if (ingresosManuales == null) ingresosManuales = 0.0;
+            if (egresosManuales == null) egresosManuales = 0.0;
+
+            Double saldoEsperado = sesion.getMontoInicialReal() + ingresosEfectivo - egresosEfectivo + ingresosManuales - egresosManuales;
 
             // Calcular diferencia (solo si la sesión está cerrada y tiene monto final)
             Double diferencia = null;
@@ -572,6 +592,8 @@ public class CajaService {
                     .ventasTransferencia(ventasTransferencia)
                     .observacionesApertura(sesion.getObservacionesApertura())
                     .observacionesCierre(sesion.getObservacionesCierre())
+                    .ingresosManuales(ingresosManuales)
+                    .egresosManuales(egresosManuales)
                     .build();
         });
     }

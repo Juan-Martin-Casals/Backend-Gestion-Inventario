@@ -1,4 +1,7 @@
+window.salesChannel = window.salesChannel || new BroadcastChannel('sales_channel');
+
 document.addEventListener('DOMContentLoaded', function () {
+    const salesChannel = window.salesChannel;
     const sectionCaja = document.getElementById('caja-section');
     if (!sectionCaja) return;
 
@@ -32,6 +35,64 @@ document.addEventListener('DOMContentLoaded', function () {
     let usuarioIdActual = null;
     let cajaEstaAbierta = false;
     let resumenCajaActual = null; // Almacenamos el DTO de respuesta para cálculos locales y PDF
+
+    // ===================================
+    // SELECTORES - MODAL TICKET
+    // ===================================
+    const modalTicketOverlay = document.getElementById('modal-ticket-overlay');
+    const btnGenerarTicket = document.getElementById('btn-generar-ticket');
+    const btnCerrarTicket = document.getElementById('btn-cerrar-ticket');
+
+    let ultimaVentaId = null;
+
+    function mostrarModalTicket(idVenta) {
+        ultimaVentaId = idVenta;
+        if (modalTicketOverlay) {
+            modalTicketOverlay.style.display = 'block';
+        }
+    }
+
+    function cerrarModalTicket() {
+        if (modalTicketOverlay) {
+            modalTicketOverlay.style.display = 'none';
+        }
+        ultimaVentaId = null;
+    }
+
+    if (btnGenerarTicket) {
+        btnGenerarTicket.addEventListener('click', async () => {
+            if (!ultimaVentaId) return;
+            try {
+                const response = await fetch(`/api/ventas/${ultimaVentaId}/ticket`);
+                if (!response.ok) throw new Error('Error al generar ticket');
+
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `Ticket_Venta_${ultimaVentaId}.pdf`;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                a.remove();
+            } catch (error) {
+                console.error('Error al descargar ticket:', error);
+                alert('Error al generar el ticket');
+            }
+            cerrarModalTicket();
+        });
+    }
+
+    if (btnCerrarTicket) {
+        btnCerrarTicket.addEventListener('click', cerrarModalTicket);
+    }
+
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalTicketOverlay && modalTicketOverlay.style.display !== 'none') {
+            cerrarModalTicket();
+        }
+    });
 
     const formatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
@@ -111,6 +172,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (infoEstado) infoEstado.textContent = 'Caja abierta y operando con normalidad. Recuerda cerrarla al final de tu turno.';
 
                 cargarDashboardCierre(silentRefresh);
+            }
+
+            const btnNuevoIngreso = document.getElementById('btn-nuevo-ingreso');
+            const btnNuevoEgreso = document.getElementById('btn-nuevo-egreso');
+            if (btnNuevoIngreso) {
+                btnNuevoIngreso.disabled = !cajaEstaAbierta;
+                btnNuevoIngreso.style.opacity = cajaEstaAbierta ? '1' : '0.6';
+                btnNuevoIngreso.style.cursor = cajaEstaAbierta ? 'pointer' : 'not-allowed';
+            }
+            if (btnNuevoEgreso) {
+                btnNuevoEgreso.disabled = !cajaEstaAbierta;
+                btnNuevoEgreso.style.opacity = cajaEstaAbierta ? '1' : '0.6';
+                btnNuevoEgreso.style.cursor = cajaEstaAbierta ? 'pointer' : 'not-allowed';
             }
 
         } catch (error) {
@@ -219,7 +293,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             // 4. Lógica de Fondo Fijo y Retiro
-            const totalEfectivoTeorico = resumenData.saldoEsperado || ((resumenData.montoInicial || 0) + (resumenData.totalEfectivo || 0) - (resumenData.totalComprasEfectivo || 0));
+            const totalEfectivoTeorico = resumenData.saldoEsperado || ((resumenData.montoInicial || 0) + (resumenData.totalEfectivo || 0) + (resumenData.ingresosManuales || 0) - (resumenData.totalComprasEfectivo || 0) - (resumenData.egresosManuales || 0));
 
             // Popula Efvo Esperado en el sidebar derecho
             const labelEsperado = document.getElementById('caja-sidebar-efectivo-esperado');
@@ -238,6 +312,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (resumenData.fechaApertura) {
                 cargarIngresosSesion(resumenData.fechaApertura);
             }
+
+            // Cargar movimientos manuales del turno
+            cargarMovimientosManualesTurno();
 
         } catch (e) {
             console.error("Error al obtener resumen de caja activa:", e);
@@ -528,7 +605,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // 3. Población dinámica del Modal con datos reales
             const data = resumenCajaActual || {};
-            const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalComprasEfectivo || 0));
+            const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) + (data.ingresosManuales || 0) - (data.totalComprasEfectivo || 0) - (data.egresosManuales || 0));
             const diferencia = montoFisicoVal - totalEfTeorico;
 
             // Header - Responsable y Sesión
@@ -541,9 +618,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const horaApertura = data.fechaApertura ? new Date(data.fechaApertura).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
             const horaCierre = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
             const vtEfNode = document.getElementById('modal-resumen-ventas-efectivo');
-            if (vtEfNode) vtEfNode.textContent = `+${formatter.format(data.totalEfectivo || 0)}`;
+            if (vtEfNode) vtEfNode.textContent = `+${formatter.format((data.totalEfectivo || 0) + (data.ingresosManuales || 0))}`;
             const gaNode = document.getElementById('modal-resumen-gastos');
-            if (gaNode) gaNode.textContent = `-${formatter.format(data.totalComprasEfectivo || 0)}`;
+            if (gaNode) gaNode.textContent = `-${formatter.format((data.totalComprasEfectivo || 0) + (data.egresosManuales || 0))}`;
             const espNode = document.getElementById('modal-resumen-esperado');
             const apNode = document.getElementById('modal-resumen-apertura');
             if (apNode) apNode.textContent = horaApertura;
@@ -622,8 +699,8 @@ document.addEventListener('DOMContentLoaded', function () {
                         document.getElementById('post-cierre-hora').textContent = horaCr;
 
                         const inicial = data.montoInicial || 0;
-                        const ventasEf = data.totalEfectivo || 0;
-                        const comprasEf = data.totalComprasEfectivo || 0;
+                        const ventasEf = (data.totalEfectivo || 0) + (data.ingresosManuales || 0);
+                        const comprasEf = (data.totalComprasEfectivo || 0) + (data.egresosManuales || 0);
                         const efTeorico = data.saldoEsperado || (inicial + ventasEf - comprasEf);
 
                         document.getElementById('post-cierre-inicial').textContent = formatter.format(inicial);
@@ -776,7 +853,7 @@ document.addEventListener('DOMContentLoaded', function () {
         doc.setFont("helvetica", "normal");
 
         y += 8;
-        const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) - (data.totalComprasEfectivo || 0));
+        const totalEfTeorico = data.saldoEsperado || ((data.montoInicial || 0) + (data.totalEfectivo || 0) + (data.ingresosManuales || 0) - (data.totalComprasEfectivo || 0) - (data.egresosManuales || 0));
         doc.text(`Efectivo Esperado: ${formatter.format(totalEfTeorico)}`, 5, y);
         y += 6;
         doc.text(`Efectivo Físico Aud: ${formatter.format(montoFisicoReal)}`, 5, y);
@@ -1319,7 +1396,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     // Cargar ventas pendientes desde el backend
-    async function loadVentasPendientes() {
+    async function loadVentasPendientes(silent = false) {
         const lista = document.getElementById('cajero-lista-pendientes');
         const countBadge = document.getElementById('cajero-pendientes-count');
         const container = document.getElementById('cajero-ventas-container');
@@ -1353,7 +1430,9 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         try {
-            lista.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px 20px;"><i class="fas fa-spinner fa-spin" style="font-size: 20px; margin-bottom: 8px;"></i><p style="margin: 0; font-size: 13px;">Buscando órdenes...</p></div>';
+            if (!silent) {
+                lista.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 40px 20px;"><i class="fas fa-spinner fa-spin" style="font-size: 20px; margin-bottom: 8px;"></i><p style="margin: 0; font-size: 13px;">Buscando órdenes...</p></div>';
+            }
             const res = await fetch('/api/ventas/pendientes', { cache: 'no-store' });
             if (!res.ok) throw new Error('Error al cargar pendientes');
             const pendientes = await res.json();
@@ -1362,12 +1441,14 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (pendientes.length === 0) {
                 lista.innerHTML = `
-                    <div style="text-align: center; padding: 60px 20px; color: #64748b;">
-                        <div style="width: 48px; height: 48px; background: #e0f2fe; color: #0284c7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px;">
-                            <i class="fas fa-check-circle" style="font-size: 20px;"></i>
+                    <div style="text-align: center; padding: 50px 20px; color: #64748b; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;">
+                        <div style="position: relative; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; background: #f0fdf4; border-radius: 50%; box-shadow: 0 8px 20px rgba(22, 163, 74, 0.06); animation: pulse 2s infinite;">
+                            <i class="fas fa-check" style="font-size: 24px; color: #16a34a; z-index: 2;"></i>
                         </div>
-                        <h5 style="margin: 0 0 4px; font-weight: 700; color: #334155;">Cola de espera vacía</h5>
-                        <p style="margin: 0; font-size: 12px;">No hay órdenes pendientes de cobro en este momento.</p>
+                        <div>
+                            <h5 style="margin: 0 0 4px; font-weight: 800; color: #0f172a; font-size: 14px;">¡Cola de espera vacía!</h5>
+                            <p style="margin: 0; font-size: 12px; color: #64748b; max-width: 200px; line-height: 1.5;">No hay órdenes pendientes de cobro en este momento.</p>
+                        </div>
                     </div>
                 `;
                 return;
@@ -1379,25 +1460,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const timeStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0') + ' hs';
                 
                 const card = document.createElement('div');
-                card.style.cssText = 'background: white; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px; cursor: pointer; transition: all 0.2s; display: flex; flex-direction: column; gap: 8px;';
-                if (ventaSeleccionada && ventaSeleccionada.idVenta === venta.idVenta) {
-                    card.style.borderColor = '#4f46e5';
-                    card.style.backgroundColor = '#f5f3ff';
-                    card.style.boxShadow = '0 4px 12px rgba(79, 70, 229, 0.05)';
-                }
-
-                card.onmouseover = () => {
-                    if (!ventaSeleccionada || ventaSeleccionada.idVenta !== venta.idVenta) {
-                        card.style.borderColor = '#cbd5e1';
-                        card.style.transform = 'translateY(-1px)';
-                    }
-                };
-                card.onmouseout = () => {
-                    if (!ventaSeleccionada || ventaSeleccionada.idVenta !== venta.idVenta) {
-                        card.style.borderColor = '#e2e8f0';
-                        card.style.transform = 'translateY(0)';
-                    }
-                };
+                card.className = `pos-order-card ${ventaSeleccionada && ventaSeleccionada.idVenta === venta.idVenta ? 'selected' : ''}`;
 
                 const metodoSugerido = venta.metodoPago || 'Efectivo';
                 let methodBadgeBg = '#f3f4f6', methodBadgeColor = '#374151';
@@ -1419,7 +1482,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     </div>
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; padding-top: 8px; border-top: 1px dashed #f1f5f9;">
                         <span style="font-size: 12px; color: #475569;">Cliente: <strong>${venta.nombreCliente || 'N/A'}</strong></span>
-                        <strong style="color: #1e3a8a; font-size: 16px;">${formatter.format(venta.total)}</strong>
+                        <strong class="pos-card-price">${formatter.format(venta.total)}</strong>
                     </div>
                 `;
 
@@ -1442,7 +1505,6 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('pos-orden-cliente').textContent = venta.nombreCliente || 'Cliente N/A';
         document.getElementById('pos-orden-vendedor').textContent = venta.nombreVendedor || '-';
         document.getElementById('pos-total-display').textContent = formatter.format(venta.total);
-        document.getElementById('pos-sugerido-metodo-text').textContent = venta.metodoPago || 'Efectivo';
         
         // Mostrar descuento si aplica
         const descDiv = document.getElementById('pos-descuento-detalle');
@@ -1476,9 +1538,23 @@ document.addEventListener('DOMContentLoaded', function () {
         const selectMetodo = document.getElementById('pos-metodo-pago');
         if (selectMetodo) {
             selectMetodo.value = '';
+            
+            const cleanStr = str => {
+                if (!str) return '';
+                return str.toLowerCase()
+                          .normalize("NFD")
+                          .replace(/[\u0300-\u036f]/g, "")
+                          .trim();
+            };
+
+            const targetMethod = cleanStr(venta.metodoPago || 'efectivo');
+
             for (let i = 0; i < selectMetodo.options.length; i++) {
                 const opt = selectMetodo.options[i];
-                if (opt.text.toLowerCase().includes((venta.metodoPago || 'efectivo').toLowerCase())) {
+                const optText = cleanStr(opt.text || opt.textContent);
+                
+                // Comparación robusta bidireccional
+                if (optText.includes(targetMethod) || targetMethod.includes(optText)) {
                     selectMetodo.value = opt.value;
                     break;
                 }
@@ -1522,13 +1598,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectMetodo = document.getElementById('pos-metodo-pago');
     if (selectMetodo) {
         selectMetodo.addEventListener('change', function () {
-            const nombre = this.options[this.selectedIndex]?.text?.toLowerCase() || '';
+            const nombre = (this.options[this.selectedIndex]?.text || this.options[this.selectedIndex]?.textContent || '').toLowerCase();
             const esEfectivo = nombre.includes('efectivo');
-            const esTarjeta = nombre.includes('tarjeta');
             
             document.getElementById('pos-efectivo-panel').style.display = esEfectivo ? 'flex' : 'none';
             document.getElementById('pos-vuelto-container').style.display = esEfectivo ? 'flex' : 'none';
-            document.getElementById('pos-tarjeta-container').style.display = esTarjeta ? 'block' : 'none';
             
             // Auto-calcular vuelto
             actualizarVueltoPOS();
@@ -1637,16 +1711,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const esEfectivo = nombreMetodo.toLowerCase().includes('efectivo');
-            const esTarjeta = nombreMetodo.toLowerCase().includes('tarjeta');
+            const nombreMetodoLower = nombreMetodo.toLowerCase();
+            const esEfectivo = nombreMetodoLower.includes('efectivo');
             
             let tipoTarjeta = null;
-            if (esTarjeta) {
-                tipoTarjeta = document.getElementById('pos-tipo-tarjeta')?.value || null;
-                if (!tipoTarjeta) {
-                    showErrorPOS('Debe seleccionar el tipo de tarjeta (Débito/Crédito).');
-                    return;
-                }
+            if (nombreMetodoLower.includes('debito') || nombreMetodoLower.includes('débito')) {
+                tipoTarjeta = 'Débito';
+            } else if (nombreMetodoLower.includes('credito') || nombreMetodoLower.includes('crédito')) {
+                tipoTarjeta = 'Crédito';
+            } else if (nombreMetodoLower.includes('tarjeta')) {
+                tipoTarjeta = 'Débito'; // Fallback default
             }
 
             let montoPagado = null;
@@ -1696,29 +1770,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const ventaCobrada = await res.json();
                 
-                showSuccessBanner('Venta cobrada con éxito. Imprimiendo ticket...');
+                showSuccessBanner('Venta cobrada con éxito.');
                 
-                // Descargar el ticket en PDF automáticamente
-                try {
-                    const ticketRes = await fetch(`/api/ventas/${ventaCobrada.idVenta}/ticket`);
-                    if (ticketRes.ok) {
-                        const blob = await ticketRes.blob();
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `Ticket_Venta_${ventaCobrada.idVenta}.pdf`;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        a.remove();
-                    }
-                } catch (ticketError) {
-                    console.error('Error al descargar ticket automáticamente:', ticketError);
-                }
+                // Mostrar modal para generar el ticket en PDF opcionalmente
+                mostrarModalTicket(ventaCobrada.idVenta);
 
                 // Notificar al dashboard de caja de forma global
                 document.dispatchEvent(new CustomEvent('ventaRegistrada'));
 
+                // Notificar al empleado mediante BroadcastChannel
+                salesChannel.postMessage({ type: 'venta_cobrada', idVenta: ventaCobrada.idVenta });
+ 
                 // Limpiar estado
                 deseleccionarVenta();
 
@@ -1745,7 +1807,387 @@ document.addEventListener('DOMContentLoaded', function () {
     loadMetodosPagoActivos();
     loadVentasPendientes();
 
+    // BroadcastChannel para escuchar nuevas órdenes en tiempo real (otras pestañas)
+    salesChannel.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'nueva_orden') {
+            if (typeof loadVentasPendientes === 'function') {
+                loadVentasPendientes(true); // Actualización silenciosa (sin mostrar spinner de carga)
+            }
+        }
+    });
+
+    // Polling de 5 segundos como respaldo (para múltiples dispositivos/navegadores)
+    setInterval(() => {
+        if (cajaEstaAbierta && typeof loadVentasPendientes === 'function') {
+            loadVentasPendientes(true); // Actualización silenciosa (sin mostrar spinner de carga)
+        }
+    }, 5000);
+
+    // ==========================================
+    // LÓGICA DE MOVIMIENTOS MANUALES DE CAJA
+    // ==========================================
+    const modalMovCaja = document.getElementById('modal-movimiento-caja');
+    const formMovCaja = document.getElementById('form-movimiento-caja');
+    const inputMovMonto = document.getElementById('movimiento-monto');
+    const selectMovCat = document.getElementById('movimiento-categoria');
+    const inputMovRef = document.getElementById('movimiento-referencia');
+    const txtMovDesc = document.getElementById('movimiento-descripcion');
+    const errorMovMsg = document.getElementById('movimiento-error-msg');
+    
+    const btnNuevoIngreso = document.getElementById('btn-nuevo-ingreso');
+    const btnNuevoEgreso = document.getElementById('btn-nuevo-egreso');
+    const btnCerrarModalMov = document.getElementById('btn-cerrar-modal-movimiento');
+    const btnCancelarMov = document.getElementById('btn-cancelar-movimiento');
+    
+    const charCountMovDesc = document.getElementById('char-count-movimiento-desc');
+
+    if (txtMovDesc && charCountMovDesc) {
+        txtMovDesc.addEventListener('input', () => {
+            charCountMovDesc.textContent = txtMovDesc.value.length;
+        });
+    }
+
+    // Bloquear caracteres no numéricos excepto un punto decimal
+    if (inputMovMonto) {
+        inputMovMonto.addEventListener('keydown', (e) => {
+            if (['e', 'E', '+', '-'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+        
+        inputMovMonto.addEventListener('input', (e) => {
+            let val = e.target.value;
+            // Permitir solo números y un punto decimal
+            val = val.replace(/[^0-9.]/g, '');
+            // Evitar múltiples puntos
+            const parts = val.split('.');
+            if (parts.length > 2) {
+                val = parts[0] + '.' + parts.slice(1).join('');
+            }
+            e.target.value = val;
+        });
+    }
+
+    async function abrirModalMovimiento(tipo) {
+        if (!modalMovCaja || !formMovCaja) return;
+        
+        // Reset form
+        formMovCaja.reset();
+        if (charCountMovDesc) charCountMovDesc.textContent = '0';
+        if (errorMovMsg) {
+            errorMovMsg.style.display = 'none';
+            errorMovMsg.textContent = '';
+        }
+
+        document.getElementById('movimiento-tipo').value = tipo;
+
+        const header = document.getElementById('movimiento-modal-header');
+        const title = document.getElementById('movimiento-modal-title');
+        const confirmBtn = document.getElementById('btn-confirmar-movimiento');
+
+        // Intentar recuperar el resumen si no está cargado
+        if (!resumenCajaActual && usuarioIdActual) {
+            try {
+                const resumenRes = await fetch(`/api/caja/sesion-activa/${usuarioIdActual}`);
+                if (resumenRes.ok) {
+                    resumenCajaActual = await resumenRes.json();
+                }
+            } catch (e) {
+                console.warn('No se pudieron recuperar datos de sesión activa:', e);
+            }
+        }
+
+        // Poblar bloque de información de auditoría (solo lectura)
+        const infoSesion = document.getElementById('movimiento-info-sesion');
+        const infoCajero = document.getElementById('movimiento-info-cajero');
+        const infoFecha = document.getElementById('movimiento-info-fecha');
+
+        if (infoSesion) {
+            infoSesion.textContent = resumenCajaActual && resumenCajaActual.idSesion 
+                ? `#${resumenCajaActual.idSesion}` 
+                : 'Sin sesión activa';
+        }
+
+        if (infoCajero) {
+            infoCajero.textContent = spanOperador ? spanOperador.textContent.trim() : 'No identificado';
+        }
+
+        if (infoFecha) {
+            infoFecha.textContent = new Date().toLocaleString('es-AR', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        if (tipo === 'INGRESO') {
+            if (header) header.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+            if (title) title.innerHTML = '<i class="fas fa-plus-circle"></i> Nuevo Ingreso de Efectivo';
+            if (confirmBtn) {
+                confirmBtn.style.background = '#10b981';
+                confirmBtn.textContent = 'Guardar Ingreso';
+            }
+        } else {
+            if (header) header.style.background = 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)';
+            if (title) title.innerHTML = '<i class="fas fa-minus-circle"></i> Nuevo Retiro / Egreso';
+            if (confirmBtn) {
+                confirmBtn.style.background = '#e11d48';
+                confirmBtn.textContent = 'Guardar Egreso';
+            }
+        }
+
+        // Cargar categorías correspondientes al tipo
+        await cargarCategoriasMovimiento(tipo);
+
+        modalMovCaja.style.display = 'flex';
+    }
+
+    function cerrarModalMovimiento() {
+        if (modalMovCaja) modalMovCaja.style.display = 'none';
+    }
+
+    if (btnNuevoIngreso) btnNuevoIngreso.addEventListener('click', () => abrirModalMovimiento('INGRESO'));
+    if (btnNuevoEgreso) btnNuevoEgreso.addEventListener('click', () => abrirModalMovimiento('EGRESO'));
+    if (btnCerrarModalMov) btnCerrarModalMov.addEventListener('click', cerrarModalMovimiento);
+    if (btnCancelarMov) btnCancelarMov.addEventListener('click', cerrarModalMovimiento);
+
+    const btnPrevMov = document.getElementById('movimientos-caja-prev');
+    const btnNextMov = document.getElementById('movimientos-caja-next');
+    if (btnPrevMov) btnPrevMov.addEventListener('click', () => {
+        if (movimientosPage > 1) {
+            movimientosPage--;
+            renderizarPaginaMovimientos();
+        }
+    });
+    if (btnNextMov) btnNextMov.addEventListener('click', () => {
+        const totalPages = Math.ceil(movimientosManualesList.length / movimientosPageSize);
+        if (movimientosPage < totalPages) {
+            movimientosPage++;
+            renderizarPaginaMovimientos();
+        }
+    });
+
+    // Cerrar modal con ESC o clic fuera
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalMovCaja && modalMovCaja.style.display !== 'none') {
+            cerrarModalMovimiento();
+        }
+    });
+
+    async function cargarCategoriasMovimiento(tipo) {
+        if (!selectMovCat) return;
+        try {
+            const res = await fetch(`/api/categorias-movimiento/tipo/${tipo}`);
+            if (!res.ok) throw new Error('Error al cargar categorías');
+            const cats = await res.json();
+            
+            selectMovCat.innerHTML = '<option value="">Seleccione una categoría...</option>';
+            cats.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.idCategoriaMovimiento;
+                opt.textContent = c.nombre;
+                selectMovCat.appendChild(opt);
+            });
+        } catch (error) {
+            console.error(error);
+            selectMovCat.innerHTML = '<option value="">Error al cargar categorías</option>';
+        }
+    }
+
+    let movimientosManualesList = [];
+    let movimientosPage = 1;
+    const movimientosPageSize = 5;
+
+    async function cargarMovimientosManualesTurno() {
+        const tbody = document.getElementById('lista-movimientos-turno-body');
+        if (!tbody) return;
+        try {
+            const res = await fetch('/api/movimientos-caja/sesion/activa');
+            if (!res.ok) {
+                const msg = cajaEstaAbierta ? "No se pudieron cargar los movimientos." : "No hay una sesión de caja activa. Abra la caja para registrar movimientos.";
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">${msg}</td></tr>`;
+                actualizarControlesPaginacionMovimientos(0);
+                return;
+            }
+            movimientosManualesList = await res.json();
+            movimientosPage = 1; // Reset to page 1 on new load
+            renderizarPaginaMovimientos();
+        } catch (error) {
+            console.error('Error al cargar movimientos:', error);
+        }
+    }
+
+    function renderizarPaginaMovimientos() {
+        const tbody = document.getElementById('lista-movimientos-turno-body');
+        if (!tbody) return;
+
+        if (movimientosManualesList.length === 0) {
+            const msg = cajaEstaAbierta ? "No se han registrado movimientos manuales en este turno." : "No hay una sesión de caja activa. Abra la caja para registrar movimientos.";
+            tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">${msg}</td></tr>`;
+            actualizarControlesPaginacionMovimientos(0);
+            return;
+        }
+
+        const totalPages = Math.ceil(movimientosManualesList.length / movimientosPageSize);
+        if (movimientosPage > totalPages) {
+            movimientosPage = totalPages;
+        }
+        if (movimientosPage < 1) {
+            movimientosPage = 1;
+        }
+
+        const start = (movimientosPage - 1) * movimientosPageSize;
+        const end = start + movimientosPageSize;
+        const pageItems = movimientosManualesList.slice(start, end);
+
+        tbody.innerHTML = '';
+        pageItems.forEach(m => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid #f1f5f9';
+            
+            const fechaHoraFormatted = new Date(m.fechaHora).toLocaleString('es-AR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+            const isIngreso = m.tipo === 'INGRESO';
+            const badgeBg = m.estado === 'ANULADO' ? '#f1f5f9' : (isIngreso ? '#ecfdf5' : '#fef2f2');
+            const badgeColor = m.estado === 'ANULADO' ? '#64748b' : (isIngreso ? '#059669' : '#e11d48');
+            const badgeText = m.estado === 'ANULADO' ? 'ANULADO' : m.tipo;
+            const badgeIcon = m.estado === 'ANULADO' ? 'fa-ban' : (isIngreso ? 'fa-arrow-up' : 'fa-arrow-down');
+            
+            if (m.estado === 'ANULADO') {
+                tr.style.opacity = '0.6';
+                tr.style.background = '#fafafa';
+            }
+
+            tr.innerHTML = `
+                <td style="padding: 12px; font-size: 13px; font-weight: 500; color: #334155;">${fechaHoraFormatted}</td>
+                <td style="padding: 12px;">
+                    <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="fas ${badgeIcon}"></i> ${badgeText}
+                    </span>
+                </td>
+                <td style="padding: 12px; font-size: 13px; font-weight: 500; color: #475569;">${m.nombreUsuario || '-'}</td>
+                <td style="padding: 12px; font-size: 13px; font-weight: 600; color: #475569;">${m.nombreCategoria}</td>
+                <td style="padding: 12px; font-size: 13px; font-weight: 800; color: ${m.estado === 'ANULADO' ? '#64748b' : badgeColor};">${formatter.format(m.monto)}</td>
+                <td style="padding: 12px; font-size: 13px; color: #64748b; word-break: break-word;">${m.descripcion}</td>
+                <td style="padding: 12px; font-size: 13px; font-weight: 500; color: #94a3b8;">${m.referencia || '-'}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        actualizarControlesPaginacionMovimientos(totalPages);
+    }
+
+    function actualizarControlesPaginacionMovimientos(totalPages) {
+        const pageInfo = document.getElementById('movimientos-caja-page-info');
+        const btnPrev = document.getElementById('movimientos-caja-prev');
+        const btnNext = document.getElementById('movimientos-caja-next');
+
+        if (!pageInfo || !btnPrev || !btnNext) return;
+
+        if (totalPages === 0) {
+            pageInfo.textContent = 'Página 1 de 1';
+            btnPrev.disabled = true;
+            btnNext.disabled = true;
+            return;
+        }
+
+        pageInfo.textContent = `Página ${movimientosPage} de ${totalPages}`;
+        btnPrev.disabled = movimientosPage === 1;
+        btnNext.disabled = movimientosPage === totalPages;
+    }
+
+    if (formMovCaja) {
+        formMovCaja.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (errorMovMsg) {
+                errorMovMsg.style.display = 'none';
+                errorMovMsg.textContent = '';
+            }
+
+            const tipo = document.getElementById('movimiento-tipo').value;
+            const monto = parseFloat(inputMovMonto.value);
+            const idCategoria = selectMovCat.value;
+            const referencia = inputMovRef.value.trim();
+            const descripcion = txtMovDesc.value.trim();
+
+            if (isNaN(monto) || monto <= 0) {
+                if (errorMovMsg) {
+                    errorMovMsg.textContent = 'Por favor ingrese un monto positivo válido.';
+                    errorMovMsg.style.display = 'block';
+                }
+                return;
+            }
+
+            if (!idCategoria) {
+                if (errorMovMsg) {
+                    errorMovMsg.textContent = 'Por favor seleccione una categoría.';
+                    errorMovMsg.style.display = 'block';
+                }
+                return;
+            }
+
+            if (!descripcion) {
+                if (errorMovMsg) {
+                    errorMovMsg.textContent = 'Por favor describa el motivo.';
+                    errorMovMsg.style.display = 'block';
+                }
+                return;
+            }
+
+
+
+            const btnConfirmar = document.getElementById('btn-confirmar-movimiento');
+            btnConfirmar.disabled = true;
+            btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Registrando...';
+
+            try {
+                const bodyReq = {
+                    tipo: tipo,
+                    monto: monto,
+                    idUsuario: usuarioIdActual,
+                    idCategoriaMovimiento: parseInt(idCategoria, 10),
+                    referencia: referencia,
+                    descripcion: descripcion
+                };
+
+                const res = await fetch('/api/movimientos-caja', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(bodyReq)
+                });
+
+                if (res.ok) {
+                    cerrarModalMovimiento();
+                    showSuccessBanner('Movimiento registrado exitosamente.');
+                    // Recargar datos
+                    await cargarDashboardCierre(true);
+                } else {
+                    const errData = await res.json();
+                    throw new Error(errData.message || 'Error al guardar el movimiento.');
+                }
+            } catch (err) {
+                console.error(err);
+                if (errorMovMsg) {
+                    errorMovMsg.textContent = err.message || 'Ocurrió un error inesperado al registrar el movimiento.';
+                    errorMovMsg.style.display = 'block';
+                }
+            } finally {
+                btnConfirmar.disabled = false;
+                btnConfirmar.innerHTML = tipo === 'INGRESO' ? 'Guardar Ingreso' : 'Guardar Egreso';
+            }
+        });
+    }
+
     // Exponer función de recarga global
     window.loadVentasPendientes = loadVentasPendientes;
+    window.cargarMovimientosManualesTurno = cargarMovimientosManualesTurno;
 
 });

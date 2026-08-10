@@ -1,4 +1,7 @@
+window.salesChannel = window.salesChannel || new BroadcastChannel('sales_channel');
+
 document.addEventListener('DOMContentLoaded', function () {
+    const salesChannel = window.salesChannel;
 
     const API_KPI_URL = '/api/informes/kpis';
     const API_AGOTADOS_URL = '/api/informes/agotados';
@@ -67,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function () {
             let countVentasHoy = 0;
             if (currentUserId) {
                 try {
-                    const resVentas = await fetch(`/api/ventas?inicio=${fechaHoy}&fin=${fechaHoy}&vendedorId=${currentUserId}&size=1`);
+                    const resVentas = await fetch(`/api/ventas?inicio=${fechaHoy}&fin=${fechaHoy}&vendedorId=${currentUserId}&estado=COBRADA&size=1`);
                     if (resVentas.ok) {
                         const dataVentas = await resVentas.json();
                         countVentasHoy = dataVentas.totalElements || 0;
@@ -134,6 +137,13 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     document.addEventListener('ventaRegistrada', loadDashboardKPIs);
+
+    // Escuchar el canal de ventas para actualizar KPIs en tiempo real
+    salesChannel.addEventListener('message', (event) => {
+        if (event.data && (event.data.type === 'venta_cobrada' || event.data.type === 'nueva_orden')) {
+            loadDashboardKPIs();
+        }
+    });
 
     // Navegación desde KPI cards (onclick en HTML llama a esta función global)
     window.navigateToStockManagement = function (estado) {

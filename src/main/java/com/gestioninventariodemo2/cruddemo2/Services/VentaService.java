@@ -187,20 +187,20 @@ public class VentaService {
 
     public Page<VentaResponseDTO> listarVentas(Pageable pageable) {
         // Mantener firma original (sin filtros) — delega al método con filtros nulos
-        return listarVentas(pageable, null, null, null, null, null);
+        return listarVentas(pageable, null, null, null, null, null, null);
     }
 
     public Page<VentaResponseDTO> listarVentas(Pageable pageable, String search, LocalDate fechaInicio,
-            LocalDate fechaFin, Long vendedorId, Long metodoPagoId) {
+            LocalDate fechaFin, Long vendedorId, Long metodoPagoId, String estado) {
 
-        Specification<Venta> spec = construirEspecificacion(search, fechaInicio, fechaFin, vendedorId, metodoPagoId);
+        Specification<Venta> spec = construirEspecificacion(search, fechaInicio, fechaFin, vendedorId, metodoPagoId, estado);
         return ventaRepository.findAll(spec, pageable).map(this::mapToVentaDTO);
     }
 
     public List<VentaResponseDTO> obtenerVentasParaPdf(String sortStr, String direction, String search, LocalDate fechaInicio,
-            LocalDate fechaFin, Long vendedorId, Long metodoPagoId) {
+            LocalDate fechaFin, Long vendedorId, Long metodoPagoId, String estado) {
             
-        Specification<Venta> spec = construirEspecificacion(search, fechaInicio, fechaFin, vendedorId, metodoPagoId);
+        Specification<Venta> spec = construirEspecificacion(search, fechaInicio, fechaFin, vendedorId, metodoPagoId, estado);
         
         org.springframework.data.domain.Sort sort = org.springframework.data.domain.Sort.unsorted();
         if (sortStr != null && !sortStr.isEmpty()) {
@@ -217,7 +217,7 @@ public class VentaService {
     }
 
     private Specification<Venta> construirEspecificacion(String search, LocalDate fechaInicio,
-            LocalDate fechaFin, Long vendedorId, Long metodoPagoId) {
+            LocalDate fechaFin, Long vendedorId, Long metodoPagoId, String estado) {
             
         boolean hasSearch = search != null && !search.trim().isEmpty();
         boolean hasDates = fechaInicio != null && fechaFin != null;
@@ -268,6 +268,9 @@ public class VentaService {
                                 cb.equal(cobroRoot.get("venta"), root),
                                 cb.equal(cobroRoot.get("metodoPago").get("idMetodoPago"), metodoPagoId)));
                 predicates.add(cb.exists(sub));
+            }
+            if (estado != null && !estado.trim().isEmpty()) {
+                predicates.add(cb.equal(root.get("estado"), estado));
             }
             return predicates.isEmpty() ? cb.conjunction() : cb.and(predicates.toArray(new Predicate[0]));
         };

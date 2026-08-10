@@ -49,31 +49,34 @@ public class CajaController {
         }
     }
     @GetMapping("/sesion-activa/{idUsuario}")
-    public ResponseEntity<com.gestioninventariodemo2.cruddemo2.DTO.CajaDetalleDTO> resumenCaja(@PathVariable Long idUsuario) {
+    public ResponseEntity<?> resumenCaja(@PathVariable Long idUsuario) {
         try {
             return ResponseEntity.ok(cajaService.obtenerResumenCaja(idUsuario));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage() != null ? e.getMessage() : "NullPointerException", "type", e.getClass().getName()));
         }
     }
 
     @GetMapping("/sesion-activa/me")
-    public ResponseEntity<com.gestioninventariodemo2.cruddemo2.DTO.CajaDetalleDTO> resumenCajaMe(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
+    public ResponseEntity<?> resumenCajaMe(@org.springframework.security.core.annotation.AuthenticationPrincipal org.springframework.security.core.userdetails.UserDetails userDetails) {
         try {
             Usuario usuario = usuarioRepository.findByEmail(userDetails.getUsername())
                     .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
             return ResponseEntity.ok(cajaService.obtenerResumenCaja(usuario.getIdUsuario()));
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage() != null ? e.getMessage() : "NullPointerException", "type", e.getClass().getName()));
         }
     }
 
     @GetMapping("/resumen-global")
-    public ResponseEntity<com.gestioninventariodemo2.cruddemo2.DTO.CajaDetalleDTO> resumenGlobal() {
+    public ResponseEntity<?> resumenGlobal() {
         try {
             return ResponseEntity.ok(cajaService.obtenerResumenGlobalActivo());
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("error", e.getMessage() != null ? e.getMessage() : "NullPointerException", "type", e.getClass().getName()));
         }
     }
 

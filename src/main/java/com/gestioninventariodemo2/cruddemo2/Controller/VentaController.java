@@ -56,13 +56,14 @@ public class VentaController {
             @RequestParam(required = false) String inicio,
             @RequestParam(required = false) String fin,
             @RequestParam(required = false) Long vendedorId,
-            @RequestParam(required = false) Long metodoPagoId) {
+            @RequestParam(required = false) Long metodoPagoId,
+            @RequestParam(required = false) String estado) {
 
         LocalDate fechaInicio = (inicio != null && !inicio.isEmpty()) ? LocalDate.parse(inicio) : null;
         LocalDate fechaFin = (fin != null && !fin.isEmpty()) ? LocalDate.parse(fin) : null;
 
         Page<VentaResponseDTO> ventas = ventaService.listarVentas(
-                pageable, search, fechaInicio, fechaFin, vendedorId, metodoPagoId);
+                pageable, search, fechaInicio, fechaFin, vendedorId, metodoPagoId, estado);
         return ResponseEntity.ok(ventas);
     }
 
@@ -88,7 +89,8 @@ public class VentaController {
             @RequestParam(required = false) String inicio,
             @RequestParam(required = false) String fin,
             @RequestParam(required = false) Long vendedorId,
-            @RequestParam(required = false) Long metodoPagoId) {
+            @RequestParam(required = false) Long metodoPagoId,
+            @RequestParam(required = false) String estado) {
 
         String customSort = null;
         String customDirection = "desc";
@@ -104,7 +106,7 @@ public class VentaController {
         LocalDate fechaFin = fin != null && !fin.isEmpty() ? LocalDate.parse(fin) : null;
 
         List<VentaResponseDTO> ventas = ventaService.obtenerVentasParaPdf(
-                customSort, customDirection, search, fechaInicio, fechaFin, vendedorId, metodoPagoId);
+                customSort, customDirection, search, fechaInicio, fechaFin, vendedorId, metodoPagoId, estado);
 
         StringBuilder nombreBuilder = new StringBuilder("Reporte_Ventas_");
         nombreBuilder.append(LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy_MM_dd")));

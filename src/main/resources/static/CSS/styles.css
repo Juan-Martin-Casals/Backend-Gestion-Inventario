@@ -924,6 +924,16 @@ body {
     color: #f57c00;
 }
 
+.status-badge.pendiente {
+    background: #fff8e1;
+    color: #b7791f;
+}
+
+.status-badge.cobrada {
+    background: #e6fffa;
+    color: #047481;
+}
+
 .stock-badge {
     padding: 4px 12px;
     border-radius: 20px;

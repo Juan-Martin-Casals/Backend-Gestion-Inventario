@@ -129,6 +129,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 cargarDashboardCierre(silentRefresh);
             }
 
+            const btnAdminNuevoIngreso = document.getElementById('btn-admin-nuevo-ingreso');
+            const btnAdminNuevoEgreso = document.getElementById('btn-admin-nuevo-egreso');
+            if (btnAdminNuevoIngreso) {
+                btnAdminNuevoIngreso.disabled = !cajaEstaAbierta;
+                btnAdminNuevoIngreso.style.opacity = cajaEstaAbierta ? '1' : '0.6';
+                btnAdminNuevoIngreso.style.cursor = cajaEstaAbierta ? 'pointer' : 'not-allowed';
+            }
+            if (btnAdminNuevoEgreso) {
+                btnAdminNuevoEgreso.disabled = !cajaEstaAbierta;
+                btnAdminNuevoEgreso.style.opacity = cajaEstaAbierta ? '1' : '0.6';
+                btnAdminNuevoEgreso.style.cursor = cajaEstaAbierta ? 'pointer' : 'not-allowed';
+            }
+
         } catch (error) {
             console.error('Error verificando la caja:', error);
         }
@@ -1563,10 +1576,12 @@ document.addEventListener('DOMContentLoaded', function () {
     window.showCajaSubsection = function (subsectionId) {
         const globalContainer = document.getElementById('caja-global-container');
         const operacionesContainer = document.getElementById('caja-operaciones-container');
+        const movimientosContainer = document.getElementById('caja-movimientos-container');
         const historialContainer = document.getElementById('caja-historial-container');
 
         if (globalContainer) globalContainer.style.display = 'none';
         if (operacionesContainer) operacionesContainer.style.display = 'none';
+        if (movimientosContainer) movimientosContainer.style.display = 'none';
         if (historialContainer) historialContainer.style.display = 'none';
 
         if (subsectionId === 'caja-dashboard' && globalContainer) {
@@ -1575,6 +1590,10 @@ document.addEventListener('DOMContentLoaded', function () {
         } else if (subsectionId === 'caja-operaciones' && operacionesContainer) {
             operacionesContainer.style.display = 'block';
             verificarEstadoCaja();
+        } else if (subsectionId === 'caja-movimientos' && movimientosContainer) {
+            movimientosContainer.style.display = 'block';
+            verificarEstadoCaja();
+            cargarMovimientosManualesCaja();
         } else if (subsectionId === 'caja-historial' && historialContainer) {
             historialContainer.style.display = 'block';
             cargarOperadores();
@@ -1586,11 +1605,13 @@ document.addEventListener('DOMContentLoaded', function () {
         // Solo mostramos el dashboard por defecto si no hay ninguna subsección visible actualmente
         const globalContainer = document.getElementById('caja-global-container');
         const operacionesContainer = document.getElementById('caja-operaciones-container');
+        const movimientosContainer = document.getElementById('caja-movimientos-container');
         const historialContainer = document.getElementById('caja-historial-container');
 
         const isAnyVisible =
             (globalContainer && globalContainer.style.display === 'block') ||
             (operacionesContainer && operacionesContainer.style.display === 'block') ||
+            (movimientosContainer && movimientosContainer.style.display === 'block') ||
             (historialContainer && historialContainer.style.display === 'block');
 
         if (!isAnyVisible) {
@@ -1897,6 +1918,570 @@ document.addEventListener('DOMContentLoaded', function () {
     // ==========================================
     // ESCUCHA EVENTOS DE VENTAS Y COMPRAS PARA ACTUALIZAR CAJA
     // ==========================================
+    document.addEventListener('ventaRegistrada', function () {
+        if (typeof verificarEstadoCaja === 'function') {
+            verificarEstadoCaja();
+        }
+    });
+
+    document.addEventListener('comprasActualizadas', function () {
+        if (typeof verificarEstadoCaja === 'function') {
+            verificarEstadoCaja();
+        }
+    });
+
+    // ==========================================
+    // LÓGICA DE MOVIMIENTOS MANUALES DE CAJA (ADMIN)
+    // ==========================================
+    const modalMovCaja = document.getElementById('modal-movimiento-caja');
+    const formMovCaja = document.getElementById('form-movimiento-caja');
+    const inputMovMonto = document.getElementById('movimiento-monto');
+    const selectMovCat = document.getElementById('movimiento-categoria');
+    const inputMovRef = document.getElementById('movimiento-referencia');
+    const txtMovDesc = document.getElementById('movimiento-descripcion');
+    const errorMovMsg = document.getElementById('movimiento-error-msg');
+    const inputMovIdEdit = document.getElementById('movimiento-id-edit');
+    
+    const btnAdminNuevoIngreso = document.getElementById('btn-admin-nuevo-ingreso');
+    const btnAdminNuevoEgreso = document.getElementById('btn-admin-nuevo-egreso');
+    const btnCerrarModalMov = document.getElementById('btn-cerrar-modal-movimiento');
+    const btnCancelarMov = document.getElementById('btn-cancelar-movimiento');
+    const charCountMovDesc = document.getElementById('char-count-movimiento-desc');
+
+    if (txtMovDesc && charCountMovDesc) {
+        txtMovDesc.addEventListener('input', () => {
+            charCountMovDesc.textContent = txtMovDesc.value.length;
+        });
+    }
+
+    if (inputMovMonto) {
+        inputMovMonto.addEventListener('keydown', (e) => {
+            if (['e', 'E', '+', '-'].includes(e.key)) {
+                e.preventDefault();
+            }
+        });
+        
+        inputMovMonto.addEventListener('input', (e) => {
+            let val = e.target.value;
+            val = val.replace(/[^0-9.]/g, '');
+            const parts = val.split('.');
+            if (parts.length > 2) {
+                val = parts[0] + '.' + parts.slice(1).join('');
+            }
+            e.target.value = val;
+        });
+    }
+
+    async function abrirModalMovimiento(tipo, editId = null) {
+        if (!modalMovCaja || !formMovCaja) return;
+        
+        formMovCaja.reset();
+        if (charCountMovDesc) charCountMovDesc.textContent = '0';
+        if (errorMovMsg) {
+            errorMovMsg.style.display = 'none';
+            errorMovMsg.textContent = '';
+        }
+
+        document.getElementById('movimiento-tipo').value = tipo;
+        inputMovIdEdit.value = editId || '';
+
+        const header = document.getElementById('movimiento-modal-header');
+        const title = document.getElementById('movimiento-modal-title');
+        const confirmBtn = document.getElementById('btn-confirmar-movimiento');
+
+        if (!resumenCajaActual && usuarioIdActual) {
+            try {
+                const resumenRes = await fetch(`/api/caja/sesion-activa/${usuarioIdActual}`);
+                if (resumenRes.ok) {
+                    resumenCajaActual = await resumenRes.json();
+                }
+            } catch (e) {
+                console.warn('No se pudieron recuperar datos de sesión activa:', e);
+            }
+        }
+
+        const infoSesion = document.getElementById('movimiento-info-sesion');
+        const infoCajero = document.getElementById('movimiento-info-cajero');
+        const infoFecha = document.getElementById('movimiento-info-fecha');
+
+        if (infoSesion) {
+            infoSesion.textContent = resumenCajaActual && resumenCajaActual.idSesion 
+                ? `#${resumenCajaActual.idSesion}` 
+                : 'Sin sesión activa';
+        }
+
+        if (infoCajero) {
+            infoCajero.textContent = spanOperador ? spanOperador.textContent.trim() : 'No identificado';
+        }
+
+        if (infoFecha) {
+            infoFecha.textContent = new Date().toLocaleString('es-AR', {
+                year: 'numeric', month: '2-digit', day: '2-digit',
+                hour: '2-digit', minute: '2-digit', second: '2-digit'
+            });
+        }
+
+        await cargarCategoriasMovimiento(tipo);
+
+        if (editId) {
+            if (header) header.style.background = 'linear-gradient(135deg, #d97706 0%, #b45309 100%)';
+            if (title) title.innerHTML = '<i class="fas fa-edit"></i> Editar Transacción';
+            if (confirmBtn) {
+                confirmBtn.style.background = '#d97706';
+                confirmBtn.textContent = 'Guardar Cambios';
+            }
+
+            const mov = movimientosManualesList.find(m => m.idMovimiento === editId);
+            if (mov) {
+                inputMovMonto.value = mov.monto;
+                txtMovDesc.value = mov.descripcion;
+                inputMovRef.value = mov.referencia || '';
+                const catOption = Array.from(selectMovCat.options).find(opt => opt.text === mov.nombreCategoria);
+                if (catOption) {
+                    selectMovCat.value = catOption.value;
+                }
+                if (charCountMovDesc) charCountMovDesc.textContent = mov.descripcion.length;
+            }
+        } else {
+            if (tipo === 'INGRESO') {
+                if (header) header.style.background = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                if (title) title.innerHTML = '<i class="fas fa-plus-circle"></i> Nuevo Ingreso de Efectivo';
+                if (confirmBtn) {
+                    confirmBtn.style.background = '#10b981';
+                    confirmBtn.textContent = 'Guardar Ingreso';
+                }
+            } else {
+                if (header) header.style.background = 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)';
+                if (title) title.innerHTML = '<i class="fas fa-minus-circle"></i> Nuevo Retiro / Egreso';
+                if (confirmBtn) {
+                    confirmBtn.style.background = '#e11d48';
+                    confirmBtn.textContent = 'Guardar Egreso';
+                }
+            }
+        }
+
+        modalMovCaja.style.display = 'flex';
+    }
+
+    function cerrarModalMovimiento() {
+        if (modalMovCaja) modalMovCaja.style.display = 'none';
+    }
+
+    if (btnAdminNuevoIngreso) btnAdminNuevoIngreso.addEventListener('click', () => abrirModalMovimiento('INGRESO'));
+    if (btnAdminNuevoEgreso) btnAdminNuevoEgreso.addEventListener('click', () => abrirModalMovimiento('EGRESO'));
+    if (btnCerrarModalMov) btnCerrarModalMov.addEventListener('click', cerrarModalMovimiento);
+    if (btnCancelarMov) btnCancelarMov.addEventListener('click', cerrarModalMovimiento);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalMovCaja && modalMovCaja.style.display !== 'none') {
+            cerrarModalMovimiento();
+        }
+    });
+
+    async function cargarCategoriasMovimiento(tipo) {
+        if (!selectMovCat) return;
+        try {
+            const res = await fetch(`/api/categorias-movimiento/tipo/${tipo}`);
+            if (!res.ok) throw new Error('Error al cargar categorías');
+            const cats = await res.json();
+            
+            selectMovCat.innerHTML = '<option value="">Seleccione una categoría...</option>';
+            cats.forEach(c => {
+                const opt = document.createElement('option');
+                opt.value = c.idCategoriaMovimiento;
+                opt.textContent = c.nombre;
+                selectMovCat.appendChild(opt);
+            });
+        } catch (error) {
+            console.error(error);
+            selectMovCat.innerHTML = '<option value="">Error al cargar categorías</option>';
+        }
+    }
+
+    let movimientosManualesList = [];
+    let movimientosPage = 1;
+    const movimientosPageSize = 5;
+
+    async function cargarMovimientosManualesCaja() {
+        const tbody = document.getElementById('lista-movimientos-admin-body');
+        if (!tbody) return;
+        try {
+            const res = await fetch('/api/movimientos-caja/sesion/activa');
+            if (!res.ok) {
+                const msg = cajaEstaAbierta ? "No se pudieron cargar los movimientos." : "No hay una sesión de caja activa. Abra la caja para registrar movimientos.";
+                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">${msg}</td></tr>`;
+                actualizarControlesPaginacionMovimientos(0);
+                return;
+            }
+            movimientosManualesList = await res.json();
+            movimientosPage = 1;
+            renderizarPaginaMovimientos();
+        } catch (error) {
+            console.error('Error al cargar movimientos:', error);
+        }
+    }
+
+    function renderizarPaginaMovimientos() {
+        const tbody = document.getElementById('lista-movimientos-admin-body');
+        if (!tbody) return;
+
+        if (movimientosManualesList.length === 0) {
+            const msg = cajaEstaAbierta ? "No se han registrado movimientos manuales en este turno." : "No hay una sesión de caja activa. Abra la caja para registrar movimientos.";
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">${msg}</td></tr>`;
+            actualizarControlesPaginacionMovimientos(0);
+            return;
+        }
+
+        const totalPages = Math.ceil(movimientosManualesList.length / movimientosPageSize);
+        if (movimientosPage > totalPages) movimientosPage = totalPages;
+        if (movimientosPage < 1) movimientosPage = 1;
+
+        const start = (movimientosPage - 1) * movimientosPageSize;
+        const end = start + movimientosPageSize;
+        const pageItems = movimientosManualesList.slice(start, end);
+
+        tbody.innerHTML = '';
+        pageItems.forEach(m => {
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = '1px solid #f1f5f9';
+            
+            const fechaHoraFormatted = new Date(m.fechaHora).toLocaleString('es-AR', {
+                day: '2-digit', month: '2-digit', year: 'numeric',
+                hour: '2-digit', minute: '2-digit'
+            });
+            const isIngreso = m.tipo === 'INGRESO';
+            const badgeBg = isIngreso ? '#ecfdf5' : '#fef2f2';
+            const badgeColor = isIngreso ? '#059669' : '#e11d48';
+            
+            let auditoriaHtml = '<span style="color: #94a3b8; font-style: italic;">-</span>';
+            if (m.estado === 'ANULADO') {
+                const fMod = m.fechaModificacion ? new Date(m.fechaModificacion).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+                auditoriaHtml = `<span style="color: #ef4444; font-size: 11px; font-weight: 700; line-height: 1.3; display: block;"><i class="fas fa-ban"></i> Anulado por:<br>${m.nombreUsuarioModificador || 'Admin'}<br>${fMod}</span>`;
+            } else if (m.nombreUsuarioModificador) {
+                const fMod = m.fechaModificacion ? new Date(m.fechaModificacion).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
+                auditoriaHtml = `<span style="color: #d97706; font-size: 11px; font-weight: 700; line-height: 1.3; display: block;"><i class="fas fa-edit"></i> Modif. por:<br>${m.nombreUsuarioModificador}<br>${fMod}</span>`;
+            }
+
+            let accionesHtml = '';
+            if (m.estado === 'ANULADO') {
+                accionesHtml = `
+                    <div style="display: flex; gap: 6px; justify-content: center;">
+                        <button type="button" class="btn-icon" disabled style="opacity: 0.3; cursor: not-allowed;"><i class="fas fa-edit"></i></button>
+                        <button type="button" class="btn-icon" disabled style="opacity: 0.3; cursor: not-allowed;"><i class="fas fa-ban"></i></button>
+                    </div>
+                `;
+            } else {
+                accionesHtml = `
+                    <div style="display: flex; gap: 6px; justify-content: center;">
+                        <button type="button" class="btn-icon btn-editar-mov" data-id="${m.idMovimiento}" title="Editar" style="color: #d97706;"><i class="fas fa-edit"></i></button>
+                        <button type="button" class="btn-icon btn-anular-mov" data-id="${m.idMovimiento}" title="Anular" style="color: #ef4444;"><i class="fas fa-ban"></i></button>
+                    </div>
+                `;
+            }
+
+            if (m.estado === 'ANULADO') {
+                tr.style.opacity = '0.6';
+                tr.style.background = '#fafafa';
+            }
+            
+            tr.innerHTML = `
+                <td style="padding: 12px; font-size: 13px; font-weight: 500; color: #334155;">${fechaHoraFormatted}</td>
+                <td style="padding: 12px;">
+                    <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
+                        <i class="fas ${isIngreso ? 'fa-arrow-up' : 'fa-arrow-down'}"></i> ${m.tipo}
+                    </span>
+                </td>
+                <td style="padding: 12px; font-size: 13px; font-weight: 500; color: #475569;">${m.nombreUsuario || '-'}</td>
+                <td style="padding: 12px; font-size: 13px; font-weight: 600; color: #475569;">${m.nombreCategoria}</td>
+                <td style="padding: 12px; font-size: 13px; font-weight: 800; color: ${badgeColor};">${formatter.format(m.monto)}</td>
+                <td style="padding: 12px; font-size: 13px; color: #64748b; word-break: break-word;">${m.descripcion}</td>
+                <td style="padding: 12px; font-size: 13px; font-weight: 500; color: #94a3b8;">${m.referencia || '-'}</td>
+                <td style="padding: 8px 12px;">${auditoriaHtml}</td>
+                <td style="padding: 12px; text-align: center;">${accionesHtml}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('.btn-editar-mov').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const id = parseInt(e.currentTarget.getAttribute('data-id'), 10);
+                const mov = movimientosManualesList.find(m => m.idMovimiento === id);
+                if (mov) abrirModalMovimiento(mov.tipo, id);
+            });
+        });
+
+        tbody.querySelectorAll('.btn-anular-mov').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const id = parseInt(e.currentTarget.getAttribute('data-id'), 10);
+                if (confirm('¿Está seguro de que desea anular este movimiento? Esta acción no se puede deshacer.')) {
+                    try {
+                        const res = await fetch(`/api/movimientos-caja/${id}/anular?idAdmin=${usuarioIdActual}`, {
+                            method: 'PUT'
+                        });
+                        if (res.ok) {
+                            showSuccessBanner('Movimiento anulado correctamente.');
+                            await cargarMovimientosManualesCaja();
+                            await verificarEstadoCaja(true);
+                        } else {
+                            const err = await res.json();
+                            alert(err.message || 'Error al anular movimiento.');
+                        }
+                    } catch (error) {
+                        console.error('Error al anular movimiento:', error);
+                        alert('Ocurrió un error al intentar anular el movimiento.');
+                    }
+                }
+            });
+        });
+
+        actualizarControlesPaginacionMovimientos(totalPages);
+    }
+
+    function actualizarControlesPaginacionMovimientos(totalPages) {
+        const pageInfo = document.getElementById('movimientos-admin-page-info');
+        const btnPrev = document.getElementById('movimientos-admin-prev');
+        const btnNext = document.getElementById('movimientos-admin-next');
+
+        if (!pageInfo || !btnPrev || !btnNext) return;
+
+        if (totalPages === 0) {
+            pageInfo.textContent = 'Página 1 de 1';
+            btnPrev.disabled = true;
+            btnNext.disabled = true;
+            return;
+        }
+
+        pageInfo.textContent = `Página ${movimientosPage} de ${totalPages}`;
+        btnPrev.disabled = movimientosPage === 1;
+        btnNext.disabled = movimientosPage === totalPages;
+    }
+
+    const btnPrevMov = document.getElementById('movimientos-admin-prev');
+    const btnNextMov = document.getElementById('movimientos-admin-next');
+    if (btnPrevMov) btnPrevMov.addEventListener('click', () => {
+        if (movimientosPage > 1) {
+            movimientosPage--;
+            renderizarPaginaMovimientos();
+        }
+    });
+    if (btnNextMov) btnNextMov.addEventListener('click', () => {
+        const totalPages = Math.ceil(movimientosManualesList.length / movimientosPageSize);
+        if (movimientosPage < totalPages) {
+            movimientosPage++;
+            renderizarPaginaMovimientos();
+        }
+    });
+
+    if (formMovCaja) {
+        formMovCaja.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (errorMovMsg) {
+                errorMovMsg.style.display = 'none';
+                errorMovMsg.textContent = '';
+            }
+
+            const tipo = document.getElementById('movimiento-tipo').value;
+            const editId = inputMovIdEdit.value;
+            const monto = parseFloat(inputMovMonto.value);
+            const idCategoria = selectMovCat.value;
+            const referencia = inputMovRef.value.trim();
+            const descripcion = txtMovDesc.value.trim();
+
+            if (isNaN(monto) || monto <= 0) {
+                if (errorMovMsg) {
+                    errorMovMsg.textContent = 'Por favor ingrese un monto positivo válido.';
+                    errorMovMsg.style.display = 'block';
+                }
+                return;
+            }
+
+            if (!idCategoria) {
+                if (errorMovMsg) {
+                    errorMovMsg.textContent = 'Por favor seleccione una categoría.';
+                    errorMovMsg.style.display = 'block';
+                }
+                return;
+            }
+
+            if (!descripcion) {
+                if (errorMovMsg) {
+                    errorMovMsg.textContent = 'Por favor describa el motivo.';
+                    errorMovMsg.style.display = 'block';
+                }
+                return;
+            }
+
+            const btnConfirmar = document.getElementById('btn-confirmar-movimiento');
+            btnConfirmar.disabled = true;
+            const originalText = btnConfirmar.textContent;
+            btnConfirmar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Guardando...';
+
+            try {
+                const bodyReq = {
+                    tipo: tipo,
+                    monto: monto,
+                    idUsuario: usuarioIdActual,
+                    idCategoriaMovimiento: parseInt(idCategoria, 10),
+                    referencia: referencia,
+                    descripcion: descripcion
+                };
+
+                let res;
+                if (editId) {
+                    res = await fetch(`/api/movimientos-caja/${editId}?idAdmin=${usuarioIdActual}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(bodyReq)
+                    });
+                } else {
+                    res = await fetch('/api/movimientos-caja', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(bodyReq)
+                    });
+                }
+
+                if (res.ok) {
+                    cerrarModalMovimiento();
+                    showSuccessBanner(editId ? 'Movimiento actualizado exitosamente.' : 'Movimiento registrado exitosamente.');
+                    await cargarMovimientosManualesCaja();
+                    await verificarEstadoCaja(true);
+                } else {
+                    const errData = await res.json();
+                    throw new Error(errData.message || 'Error al procesar el movimiento.');
+                }
+            } catch (err) {
+                console.error(err);
+                if (errorMovMsg) {
+                    errorMovMsg.textContent = err.message || 'Ocurrió un error inesperado.';
+                    errorMovMsg.style.display = 'block';
+                }
+            } finally {
+                btnConfirmar.disabled = false;
+                btnConfirmar.textContent = originalText;
+            }
+        });
+    }
+
+    // ==========================================
+    // GESTIÓN DE CATEGORÍAS (ADMIN)
+    // ==========================================
+    const modalCategorias = document.getElementById('modal-gestionar-categorias');
+    const btnGestionarCategorias = document.getElementById('btn-admin-gestionar-categorias');
+    const btnCerrarModalCat = document.getElementById('btn-cerrar-modal-categorias');
+    const formCrearCat = document.getElementById('form-crear-categoria');
+    const selectTipoCat = document.getElementById('categoria-nueva-tipo');
+    const inputNombreCat = document.getElementById('categoria-nueva-nombre');
+    const errorCatMsg = document.getElementById('categoria-error-msg');
+    const listaCategoriasDiv = document.getElementById('lista-categorias-existentes');
+
+    async function abrirModalCategorias() {
+        if (!modalCategorias) return;
+        formCrearCat.reset();
+        if (errorCatMsg) {
+            errorCatMsg.style.display = 'none';
+            errorCatMsg.textContent = '';
+        }
+        await cargarCategoriasModal();
+        modalCategorias.style.display = 'flex';
+    }
+
+    function cerrarModalCategorias() {
+        if (modalCategorias) modalCategorias.style.display = 'none';
+    }
+
+    if (btnGestionarCategorias) btnGestionarCategorias.addEventListener('click', abrirModalCategorias);
+    if (btnCerrarModalCat) btnCerrarModalCat.addEventListener('click', cerrarModalCategorias);
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalCategorias && modalCategorias.style.display !== 'none') {
+            cerrarModalCategorias();
+        }
+    });
+
+    async function cargarCategoriasModal() {
+        if (!listaCategoriasDiv) return;
+        try {
+            listaCategoriasDiv.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 13px;"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
+            const res = await fetch('/api/categorias-movimiento');
+            if (!res.ok) throw new Error('Error al cargar categorías');
+            const cats = await res.json();
+            
+            listaCategoriasDiv.innerHTML = '';
+            cats.forEach(c => {
+                const item = document.createElement('div');
+                item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-weight: 500;';
+                
+                const isIngreso = c.tipo === 'INGRESO';
+                const badgeBg = isIngreso ? '#ecfdf5' : '#fef2f2';
+                const badgeColor = isIngreso ? '#059669' : '#e11d48';
+
+                item.innerHTML = `
+                    <span style="color: #334155; font-weight: 600;">${c.nombre}</span>
+                    <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">
+                        ${c.tipo}
+                    </span>
+                `;
+                listaCategoriasDiv.appendChild(item);
+            });
+        } catch (error) {
+            console.error(error);
+            listaCategoriasDiv.innerHTML = '<div style="text-align: center; color: #ef4444; font-size: 13px;">Error al cargar categorías</div>';
+        }
+    }
+
+    if (formCrearCat) {
+        formCrearCat.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (errorCatMsg) {
+                errorCatMsg.style.display = 'none';
+                errorCatMsg.textContent = '';
+            }
+
+            const nombre = inputNombreCat.value.trim();
+            const tipo = selectTipoCat.value;
+
+            if (!nombre) return;
+
+            const btnCrear = formCrearCat.querySelector('button[type="submit"]');
+            btnCrear.disabled = true;
+            btnCrear.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            try {
+                const res = await fetch('/api/categorias-movimiento', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre: nombre, tipo: tipo })
+                });
+
+                if (res.ok) {
+                    inputNombreCat.value = '';
+                    showSuccessBanner('Categoría creada exitosamente.');
+                    await cargarCategoriasModal();
+                } else {
+                    const text = await res.text();
+                    throw new Error(text || 'Error al crear la categoría.');
+                }
+            } catch (err) {
+                console.error(err);
+                if (errorCatMsg) {
+                    errorCatMsg.textContent = err.message || 'Error al guardar la categoría.';
+                    errorCatMsg.style.display = 'block';
+                }
+            } finally {
+                btnCrear.disabled = false;
+                btnCrear.textContent = 'Crear';
+            }
+        });
+    }
+
+    window.cargarMovimientosManualesCaja = cargarMovimientosManualesCaja;
+
+    window.addEventListener('click', (e) => {
+        if (e.target === modalMovCaja) cerrarModalMovimiento();
+        if (e.target === modalCategorias) cerrarModalCategorias();
+    });
+
     document.addEventListener('ventaRegistrada', function () {
         if (typeof verificarEstadoCaja === 'function') {
             verificarEstadoCaja();

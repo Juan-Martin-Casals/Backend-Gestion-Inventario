@@ -32,4 +32,6 @@ public class HistorialSesionDTO {
     private Double ventasTransferencia;
     private String observacionesApertura;
     private String observacionesCierre;
+    private Double ingresosManuales;
+    private Double egresosManuales;
 }

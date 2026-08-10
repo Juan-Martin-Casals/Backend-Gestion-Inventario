@@ -14,6 +14,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const sectionIcons = {
         'principal': 'fas fa-home',
         'caja': 'fas fa-cash-register',
+        'ingresos-egresos': 'fas fa-exchange-alt',
         'ventas-cobrar': 'fas fa-receipt',
     };
 
@@ -84,6 +85,12 @@ document.addEventListener('DOMContentLoaded', function () {
             if (sectionId === 'caja') {
                 if (typeof window.showCajaSubsection === 'function') {
                     window.showCajaSubsection('caja-operaciones');
+                }
+            }
+
+            if (sectionId === 'ingresos-egresos') {
+                if (typeof window.cargarMovimientosManualesTurno === 'function') {
+                    window.cargarMovimientosManualesTurno();
                 }
             }
 

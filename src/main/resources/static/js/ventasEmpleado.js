@@ -1,4 +1,7 @@
+window.salesChannel = window.salesChannel || new BroadcastChannel('sales_channel');
+
 document.addEventListener('DOMContentLoaded', function () {
+    const salesChannel = window.salesChannel;
 
     // ===============================
     // URLs DE LA API
@@ -91,80 +94,31 @@ document.addEventListener('DOMContentLoaded', function () {
     const addClienteModal = document.getElementById('modal-add-cliente-overlay');
     const addClienteForm = document.getElementById('add-cliente-form');
     const addClienteMessage = document.getElementById('form-general-message-add-cliente');
-
-    // ===================================
-    // SELECTORES - MODAL TICKET
-    // ===================================
-    const modalTicketOverlay = document.getElementById('modal-ticket-overlay');
-    const btnGenerarTicket = document.getElementById('btn-generar-ticket');
-    const btnCerrarTicket = document.getElementById('btn-cerrar-ticket');
-
-    // Variable para guardar el ID de la última venta
-    let ultimaVentaId = null;
-
-    // Función para mostrar modal ticket
-    function mostrarModalTicket(idVenta) {
-        ultimaVentaId = idVenta;
-        if (modalTicketOverlay) {
-            modalTicketOverlay.style.display = 'block';
-        }
-    }
-
-    // Función para cerrar modal ticket
-    function cerrarModalTicket() {
-        if (modalTicketOverlay) {
-            modalTicketOverlay.style.display = 'none';
-        }
-        ultimaVentaId = null;
-    }
-
-    // Event listeners para botones del modal ticket
-    if (btnGenerarTicket) {
-        btnGenerarTicket.addEventListener('click', async () => {
-            if (!ultimaVentaId) return;
-            try {
-                const response = await fetch(`/api/ventas/${ultimaVentaId}/ticket`);
-                if (!response.ok) throw new Error('Error al generar ticket');
-
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `Ticket_Venta_${ultimaVentaId}.pdf`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                a.remove();
-            } catch (error) {
-                console.error('Error al descargar ticket:', error);
-                alert('Error al generar el ticket');
+    
+    salesChannel.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'venta_cobrada') {
+            const idVentaCobrada = event.data.idVenta;
+            
+            // Recargar la tabla de ventas de forma silenciosa
+            if (typeof loadVentas === 'function') {
+                loadVentas(currentPageVentas, true).then(() => {
+                    // Si se renderizó de nuevo, buscar la fila y darle una animación premium
+                    if (idVentaCobrada) {
+                        setTimeout(() => {
+                            const fila = document.querySelector(`tr[data-venta-id="${idVentaCobrada}"]`);
+                            if (fila) {
+                                fila.style.transition = 'background-color 0.5s ease';
+                                fila.style.backgroundColor = '#e6fffa'; // verde muy claro
+                                setTimeout(() => {
+                                    fila.style.backgroundColor = '';
+                                }, 2000);
+                            }
+                        }, 100);
+                    }
+                });
             }
-            cerrarModalTicket();
-        });
-    }
-
-    if (btnCerrarTicket) {
-        btnCerrarTicket.addEventListener('click', cerrarModalTicket);
-    }
-
-    // Cerrar modal con ESC
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && modalTicketOverlay && modalTicketOverlay.style.display !== 'none') {
-            cerrarModalTicket();
         }
     });
-
-    // Click fuera del modal para cerrar
-    if (modalTicketOverlay) {
-        const modalInner = modalTicketOverlay.firstElementChild;
-        if (modalInner) {
-            modalInner.addEventListener('click', (e) => {
-                if (e.target === modalInner) {
-                    cerrarModalTicket();
-                }
-            });
-        }
-    }
 
     // ===============================
     // RESTRICCIÓN DE CAMPO TELÉFONO CLIENTE
@@ -351,12 +305,14 @@ document.addEventListener('DOMContentLoaded', function () {
     // LÓGICA DE CARGA DE DATOS
     // ==========================================================
 
-    async function loadVentas(page = 0) {
+    async function loadVentas(page = 0, silent = false) {
         if (!ventaTableBody || !mainContent) return;
 
         const scrollPosition = window.scrollY || document.documentElement.scrollTop;
-        ventaTableBody.classList.add('loading');
-        await new Promise(resolve => setTimeout(resolve, 200));
+        if (!silent) {
+            ventaTableBody.classList.add('loading');
+            await new Promise(resolve => setTimeout(resolve, 200));
+        }
 
         try {
             const sortParam = `&sort=${ventasSortField},${ventasSortDirection}`;
@@ -387,21 +343,25 @@ document.addEventListener('DOMContentLoaded', function () {
             updateVentasPaginationControls();
             updateVentasSortIndicators();
 
-            requestAnimationFrame(() => {
-                window.scrollTo(0, scrollPosition);
-                ventaTableBody.classList.remove('loading');
-            });
+            if (!silent) {
+                requestAnimationFrame(() => {
+                    window.scrollTo(0, scrollPosition);
+                    ventaTableBody.classList.remove('loading');
+                });
+            }
 
         } catch (error) {
             console.error('Error al cargar las ventas:', error);
             if (ventaTableBody) {
-                ventaTableBody.innerHTML = `<tr><td colspan="7">Error al cargar el historial de ventas.</td></tr>`;
+                ventaTableBody.innerHTML = `<tr><td colspan="8">Error al cargar el historial de ventas.</td></tr>`;
             }
             currentPageVentas = 0;
             totalPagesVentas = 0;
             renderVentasTable([]);
             updateVentasPaginationControls();
-            ventaTableBody.classList.remove('loading');
+            if (!silent) {
+                ventaTableBody.classList.remove('loading');
+            }
         }
     }
 
@@ -488,20 +448,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const inputPrev = parsearMoneda(cobroMontoInput?.value) || 0;
         const diff = pendiente - inputPrev;
         if (balanceIndicator) {
-            if (totalVenta === 0 && cobrosMixtos.length === 0) {
-                balanceIndicator.innerHTML = '';
-            } else {
-                balanceIndicator.innerHTML = `
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
-                    <span style="color: #cfe2ff; font-size: 0.9rem;">Cobrado ahora</span>
-                    <span style="color: #fff; font-weight: 600; font-size: 0.95rem;">$${formatoMoneda.format(totalCobrado + inputPrev)}</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 0;">
-                    <span style="color: #cfe2ff; font-size: 0.9rem;">Saldo pendiente</span>
-                    <span style="color: ${diff > 0.05 ? '#ff6b6b' : '#fff'}; font-weight: 700; font-size: 0.95rem;">$${formatoMoneda.format(diff > 0 ? diff : 0)}</span>
-                </div>
-            `;
-            }
+            balanceIndicator.innerHTML = '';
         }
     }
 
@@ -1229,10 +1176,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const ventaCreada = await response.json();
 
-                // Mostrar modal de ticket inmediatamente después de que se cierre el modal de confirmación
-                setTimeout(() => {
-                    mostrarModalTicket(ventaCreada.idVenta);
-                }, 100);
+                // Mostrar banner de éxito
+                showSuccessBanner('Orden enviada a caja');
+
+                // Notificar al cajero mediante BroadcastChannel
+                salesChannel.postMessage({ type: 'nueva_orden' });
 
                 // Resetear formulario
                 detallesVenta = [];
@@ -1266,11 +1214,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 ventasSortDirection = 'desc';
                 loadVentas(currentPageVentas);
 
-                // Ocultar mensaje de éxito después de 3 segundos
-                setTimeout(() => {
-                    generalMessage.textContent = '';
-                    generalMessage.className = 'form-message';
-                }, 3000);
+
 
             } catch (error) {
                 console.error('Error al registrar la venta:', error);
@@ -1291,14 +1235,22 @@ document.addEventListener('DOMContentLoaded', function () {
         const nombreVendedorTexto = venta.nombreVendedor || '-';
         const metodoPagoTexto = venta.metodoPago || 'No especificado';
 
+        // Determinar estilo del badge de estado
+        const esCobrada = (venta.estado || '').toUpperCase() === 'COBRADA';
+        const estadoClass = esCobrada ? 'cobrada' : 'pendiente';
+        const estadoText = esCobrada ? 'Cobrado' : 'Pendiente';
+        const estadoIcon = esCobrada ? 'fa-check-circle' : 'fa-clock';
+        const estadoBadge = `<span class="status-badge ${estadoClass}"><i class="fas ${estadoIcon}" style="margin-right: 4px;"></i>${estadoText}</span>`;
+
         return `
-            <tr>
+            <tr data-venta-id="${venta.idVenta}">
                 <td>${fechaFormateada}</td>
                 <td>${nombreClienteTexto}</td> 
                 <td>${productosTexto}</td> 
                 <td class="col-num">$${formatoMoneda.format(venta.total)}</td>
                 <td>${nombreVendedorTexto}</td>
                 <td>${metodoPagoTexto}</td>
+                <td>${estadoBadge}</td>
                 <td>
                     <button class="btn-icon btn-view-venta" onclick="mostrarDetalleVenta(${venta.idVenta})" title="Ver detalle">
                         <i class="fas fa-eye"></i>
@@ -1313,7 +1265,7 @@ document.addEventListener('DOMContentLoaded', function () {
         ventaTableBody.innerHTML = '';
 
         if (!Array.isArray(ventas) || ventas.length === 0) {
-            ventaTableBody.innerHTML = '<tr><td colspan="7">No hay ventas registradas.</td></tr>';
+            ventaTableBody.innerHTML = '<tr><td colspan="8">No hay ventas registradas.</td></tr>';
             return;
         }
 
@@ -1733,6 +1685,26 @@ document.addEventListener('DOMContentLoaded', function () {
         filtroMetodoPago.addEventListener('change', () => { currentPageVentas = 0; loadVentas(0); });
     }
 
+    // Listener para el botón Actualizar ventas
+    const btnRefrescarVentas = document.getElementById('ventas-btn-refrescar');
+    if (btnRefrescarVentas) {
+        btnRefrescarVentas.addEventListener('click', () => {
+            const icon = btnRefrescarVentas.querySelector('i');
+            if (icon) icon.classList.add('fa-spin');
+            loadVentas(currentPageVentas).then(() => {
+                if (icon) setTimeout(() => icon.classList.remove('fa-spin'), 500);
+            });
+        });
+    }
+
+    // Polling silencioso cada 5 segundos para mantener la tabla de ventas actualizada
+    setInterval(() => {
+        const sectionVentas = document.getElementById('ventas-section');
+        if (sectionVentas && sectionVentas.style.display !== 'none' && typeof loadVentas === 'function') {
+            loadVentas(currentPageVentas, true);
+        }
+    }, 5000);
+
     if (ventasBtnFiltrar) {
         ventasBtnFiltrar.addEventListener('click', function () {
             ocultarErrorFiltroVentas();
@@ -2148,6 +2120,31 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     });
+    // Funciones para Banners de Éxito/Error
+    function showSuccessBanner(msg) {
+        const banner = document.getElementById('success-banner') || crearBannerExito();
+        const textEl = document.getElementById('success-banner-text');
+        if (textEl) textEl.textContent = msg;
+        banner.style.backgroundColor = '#28a745';
+        banner.classList.add('show');
+        setTimeout(() => {
+            banner.classList.remove('show');
+            setTimeout(() => { banner.style.backgroundColor = ''; }, 300);
+        }, 3000);
+    }
+
+    function crearBannerExito() {
+        const banner = document.createElement('div');
+        banner.id = 'success-banner';
+        banner.className = 'success-banner';
+        banner.innerHTML = `
+            <i class="fas fa-check-circle" style="margin-right: 10px;"></i>
+            <span id="success-banner-text"></span>
+        `;
+        document.body.appendChild(banner);
+        return banner;
+    }
+
     // Exponer globalmente
     window.showVentasSubsection = showSubsection;
     window.mostrarDetalleVenta = mostrarDetalleVenta;
