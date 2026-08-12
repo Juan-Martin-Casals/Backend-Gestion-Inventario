@@ -19,7 +19,8 @@ public class CategoriaMovimientoCajaService {
 
     @Transactional
     public CategoriaMovimientoCajaResponseDTO crear(CategoriaMovimientoCajaRequestDTO dto) {
-        if (repository.findByNombre(dto.getNombre().trim()).isPresent()) {
+        String nombreNormalizado = dto.getNombre().trim();
+        if (repository.buscarPorNombreExacto(nombreNormalizado).isPresent()) {
             throw new IllegalArgumentException("Ya existe una categoría de movimiento con ese nombre");
         }
 
@@ -41,9 +42,17 @@ public class CategoriaMovimientoCajaService {
 
     @Transactional(readOnly = true)
     public List<CategoriaMovimientoCajaResponseDTO> listarPorTipo(String tipo) {
-        return repository.findByTipo(tipo.toUpperCase()).stream()
+        return repository.findByTipoAndActivoTrue(tipo.toUpperCase()).stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
+    }
+
+    @Transactional
+    public void toggleEstado(Long id) {
+        CategoriaMovimientoCaja cat = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Categoría no encontrada"));
+        cat.setActivo(!cat.getActivo());
+        repository.save(cat);
     }
 
     private CategoriaMovimientoCajaResponseDTO mapToDTO(CategoriaMovimientoCaja cat) {
@@ -51,6 +60,7 @@ public class CategoriaMovimientoCajaService {
                 .idCategoriaMovimiento(cat.getIdCategoriaMovimiento())
                 .nombre(cat.getNombre())
                 .tipo(cat.getTipo())
+                .activo(cat.getActivo())
                 .build();
     }
 }

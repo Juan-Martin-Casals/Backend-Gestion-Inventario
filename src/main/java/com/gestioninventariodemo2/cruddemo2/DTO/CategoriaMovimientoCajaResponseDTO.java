@@ -13,4 +13,5 @@ public class CategoriaMovimientoCajaResponseDTO {
     private Long idCategoriaMovimiento;
     private String nombre;
     private String tipo;
+    private Boolean activo;
 }

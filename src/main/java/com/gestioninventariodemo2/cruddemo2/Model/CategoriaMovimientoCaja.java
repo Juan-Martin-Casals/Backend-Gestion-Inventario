@@ -25,4 +25,8 @@ public class CategoriaMovimientoCaja {
 
     @Column(name = "tipo", nullable = false, length = 10) // INGRESO o EGRESO
     private String tipo;
+
+    @Column(name = "activo", columnDefinition = "boolean default true")
+    @Builder.Default
+    private Boolean activo = true;
 }

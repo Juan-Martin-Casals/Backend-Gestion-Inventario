@@ -37,4 +37,14 @@ public class CategoriaMovimientoCajaController {
     public ResponseEntity<List<CategoriaMovimientoCajaResponseDTO>> listarPorTipo(@PathVariable String tipo) {
         return ResponseEntity.ok(service.listarPorTipo(tipo));
     }
+
+    @PutMapping("/{id}/toggle-estado")
+    public ResponseEntity<?> toggleEstado(@PathVariable Long id) {
+        try {
+            service.toggleEstado(id);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
 }

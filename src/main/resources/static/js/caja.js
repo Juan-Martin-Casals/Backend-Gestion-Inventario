@@ -587,7 +587,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 inputMontoFinalFisico.focus();
                 return;
             }
-            
+
             const montoFisicoVal = parseAmount(rawMontoFisico);
             if (isNaN(montoFisicoVal) || montoFisicoVal < 0) {
                 if (window.mostrarErrorInline) {
@@ -629,17 +629,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
             // 3. Población dinámica del Modal con datos reales
             const data = resumenCajaActual || {};
-            
+
             const getNum = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
             const saldoEsp = getNum(data.saldoEsperado);
             const montoIni = getNum(data.montoInicial);
             const totEf = getNum(data.totalEfectivo);
             const totComp = getNum(data.totalComprasEfectivo);
-            
-            const totalEfTeorico = (data.saldoEsperado !== undefined && data.saldoEsperado !== null) 
-                ? saldoEsp 
+
+            const totalEfTeorico = (data.saldoEsperado !== undefined && data.saldoEsperado !== null)
+                ? saldoEsp
                 : (montoIni + totEf - totComp);
-                
+
             const diferencia = montoFisicoVal - totalEfTeorico;
 
             // Header - Responsable y Sesión
@@ -1054,7 +1054,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(() => {
         const modalResumen = document.getElementById('modal-resumen-cierre');
         if (modalResumen && modalResumen.style.display === 'flex') return;
-        
+
         const sectionCaja = document.getElementById('caja-section');
         if (sectionCaja && sectionCaja.style.display !== 'none') {
             verificarEstadoCaja(true);
@@ -1169,14 +1169,14 @@ document.addEventListener('DOMContentLoaded', function () {
             let fechaAperturaVal = fmtFechaSoloFecha(sesion.fechaApertura);
             let horaAperturaVal = fmtHoraSoloHora(sesion.fechaApertura);
             let horaCierreVal = sesion.fechaCierre ? fmtHoraSoloHora(sesion.fechaCierre) : 'En curso';
-            
+
             let duracionBadge = '';
             if (sesion.estado === 'CERRADA' && sesion.duracion) {
                 duracionBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 2px 6px; background: #e0e7ff; color: #4f46e5; border-radius: 4px; font-size: 10px; font-weight: 600;">
                     <i class="far fa-clock"></i> ${sesion.duracion}
                 </span>`;
             }
-            
+
             let turnoDetalleHtml = `
                 <div style="font-weight: 600; color: #1e293b;">${fechaAperturaVal}</div>
                 <div style="font-size: 11px; color: #64748b; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
@@ -1205,13 +1205,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const obsAp = (sesion.observacionesApertura || '').trim();
             const obsMatch = (sesion.observacionesCierre || '').match(/Obs=(.+)$/);
             const obsCi = obsMatch ? obsMatch[1].trim() : '';
-            
+
             let notasHtml = '';
             if (obsAp || obsCi) {
                 let tooltipText = '';
                 if (obsAp) tooltipText += `<div style="margin-bottom: 6px;"><strong style="color: #fbbf24;"><i class="fas fa-lock-open"></i> Apertura:</strong> ${obsAp}</div>`;
                 if (obsCi) tooltipText += `<div><strong style="color: #f87171;"><i class="fas fa-lock"></i> Cierre:</strong> ${obsCi}</div>`;
-                
+
                 notasHtml = `
                     <div class="custom-tooltip btn-ver-detalles" data-id="${sesion.idSesion}" data-tab="tab-observaciones" style="cursor: pointer;">
                         <i class="fas fa-sticky-note" style="color: #334155; font-size: 16px; transition: all 0.2s;" 
@@ -1441,9 +1441,9 @@ document.addEventListener('DOMContentLoaded', function () {
         await new Promise(resolve => setTimeout(resolve, 200));
 
         try {
-            const params = new URLSearchParams({ 
-                page: 0, 
-                size: 1000, 
+            const params = new URLSearchParams({
+                page: 0,
+                size: 1000,
                 sort: 'fechaApertura,desc',
                 _t: new Date().getTime()
             });
@@ -1941,7 +1941,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const txtMovDesc = document.getElementById('movimiento-descripcion');
     const errorMovMsg = document.getElementById('movimiento-error-msg');
     const inputMovIdEdit = document.getElementById('movimiento-id-edit');
-    
+
     const btnAdminNuevoIngreso = document.getElementById('btn-admin-nuevo-ingreso');
     const btnAdminNuevoEgreso = document.getElementById('btn-admin-nuevo-egreso');
     const btnCerrarModalMov = document.getElementById('btn-cerrar-modal-movimiento');
@@ -1960,7 +1960,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 e.preventDefault();
             }
         });
-        
+
         inputMovMonto.addEventListener('input', (e) => {
             let val = e.target.value;
             val = val.replace(/[^0-9.]/g, '');
@@ -1973,8 +1973,12 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     async function abrirModalMovimiento(tipo, editId = null) {
-        if (!modalMovCaja || !formMovCaja) return;
-        
+        console.log("abrirModalMovimiento called with tipo:", tipo, "editId:", editId);
+        if (!modalMovCaja || !formMovCaja) {
+            console.error("modalMovCaja or formMovCaja is null!", { modalMovCaja, formMovCaja });
+            return;
+        }
+
         formMovCaja.reset();
         if (charCountMovDesc) charCountMovDesc.textContent = '0';
         if (errorMovMsg) {
@@ -2005,8 +2009,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const infoFecha = document.getElementById('movimiento-info-fecha');
 
         if (infoSesion) {
-            infoSesion.textContent = resumenCajaActual && resumenCajaActual.idSesion 
-                ? `#${resumenCajaActual.idSesion}` 
+            infoSesion.textContent = resumenCajaActual && resumenCajaActual.idSesion
+                ? `#${resumenCajaActual.idSesion}`
                 : 'Sin sesión activa';
         }
 
@@ -2060,15 +2064,23 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        modalMovCaja.style.display = 'flex';
+        modalMovCaja.style.setProperty('display', 'flex', 'important');
+        modalMovCaja.style.setProperty('z-index', '99999', 'important');
+        modalMovCaja.classList.add('modal-visible');
+        
+
     }
 
     function cerrarModalMovimiento() {
-        if (modalMovCaja) modalMovCaja.style.display = 'none';
+        if (modalMovCaja) {
+            modalMovCaja.style.setProperty('display', 'none', 'important');
+            modalMovCaja.classList.remove('modal-visible');
+        }
     }
 
-    if (btnAdminNuevoIngreso) btnAdminNuevoIngreso.addEventListener('click', () => abrirModalMovimiento('INGRESO'));
-    if (btnAdminNuevoEgreso) btnAdminNuevoEgreso.addEventListener('click', () => abrirModalMovimiento('EGRESO'));
+    window.abrirModalMovimientoAdmin = abrirModalMovimiento;
+    window.cerrarModalMovimientoAdmin = cerrarModalMovimiento;
+
     if (btnCerrarModalMov) btnCerrarModalMov.addEventListener('click', cerrarModalMovimiento);
     if (btnCancelarMov) btnCancelarMov.addEventListener('click', cerrarModalMovimiento);
 
@@ -2084,7 +2096,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const res = await fetch(`/api/categorias-movimiento/tipo/${tipo}`);
             if (!res.ok) throw new Error('Error al cargar categorías');
             const cats = await res.json();
-            
+
             selectMovCat.innerHTML = '<option value="">Seleccione una categoría...</option>';
             cats.forEach(c => {
                 const opt = document.createElement('option');
@@ -2099,12 +2111,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     let movimientosManualesList = [];
+    let movimientosFiltradosList = [];
+    let movimientoIdParaAnular = null;
+    let movSortDir = 'desc'; // por defecto: más reciente primero
     let movimientosPage = 1;
     const movimientosPageSize = 5;
 
     async function cargarMovimientosManualesCaja() {
         const tbody = document.getElementById('lista-movimientos-admin-body');
         if (!tbody) return;
+        // Loading state (punto 5)
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 24px;"><i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Cargando movimientos...</td></tr>`;
         try {
             const res = await fetch('/api/movimientos-caja/sesion/activa');
             if (!res.ok) {
@@ -2115,9 +2132,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             movimientosManualesList = await res.json();
             movimientosPage = 1;
-            renderizarPaginaMovimientos();
+            poblarDropdownsFiltrosMovimientos();
+            aplicarFiltrosMovimientos();
         } catch (error) {
             console.error('Error al cargar movimientos:', error);
+            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #ef4444; padding: 24px;"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>Error al cargar movimientos.</td></tr>`;
         }
     }
 
@@ -2125,26 +2144,51 @@ document.addEventListener('DOMContentLoaded', function () {
         const tbody = document.getElementById('lista-movimientos-admin-body');
         if (!tbody) return;
 
-        if (movimientosManualesList.length === 0) {
-            const msg = cajaEstaAbierta ? "No se han registrado movimientos manuales en este turno." : "No hay una sesión de caja activa. Abra la caja para registrar movimientos.";
-            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">${msg}</td></tr>`;
+        // Actualizar contador de resultados (punto 4)
+        const contador = document.getElementById('movimientos-contador');
+        if (contador) {
+            if (movimientosManualesList.length === 0) {
+                contador.textContent = '';
+            } else {
+                const total = movimientosManualesList.length;
+                const filtrados = movimientosFiltradosList.length;
+                contador.textContent = filtrados === total
+                    ? `${total} movimiento${total !== 1 ? 's' : ''} en total`
+                    : `Mostrando ${filtrados} de ${total} movimientos`;
+            }
+        }
+
+        if (movimientosFiltradosList.length === 0) {
+            let msgHtml;
+            if (movimientosManualesList.length === 0) {
+                // Sin datos reales
+                const msg = cajaEstaAbierta ? "No se han registrado movimientos manuales en este turno." : "No hay una sesión de caja activa. Abra la caja para registrar movimientos.";
+                msgHtml = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 30px; font-style: italic;">${msg}</td></tr>`;
+            } else {
+                // Filtro aplicado sin resultados (punto 4 - estado vacío diferenciado)
+                msgHtml = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 30px;">
+                    <i class="fas fa-filter" style="font-size: 22px; opacity: 0.4; display: block; margin-bottom: 10px;"></i>
+                    <span style="font-style: italic; display: block;">Ningún movimiento coincide con los filtros aplicados.</span>
+                </td></tr>`;
+            }
+            tbody.innerHTML = msgHtml;
             actualizarControlesPaginacionMovimientos(0);
             return;
         }
 
-        const totalPages = Math.ceil(movimientosManualesList.length / movimientosPageSize);
+        const totalPages = Math.ceil(movimientosFiltradosList.length / movimientosPageSize);
         if (movimientosPage > totalPages) movimientosPage = totalPages;
         if (movimientosPage < 1) movimientosPage = 1;
 
         const start = (movimientosPage - 1) * movimientosPageSize;
         const end = start + movimientosPageSize;
-        const pageItems = movimientosManualesList.slice(start, end);
+        const pageItems = movimientosFiltradosList.slice(start, end);
 
         tbody.innerHTML = '';
         pageItems.forEach(m => {
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid #f1f5f9';
-            
+
             const fechaHoraFormatted = new Date(m.fechaHora).toLocaleString('es-AR', {
                 day: '2-digit', month: '2-digit', year: 'numeric',
                 hour: '2-digit', minute: '2-digit'
@@ -2152,7 +2196,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const isIngreso = m.tipo === 'INGRESO';
             const badgeBg = isIngreso ? '#ecfdf5' : '#fef2f2';
             const badgeColor = isIngreso ? '#059669' : '#e11d48';
-            
+
             let auditoriaHtml = '<span style="color: #94a3b8; font-style: italic;">-</span>';
             if (m.estado === 'ANULADO') {
                 const fMod = m.fechaModificacion ? new Date(m.fechaModificacion).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '';
@@ -2183,7 +2227,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 tr.style.opacity = '0.6';
                 tr.style.background = '#fafafa';
             }
-            
+
             tr.innerHTML = `
                 <td style="padding: 12px; font-size: 13px; font-weight: 500; color: #334155;">${fechaHoraFormatted}</td>
                 <td style="padding: 12px;">
@@ -2211,26 +2255,9 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         tbody.querySelectorAll('.btn-anular-mov').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
+            btn.addEventListener('click', (e) => {
                 const id = parseInt(e.currentTarget.getAttribute('data-id'), 10);
-                if (confirm('¿Está seguro de que desea anular este movimiento? Esta acción no se puede deshacer.')) {
-                    try {
-                        const res = await fetch(`/api/movimientos-caja/${id}/anular?idAdmin=${usuarioIdActual}`, {
-                            method: 'PUT'
-                        });
-                        if (res.ok) {
-                            showSuccessBanner('Movimiento anulado correctamente.');
-                            await cargarMovimientosManualesCaja();
-                            await verificarEstadoCaja(true);
-                        } else {
-                            const err = await res.json();
-                            alert(err.message || 'Error al anular movimiento.');
-                        }
-                    } catch (error) {
-                        console.error('Error al anular movimiento:', error);
-                        alert('Ocurrió un error al intentar anular el movimiento.');
-                    }
-                }
+                abrirModalConfirmarAnular(id);
             });
         });
 
@@ -2265,10 +2292,195 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     });
     if (btnNextMov) btnNextMov.addEventListener('click', () => {
-        const totalPages = Math.ceil(movimientosManualesList.length / movimientosPageSize);
+        const totalPages = Math.ceil(movimientosFiltradosList.length / movimientosPageSize);
         if (movimientosPage < totalPages) {
             movimientosPage++;
             renderizarPaginaMovimientos();
+        }
+    });
+
+    // ==========================================
+    // FILTROS DE MOVIMIENTOS MANUALES (punto 1)
+    // ==========================================
+
+    function poblarDropdownsFiltrosMovimientos() {
+        const selectCategoria = document.getElementById('movimientos-filtro-categoria');
+        const selectUsuario = document.getElementById('movimientos-filtro-usuario');
+
+        if (selectCategoria) {
+            const categorias = [...new Set(movimientosManualesList.map(m => m.nombreCategoria).filter(Boolean))].sort();
+            const currentCat = selectCategoria.value;
+            selectCategoria.innerHTML = '<option value="">Todas las categor\u00edas</option>';
+            categorias.forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                selectCategoria.appendChild(opt);
+            });
+            if (currentCat && categorias.includes(currentCat)) selectCategoria.value = currentCat;
+        }
+
+        if (selectUsuario) {
+            const usuarios = [...new Set(movimientosManualesList.map(m => m.nombreUsuario).filter(Boolean))].sort();
+            const currentUser = selectUsuario.value;
+            selectUsuario.innerHTML = '<option value="">Todos los usuarios</option>';
+            usuarios.forEach(user => {
+                const opt = document.createElement('option');
+                opt.value = user;
+                opt.textContent = user;
+                selectUsuario.appendChild(opt);
+            });
+            if (currentUser && usuarios.includes(currentUser)) selectUsuario.value = currentUser;
+        }
+    }
+
+    function aplicarFiltrosMovimientos() {
+        const searchInput = document.getElementById('movimientos-search-input');
+        const filtroTipo = document.getElementById('movimientos-filtro-tipo');
+        const filtroCategoria = document.getElementById('movimientos-filtro-categoria');
+        const filtroUsuario = document.getElementById('movimientos-filtro-usuario');
+        const filtroFechaDesde = document.getElementById('movimientos-filtro-fecha-desde');
+        const filtroFechaHasta = document.getElementById('movimientos-filtro-fecha-hasta');
+
+        const texto = searchInput ? normH(searchInput.value.trim()) : '';
+        const tipo = filtroTipo ? filtroTipo.value : '';
+        const categoria = filtroCategoria ? filtroCategoria.value : '';
+        const usuario = filtroUsuario ? filtroUsuario.value : '';
+        const fechaDesde = filtroFechaDesde && filtroFechaDesde.value ? new Date(filtroFechaDesde.value + 'T00:00:00') : null;
+        const fechaHasta = filtroFechaHasta && filtroFechaHasta.value ? new Date(filtroFechaHasta.value + 'T23:59:59') : null;
+
+        let resultado = movimientosManualesList;
+
+        if (tipo) resultado = resultado.filter(m => m.tipo === tipo);
+        if (categoria) resultado = resultado.filter(m => m.nombreCategoria === categoria);
+        if (usuario) resultado = resultado.filter(m => m.nombreUsuario === usuario);
+        if (fechaDesde) resultado = resultado.filter(m => new Date(m.fechaHora) >= fechaDesde);
+        if (fechaHasta) resultado = resultado.filter(m => new Date(m.fechaHora) <= fechaHasta);
+        if (texto) {
+            resultado = resultado.filter(m =>
+                normH(m.descripcion || '').includes(texto) ||
+                normH(m.referencia || '').includes(texto)
+            );
+        }
+
+        // Aplicar ordenamiento por fecha
+        resultado = [...resultado].sort((a, b) => {
+            const da = new Date(a.fechaHora);
+            const db = new Date(b.fechaHora);
+            return movSortDir === 'desc' ? db - da : da - db;
+        });
+
+        movimientosFiltradosList = resultado;
+        movimientosPage = 1;
+        renderizarPaginaMovimientos();
+    }
+
+    function actualizarIconoSortFecha() {
+        const icon = document.getElementById('mov-sort-fecha-icon');
+        const btn = document.getElementById('mov-sort-fecha-btn');
+        if (icon) {
+            icon.className = `fas fa-sort-${movSortDir === 'desc' ? 'down' : 'up'} sort-arrow`;
+        }
+        if (btn) {
+            btn.classList.add('active');
+        }
+    }
+
+    window.limpiarFiltrosMovimientos = function () {
+        const searchInput = document.getElementById('movimientos-search-input');
+        const filtroTipo = document.getElementById('movimientos-filtro-tipo');
+        const filtroCategoria = document.getElementById('movimientos-filtro-categoria');
+        const filtroUsuario = document.getElementById('movimientos-filtro-usuario');
+        const filtroFechaDesde = document.getElementById('movimientos-filtro-fecha-desde');
+        const filtroFechaHasta = document.getElementById('movimientos-filtro-fecha-hasta');
+        if (searchInput) searchInput.value = '';
+        if (filtroTipo) filtroTipo.value = '';
+        if (filtroCategoria) filtroCategoria.value = '';
+        if (filtroUsuario) filtroUsuario.value = '';
+        if (filtroFechaDesde) filtroFechaDesde.value = '';
+        if (filtroFechaHasta) filtroFechaHasta.value = '';
+        aplicarFiltrosMovimientos();
+    };
+
+    // Event listeners para filtros de movimientos
+    const movSearchInput = document.getElementById('movimientos-search-input');
+    const movFiltroTipo = document.getElementById('movimientos-filtro-tipo');
+    const movFiltroCategoria = document.getElementById('movimientos-filtro-categoria');
+    const movFiltroUsuario = document.getElementById('movimientos-filtro-usuario');
+    const movBtnLimpiar = document.getElementById('movimientos-btn-limpiar');
+    const movFiltroFechaDesde = document.getElementById('movimientos-filtro-fecha-desde');
+    const movFiltroFechaHasta = document.getElementById('movimientos-filtro-fecha-hasta');
+    const movSortFechaBtn = document.getElementById('mov-sort-fecha-btn');
+
+    if (movSearchInput) movSearchInput.addEventListener('input', aplicarFiltrosMovimientos);
+    if (movFiltroTipo) movFiltroTipo.addEventListener('change', aplicarFiltrosMovimientos);
+    if (movFiltroCategoria) movFiltroCategoria.addEventListener('change', aplicarFiltrosMovimientos);
+    if (movFiltroUsuario) movFiltroUsuario.addEventListener('change', aplicarFiltrosMovimientos);
+    if (movFiltroFechaDesde) movFiltroFechaDesde.addEventListener('change', aplicarFiltrosMovimientos);
+    if (movFiltroFechaHasta) movFiltroFechaHasta.addEventListener('change', aplicarFiltrosMovimientos);
+    if (movBtnLimpiar) movBtnLimpiar.addEventListener('click', window.limpiarFiltrosMovimientos);
+
+    // Click en botón Fecha para toggle asc/desc
+    if (movSortFechaBtn) {
+        movSortFechaBtn.addEventListener('click', () => {
+            movSortDir = movSortDir === 'desc' ? 'asc' : 'desc';
+            actualizarIconoSortFecha();
+            aplicarFiltrosMovimientos();
+        });
+    }
+
+    // Inicializar ícono en estado desc (por defecto)
+    actualizarIconoSortFecha();
+
+    // ==========================================
+    // MODAL CONFIRMACIÓN: ANULAR MOVIMIENTO (punto 6)
+    // ==========================================
+
+    const modalConfirmarAnular = document.getElementById('modal-confirmar-anular-mov');
+    const btnConfirmAnular = document.getElementById('confirm-anular-mov');
+    const btnCancelAnular = document.getElementById('cancel-anular-mov');
+    const btnCancelAnularX = document.getElementById('cancel-anular-mov-x');
+
+    function abrirModalConfirmarAnular(id) {
+        movimientoIdParaAnular = id;
+        if (modalConfirmarAnular) modalConfirmarAnular.style.display = 'flex';
+    }
+
+    function cerrarModalConfirmarAnular() {
+        movimientoIdParaAnular = null;
+        if (modalConfirmarAnular) modalConfirmarAnular.style.display = 'none';
+    }
+
+    if (btnCancelAnular) btnCancelAnular.addEventListener('click', cerrarModalConfirmarAnular);
+    if (btnCancelAnularX) btnCancelAnularX.addEventListener('click', cerrarModalConfirmarAnular);
+
+    if (btnConfirmAnular) {
+        btnConfirmAnular.addEventListener('click', async () => {
+            if (!movimientoIdParaAnular) return;
+            const id = movimientoIdParaAnular;
+            cerrarModalConfirmarAnular();
+            try {
+                const res = await fetch(`/api/movimientos-caja/${id}/anular?idAdmin=${usuarioIdActual}`, {
+                    method: 'PUT'
+                });
+                if (res.ok) {
+                    showSuccessBanner('Movimiento anulado correctamente.');
+                    await cargarMovimientosManualesCaja();
+                    await verificarEstadoCaja(true);
+                } else {
+                    const err = await res.json();
+                    alert(err.message || 'Error al anular movimiento.');
+                }
+            } catch (error) {
+                console.error('Error al anular movimiento:', error);
+                alert('Ocurri\u00f3 un error al intentar anular el movimiento.');
+            }
+        });
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modalConfirmarAnular && modalConfirmarAnular.style.display !== 'none') {
+            cerrarModalConfirmarAnular();
         }
     });
 
@@ -2374,16 +2586,30 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputNombreCat = document.getElementById('categoria-nueva-nombre');
     const errorCatMsg = document.getElementById('categoria-error-msg');
     const listaCategoriasDiv = document.getElementById('lista-categorias-existentes');
+    const inputFiltroCat = document.getElementById('filtro-categorias');
+    const selectFiltroTipoCat = document.getElementById('filtro-tipo-categoria');
+    const btnLimpiarCat = document.getElementById('btn-limpiar-categoria');
+    const charCountCatSpan = document.getElementById('categoria-char-count');
+    let categoriasModalList = [];
 
     async function abrirModalCategorias() {
         if (!modalCategorias) return;
         formCrearCat.reset();
+        if (inputFiltroCat) inputFiltroCat.value = '';
+        if (selectFiltroTipoCat) selectFiltroTipoCat.value = 'TODOS';
+        if (charCountCatSpan) charCountCatSpan.textContent = '0/50';
         if (errorCatMsg) {
             errorCatMsg.style.display = 'none';
             errorCatMsg.textContent = '';
         }
+        if (window.limpiarErroresInline) {
+            window.limpiarErroresInline('categoria-nueva-nombre');
+        }
         await cargarCategoriasModal();
         modalCategorias.style.display = 'flex';
+        setTimeout(() => {
+            if (inputNombreCat) inputNombreCat.focus();
+        }, 100);
     }
 
     function cerrarModalCategorias() {
@@ -2405,29 +2631,184 @@ document.addEventListener('DOMContentLoaded', function () {
             listaCategoriasDiv.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 13px;"><i class="fas fa-spinner fa-spin"></i> Cargando...</div>';
             const res = await fetch('/api/categorias-movimiento');
             if (!res.ok) throw new Error('Error al cargar categorías');
-            const cats = await res.json();
-            
-            listaCategoriasDiv.innerHTML = '';
-            cats.forEach(c => {
-                const item = document.createElement('div');
-                item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-weight: 500;';
-                
-                const isIngreso = c.tipo === 'INGRESO';
-                const badgeBg = isIngreso ? '#ecfdf5' : '#fef2f2';
-                const badgeColor = isIngreso ? '#059669' : '#e11d48';
+            categoriasModalList = await res.json();
 
-                item.innerHTML = `
-                    <span style="color: #334155; font-weight: 600;">${c.nombre}</span>
-                    <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">
-                        ${c.tipo}
-                    </span>
-                `;
-                listaCategoriasDiv.appendChild(item);
-            });
+            filtrarCategoriasModal();
         } catch (error) {
             console.error(error);
             listaCategoriasDiv.innerHTML = '<div style="text-align: center; color: #ef4444; font-size: 13px;">Error al cargar categorías</div>';
         }
+    }
+
+    function filtrarCategoriasModal() {
+        const texto = inputFiltroCat ? normH(inputFiltroCat.value) : '';
+        const tipo = selectFiltroTipoCat ? selectFiltroTipoCat.value : 'TODOS';
+
+        let filtradas = categoriasModalList;
+
+        if (texto) {
+            filtradas = filtradas.filter(c => normH(c.nombre).includes(texto));
+        }
+
+        if (tipo !== 'TODOS') {
+            filtradas = filtradas.filter(c => c.tipo === tipo);
+        }
+
+        renderListaCategoriasModal(filtradas);
+    }
+
+    function renderListaCategoriasModal(cats) {
+        if (!listaCategoriasDiv) return;
+        listaCategoriasDiv.innerHTML = '';
+
+        if (cats.length === 0) {
+            listaCategoriasDiv.innerHTML = `
+                <div style="text-align: center; padding: 30px 10px; color: #94a3b8; display: flex; flex-direction: column; align-items: center; gap: 8px;">
+                    <i class="fas fa-tags" style="font-size: 24px; opacity: 0.5;"></i>
+                    <span style="font-size: 13px; font-weight: 500;">No se encontraron categorías</span>
+                </div>
+            `;
+            return;
+        }
+
+        cats.forEach(c => {
+            const item = document.createElement('div');
+            item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; font-size: 13px; font-weight: 500; margin-bottom: 5px;';
+
+            const isIngreso = c.tipo === 'INGRESO';
+            const badgeBg = isIngreso ? '#ecfdf5' : '#fef2f2';
+            const badgeColor = isIngreso ? '#059669' : '#e11d48';
+
+            const nombreEstilo = c.activo !== false ? 'color: #334155; font-weight: 600; transition: all 0.3s;' : 'color: #94a3b8; font-weight: 600; text-decoration: line-through; transition: all 0.3s;';
+
+            item.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span id="nombre-cat-${c.idCategoriaMovimiento}" style="${nombreEstilo}">${c.nombre}</span>
+                    <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">
+                        ${c.tipo}
+                    </span>
+                </div>
+                <label class="switch-caja" title="${c.activo !== false ? 'Desactivar' : 'Activar'}" style="display: flex; align-items: center;">
+                    <input type="checkbox" class="input-toggle-cat" data-id="${c.idCategoriaMovimiento}" ${c.activo !== false ? 'checked' : ''}>
+                    <span class="slider-caja"></span>
+                </label>
+            `;
+            listaCategoriasDiv.appendChild(item);
+        });
+
+        listaCategoriasDiv.querySelectorAll('.input-toggle-cat').forEach(input => {
+            input.addEventListener('change', async (e) => {
+                const id = e.currentTarget.getAttribute('data-id');
+                const isChecked = e.currentTarget.checked;
+                const nombreSpan = document.getElementById(`nombre-cat-${id}`);
+                const labelContainer = e.currentTarget.parentElement;
+                const originalColor = nombreSpan.style.color;
+                const originalDecoration = nombreSpan.style.textDecoration;
+
+                // Optimistic UI: Cambiar estilos al instante
+                if (isChecked) {
+                    nombreSpan.style.color = '#334155';
+                    nombreSpan.style.textDecoration = 'none';
+                    if (labelContainer) labelContainer.setAttribute('title', 'Desactivar');
+                } else {
+                    nombreSpan.style.color = '#94a3b8';
+                    nombreSpan.style.textDecoration = 'line-through';
+                    if (labelContainer) labelContainer.setAttribute('title', 'Activar');
+                }
+
+                // Actualizar localmente el estado en el array
+                const localCat = categoriasModalList.find(c => c.idCategoriaMovimiento == id);
+                if (localCat) localCat.activo = isChecked;
+
+                try {
+                    const res = await fetch('/api/categorias-movimiento/' + id + '/toggle-estado', { method: 'PUT' });
+                    if (res.ok) {
+                        showSuccessBanner('Estado de la categoría actualizado.');
+                    } else {
+                        // Revertir si la API responde error
+                        e.currentTarget.checked = !isChecked;
+                        nombreSpan.style.color = originalColor;
+                        nombreSpan.style.textDecoration = originalDecoration;
+                        if (labelContainer) labelContainer.setAttribute('title', !isChecked ? 'Desactivar' : 'Activar');
+                        if (localCat) localCat.activo = !isChecked;
+                        const errData = await res.text();
+                        alert(errData || 'Error al actualizar estado.');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    // Revertir si falla la conexión
+                    e.currentTarget.checked = !isChecked;
+                    nombreSpan.style.color = originalColor;
+                    nombreSpan.style.textDecoration = originalDecoration;
+                    if (labelContainer) labelContainer.setAttribute('title', !isChecked ? 'Desactivar' : 'Activar');
+                    if (localCat) localCat.activo = !isChecked;
+                    alert('Error de conexión al actualizar estado.');
+                }
+            });
+        });
+    }
+
+    const ocultarErrorSoft = () => {
+        if (errorCatMsg && errorCatMsg.style.display !== 'none') {
+            errorCatMsg.style.opacity = '0';
+            errorCatMsg.style.transform = 'translateY(-5px)';
+            setTimeout(() => {
+                errorCatMsg.style.display = 'none';
+                errorCatMsg.innerHTML = '';
+            }, 300);
+        }
+    };
+
+    const mostrarErrorSoft = (msg) => {
+        if (errorCatMsg) {
+            errorCatMsg.innerHTML = `<i class="fas fa-exclamation-circle" style="font-size: 14px;"></i> <span>${msg}</span>`;
+            errorCatMsg.style.display = 'flex';
+            setTimeout(() => {
+                errorCatMsg.style.opacity = '1';
+                errorCatMsg.style.transform = 'translateY(0)';
+            }, 10);
+        }
+    };
+
+    if (inputNombreCat) {
+        inputNombreCat.addEventListener('input', () => {
+            inputNombreCat.style.borderColor = '#cbd5e1';
+            ocultarErrorSoft();
+            if (window.checkMaxLength) {
+                window.checkMaxLength(inputNombreCat, 50);
+            }
+            if (charCountCatSpan) {
+                charCountCatSpan.textContent = `${inputNombreCat.value.length}/50`;
+            }
+        });
+    }
+
+    if (inputFiltroCat) {
+        inputFiltroCat.addEventListener('input', filtrarCategoriasModal);
+    }
+
+    if (selectFiltroTipoCat) {
+        selectFiltroTipoCat.addEventListener('change', filtrarCategoriasModal);
+    }
+
+    if (btnLimpiarCat) {
+        btnLimpiarCat.addEventListener('click', () => {
+            formCrearCat.reset();
+            if (inputFiltroCat) inputFiltroCat.value = '';
+            if (selectFiltroTipoCat) selectFiltroTipoCat.value = 'TODOS';
+            if (charCountCatSpan) charCountCatSpan.textContent = '0/50';
+            if (errorCatMsg) {
+                errorCatMsg.style.display = 'none';
+                errorCatMsg.textContent = '';
+            }
+            if (window.limpiarErroresInline) {
+                window.limpiarErroresInline('categoria-nueva-nombre');
+            }
+            filtrarCategoriasModal();
+            setTimeout(() => {
+                if (inputNombreCat) inputNombreCat.focus();
+            }, 50);
+        });
     }
 
     if (formCrearCat) {
@@ -2435,17 +2816,30 @@ document.addEventListener('DOMContentLoaded', function () {
             e.preventDefault();
             if (errorCatMsg) {
                 errorCatMsg.style.display = 'none';
-                errorCatMsg.textContent = '';
+                errorCatMsg.style.opacity = '0';
+                errorCatMsg.style.transform = 'translateY(-5px)';
+                errorCatMsg.innerHTML = '';
+            }
+            if (inputNombreCat) {
+                inputNombreCat.style.borderColor = '#cbd5e1';
             }
 
             const nombre = inputNombreCat.value.trim();
             const tipo = selectTipoCat.value;
 
-            if (!nombre) return;
+            if (!nombre) {
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('categoria-nueva-nombre', 'El nombre de la categoría no puede estar vacío.');
+                } else {
+                    if (inputNombreCat) inputNombreCat.style.borderColor = '#ef4444';
+                    mostrarErrorSoft('El nombre de la categoría no puede estar vacío.');
+                }
+                return;
+            }
 
             const btnCrear = formCrearCat.querySelector('button[type="submit"]');
             btnCrear.disabled = true;
-            btnCrear.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            btnCrear.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creando...';
 
             try {
                 const res = await fetch('/api/categorias-movimiento', {
@@ -2456,6 +2850,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (res.ok) {
                     inputNombreCat.value = '';
+                    if (charCountCatSpan) charCountCatSpan.textContent = '0/50';
+                    if (window.limpiarErroresInline) {
+                        window.limpiarErroresInline('categoria-nueva-nombre');
+                    }
                     showSuccessBanner('Categoría creada exitosamente.');
                     await cargarCategoriasModal();
                 } else {
@@ -2464,9 +2862,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             } catch (err) {
                 console.error(err);
-                if (errorCatMsg) {
-                    errorCatMsg.textContent = err.message || 'Error al guardar la categoría.';
-                    errorCatMsg.style.display = 'block';
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('categoria-nueva-nombre', err.message || 'Error al guardar la categoría.');
+                } else {
+                    if (inputNombreCat) inputNombreCat.style.borderColor = '#ef4444';
+                    mostrarErrorSoft(err.message || 'Error al guardar la categoría.');
                 }
             } finally {
                 btnCrear.disabled = false;
