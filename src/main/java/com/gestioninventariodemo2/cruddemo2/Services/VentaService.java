@@ -154,14 +154,6 @@ public class VentaService {
         String userRole = usuario.getRol() != null ? usuario.getRol().getDescripcion().toUpperCase() : "";
         if ("EMPLEADO".equals(userRole)) {
             venta.setEstado("PENDIENTE");
-            if (ventaRequestDTO.getIdMetodoPago() != null) {
-                try {
-                    var sugerido = metodoPagoService.obtenerPorId(ventaRequestDTO.getIdMetodoPago());
-                    venta.setMetodoPagoSugerido(sugerido);
-                } catch (Exception e) {
-                    // ignorar
-                }
-            }
         } else {
             venta.setEstado("COBRADA");
         }
@@ -322,9 +314,7 @@ public class VentaService {
 
         // Obtener cobros
         String metodoPago = "Desconocido";
-        if (venta.getMetodoPagoSugerido() != null) {
-            metodoPago = venta.getMetodoPagoSugerido().getNombre();
-        } else if ("PENDIENTE".equals(venta.getEstado())) {
+        if ("PENDIENTE".equals(venta.getEstado())) {
             metodoPago = "Pendiente";
         }
         Double montoPagado = null;

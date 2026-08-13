@@ -1152,8 +1152,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     fecha: fechaVenta,
                     idCliente: parseInt(idCliente),
                     detalles: detallesParaBackend,
-                    cobros: null, // No cobros aún
-                    idMetodoPago: idMetodoPago, // Método de pago sugerido
+                    cobros: null,
+                    idMetodoPago: null,
                     descuento: descuento,
                     tipoDescuento: tipoDescuento
                 };

@@ -1217,7 +1217,7 @@
                                 <!-- Controles Financieros del Cobro -->
                                 <div class="pos-controls-grid">
                                     
-                                    <!-- Col Izq: Método de Pago -->
+                                    <!-- Col Izq: Selección de Método y Monto -->
                                     <div style="display: flex; flex-direction: column; gap: 14px;">
                                         <div class="form-group" style="margin: 0;">
                                             <label style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; display: block;">Método de Pago</label>
@@ -1225,23 +1225,38 @@
                                                 <!-- Se llena por JS -->
                                             </select>
                                         </div>
+
+                                        <div class="form-group" style="margin: 0;">
+                                            <label style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; display: block;">Monto a Aportar</label>
+                                            <div style="position: relative;">
+                                                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: bold; color: #94a3b8; font-size: 15px;">$</span>
+                                                <input type="text" id="pos-monto-recibido" placeholder="0" maxlength="10"
+                                                    style="width: 100%; padding: 10px 10px 10px 30px; font-size: 16px; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 8px; outline: none;"
+                                                    onfocus="this.style.borderColor='#1e3a8a';"
+                                                    onblur="this.style.borderColor='#cbd5e1';">
+                                            </div>
+                                        </div>
+
+                                        <button type="button" id="btn-pos-agregar-pago" class="btn-primary" style="padding: 8px 14px; font-size: 12px; font-weight: 700; border-radius: 6px; background: #2563eb;">
+                                            <i class="fas fa-plus"></i> Agregar Pago
+                                        </button>
                                     </div>
 
-                                    <!-- Col Der: Importe Recibido y Vuelto -->
+                                    <!-- Col Der: Lista de Pagos Cargados y Saldo Pendiente -->
                                     <div style="display: flex; flex-direction: column; gap: 10px;">
-                                        <div id="pos-efectivo-panel" style="display: flex; flex-direction: column; gap: 10px;">
-                                            <div class="form-group" style="margin: 0;">
-                                                <label style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; display: block;">Monto Entregado por Cliente</label>
-                                                <div style="position: relative;">
-                                                    <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: bold; color: #94a3b8; font-size: 15px;">$</span>
-                                                    <input type="text" id="pos-monto-recibido" placeholder="0" maxlength="10"
-                                                        style="width: 100%; padding: 10px 10px 10px 30px; font-size: 16px; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 8px; outline: none;"
-                                                        onfocus="this.style.borderColor='#1e3a8a';"
-                                                        onblur="this.style.borderColor='#cbd5e1';">
-                                                </div>
+                                        <!-- Resumen de Pagos Agregados -->
+                                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                                <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Pagos Agregados</span>
+                                                <span style="font-size: 11px; font-weight: 700; color: #64748b;">Pendiente: <strong id="pos-saldo-pendiente" style="color: #dc2626;">$0</strong></span>
                                             </div>
-                                            
-                                            <!-- Teclado de Billetes Rápidos -->
+                                            <div id="pos-lista-cobros" style="display: flex; flex-direction: column; gap: 6px; max-height: 110px; overflow-y: auto;">
+                                                <div style="font-size: 12px; color: #94a3b8; text-align: center; padding: 10px;">Sin pagos agregados todavía</div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Teclado de Billetes Rápidos -->
+                                        <div id="pos-efectivo-panel" style="display: flex; flex-direction: column; gap: 8px;">
                                             <div class="pos-bill-keyboard">
                                                 <button type="button" class="btn-pos-bill" data-amount="1000" style="padding: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; font-weight: 700; background: #f8fafc; cursor: pointer; transition: all 0.2s;">+$1k</button>
                                                 <button type="button" class="btn-pos-bill" data-amount="2000" style="padding: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; font-weight: 700; background: #f8fafc; cursor: pointer; transition: all 0.2s;">+$2k</button>
@@ -1253,9 +1268,9 @@
                                         </div>
 
                                         <!-- Vuelto Display -->
-                                        <div id="pos-vuelto-container" style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 12px 18px; text-align: right; display: flex; flex-direction: column; gap: 2px;">
-                                            <span style="font-size: 10px; font-weight: 700; color: #166534; text-transform: uppercase; letter-spacing: 0.5px;">Vuelto a entregar</span>
-                                            <span id="pos-vuelto-display" style="font-size: 20px; font-weight: 800; color: #15803d;">$0</span>
+                                        <div id="pos-vuelto-container" style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 8px 14px; text-align: right; display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
+                                            <span style="font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase;">Vuelto</span>
+                                            <span id="pos-vuelto-display" style="font-size: 18px; font-weight: 800; color: #15803d;">$0</span>
                                         </div>
                                     </div>
 

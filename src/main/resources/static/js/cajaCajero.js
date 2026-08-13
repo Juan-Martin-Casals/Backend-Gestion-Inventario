@@ -1366,10 +1366,156 @@ document.addEventListener('DOMContentLoaded', function () {
     });
 
     // ==========================================
-    // LÓGICA DE COBRANZA DE VENTAS (POS) - PREMIUM
+    // LÓGICA DE COBRANZA DE VENTAS (POS) - PREMIUM MULTI-PAGO
     // ==========================================
     let ventaSeleccionada = null;
     let metodosPagoList = [];
+    let cobrosCajero = [];
+
+    // Renderizar la lista de cobros agregados y actualizar saldos
+    function renderCobrosCajero() {
+        const listaEl = document.getElementById('pos-lista-cobros');
+        const pendienteEl = document.getElementById('pos-saldo-pendiente');
+        const vueltoText = document.getElementById('pos-vuelto-display');
+        const vueltoContainer = document.getElementById('pos-vuelto-container');
+
+        if (!ventaSeleccionada) return;
+
+        const totalVenta = ventaSeleccionada.total || 0;
+        const totalAportado = cobrosCajero.reduce((acc, c) => acc + (c.monto || 0), 0);
+        const saldoPendiente = Math.max(0, totalVenta - totalAportado);
+
+        // Actualizar etiqueta de Saldo Pendiente
+        if (pendienteEl) {
+            pendienteEl.textContent = formatter.format(saldoPendiente);
+            pendienteEl.style.color = saldoPendiente > 0.01 ? '#dc2626' : '#16a34a';
+        }
+
+        // Renderizar lista de pagos cargados
+        if (listaEl) {
+            if (cobrosCajero.length === 0) {
+                listaEl.innerHTML = '<div style="font-size: 12px; color: #94a3b8; text-align: center; padding: 10px;">Sin pagos agregados todavía</div>';
+            } else {
+                listaEl.innerHTML = cobrosCajero.map((cobro, idx) => `
+                    <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px;">
+                        <div>
+                            <strong style="color: #1e293b;">${cobro.nombreMetodo}</strong>
+                            ${cobro.vuelto > 0 ? `<span style="font-size: 10px; color: #16a34a; margin-left: 6px;">(Vuelto: ${formatter.format(cobro.vuelto)})</span>` : ''}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-weight: 700; color: #0f172a;">${formatter.format(cobro.monto)}</span>
+                            <button type="button" data-idx="${idx}" class="btn-eliminar-cobro-pos" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 2px 4px; font-size: 12px;" title="Eliminar pago">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+
+                // Event listener para botones de eliminar
+                listaEl.querySelectorAll('.btn-eliminar-cobro-pos').forEach(btn => {
+                    btn.addEventListener('click', function () {
+                        const index = parseInt(this.dataset.idx);
+                        cobrosCajero.splice(index, 1);
+                        renderCobrosCajero();
+                    });
+                });
+            }
+        }
+
+        // Calcular vuelto global
+        let vueltoTotal = 0;
+        cobrosCajero.forEach(c => {
+            if (c.vuelto) vueltoTotal += c.vuelto;
+        });
+
+        if (vueltoText && vueltoContainer) {
+            if (vueltoTotal > 0) {
+                vueltoContainer.style.display = 'flex';
+                vueltoText.textContent = formatter.format(vueltoTotal);
+            } else {
+                vueltoText.textContent = '$0';
+            }
+        }
+    }
+
+    // Agregar un pago al array de cobros
+    function agregarPagoCajero() {
+        const errorMsg = document.getElementById('pos-error-message');
+        if (errorMsg) errorMsg.style.display = 'none';
+
+        if (!ventaSeleccionada) return;
+
+        const selectMetodo = document.getElementById('pos-metodo-pago');
+        const inputRecibido = document.getElementById('pos-monto-recibido');
+
+        const idMetodo = selectMetodo?.value;
+        const nombreMetodo = selectMetodo ? selectMetodo.options[selectMetodo.selectedIndex]?.text || '' : '';
+        if (!idMetodo) {
+            showErrorPOS('Debe seleccionar un método de pago.');
+            return;
+        }
+
+        const raw = inputRecibido ? inputRecibido.value.replace(/\D/g, '') : '';
+        let montoIngresado = parseFloat(raw);
+        if (isNaN(montoIngresado) || montoIngresado <= 0) {
+            showErrorPOS('Debe ingresar un monto válido.');
+            return;
+        }
+
+        const totalVenta = ventaSeleccionada.total || 0;
+        const totalAportadoAct = cobrosCajero.reduce((acc, c) => acc + (c.monto || 0), 0);
+        const saldoPendienteActual = Math.max(0, totalVenta - totalAportadoAct);
+
+        if (saldoPendienteActual <= 0.01) {
+            showErrorPOS('El total de la venta ya ha sido cubierto por los pagos agregados.');
+            return;
+        }
+
+        const nombreMetodoLower = nombreMetodo.toLowerCase();
+        const esEfectivo = nombreMetodoLower.includes('efectivo');
+
+        let tipoTarjeta = null;
+        if (nombreMetodoLower.includes('debito') || nombreMetodoLower.includes('débito')) {
+            tipoTarjeta = 'Débito';
+        } else if (nombreMetodoLower.includes('credito') || nombreMetodoLower.includes('crédito')) {
+            tipoTarjeta = 'Crédito';
+        } else if (nombreMetodoLower.includes('tarjeta')) {
+            tipoTarjeta = 'Débito';
+        }
+
+        let montoAplicado = montoIngresado;
+        let vueltoCalculado = 0;
+
+        if (esEfectivo) {
+            if (montoIngresado > saldoPendienteActual) {
+                vueltoCalculado = montoIngresado - saldoPendienteActual;
+                montoAplicado = saldoPendienteActual;
+            }
+        } else {
+            if (montoIngresado > saldoPendienteActual + 0.05) {
+                showErrorPOS(`El monto ingresado para este método supera el saldo pendiente de ${formatter.format(saldoPendienteActual)}.`);
+                return;
+            }
+        }
+
+        cobrosCajero.push({
+            idMetodoPago: parseInt(idMetodo),
+            nombreMetodo: nombreMetodo,
+            tipoTarjeta: tipoTarjeta,
+            monto: montoAplicado,
+            montoPagado: montoIngresado,
+            vuelto: vueltoCalculado
+        });
+
+        if (inputRecibido) inputRecibido.value = '';
+        renderCobrosCajero();
+    }
+
+    // Configurar listener para botón agregar pago
+    const btnAgregarPago = document.getElementById('btn-pos-agregar-pago');
+    if (btnAgregarPago) {
+        btnAgregarPago.addEventListener('click', agregarPagoCajero);
+    }
 
     // Cargar métodos de pago activos en el selector del POS
     async function loadMetodosPagoActivos() {
@@ -1499,6 +1645,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Seleccionar una venta de la lista
     function seleccionarVenta(venta) {
         ventaSeleccionada = venta;
+        cobrosCajero = [];
         
         // Cargar datos en el panel POS
         document.getElementById('pos-orden-id').textContent = `#${venta.idVenta}`;
@@ -1534,7 +1681,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        // Seleccionar método de pago equivalente
+        // Seleccionar método de pago equivalente por defecto
         const selectMetodo = document.getElementById('pos-metodo-pago');
         if (selectMetodo) {
             selectMetodo.value = '';
@@ -1553,13 +1700,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 const opt = selectMetodo.options[i];
                 const optText = cleanStr(opt.text || opt.textContent);
                 
-                // Comparación robusta bidireccional
                 if (optText.includes(targetMethod) || targetMethod.includes(optText)) {
                     selectMetodo.value = opt.value;
                     break;
                 }
             }
-            // Trigger change event to set visibility of payment details panels
             selectMetodo.dispatchEvent(new Event('change'));
         }
 
@@ -1568,27 +1713,21 @@ document.addEventListener('DOMContentLoaded', function () {
         if (inputRecibido) inputRecibido.value = '';
         document.getElementById('pos-error-message').style.display = 'none';
         
-        // Auto-calcular vuelto inicial
-        actualizarVueltoPOS();
+        // Renderizar cobros y estado financiero
+        renderCobrosCajero();
 
         // Alternar paneles
         document.getElementById('pos-vacio-state').style.display = 'none';
         document.getElementById('pos-activo-panel').style.display = 'flex';
 
         // Re-render list to highlight selected card
-        const countBadge = document.getElementById('cajero-pendientes-count');
-        const lista = document.getElementById('cajero-lista-pendientes');
-        if (lista) {
-            const cards = lista.querySelectorAll('div[style*="cursor: pointer"]');
-            const pendientesText = countBadge ? countBadge.textContent : '';
-            // Just refresh list highlights
-            loadVentasPendientes();
-        }
+        loadVentasPendientes();
     }
 
     // Resetear POS a vacío
     function deseleccionarVenta() {
         ventaSeleccionada = null;
+        cobrosCajero = [];
         document.getElementById('pos-activo-panel').style.display = 'none';
         document.getElementById('pos-vacio-state').style.display = 'flex';
         loadVentasPendientes();
@@ -1601,44 +1740,9 @@ document.addEventListener('DOMContentLoaded', function () {
             const nombre = (this.options[this.selectedIndex]?.text || this.options[this.selectedIndex]?.textContent || '').toLowerCase();
             const esEfectivo = nombre.includes('efectivo');
             
-            document.getElementById('pos-efectivo-panel').style.display = esEfectivo ? 'flex' : 'none';
-            document.getElementById('pos-vuelto-container').style.display = esEfectivo ? 'flex' : 'none';
-            
-            // Auto-calcular vuelto
-            actualizarVueltoPOS();
+            const efPanel = document.getElementById('pos-efectivo-panel');
+            if (efPanel) efPanel.style.display = esEfectivo ? 'flex' : 'none';
         });
-    }
-
-    // Auto-calcular el vuelto del POS
-    function actualizarVueltoPOS() {
-        const inputRecibido = document.getElementById('pos-monto-recibido');
-        const vueltoText = document.getElementById('pos-vuelto-display');
-        const vueltoContainer = document.getElementById('pos-vuelto-container');
-        if (!inputRecibido || !vueltoText || !ventaSeleccionada) return;
-
-        const metodo = selectMetodo ? selectMetodo.options[selectMetodo.selectedIndex]?.text?.toLowerCase() || '' : '';
-        const esEfectivo = metodo.includes('efectivo');
-        if (!esEfectivo) {
-            vueltoContainer.style.display = 'none';
-            return;
-        }
-
-        const montoRecibidoRaw = inputRecibido.value.replace(/\D/g, '');
-        const montoRecibido = parseFloat(montoRecibidoRaw) || 0;
-        const total = ventaSeleccionada.total;
-        const vuelto = montoRecibido - total;
-
-        if (montoRecibido > 0) {
-            vueltoText.textContent = vuelto >= 0 ? formatter.format(vuelto) : 'Monto insuficiente';
-            vueltoText.style.color = vuelto >= 0 ? '#15803d' : '#b91c1c';
-            vueltoContainer.style.background = vuelto >= 0 ? '#ecfdf5' : '#fef2f2';
-            vueltoContainer.style.borderColor = vuelto >= 0 ? '#a7f3d0' : '#fecaca';
-        } else {
-            vueltoText.textContent = '$0';
-            vueltoText.style.color = '#15803d';
-            vueltoContainer.style.background = '#ecfdf5';
-            vueltoContainer.style.borderColor = '#a7f3d0';
-        }
     }
 
     // Input change listener for money format
@@ -1648,11 +1752,9 @@ document.addEventListener('DOMContentLoaded', function () {
             let raw = this.value.replace(/[^0-9]/g, '');
             if (raw === '') {
                 this.value = '';
-                actualizarVueltoPOS();
                 return;
             }
             this.value = new Intl.NumberFormat('es-AR').format(parseInt(raw, 10));
-            actualizarVueltoPOS();
         });
     }
 
@@ -1665,11 +1767,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             let currentRaw = input.value.replace(/\D/g, '');
             let current = parseFloat(currentRaw) || 0;
-            
-            // Sumar el billete
             let nuevo = current + bill;
             input.value = new Intl.NumberFormat('es-AR').format(nuevo);
-            actualizarVueltoPOS();
         });
     });
 
@@ -1680,8 +1779,10 @@ document.addEventListener('DOMContentLoaded', function () {
             const input = document.getElementById('pos-monto-recibido');
             if (!input || !ventaSeleccionada) return;
 
-            input.value = new Intl.NumberFormat('es-AR').format(Math.ceil(ventaSeleccionada.total));
-            actualizarVueltoPOS();
+            const totalAportado = cobrosCajero.reduce((acc, c) => acc + (c.monto || 0), 0);
+            const saldoPendiente = Math.max(0, ventaSeleccionada.total - totalAportado);
+
+            input.value = new Intl.NumberFormat('es-AR').format(Math.ceil(saldoPendiente));
         });
     }
 
@@ -1704,51 +1805,42 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
-            const idMetodo = selectMetodo?.value;
-            const nombreMetodo = selectMetodo ? selectMetodo.options[selectMetodo.selectedIndex]?.text || '' : '';
-            if (!idMetodo) {
-                showErrorPOS('Debe seleccionar un método de pago.');
+            // Si no hay pagos en el arreglo, pero hay un monto e idMetodo seleccionados en el formulario, intentar agregarlo automáticamente
+            if (cobrosCajero.length === 0) {
+                const selectMetodo = document.getElementById('pos-metodo-pago');
+                const inputRecibido = document.getElementById('pos-monto-recibido');
+                const idMetodo = selectMetodo?.value;
+                const raw = inputRecibido ? inputRecibido.value.replace(/\D/g, '') : '';
+                const monto = parseFloat(raw);
+
+                if (idMetodo && !isNaN(monto) && monto > 0) {
+                    agregarPagoCajero();
+                }
+            }
+
+            if (cobrosCajero.length === 0) {
+                showErrorPOS('Debe agregar al menos un pago a la orden.');
                 return;
             }
 
-            const nombreMetodoLower = nombreMetodo.toLowerCase();
-            const esEfectivo = nombreMetodoLower.includes('efectivo');
-            
-            let tipoTarjeta = null;
-            if (nombreMetodoLower.includes('debito') || nombreMetodoLower.includes('débito')) {
-                tipoTarjeta = 'Débito';
-            } else if (nombreMetodoLower.includes('credito') || nombreMetodoLower.includes('crédito')) {
-                tipoTarjeta = 'Crédito';
-            } else if (nombreMetodoLower.includes('tarjeta')) {
-                tipoTarjeta = 'Débito'; // Fallback default
+            const totalVenta = ventaSeleccionada.total || 0;
+            const totalAportado = cobrosCajero.reduce((acc, c) => acc + (c.monto || 0), 0);
+            const saldoPendiente = Math.max(0, totalVenta - totalAportado);
+
+            if (saldoPendiente > 0.05) {
+                showErrorPOS(`El saldo pendiente debe ser $0 para registrar la venta. Faltan ${formatter.format(saldoPendiente)}`);
+                return;
             }
 
-            let montoPagado = null;
-            let vuelto = null;
-
-            if (esEfectivo) {
-                const input = document.getElementById('pos-monto-recibido');
-                const raw = input ? input.value.replace(/\D/g, '') : '';
-                montoPagado = parseFloat(raw);
-                if (isNaN(montoPagado) || montoPagado <= 0) {
-                    showErrorPOS('Debe ingresar un monto entregado por el cliente.');
-                    return;
-                }
-
-                if (montoPagado < ventaSeleccionada.total - 0.05) {
-                    showErrorPOS(`El monto entregado es insuficiente. Faltan ${formatter.format(ventaSeleccionada.total - montoPagado)}`);
-                    return;
-                }
-
-                vuelto = montoPagado - ventaSeleccionada.total;
-            }
-
-            // Construir el Request Body
+            // Construir el Request Body con cobros múltiples
             const cobroRequest = {
-                idMetodoPago: parseInt(idMetodo),
-                tipoTarjeta: tipoTarjeta,
-                montoPagado: montoPagado,
-                vuelto: vuelto
+                cobros: cobrosCajero.map(c => ({
+                    idMetodoPago: c.idMetodoPago,
+                    importe: c.monto,
+                    tipoTarjeta: c.tipoTarjeta,
+                    montoPagado: c.montoPagado || c.monto,
+                    vuelto: c.vuelto || 0
+                }))
             };
 
             btnPosCobrar.disabled = true;
@@ -1771,6 +1863,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const ventaCobrada = await res.json();
                 
                 showSuccessBanner('Venta cobrada con éxito.');
+                cobrosCajero = [];
                 
                 // Mostrar modal para generar el ticket en PDF opcionalmente
                 mostrarModalTicket(ventaCobrada.idVenta);

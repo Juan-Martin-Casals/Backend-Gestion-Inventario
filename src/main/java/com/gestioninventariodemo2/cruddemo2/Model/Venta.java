@@ -63,9 +63,5 @@ public class Venta {
     @Column(name = "estado")
     private String estado;
 
-    @ManyToOne
-    @JoinColumn(name = "id_metodo_pago_sugerido", nullable = true)
-    private MetodoPago metodoPagoSugerido;
-
 }
 
