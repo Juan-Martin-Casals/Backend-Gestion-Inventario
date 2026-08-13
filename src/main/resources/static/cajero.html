@@ -1124,28 +1124,26 @@
 
     <!-- SECCIÓN COBRAR VENTAS (NUEVA - POS PREMIUM) -->
     <section id="ventas-cobrar-section" class="spa-section" style="display:none; padding: 40px;">
-        <div style="max-width: 1300px; margin: 0 auto 0 0;">
+        <div style="max-width: 1400px; margin: 0 auto 0 0;">
             
-
-
             <!-- Contenedor con Caja Cerrada Warning Overlay (si no hay caja activa) -->
             <div id="cajero-ventas-container" style="position: relative; min-height: 500px;">
                 
-                <!-- Layout Principal -->
+                <!-- Layout Principal POS Grid -->
                 <div class="pos-layout-grid">
                     
                     <!-- COLUMNA IZQUIERDA: LISTA DE VENTAS PENDIENTES -->
-                    <div style="background: white; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 4px 15px rgba(0,0,0,0.02); display: flex; flex-direction: column; overflow: hidden;">
-                        <div style="padding: 20px 24px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; background: #fafafa;">
+                    <div class="pos-queue-panel">
+                        <div class="pos-queue-header">
                             <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-list-ul" style="color: #64748b; font-size: 13px;"></i>
+                                <i class="fas fa-receipt" style="color: #6366f1; font-size: 14px;"></i>
                                 Cola de Espera
                             </h4>
-                            <span id="cajero-pendientes-count" style="background: #e0e7ff; color: #4338ca; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700;">0 Órdenes</span>
+                            <span id="cajero-pendientes-count" class="pos-badge-count">0 Órdenes</span>
                         </div>
 
                         <!-- Contenedor de la lista con Scroll -->
-                        <div id="cajero-lista-pendientes" style="flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: #f8fafc;">
+                        <div id="cajero-lista-pendientes" class="pos-queue-body">
                             <div style="text-align: center; color: #94a3b8; padding: 40px 20px;">
                                 <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 12px;"></i>
                                 <p style="margin: 0; font-size: 13px;">Buscando órdenes pendientes...</p>
@@ -1154,48 +1152,54 @@
                     </div>
 
                     <!-- COLUMNA DERECHA: DETALLE Y PANEL DE COBRO (POS) -->
-                    <div style="background: white; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 30px rgba(0,0,0,0.04); min-height: 450px; display: flex; flex-direction: column; overflow: hidden; position: relative;">
+                    <div class="pos-checkout-panel">
                         
                         <!-- Estado Vacío (Default) -->
-                        <div id="pos-vacio-state" style="display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; padding: 80px 40px; text-align: center; background: #ffffff; z-index: 5;">
-                            <div style="width: 80px; height: 80px; background: #f1f5f9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 24px; color: #94a3b8;">
-                                <i class="fas fa-cash-register" style="font-size: 32px;"></i>
+                        <div id="pos-vacio-state" class="pos-empty-state">
+                            <div class="pos-empty-icon">
+                                <i class="fas fa-cash-register"></i>
                             </div>
-                            <h4 style="margin: 0 0 8px; color: #334155; font-size: 16px; font-weight: 700;">Listo para operar</h4>
-                            <p style="margin: 0; color: #64748b; font-size: 13px; max-width: 320px; line-height: 1.5;">Selecciona una venta pendiente de la lista izquierda para cargar el detalle y procesar el pago.</p>
+                            <h4 style="margin: 0 0 8px; color: #0f172a; font-size: 18px; font-weight: 800;">Terminal Lista para Cobrar</h4>
+                            <p style="margin: 0; color: #64748b; font-size: 14px; max-width: 360px; line-height: 1.6;">Selecciona una orden de venta de la lista de espera para habilitar los métodos de pago y procesar el cobro.</p>
                         </div>
 
                         <!-- Panel de Cobro Activo (Oculto al inicio) -->
-                        <div id="pos-activo-panel" style="display: none; flex-direction: column; flex: 1; overflow-y: auto;">
+                        <div id="pos-activo-panel" class="pos-active-container" style="display: none;">
                             
                             <!-- Cabecera de la Orden Seleccionada -->
-                            <div style="padding: 20px 24px; background: white; display: flex; justify-content: space-between; align-items: center;">
-                                <div>
-                                    <h4 style="margin: 0 0 4px; font-size: 15px; font-weight: 800; color: #0f172a; letter-spacing: -0.3px;">Orden <span id="pos-orden-id">#00</span></h4>
-                                    <span style="font-size: 12px; color: #64748b;">Vendedor: <strong id="pos-orden-vendedor" style="color: #334155;">-</strong></span>
+                            <div class="pos-header-bar">
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div class="pos-order-badge">
+                                        <i class="fas fa-shopping-bag"></i>
+                                    </div>
+                                    <div>
+                                        <h4 style="margin: 0 0 2px; font-size: 16px; font-weight: 800; color: #0f172a; letter-spacing: -0.3px;">Orden <span id="pos-orden-id">#00</span></h4>
+                                        <span style="font-size: 12px; color: #64748b;">Vendedor: <strong id="pos-orden-vendedor" style="color: #334155;">-</strong></span>
+                                    </div>
                                 </div>
-                                <div style="text-align: right;">
-                                    <span style="display: block; font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Cliente</span>
+                                <div style="text-align: right; background: #f8fafc; padding: 8px 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                    <span style="display: block; font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Cliente</span>
                                     <strong id="pos-orden-cliente" style="color: #0f172a; font-size: 14px;">-</strong>
                                 </div>
                             </div>
-                            
-                            <!-- Divisor estilo Ticket -->
-                            <div class="pos-ticket-effect" style="margin: 0 24px;"></div>
 
-                            <!-- Contenido del checkout -->
-                            <div style="padding: 20px 24px; flex: 1; display: flex; flex-direction: column; gap: 16px;">
+                            <!-- Layout Interno del Checkout: Productos (Izquierda) + Finanzas Oscuro (Derecha) -->
+                            <div class="pos-checkout-body-grid">
                                 
-                                <!-- Lista de Productos resumida -->
-                                <div style="overflow: hidden; background: white;">
-                                    <div style="max-height: 140px; overflow-y: auto;">
-                                        <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
+                                <!-- COLUMNA CHECKOUT IZQ: DETALLE PRODUCTOS -->
+                                <div class="pos-products-column">
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;">
+                                        <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.8px;"><i class="fas fa-boxes" style="margin-right: 6px;"></i> Detalle de Items</span>
+                                    </div>
+                                    
+                                    <div class="pos-products-scroll">
+                                        <table class="pos-products-table">
                                             <thead>
-                                                <tr style="color: #64748b; font-weight: 700; border-bottom: 1px dashed #cbd5e1;">
-                                                    <th style="padding: 8px 4px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Producto</th>
-                                                    <th style="padding: 8px 4px; text-align: center; width: 60px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Cant.</th>
-                                                    <th style="padding: 8px 4px; text-align: right; width: 100px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Precio</th>
-                                                    <th style="padding: 8px 4px; text-align: right; width: 100px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Subtotal</th>
+                                                <tr>
+                                                    <th>Producto</th>
+                                                    <th style="text-align: center; width: 60px;">Cant.</th>
+                                                    <th style="text-align: right; width: 90px;">Precio</th>
+                                                    <th style="text-align: right; width: 90px;">Subtotal</th>
                                                 </tr>
                                             </thead>
                                             <tbody id="pos-productos-body">
@@ -1203,89 +1207,88 @@
                                             </tbody>
                                         </table>
                                     </div>
-                                </div>
 
-                                <!-- Bloque del TOTAL Grande (Diseño Ticket Premium) -->
-                                <div style="border-top: 2px dashed #94a3b8; border-bottom: 2px dashed #94a3b8; padding: 18px 20px; text-align: right; background: #fafafa; border-radius: 4px; margin: 4px 0;">
-                                    <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; display: block; margin-bottom: 6px;">TOTAL A COBRAR</span>
-                                    <h2 id="pos-total-display" style="margin: 0; font-size: 40px; font-weight: 900; color: #0f172a; font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, sans-serif; letter-spacing: -1px;">$0</h2>
-                                    <div id="pos-descuento-detalle" style="font-size: 12px; color: #16a34a; margin-top: 6px; font-weight: 700; display: none; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    <div id="pos-descuento-detalle" class="pos-discount-banner">
                                         <i class="fas fa-tag"></i> Descuento aplicado: <span id="pos-descuento-monto">-$0</span>
                                     </div>
                                 </div>
 
-                                <!-- Controles Financieros del Cobro -->
-                                <div class="pos-controls-grid">
+                                <!-- COLUMNA CHECKOUT DER: HERO PANEL FINANCIERO LIGHT PREMIUM -->
+                                <div class="pos-financial-light-card">
                                     
-                                    <!-- Col Izq: Selección de Método y Monto -->
-                                    <div style="display: flex; flex-direction: column; gap: 14px;">
-                                        <div class="form-group" style="margin: 0;">
-                                            <label style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; display: block;">Método de Pago</label>
-                                            <select id="pos-metodo-pago" class="form-control" style="font-size: 13px; height: 38px; padding: 6px 10px; border-radius: 8px;">
+                                    <!-- DISPLAY PRINCIPAL TOTAL -->
+                                    <div class="pos-hero-total-box-light">
+                                        <span class="pos-hero-total-label-light">TOTAL A COBRAR</span>
+                                        <h2 id="pos-total-display" class="pos-hero-total-amount-light">$0</h2>
+                                    </div>
+
+                                    <!-- INGRESO PAGO Y SELECCIÓN MÉTODO -->
+                                    <div class="pos-payment-inputs-group-light">
+                                        <div style="flex: 1;">
+                                            <label class="pos-light-label">Método de Pago</label>
+                                            <select id="pos-metodo-pago" class="pos-light-select">
                                                 <!-- Se llena por JS -->
                                             </select>
                                         </div>
 
-                                        <div class="form-group" style="margin: 0;">
-                                            <label style="font-size: 12px; font-weight: 700; color: #475569; margin-bottom: 6px; display: block;">Monto a Aportar</label>
+                                        <div style="flex: 1;">
+                                            <label class="pos-light-label">Monto a Ingresar</label>
                                             <div style="position: relative;">
-                                                <span style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); font-weight: bold; color: #94a3b8; font-size: 15px;">$</span>
-                                                <input type="text" id="pos-monto-recibido" placeholder="0" maxlength="10"
-                                                    style="width: 100%; padding: 10px 10px 10px 30px; font-size: 16px; font-weight: 700; border: 1px solid #cbd5e1; border-radius: 8px; outline: none;"
-                                                    onfocus="this.style.borderColor='#1e3a8a';"
-                                                    onblur="this.style.borderColor='#cbd5e1';">
+                                                <span class="pos-light-currency">$</span>
+                                                <input type="text" id="pos-monto-recibido" placeholder="0" maxlength="10" class="pos-light-input">
                                             </div>
                                         </div>
 
-                                        <button type="button" id="btn-pos-agregar-pago" class="btn-primary" style="padding: 8px 14px; font-size: 12px; font-weight: 700; border-radius: 6px; background: #2563eb;">
-                                            <i class="fas fa-plus"></i> Agregar Pago
+                                        <button type="button" id="btn-pos-agregar-pago" class="pos-light-btn-add">
+                                            <i class="fas fa-plus"></i> Agregar
                                         </button>
                                     </div>
 
-                                    <!-- Col Der: Lista de Pagos Cargados y Saldo Pendiente -->
-                                    <div style="display: flex; flex-direction: column; gap: 10px;">
-                                        <!-- Resumen de Pagos Agregados -->
-                                        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
-                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                                                <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase;">Pagos Agregados</span>
-                                                <span style="font-size: 11px; font-weight: 700; color: #64748b;">Pendiente: <strong id="pos-saldo-pendiente" style="color: #dc2626;">$0</strong></span>
-                                            </div>
-                                            <div id="pos-lista-cobros" style="display: flex; flex-direction: column; gap: 6px; max-height: 110px; overflow-y: auto;">
-                                                <div style="font-size: 12px; color: #94a3b8; text-align: center; padding: 10px;">Sin pagos agregados todavía</div>
-                                            </div>
+                                    <!-- RESUMEN DE PAGOS Y SALDO PENDIENTES (Oculto por defecto si es 1 solo pago sin presionar agregar) -->
+                                    <div id="pos-contenedor-pagos-agregados" class="pos-payments-summary-box-light" style="display: none;">
+                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Pagos Cargados</span>
+                                            <span style="font-size: 12px; font-weight: 700; color: #475569;">Pendiente: <strong id="pos-saldo-pendiente" class="pos-pending-highlight">$0</strong></span>
                                         </div>
-
-                                        <!-- Teclado de Billetes Rápidos -->
-                                        <div id="pos-efectivo-panel" style="display: flex; flex-direction: column; gap: 8px;">
-                                            <div class="pos-bill-keyboard">
-                                                <button type="button" class="btn-pos-bill" data-amount="1000" style="padding: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; font-weight: 700; background: #f8fafc; cursor: pointer; transition: all 0.2s;">+$1k</button>
-                                                <button type="button" class="btn-pos-bill" data-amount="2000" style="padding: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; font-weight: 700; background: #f8fafc; cursor: pointer; transition: all 0.2s;">+$2k</button>
-                                                <button type="button" class="btn-pos-bill" data-amount="5000" style="padding: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; font-weight: 700; background: #f8fafc; cursor: pointer; transition: all 0.2s;">+$5k</button>
-                                                <button type="button" class="btn-pos-bill" data-amount="10000" style="padding: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; font-weight: 700; background: #f8fafc; cursor: pointer; transition: all 0.2s;">+$10k</button>
-                                                <button type="button" class="btn-pos-bill" data-amount="20000" style="padding: 6px 0; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 11px; font-weight: 700; background: #f8fafc; cursor: pointer; transition: all 0.2s;">+$20k</button>
-                                                <button type="button" id="btn-pos-exacto" style="padding: 6px 0; border: 1px solid #bbf7d0; border-radius: 6px; font-size: 11px; font-weight: 700; background: #ecfdf5; color: #166534; cursor: pointer; transition: all 0.2s;">Exacto</button>
-                                            </div>
-                                        </div>
-
-                                        <!-- Vuelto Display -->
-                                        <div id="pos-vuelto-container" style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 8px 14px; text-align: right; display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
-                                            <span style="font-size: 11px; font-weight: 700; color: #166534; text-transform: uppercase;">Vuelto</span>
-                                            <span id="pos-vuelto-display" style="font-size: 18px; font-weight: 800; color: #15803d;">$0</span>
+                                        <div id="pos-lista-cobros" class="pos-payments-list-light">
+                                            <!-- Se llena por JS -->
                                         </div>
                                     </div>
 
+                                    <!-- BOTONES RÁPIDOS DE EFECTIVO -->
+                                    <div id="pos-efectivo-panel" class="pos-bill-panel-light">
+                                        <span style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block;">Ingreso Rápido Efectivo</span>
+                                        <div class="pos-bill-keyboard">
+                                            <button type="button" class="btn-pos-bill" data-amount="1000">+$1k</button>
+                                            <button type="button" class="btn-pos-bill" data-amount="2000">+$2k</button>
+                                            <button type="button" class="btn-pos-bill" data-amount="5000">+$5k</button>
+                                            <button type="button" class="btn-pos-bill" data-amount="10000">+$10k</button>
+                                            <button type="button" class="btn-pos-bill" data-amount="20000">+$20k</button>
+                                            <button type="button" id="btn-pos-exacto" class="btn-pos-bill-exact">Exacto</button>
+                                        </div>
+                                    </div>
+
+                                    <!-- DISPLAY VUELTO (Oculto por defecto, solo se activa si vuelto > 0) -->
+                                    <div id="pos-vuelto-container" class="pos-vuelto-card-light" style="display: none;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <i class="fas fa-hand-holding-usd" style="font-size: 18px; color: #059669;"></i>
+                                            <span style="font-size: 12px; font-weight: 800; color: #065f46; text-transform: uppercase; letter-spacing: 0.8px;">Vuelto a Entregar</span>
+                                        </div>
+                                        <span id="pos-vuelto-display" class="pos-vuelto-amount-light">$0</span>
+                                    </div>
+
+                                    <div id="pos-error-message" class="error-message" style="display: none; padding: 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #ef4444; font-size: 12px; font-weight: 600; text-align: center; margin-top: 10px;"></div>
                                 </div>
 
-                                <div id="pos-error-message" class="error-message" style="display: none; padding: 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #ef4444; font-size: 12px; font-weight: 600; text-align: center;"></div>
                             </div>
 
                             <!-- Footer Acciones de POS -->
-                            <div style="padding: 16px 24px; background: #f8fafc; border-top: 1px solid #e2e8f0; display: flex; gap: 12px; justify-content: flex-end; align-items: center;">
-                                <button type="button" id="btn-pos-cobrar" class="btn-primary" style="padding: 12px 30px; font-size: 14px; font-weight: 700; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
-                                    <i class="fas fa-check-circle"></i> Confirmar y Cobrar Venta
+                            <div class="pos-actions-footer">
+                                <button type="button" id="btn-pos-descartar" class="btn-outline" style="padding: 12px 24px; font-size: 14px; font-weight: 600; border-radius: 10px; color: #64748b;">
+                                    <i class="fas fa-times" style="margin-right: 6px;"></i> Cancelar
                                 </button>
-                                <button type="button" id="btn-pos-descartar" class="btn-outline" style="padding: 12px 20px; font-size: 14px; font-weight: 600; border-radius: 8px; color: #64748b;">
-                                    Cancelar
+                                <button type="button" id="btn-pos-cobrar" class="pos-btn-confirm">
+                                    <i class="fas fa-check-circle" style="font-size: 18px;"></i> Confirmar y Registrar Cobro
                                 </button>
                             </div>
 

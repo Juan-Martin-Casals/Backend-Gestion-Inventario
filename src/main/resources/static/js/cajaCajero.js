@@ -1374,6 +1374,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Renderizar la lista de cobros agregados y actualizar saldos
     function renderCobrosCajero() {
+        const contenedorPagos = document.getElementById('pos-contenedor-pagos-agregados');
         const listaEl = document.getElementById('pos-lista-cobros');
         const pendienteEl = document.getElementById('pos-saldo-pendiente');
         const vueltoText = document.getElementById('pos-vuelto-display');
@@ -1387,52 +1388,77 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Actualizar etiqueta de Saldo Pendiente
         if (pendienteEl) {
-            pendienteEl.textContent = formatter.format(saldoPendiente);
-            pendienteEl.style.color = saldoPendiente > 0.01 ? '#dc2626' : '#16a34a';
-        }
-
-        // Renderizar lista de pagos cargados
-        if (listaEl) {
-            if (cobrosCajero.length === 0) {
-                listaEl.innerHTML = '<div style="font-size: 12px; color: #94a3b8; text-align: center; padding: 10px;">Sin pagos agregados todavía</div>';
+            if (saldoPendiente > 0.01) {
+                pendienteEl.textContent = formatter.format(saldoPendiente);
+                pendienteEl.classList.remove('completado');
             } else {
-                listaEl.innerHTML = cobrosCajero.map((cobro, idx) => `
-                    <div style="display: flex; justify-content: space-between; align-items: center; background: white; padding: 6px 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 12px;">
-                        <div>
-                            <strong style="color: #1e293b;">${cobro.nombreMetodo}</strong>
-                            ${cobro.vuelto > 0 ? `<span style="font-size: 10px; color: #16a34a; margin-left: 6px;">(Vuelto: ${formatter.format(cobro.vuelto)})</span>` : ''}
-                        </div>
-                        <div style="display: flex; align-items: center; gap: 8px;">
-                            <span style="font-weight: 700; color: #0f172a;">${formatter.format(cobro.monto)}</span>
-                            <button type="button" data-idx="${idx}" class="btn-eliminar-cobro-pos" style="background: none; border: none; color: #ef4444; cursor: pointer; padding: 2px 4px; font-size: 12px;" title="Eliminar pago">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                `).join('');
-
-                // Event listener para botones de eliminar
-                listaEl.querySelectorAll('.btn-eliminar-cobro-pos').forEach(btn => {
-                    btn.addEventListener('click', function () {
-                        const index = parseInt(this.dataset.idx);
-                        cobrosCajero.splice(index, 1);
-                        renderCobrosCajero();
-                    });
-                });
+                pendienteEl.textContent = '$0 - COMPLETADO';
+                pendienteEl.classList.add('completado');
             }
         }
 
-        // Calcular vuelto global
+        // Mostrar / Ocultar el bloque de Pagos Cargados (solo si hay cobros en el array)
+        if (contenedorPagos) {
+            if (cobrosCajero.length > 0) {
+                contenedorPagos.style.display = 'block';
+            } else {
+                contenedorPagos.style.display = 'none';
+            }
+        }
+
+        // Renderizar lista de pagos cargados en formato Light Tag Premium
+        if (listaEl && cobrosCajero.length > 0) {
+            listaEl.innerHTML = cobrosCajero.map((cobro, idx) => `
+                <div class="pos-payment-tag-light">
+                    <div>
+                        <strong style="color: #0f172a;">${cobro.nombreMetodo}</strong>
+                        ${cobro.vuelto > 0 ? `<span style="font-size: 11px; color: #059669; margin-left: 6px;">(Vuelto: ${formatter.format(cobro.vuelto)})</span>` : ''}
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <span style="font-weight: 800; color: #0f172a;">${formatter.format(cobro.monto)}</span>
+                        <button type="button" data-idx="${idx}" class="btn-eliminar-cobro-pos btn-remove-cobro" title="Eliminar pago">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+
+            // Event listener para botones de eliminar
+            listaEl.querySelectorAll('.btn-eliminar-cobro-pos').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const index = parseInt(this.dataset.idx);
+                    cobrosCajero.splice(index, 1);
+                    renderCobrosCajero();
+                });
+            });
+        }
+
+        // Calcular vuelto acumulado en el array + vuelto en tiempo real del input (si el método es Efectivo)
         let vueltoTotal = 0;
         cobrosCajero.forEach(c => {
             if (c.vuelto) vueltoTotal += c.vuelto;
         });
 
+        const selectMetodo = document.getElementById('pos-metodo-pago');
+        const inputRecibido = document.getElementById('pos-monto-recibido');
+        if (selectMetodo && inputRecibido && saldoPendiente > 0.01) {
+            const nombreMetodo = (selectMetodo.options[selectMetodo.selectedIndex]?.text || '').toLowerCase();
+            if (nombreMetodo.includes('efectivo')) {
+                const raw = inputRecibido.value.replace(/\D/g, '');
+                const montoIngresado = parseFloat(raw) || 0;
+                if (montoIngresado > saldoPendiente) {
+                    vueltoTotal += (montoIngresado - saldoPendiente);
+                }
+            }
+        }
+
+        // Mostrar / Ocultar tarjeta de Vuelto (solo se muestra si vueltoTotal > 0)
         if (vueltoText && vueltoContainer) {
-            if (vueltoTotal > 0) {
+            if (vueltoTotal > 0.01) {
                 vueltoContainer.style.display = 'flex';
                 vueltoText.textContent = formatter.format(vueltoTotal);
             } else {
+                vueltoContainer.style.display = 'none';
                 vueltoText.textContent = '$0';
             }
         }
@@ -1508,6 +1534,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         if (inputRecibido) inputRecibido.value = '';
+        if (selectMetodo) {
+            selectMetodo.value = '';
+            selectMetodo.dispatchEvent(new Event('change'));
+        }
         renderCobrosCajero();
     }
 
@@ -1742,19 +1772,22 @@ document.addEventListener('DOMContentLoaded', function () {
             
             const efPanel = document.getElementById('pos-efectivo-panel');
             if (efPanel) efPanel.style.display = esEfectivo ? 'flex' : 'none';
+            renderCobrosCajero();
         });
     }
 
-    // Input change listener for money format
+    // Input change listener for money format and real-time change calculation
     const posMontoRecibido = document.getElementById('pos-monto-recibido');
     if (posMontoRecibido) {
         posMontoRecibido.addEventListener('input', function () {
             let raw = this.value.replace(/[^0-9]/g, '');
             if (raw === '') {
                 this.value = '';
+                renderCobrosCajero();
                 return;
             }
             this.value = new Intl.NumberFormat('es-AR').format(parseInt(raw, 10));
+            renderCobrosCajero();
         });
     }
 
@@ -1769,6 +1802,7 @@ document.addEventListener('DOMContentLoaded', function () {
             let current = parseFloat(currentRaw) || 0;
             let nuevo = current + bill;
             input.value = new Intl.NumberFormat('es-AR').format(nuevo);
+            renderCobrosCajero();
         });
     });
 
@@ -1783,6 +1817,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const saldoPendiente = Math.max(0, ventaSeleccionada.total - totalAportado);
 
             input.value = new Intl.NumberFormat('es-AR').format(Math.ceil(saldoPendiente));
+            renderCobrosCajero();
         });
     }
 

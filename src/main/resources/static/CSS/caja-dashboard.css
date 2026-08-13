@@ -1181,3 +1181,465 @@
     border: none;
     margin: 15px 0;
 }
+
+/* =============================================
+   POS REDESIGN - HIGH CONTRAST & PREMIUM STYLES
+   ============================================= */
+
+/* Queue Left Column */
+.pos-queue-panel {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.pos-queue-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fafafa;
+}
+
+.pos-badge-count {
+    background: #e0e7ff;
+    color: #4338ca;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.pos-queue-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: #f8fafc;
+}
+
+/* Right Main Checkout Panel */
+.pos-checkout-panel {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+}
+
+.pos-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex: 1;
+    padding: 80px 40px;
+    text-align: center;
+    background: #ffffff;
+    z-index: 5;
+}
+
+.pos-empty-icon {
+    width: 80px;
+    height: 80px;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    color: #6366f1;
+    font-size: 32px;
+}
+
+.pos-active-container {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+
+.pos-header-bar {
+    padding: 16px 24px;
+    background: #ffffff;
+    border-bottom: 1px solid #f1f5f9;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.pos-order-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: #e0e7ff;
+    color: #4f46e5;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+}
+
+/* Checkout Inner Grid (Split Left: Products / Right: Dark Financial Card) */
+.pos-checkout-body-grid {
+    padding: 20px 24px;
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1.25fr;
+    gap: 24px;
+    overflow-y: auto;
+}
+
+@media (max-width: 1050px) {
+    .pos-checkout-body-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Left Column: Products */
+.pos-products-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pos-products-scroll {
+    flex: 1;
+    max-height: 380px;
+    overflow-y: auto;
+    border: 1px solid #f1f5f9;
+    border-radius: 12px;
+    padding: 8px;
+    background: #fafafa;
+}
+
+.pos-products-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+}
+
+.pos-products-table th {
+    padding: 10px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px dashed #cbd5e1;
+}
+
+.pos-products-table td {
+    padding: 10px 8px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #334155;
+}
+
+.pos-discount-banner {
+    font-size: 12px;
+    color: #15803d;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-weight: 700;
+    display: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Right Column: Light Premium Financial Card */
+.pos-financial-light-card {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 24px;
+    color: #0f172a;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.04);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    border: 1px solid #e2e8f0;
+}
+
+.pos-hero-total-box-light {
+    background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+    border: 1px solid #e2e8f0;
+    border-radius: 14px;
+    padding: 16px 20px;
+    text-align: right;
+}
+
+.pos-hero-total-label-light {
+    font-size: 11px;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #64748b;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.pos-hero-total-amount-light {
+    margin: 0;
+    font-size: 38px;
+    font-weight: 900;
+    color: #0f172a;
+    letter-spacing: -1px;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Inputs in Light Theme */
+.pos-payment-inputs-group-light {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+    background: #f8fafc;
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid #e2e8f0;
+}
+
+.pos-light-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #475569;
+    margin-bottom: 6px;
+    display: block;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.pos-light-select {
+    width: 100%;
+    height: 42px;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    color: #0f172a;
+    padding: 0 12px;
+    font-size: 13px;
+    font-weight: 600;
+    outline: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pos-light-select:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.pos-light-currency {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 800;
+    color: #94a3b8;
+    font-size: 16px;
+}
+
+.pos-light-input {
+    width: 100%;
+    height: 42px;
+    padding: 0 12px 0 28px;
+    font-size: 17px;
+    font-weight: 800;
+    background: #ffffff;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    color: #0f172a;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.pos-light-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.pos-light-btn-add {
+    height: 42px;
+    padding: 0 18px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.2);
+}
+
+.pos-light-btn-add:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
+}
+
+/* Payments list inside Light Card */
+.pos-payments-summary-box-light {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 12px 14px;
+}
+
+.pos-pending-highlight {
+    color: #ef4444;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.pos-pending-highlight.completado {
+    color: #059669 !important;
+}
+
+.pos-payments-list-light {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 110px;
+    overflow-y: auto;
+}
+
+.pos-payment-tag-light {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #ffffff;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    font-size: 12px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+}
+
+.pos-payment-tag-light .btn-remove-cobro {
+    color: #ef4444;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 13px;
+    padding: 2px 4px;
+    transition: color 0.2s;
+}
+
+.pos-payment-tag-light .btn-remove-cobro:hover {
+    color: #b91c1c;
+}
+
+/* Quick Bills Keyboard in Light Theme */
+.pos-bill-panel-light {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.pos-bill-panel-light .btn-pos-bill {
+    padding: 8px 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #ffffff;
+    color: #334155;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.pos-bill-panel-light .btn-pos-bill:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #0f172a;
+}
+
+.pos-bill-panel-light .btn-pos-bill-exact {
+    padding: 8px 0;
+    border: 1px solid #a7f3d0;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 800;
+    background: #ecfdf5;
+    color: #059669;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.pos-bill-panel-light .btn-pos-bill-exact:hover {
+    background: #d1fae5;
+    border-color: #34d399;
+}
+
+/* Vuelto Card Light */
+.pos-vuelto-card-light {
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);
+}
+
+.pos-vuelto-amount-light {
+    font-size: 22px;
+    font-weight: 900;
+    color: #059669;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Footer Actions Bar */
+.pos-actions-footer {
+    padding: 16px 24px;
+    background: #ffffff;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 16px;
+    justify-content: flex-end;
+    align-items: center;
+}
+
+.pos-btn-confirm {
+    padding: 14px 36px;
+    font-size: 15px;
+    font-weight: 800;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.pos-btn-confirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+}
+
+.pos-btn-confirm:active {
+    transform: translateY(0);
+}
