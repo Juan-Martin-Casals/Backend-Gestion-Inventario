@@ -151,11 +151,13 @@ public class VentaService {
 
         double totalFinal = subtotal - descuentoMonto;
 
-        String userRole = usuario.getRol() != null ? usuario.getRol().getDescripcion().toUpperCase() : "";
-        if ("EMPLEADO".equals(userRole)) {
-            venta.setEstado("PENDIENTE");
-        } else {
+        boolean tieneCobros = (ventaRequestDTO.getCobros() != null && !ventaRequestDTO.getCobros().isEmpty())
+                || ventaRequestDTO.getIdMetodoPago() != null;
+
+        if (tieneCobros) {
             venta.setEstado("COBRADA");
+        } else {
+            venta.setEstado("PENDIENTE");
         }
 
         venta.setSubtotal(subtotal);
@@ -165,8 +167,8 @@ public class VentaService {
 
         Venta ventaGuardada = ventaRepository.save(venta);
 
-        // 7. Registrar cobros (solo si no es empleado)
-        if (!"EMPLEADO".equals(userRole)) {
+        // 7. Registrar cobros solo si se proporcionó información de cobro
+        if (tieneCobros) {
             if (ventaRequestDTO.getCobros() != null && !ventaRequestDTO.getCobros().isEmpty()) {
                 registrarCobrosVenta(ventaRequestDTO.getCobros(), ventaGuardada, usuario, totalFinal);
             } else {
@@ -343,6 +345,13 @@ public class VentaService {
                 .descuentoMonto(venta.getDescuentoMonto())
                 .productos(productosDTO)
                 .estado(venta.getEstado())
+                .motivoAnulacion(venta.getMotivoAnulacion())
+                .observacionesAnulacion(venta.getObservacionesAnulacion())
+                .fechaAnulacion(venta.getFechaAnulacion())
+                .nombreUsuarioAnulacion(venta.getUsuarioAnulacion() != null ? 
+                    (venta.getUsuarioAnulacion().getNombre() + (venta.getUsuarioAnulacion().getApellido() != null ? " " + venta.getUsuarioAnulacion().getApellido() : "")) : null)
+                .rolUsuarioAnulacion(venta.getUsuarioAnulacion() != null && venta.getUsuarioAnulacion().getRol() != null ? 
+                    venta.getUsuarioAnulacion().getRol().getDescripcion() : null)
                 .metodoPago(metodoPago)
                 .montoPagado(montoPagado)
                 .vuelto(vuelto)
@@ -445,6 +454,11 @@ public class VentaService {
         Usuario cajero = usuarioRepository.findByEmail(userEmail)
                 .orElseThrow(() -> new EntityNotFoundException("Cajero no encontrado: " + userEmail));
 
+        String rol = cajero.getRol() != null ? cajero.getRol().getDescripcion() : "";
+        if (!"CAJERO".equalsIgnoreCase(rol) && !"ADMINISTRADOR".equalsIgnoreCase(rol)) {
+            throw new RuntimeException("No tiene permisos para cobrar ventas. Solo CAJERO o ADMINISTRADOR.");
+        }
+
         // 3. Validar que la Caja esté activa para este usuario/sesión
         if (!cajaService.verificarCajaActiva(cajero.getIdUsuario())) {
             throw new RuntimeException("Debe abrir la caja antes de registrar movimientos.");
@@ -462,6 +476,54 @@ public class VentaService {
         Venta ventaCobrada = ventaRepository.save(venta);
 
         return mapToVentaDTO(ventaCobrada);
+    }
+
+    @Transactional
+    public VentaResponseDTO cancelarVenta(Long idVenta, String motivoAnulacion, String observacionesAnulacion, UserDetails userDetails) {
+        if (motivoAnulacion == null || motivoAnulacion.trim().isEmpty()) {
+            throw new IllegalArgumentException("Debe indicar obligatoriamente el motivo de la anulación.");
+        }
+
+        Venta venta = ventaRepository.findById(idVenta)
+                .orElseThrow(() -> new EntityNotFoundException("Venta no encontrada con ID: " + idVenta));
+
+        if (!"PENDIENTE".equals(venta.getEstado())) {
+            throw new RuntimeException("Solo se pueden anular ventas en estado PENDIENTE.");
+        }
+
+        if (venta.getDetalleVentas() != null) {
+            for (DetalleVenta detalle : venta.getDetalleVentas()) {
+                Producto producto = detalle.getProducto();
+                if (producto != null) {
+                    Stock stock = stockRepository.findByProducto(producto)
+                            .orElse(null);
+                    if (stock != null) {
+                        stock.setStockActual(stock.getStockActual() + detalle.getCantidad());
+                        stockRepository.save(stock);
+                    }
+                }
+            }
+        }
+
+        Usuario usuarioActual = null;
+        if (userDetails != null) {
+            usuarioActual = usuarioRepository.findByEmail(userDetails.getUsername()).orElse(null);
+        }
+
+        if (usuarioActual != null) {
+            String rol = usuarioActual.getRol() != null ? usuarioActual.getRol().getDescripcion() : "";
+            if (!"CAJERO".equalsIgnoreCase(rol) && !"ADMINISTRADOR".equalsIgnoreCase(rol)) {
+                throw new RuntimeException("No tiene permisos para anular ventas. Solo CAJERO o ADMINISTRADOR.");
+            }
+            venta.setUsuarioAnulacion(usuarioActual);
+        }
+        venta.setFechaAnulacion(LocalDateTime.now());
+        venta.setEstado("ANULADA");
+        venta.setMotivoAnulacion(motivoAnulacion);
+        venta.setObservacionesAnulacion(observacionesAnulacion);
+        Venta ventaAnulada = ventaRepository.save(venta);
+
+        return mapToVentaDTO(ventaAnulada);
     }
 
 }

@@ -25,7 +25,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
             )
             FROM Venta v
             JOIN v.detalleVentas dv
-            WHERE v.fecha BETWEEN :inicio AND :fin
+            WHERE v.fecha BETWEEN :inicio AND :fin AND (v.estado IS NULL OR v.estado = 'COBRADA')
             """)
     InformeResponseDTO obtenerResumenVentas(
             @Param("inicio") LocalDateTime inicio,
@@ -36,7 +36,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
             FROM detalle_venta dv
             JOIN productos p ON dv.id_producto = p.id_producto
             JOIN ventas v ON dv.id_venta = v.id_venta
-            WHERE v.fecha BETWEEN :inicio AND :fin
+            WHERE v.fecha BETWEEN :inicio AND :fin AND (v.estado IS NULL OR v.estado = 'COBRADA')
             GROUP BY p.id_producto, p.nombre
             ORDER BY SUM(dv.cantidad) DESC
             LIMIT 1
@@ -59,7 +59,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
             FROM DetalleVenta dv
             JOIN dv.producto p
             JOIN dv.venta v
-            WHERE v.fecha BETWEEN :inicio AND :fin
+            WHERE v.fecha BETWEEN :inicio AND :fin AND (v.estado IS NULL OR v.estado = 'COBRADA')
             GROUP BY p.id, p.nombre
             ORDER BY SUM(dv.cantidad) DESC
             """)
@@ -70,16 +70,16 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
             FROM DetalleVenta dv
             JOIN dv.producto p
             JOIN dv.venta v
-            WHERE v.fecha BETWEEN :inicio AND :fin
+            WHERE v.fecha BETWEEN :inicio AND :fin AND (v.estado IS NULL OR v.estado = 'COBRADA')
             GROUP BY p.id, p.nombre
             ORDER BY SUM(dv.cantidad) ASC
             """)
     List<String> obtenerProductoMenosVendidoEnRango(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
-    @Query("SELECT COUNT(v) FROM Venta v")
+    @Query("SELECT COUNT(v) FROM Venta v WHERE (v.estado IS NULL OR v.estado = 'COBRADA')")
     Long countVentasHistoricas();
 
-    @Query("SELECT SUM(dv.cantidad) FROM DetalleVenta dv")
+    @Query("SELECT SUM(dv.cantidad) FROM DetalleVenta dv JOIN dv.venta v WHERE (v.estado IS NULL OR v.estado = 'COBRADA')")
     Long sumProductosHistoricos();
 
     // ==========================================================
@@ -103,14 +103,14 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
                 ORDER BY c.fecha DESC
                 LIMIT 1
             ) ultimo_costo ON true
-            WHERE v.fecha BETWEEN :inicio AND :fin
+            WHERE v.fecha BETWEEN :inicio AND :fin AND (v.estado IS NULL OR v.estado = 'COBRADA')
             """, nativeQuery = true)
     Double calcularCostoBienesVendidos(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
     @Query(value = """
             SELECT DATE(v.fecha) as fecha, COALESCE(SUM(v.total), 0) as total
             FROM ventas v
-            WHERE v.fecha BETWEEN CAST(:inicio AS DATE) AND CAST(:fin AS DATE)
+            WHERE v.fecha BETWEEN CAST(:inicio AS DATE) AND CAST(:fin AS DATE) AND (v.estado IS NULL OR v.estado = 'COBRADA')
             GROUP BY DATE(v.fecha)
             ORDER BY DATE(v.fecha)
             """, nativeQuery = true)
@@ -121,7 +121,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
             FROM detalle_venta dv
             JOIN productos p ON dv.id_producto = p.id_producto
             JOIN ventas v ON dv.id_venta = v.id_venta
-            WHERE v.fecha BETWEEN :inicio AND :fin
+            WHERE v.fecha BETWEEN :inicio AND :fin AND (v.estado IS NULL OR v.estado = 'COBRADA')
             GROUP BY p.id_producto, p.nombre
             ORDER BY total DESC
             LIMIT :limit
@@ -155,7 +155,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long>, JpaSpecific
                 ORDER BY c.fecha DESC
                 LIMIT 1
             ) ultimo_costo ON true
-            WHERE v.fecha BETWEEN :inicio AND :fin
+            WHERE v.fecha BETWEEN :inicio AND :fin AND (v.estado IS NULL OR v.estado = 'COBRADA')
             GROUP BY p.id_producto, p.nombre, p.precio, ultimo_costo.precio
             ORDER BY ganancia_total DESC
             LIMIT :limit

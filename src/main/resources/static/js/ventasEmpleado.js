@@ -96,19 +96,18 @@ document.addEventListener('DOMContentLoaded', function () {
     const addClienteMessage = document.getElementById('form-general-message-add-cliente');
     
     salesChannel.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'venta_cobrada') {
-            const idVentaCobrada = event.data.idVenta;
+        if (event.data && (event.data.type === 'venta_cobrada' || event.data.type === 'venta_anulada')) {
+            const idVenta = event.data.idVenta;
+            const isAnulada = event.data.type === 'venta_anulada';
             
-            // Recargar la tabla de ventas de forma silenciosa
             if (typeof loadVentas === 'function') {
                 loadVentas(currentPageVentas, true).then(() => {
-                    // Si se renderizó de nuevo, buscar la fila y darle una animación premium
-                    if (idVentaCobrada) {
+                    if (idVenta) {
                         setTimeout(() => {
-                            const fila = document.querySelector(`tr[data-venta-id="${idVentaCobrada}"]`);
+                            const fila = document.querySelector(`tr[data-venta-id="${idVenta}"]`);
                             if (fila) {
                                 fila.style.transition = 'background-color 0.5s ease';
-                                fila.style.backgroundColor = '#e6fffa'; // verde muy claro
+                                fila.style.backgroundColor = isAnulada ? '#fef2f2' : '#e6fffa';
                                 setTimeout(() => {
                                     fila.style.backgroundColor = '';
                                 }, 2000);
@@ -1236,11 +1235,23 @@ document.addEventListener('DOMContentLoaded', function () {
         const metodoPagoTexto = venta.metodoPago || 'No especificado';
 
         // Determinar estilo del badge de estado
-        const esCobrada = (venta.estado || '').toUpperCase() === 'COBRADA';
-        const estadoClass = esCobrada ? 'cobrada' : 'pendiente';
-        const estadoText = esCobrada ? 'Cobrado' : 'Pendiente';
-        const estadoIcon = esCobrada ? 'fa-check-circle' : 'fa-clock';
-        const estadoBadge = `<span class="status-badge ${estadoClass}"><i class="fas ${estadoIcon}" style="margin-right: 4px;"></i>${estadoText}</span>`;
+        const estadoUpper = (venta.estado || '').toUpperCase();
+        let estadoClass = 'pendiente';
+        let estadoText = 'Pendiente';
+        let estadoIcon = 'fa-clock';
+        let customBadgeStyle = '';
+
+        if (estadoUpper === 'COBRADA') {
+            estadoClass = 'cobrada';
+            estadoText = 'Cobrado';
+            estadoIcon = 'fa-check-circle';
+        } else if (estadoUpper === 'ANULADA') {
+            estadoClass = 'anulada';
+            estadoText = 'Anulada';
+            estadoIcon = 'fa-ban';
+            customBadgeStyle = 'style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;"';
+        }
+        const estadoBadge = `<span class="status-badge ${estadoClass}" ${customBadgeStyle}><i class="fas ${estadoIcon}" style="margin-right: 4px;"></i>${estadoText}</span>`;
 
         return `
             <tr data-venta-id="${venta.idVenta}">
@@ -2031,7 +2042,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 descuentoContainer.style.display = 'none';
             }
 
-            document.getElementById('modal-venta-total').textContent = `$${formatoMoneda.format(venta.total)}`;
+            const totalEl = document.getElementById('modal-venta-total');
+            if (totalEl) {
+                totalEl.textContent = `$${formatoMoneda.format(venta.total)}`;
+            }
 
             // Resumen pago efectivo
             const resumenPago = document.getElementById('modal-venta-resumen-pago');
@@ -2041,6 +2055,81 @@ document.addEventListener('DOMContentLoaded', function () {
                 document.getElementById('modal-venta-vuelto').textContent = `$${formatoMoneda.format(venta.vuelto)}`;
             } else {
                 resumenPago.style.display = 'none';
+            }
+
+            // Remover banner antiguo de la parte superior si existiera
+            const oldBanner = document.getElementById('modal-venta-estado-banner');
+            if (oldBanner) oldBanner.remove();
+
+            // Tarjeta de Estado y Auditoría (UX/UI en Sidebar)
+            let auditoriaContainer = document.getElementById('modal-venta-auditoria-container');
+            if (!auditoriaContainer) {
+                const sidebar = document.querySelector('#venta-detail-modal .vd-sidebar');
+                const metaList = document.querySelector('#venta-detail-modal .vd-meta-list');
+                if (sidebar && metaList) {
+                    auditoriaContainer = document.createElement('div');
+                    auditoriaContainer.id = 'modal-venta-auditoria-container';
+                    auditoriaContainer.style.marginBottom = '20px';
+                    sidebar.insertBefore(auditoriaContainer, metaList);
+                }
+            }
+
+            if (auditoriaContainer) {
+                if (venta.estado === 'ANULADA') {
+                    let detalleHtml = `
+                        <div style="background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 1px solid #fca5a5; border-radius: 12px; padding: 14px; position: relative; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.08); word-break: break-word; overflow-wrap: anywhere;">
+                            <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                                <div style="width: 28px; height: 28px; background: #ef4444; border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(239,68,68,0.3); flex-shrink: 0;">
+                                    <i class="fas fa-ban" style="color: white; font-size: 12px;"></i>
+                                </div>
+                                <span style="font-size: 13px; font-weight: 800; color: #7f1d1d; letter-spacing: -0.2px;">ORDEN ANULADA</span>
+                            </div>
+                            
+                            ${venta.motivoAnulacion ? `
+                            <div style="background: rgba(255,255,255,0.75); padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; border: 1px solid rgba(252, 165, 165, 0.5); word-break: break-word; overflow-wrap: anywhere;">
+                                <span style="display: block; font-size: 9px; font-weight: 700; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Motivo</span>
+                                <span style="font-size: 12px; font-weight: 600; color: #450a0a; word-break: break-word; overflow-wrap: anywhere; display: block;">${venta.motivoAnulacion}</span>
+                            </div>` : ''}
+
+                            ${venta.observacionesAnulacion ? `
+                            <div style="background: rgba(255,255,255,0.5); padding: 8px 10px; border-radius: 6px; border: 1px solid rgba(252, 165, 165, 0.3); word-break: break-word; overflow-wrap: anywhere; margin-bottom: 6px;">
+                                <span style="display: block; font-size: 9px; font-weight: 700; color: #991b1b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">Observaciones</span>
+                                <p style="margin: 0; font-size: 11px; color: #7f1d1d; line-height: 1.4; font-style: italic; word-break: break-word; overflow-wrap: anywhere;">"${venta.observacionesAnulacion}"</p>
+                            </div>` : ''}
+
+                            ${(venta.nombreUsuarioAnulacion || venta.fechaAnulacion) ? `
+                            <div style="padding: 6px 10px 0 10px; border-top: 1px dashed rgba(239, 68, 68, 0.3); font-size: 10px; color: #991b1b; display: flex; flex-direction: column; gap: 2px;">
+                                ${venta.nombreUsuarioAnulacion ? `<div><strong>Anulado por:</strong> <span style="color: #7f1d1d;">${venta.nombreUsuarioAnulacion}${venta.rolUsuarioAnulacion ? ` (${venta.rolUsuarioAnulacion})` : ''}</span></div>` : ''}
+                                ${venta.fechaAnulacion ? `<div><strong>Fecha anulación:</strong> <span style="color: #7f1d1d;">${new Date(venta.fechaAnulacion).toLocaleString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' })} hs</span></div>` : ''}
+                            </div>` : ''}
+                        </div>`;
+                    auditoriaContainer.innerHTML = detalleHtml;
+                    if (totalEl) totalEl.style.textDecoration = 'line-through';
+                } else if (venta.estado === 'PENDIENTE') {
+                    auditoriaContainer.innerHTML = `
+                        <div style="background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fcd34d; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.08);">
+                            <div style="width: 28px; height: 28px; background: #f59e0b; border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(245,158,11,0.3);">
+                                <i class="fas fa-clock" style="color: white; font-size: 12px;"></i>
+                            </div>
+                            <div>
+                                <span style="display: block; font-size: 12px; font-weight: 800; color: #78350f; letter-spacing: -0.2px;">ORDEN PENDIENTE</span>
+                                <span style="font-size: 10px; color: #92400e; font-weight: 500;">Esperando cobro en caja</span>
+                            </div>
+                        </div>`;
+                    if (totalEl) totalEl.style.textDecoration = 'none';
+                } else {
+                    auditoriaContainer.innerHTML = `
+                        <div style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border: 1px solid #86efac; border-radius: 12px; padding: 12px 14px; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.08);">
+                            <div style="width: 28px; height: 28px; background: #10b981; border-radius: 6px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 6px rgba(16,185,129,0.3);">
+                                <i class="fas fa-check-circle" style="color: white; font-size: 12px;"></i>
+                            </div>
+                            <div>
+                                <span style="display: block; font-size: 12px; font-weight: 800; color: #065f46; letter-spacing: -0.2px;">VENTA COBRADA</span>
+                                <span style="font-size: 10px; color: #166534; font-weight: 500;">Pago procesado correctamente</span>
+                            </div>
+                        </div>`;
+                    if (totalEl) totalEl.style.textDecoration = 'none';
+                }
             }
 
             modalVentaProductos = venta.productos || [];

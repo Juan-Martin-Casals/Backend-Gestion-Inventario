@@ -3555,6 +3555,14 @@
                                     style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; flex: 1; min-width: 160px;">
                                     <option value="">💳 Método: Todos</option>
                                 </select>
+                                <!-- Filtro Estado -->
+                                <select id="ventas-filtro-estado"
+                                    style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; flex: 1; min-width: 150px;">
+                                    <option value="">📌 Estado: Todos</option>
+                                    <option value="PENDIENTE">⏳ Pendientes</option>
+                                    <option value="COBRADA">✅ Cobradas</option>
+                                    <option value="ANULADA">🚫 Anuladas</option>
+                                </select>
 
                                 <!-- Separador visual -->
                                 <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
@@ -3598,6 +3606,7 @@
                                         <th class="col-num">Total</th>
                                         <th>Vendedor</th>
                                         <th>Método de Pago</th>
+                                        <th>Estado</th>
                                         <th>Acciones</th>
                                     </tr>
                                 </thead>
@@ -3636,6 +3645,9 @@
                                     <span id="modal-venta-total" class="vd-total-highlight-value"></span>
                                     <div class="vd-id-badge">ID: <span id="modal-venta-id"></span></div>
                                 </div>
+
+                                <!-- Tarjeta de Auditoría / Estado (UX/UI) -->
+                                <div id="modal-venta-auditoria-container" style="margin-bottom: 20px;"></div>
 
                                 <div class="vd-meta-list">
                                     <div class="vd-meta-item">

@@ -24,6 +24,11 @@ public class VentaResponseDTO {
     private Double descuentoMonto;
     private List<ProductoVentaDTO> productos;
     private String estado;
+    private String motivoAnulacion;
+    private String observacionesAnulacion;
+    private LocalDateTime fechaAnulacion;
+    private String nombreUsuarioAnulacion;
+    private String rolUsuarioAnulacion;
 
     private String nombreVendedor;
     private String rolVendedor;

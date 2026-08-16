@@ -1760,7 +1760,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 fechaFiltro = new Date(fechaAperturaGlobal);
             }
 
-            let ingresosHoy = ventas.filter(v => new Date(v.fecha).getTime() >= fechaFiltro.getTime());
+            let ingresosHoy = ventas.filter(v => new Date(v.fecha).getTime() >= fechaFiltro.getTime() && (!v.estado || v.estado === 'COBRADA'));
             // Ordenar de más reciente a más antigua
             ingresosHoy.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
             // Mostrar hasta los últimos 50 ingresos para no saturar la vista

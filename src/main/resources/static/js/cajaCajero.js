@@ -901,9 +901,9 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!response.ok) throw new Error('Error obteniendo ventas');
             const ventas = await response.json();
 
-            // Filtrar las ventas que sucedieron despues de la apertura de caja
+            // Filtrar las ventas que sucedieron despues de la apertura de caja y que estén cobradas
             const fechaRef = new Date(fechaApertura).getTime();
-            let ingresosSesion = ventas.filter(v => new Date(v.fecha).getTime() >= fechaRef);
+            let ingresosSesion = ventas.filter(v => new Date(v.fecha).getTime() >= fechaRef && (!v.estado || v.estado === 'COBRADA'));
 
             // Ordenar de más reciente a más antigua
             ingresosSesion.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
@@ -1821,10 +1821,123 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Botón Descartar (Cancelar checkout de POS)
+    // Botón Descartar (Cerrar vista de detalle POS)
     const btnPosDescartar = document.getElementById('btn-pos-descartar');
     if (btnPosDescartar) {
         btnPosDescartar.addEventListener('click', deseleccionarVenta);
+    }
+
+    // Modal de Anulación de Orden
+    const modalAnularOrden = document.getElementById('modal-anular-orden');
+    const btnPosAnularOrden = document.getElementById('btn-pos-anular-orden');
+    const btnCancelarAnularModal = document.getElementById('btn-cancelar-anular-modal');
+    const btnConfirmarAnularModal = document.getElementById('btn-confirmar-anular-modal');
+    const modalAnularOrdenId = document.getElementById('modal-anular-orden-id');
+
+    const selectAnularMotivo = document.getElementById('anular-motivo-select');
+    const txtAnularObs = document.getElementById('anular-obs-text');
+    const countAnularObs = document.getElementById('anular-obs-count');
+    const errAnularMotivo = document.getElementById('error-anular-motivo');
+
+    function limpiarErrorMotivoAnulacion() {
+        if (selectAnularMotivo) {
+            selectAnularMotivo.style.borderColor = '#cbd5e1';
+            selectAnularMotivo.style.background = '#f8fafc';
+        }
+        if (errAnularMotivo) {
+            errAnularMotivo.style.display = 'none';
+        }
+    }
+
+    function mostrarErrorMotivoAnulacion() {
+        if (selectAnularMotivo) {
+            selectAnularMotivo.style.borderColor = '#ef4444';
+            selectAnularMotivo.style.background = '#f8fafc';
+        }
+        if (errAnularMotivo) {
+            errAnularMotivo.style.display = 'flex';
+        }
+    }
+
+    if (selectAnularMotivo) {
+        selectAnularMotivo.addEventListener('change', () => {
+            if (selectAnularMotivo.value) {
+                limpiarErrorMotivoAnulacion();
+            }
+        });
+    }
+
+    if (txtAnularObs && countAnularObs) {
+        txtAnularObs.addEventListener('input', () => {
+            countAnularObs.textContent = txtAnularObs.value.length;
+        });
+    }
+
+    if (btnPosAnularOrden) {
+        btnPosAnularOrden.addEventListener('click', () => {
+            if (!ventaSeleccionada) return;
+            if (modalAnularOrdenId) modalAnularOrdenId.textContent = `#${ventaSeleccionada.idVenta}`;
+            if (selectAnularMotivo) selectAnularMotivo.value = '';
+            if (txtAnularObs) txtAnularObs.value = '';
+            if (countAnularObs) countAnularObs.textContent = '0';
+            limpiarErrorMotivoAnulacion();
+            if (modalAnularOrden) modalAnularOrden.style.display = 'flex';
+        });
+    }
+
+    if (btnCancelarAnularModal) {
+        btnCancelarAnularModal.addEventListener('click', () => {
+            limpiarErrorMotivoAnulacion();
+            if (modalAnularOrden) modalAnularOrden.style.display = 'none';
+        });
+    }
+
+    if (btnConfirmarAnularModal) {
+        btnConfirmarAnularModal.addEventListener('click', async () => {
+            if (!ventaSeleccionada) return;
+
+            const motivo = selectAnularMotivo ? selectAnularMotivo.value : '';
+            if (!motivo) {
+                mostrarErrorMotivoAnulacion();
+                return;
+            }
+            limpiarErrorMotivoAnulacion();
+
+            btnConfirmarAnularModal.disabled = true;
+            btnConfirmarAnularModal.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Anulando...';
+
+            try {
+                const res = await fetch(`/api/ventas/${ventaSeleccionada.idVenta}/anular`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        motivoAnulacion: motivo,
+                        observacionesAnulacion: txtAnularObs ? txtAnularObs.value.trim() : ''
+                    })
+                });
+
+                if (!res.ok) {
+                    const text = await res.text();
+                    let errMsg = `Error ${res.status}`;
+                    try { errMsg = JSON.parse(text).message || text; } catch { errMsg = text; }
+                    throw new Error(errMsg);
+                }
+
+                if (modalAnularOrden) modalAnularOrden.style.display = 'none';
+                showSuccessBanner('Orden anulada exitosamente. El stock fue devuelto.');
+                
+                salesChannel.postMessage({ type: 'venta_anulada', idVenta: ventaSeleccionada.idVenta });
+
+                deseleccionarVenta();
+            } catch (err) {
+                console.error('Error al anular orden:', err);
+                showErrorPOS(err.message);
+                if (modalAnularOrden) modalAnularOrden.style.display = 'none';
+            } finally {
+                btnConfirmarAnularModal.disabled = false;
+                btnConfirmarAnularModal.innerHTML = '<i class="fas fa-trash-alt" style="margin-right: 6px;"></i> Confirmar Anulación';
+            }
+        });
     }
 
     // Botón Registrar Cobro en POS

@@ -188,4 +188,15 @@ public class VentaController {
         return ResponseEntity.ok(ventaCobrada);
     }
 
+    @PutMapping("/{id}/anular")
+    public ResponseEntity<VentaResponseDTO> cancelarVenta(
+            @PathVariable Long id,
+            @RequestBody(required = false) java.util.Map<String, String> body,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        String motivo = body != null ? body.get("motivoAnulacion") : null;
+        String observaciones = body != null ? body.get("observacionesAnulacion") : null;
+        VentaResponseDTO ventaAnulada = ventaService.cancelarVenta(id, motivo, observaciones, userDetails);
+        return ResponseEntity.ok(ventaAnulada);
+    }
+
 }

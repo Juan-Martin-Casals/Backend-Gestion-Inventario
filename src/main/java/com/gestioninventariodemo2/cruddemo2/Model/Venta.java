@@ -63,5 +63,17 @@ public class Venta {
     @Column(name = "estado")
     private String estado;
 
+    @Column(name = "motivo_anulacion")
+    private String motivoAnulacion;
+
+    @Column(name = "observaciones_anulacion", length = 500)
+    private String observacionesAnulacion;
+
+    @Column(name = "fecha_anulacion")
+    private LocalDateTime fechaAnulacion;
+
+    @ManyToOne
+    @JoinColumn(name = "id_usuario_anulacion")
+    private Usuario usuarioAnulacion;
 }
 
