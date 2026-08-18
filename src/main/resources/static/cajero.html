@@ -1428,30 +1428,41 @@
                     <label for="movimiento-monto" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">Monto de Efectivo <span style="color: #ef4444;">*</span></label>
                     <div style="position: relative;">
                         <span style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-weight: bold; color: #64748b; font-size: 16px;">$</span>
-                        <input type="text" id="movimiento-monto" required placeholder="0.00" autocomplete="off" style="width: 100%; padding: 12px 12px 12px 30px; font-size: 18px; font-weight: 800; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: #f8fafc;" onfocus="this.style.borderColor='#6366f1'; this.style.background='white';">
+                        <input type="text" id="movimiento-monto" placeholder="0.00" autocomplete="off" style="width: 100%; padding: 12px 12px 12px 30px; font-size: 18px; font-weight: 800; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: #f8fafc;" onfocus="this.style.background='white';">
                     </div>
+                    <div class="error-message" id="error-movimiento-monto"></div>
                 </div>
 
                 <!-- Categoría -->
                 <div class="form-group" style="margin: 0;">
                     <label for="movimiento-categoria" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">Categoría / Concepto <span style="color: #ef4444;">*</span></label>
-                    <select id="movimiento-categoria" required style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: #f8fafc;" onfocus="this.style.borderColor='#6366f1';">
+                    <select id="movimiento-categoria" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: #f8fafc;">
                         <option value="">Cargando categorías...</option>
                     </select>
+                    <div class="error-message" id="error-movimiento-categoria"></div>
                 </div>
 
                 <!-- Referencia -->
                 <div class="form-group" style="margin: 0;">
                     <label for="movimiento-referencia" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">Nº Referencia / Comprobante (Opcional)</label>
-                    <input type="text" id="movimiento-referencia" placeholder="Ej: Factura #1234" autocomplete="off" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: #f8fafc;" onfocus="this.style.borderColor='#6366f1';">
+                    <input type="text" id="movimiento-referencia" maxlength="50" placeholder="Ej: Factura #1234" autocomplete="off" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: #f8fafc;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 4px;">
+                        <div class="error-message" id="error-movimiento-referencia"></div>
+                        <div style="font-size: 11px; color: #94a3b8; margin-left: auto;">
+                            <span id="char-count-movimiento-ref">0</span>/50
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Descripción -->
                 <div class="form-group" style="margin: 0;">
                     <label for="movimiento-descripcion" style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">Observaciones / Descripción <span style="color: #ef4444;">*</span></label>
-                    <textarea id="movimiento-descripcion" required rows="3" maxlength="255" placeholder="Escribe el motivo detallado de esta transacción..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: #f8fafc; resize: none; font-family: inherit;" onfocus="this.style.borderColor='#6366f1';"></textarea>
-                    <div style="text-align: right; font-size: 11px; color: #94a3b8; margin-top: 4px;">
-                        <span id="char-count-movimiento-desc">0</span>/255
+                    <textarea id="movimiento-descripcion" rows="3" maxlength="125" placeholder="Escribe el motivo detallado de esta transacción..." style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: #f8fafc; resize: none; font-family: inherit;"></textarea>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 4px;">
+                        <div class="error-message" id="error-movimiento-descripcion"></div>
+                        <div style="font-size: 11px; color: #94a3b8; margin-left: auto;">
+                            <span id="char-count-movimiento-desc">0</span>/125
+                        </div>
                     </div>
                 </div>
 

@@ -2081,10 +2081,36 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnCancelarMov = document.getElementById('btn-cancelar-movimiento');
     
     const charCountMovDesc = document.getElementById('char-count-movimiento-desc');
+    const charCountMovRef = document.getElementById('char-count-movimiento-ref');
 
     if (txtMovDesc && charCountMovDesc) {
         txtMovDesc.addEventListener('input', () => {
-            charCountMovDesc.textContent = txtMovDesc.value.length;
+            const len = txtMovDesc.value.length;
+            charCountMovDesc.textContent = len;
+            if (len >= 125) {
+                if (window.mostrarErrorInline) window.mostrarErrorInline('movimiento-descripcion', 'Has alcanzado el límite máximo de 125 caracteres.');
+            } else if (len > 0) {
+                if (window.limpiarErroresInline) window.limpiarErroresInline('movimiento-descripcion');
+            }
+        });
+    }
+
+    if (selectMovCat) {
+        selectMovCat.addEventListener('change', () => {
+            if (selectMovCat.value) {
+                if (window.limpiarErroresInline) window.limpiarErroresInline('movimiento-categoria');
+            }
+        });
+    }
+
+    if (inputMovRef) {
+        inputMovRef.addEventListener('input', () => {
+            if (charCountMovRef) charCountMovRef.textContent = inputMovRef.value.length;
+            if (inputMovRef.value.length >= 50) {
+                if (window.mostrarErrorInline) window.mostrarErrorInline('movimiento-referencia', 'Has alcanzado el límite máximo de 50 caracteres.');
+            } else {
+                if (window.limpiarErroresInline) window.limpiarErroresInline('movimiento-referencia');
+            }
         });
     }
 
@@ -2098,14 +2124,15 @@ document.addEventListener('DOMContentLoaded', function () {
         
         inputMovMonto.addEventListener('input', (e) => {
             let val = e.target.value;
-            // Permitir solo números y un punto decimal
             val = val.replace(/[^0-9.]/g, '');
-            // Evitar múltiples puntos
             const parts = val.split('.');
             if (parts.length > 2) {
                 val = parts[0] + '.' + parts.slice(1).join('');
             }
             e.target.value = val;
+            if (parseFloat(val) > 0) {
+                if (window.limpiarErroresInline) window.limpiarErroresInline('movimiento-monto');
+            }
         });
     }
 
@@ -2115,6 +2142,13 @@ document.addEventListener('DOMContentLoaded', function () {
         // Reset form
         formMovCaja.reset();
         if (charCountMovDesc) charCountMovDesc.textContent = '0';
+        if (charCountMovRef) charCountMovRef.textContent = '0';
+        if (window.limpiarErroresInline) {
+            window.limpiarErroresInline('movimiento-monto');
+            window.limpiarErroresInline('movimiento-categoria');
+            window.limpiarErroresInline('movimiento-referencia');
+            window.limpiarErroresInline('movimiento-descripcion');
+        }
         if (errorMovMsg) {
             errorMovMsg.style.display = 'none';
             errorMovMsg.textContent = '';
@@ -2359,29 +2393,35 @@ document.addEventListener('DOMContentLoaded', function () {
             const referencia = inputMovRef.value.trim();
             const descripcion = txtMovDesc.value.trim();
 
+            let esValido = true;
+            if (window.limpiarErroresInline) {
+                window.limpiarErroresInline('movimiento-monto');
+                window.limpiarErroresInline('movimiento-categoria');
+                window.limpiarErroresInline('movimiento-descripcion');
+            }
+
             if (isNaN(monto) || monto <= 0) {
-                if (errorMovMsg) {
-                    errorMovMsg.textContent = 'Por favor ingrese un monto positivo válido.';
-                    errorMovMsg.style.display = 'block';
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('movimiento-monto', isNaN(monto) ? 'El monto de efectivo es obligatorio.' : 'Por favor ingrese un monto positivo válido.');
                 }
-                return;
+                esValido = false;
             }
 
             if (!idCategoria) {
-                if (errorMovMsg) {
-                    errorMovMsg.textContent = 'Por favor seleccione una categoría.';
-                    errorMovMsg.style.display = 'block';
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('movimiento-categoria', 'La categoría es obligatoria.');
                 }
-                return;
+                esValido = false;
             }
 
             if (!descripcion) {
-                if (errorMovMsg) {
-                    errorMovMsg.textContent = 'Por favor describa el motivo.';
-                    errorMovMsg.style.display = 'block';
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('movimiento-descripcion', 'Las observaciones son obligatorias.');
                 }
-                return;
+                esValido = false;
             }
+
+            if (!esValido) return;
 
 
 

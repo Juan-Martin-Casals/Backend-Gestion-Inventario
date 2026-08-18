@@ -997,6 +997,7 @@ body {
 #clientes-sort-apellido.active,
 #clientes-sort-nombre.active,
 #user-sort-apellido.active,
+#mov-sort-fecha-btn.active,
 #user-sort-nombre.active {
     background: #e7f1ff !important;
     border-color: #007bff !important;
@@ -1011,6 +1012,7 @@ body {
 #clientes-sort-apellido .sort-arrow,
 #clientes-sort-nombre .sort-arrow,
 #user-sort-apellido .sort-arrow,
+#mov-sort-fecha-btn .sort-arrow,
 #user-sort-nombre .sort-arrow {
     font-size: 12px;
     opacity: 0.7;

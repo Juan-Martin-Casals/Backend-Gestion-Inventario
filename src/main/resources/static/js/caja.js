@@ -1948,10 +1948,64 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnCancelarMov = document.getElementById('btn-cancelar-movimiento');
     const charCountMovDesc = document.getElementById('char-count-movimiento-desc');
 
+    const charCountMovRef = document.getElementById('char-count-movimiento-ref');
+    const errorMovRef = document.getElementById('error-movimiento-referencia');
+    const saldoDisponibleContainer = document.getElementById('movimiento-saldo-disponible-container');
+    const saldoDisponibleValor = document.getElementById('movimiento-saldo-disponible-valor');
+    let saldoEfectivoDisponible = 0.0;
+    let tipoMovimientoActual = 'INGRESO';
+
+    const errorMovMonto = document.getElementById('error-movimiento-monto');
+    const errorMovCat = document.getElementById('error-movimiento-categoria');
+    const errorMovDesc = document.getElementById('error-movimiento-descripcion');
+
     if (txtMovDesc && charCountMovDesc) {
         txtMovDesc.addEventListener('input', () => {
-            charCountMovDesc.textContent = txtMovDesc.value.length;
+            const len = txtMovDesc.value.length;
+            charCountMovDesc.textContent = len;
+            if (len >= 125) {
+                if (window.mostrarErrorInline) window.mostrarErrorInline('movimiento-descripcion', 'Has alcanzado el límite máximo de 125 caracteres.');
+            } else if (len > 0) {
+                if (window.limpiarErroresInline) window.limpiarErroresInline('movimiento-descripcion');
+            }
         });
+    }
+
+    if (selectMovCat) {
+        selectMovCat.addEventListener('change', () => {
+            if (selectMovCat.value) {
+                if (window.limpiarErroresInline) window.limpiarErroresInline('movimiento-categoria');
+            }
+        });
+    }
+
+    if (inputMovRef) {
+        inputMovRef.addEventListener('input', () => {
+            if (charCountMovRef) charCountMovRef.textContent = inputMovRef.value.length;
+            if (inputMovRef.value.length >= 50) {
+                if (window.mostrarErrorInline) window.mostrarErrorInline('movimiento-referencia', 'Has alcanzado el límite máximo de 50 caracteres.');
+            } else {
+                if (window.limpiarErroresInline) window.limpiarErroresInline('movimiento-referencia');
+            }
+        });
+    }
+
+    function validarSaldoEgreso() {
+        if (tipoMovimientoActual !== 'EGRESO') return true;
+        const montoIngresado = parseFloat(inputMovMonto.value) || 0;
+        const confirmBtn = document.getElementById('btn-confirmar-movimiento');
+
+        if (montoIngresado > saldoEfectivoDisponible) {
+            if (window.mostrarErrorInline) {
+                window.mostrarErrorInline('movimiento-monto', `El monto a retirar no puede superar el saldo disponible en caja ($${saldoEfectivoDisponible.toLocaleString('es-AR')}).`);
+            }
+            if (confirmBtn) confirmBtn.disabled = true;
+            return false;
+        } else {
+            if (window.limpiarErroresInline) window.limpiarErroresInline('movimiento-monto');
+            if (confirmBtn) confirmBtn.disabled = false;
+            return true;
+        }
     }
 
     if (inputMovMonto) {
@@ -1969,6 +2023,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 val = parts[0] + '.' + parts.slice(1).join('');
             }
             e.target.value = val;
+            if (parseFloat(val) > 0) {
+                if (window.limpiarErroresInline) window.limpiarErroresInline('movimiento-monto');
+            }
+            validarSaldoEgreso();
         });
     }
 
@@ -1981,6 +2039,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
         formMovCaja.reset();
         if (charCountMovDesc) charCountMovDesc.textContent = '0';
+        if (charCountMovRef) charCountMovRef.textContent = '0';
+        if (window.limpiarErroresInline) {
+            window.limpiarErroresInline('movimiento-monto');
+            window.limpiarErroresInline('movimiento-categoria');
+            window.limpiarErroresInline('movimiento-referencia');
+            window.limpiarErroresInline('movimiento-descripcion');
+        }
         if (errorMovMsg) {
             errorMovMsg.style.display = 'none';
             errorMovMsg.textContent = '';
@@ -2026,6 +2091,34 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         await cargarCategoriasMovimiento(tipo);
+
+        tipoMovimientoActual = tipo;
+        if (confirmBtn) confirmBtn.disabled = false;
+
+        if (inputMovRef) inputMovRef.style.borderColor = '#cbd5e1';
+        if (errorMovRef) errorMovRef.style.display = 'none';
+        if (charCountMovRef) charCountMovRef.textContent = inputMovRef ? inputMovRef.value.length : '0';
+
+        if (tipo === 'EGRESO') {
+            if (saldoDisponibleContainer) saldoDisponibleContainer.style.display = 'block';
+            try {
+                const saldoRes = await fetch('/api/movimientos-caja/sesion/activa/saldo');
+                if (saldoRes.ok) {
+                    const saldoData = await saldoRes.json();
+                    saldoEfectivoDisponible = saldoData.saldoEfectivo || 0.0;
+                } else {
+                    saldoEfectivoDisponible = 0.0;
+                }
+            } catch (err) {
+                console.error("Error al obtener saldo disponible:", err);
+                saldoEfectivoDisponible = 0.0;
+            }
+            if (saldoDisponibleValor) {
+                saldoDisponibleValor.textContent = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(saldoEfectivoDisponible);
+            }
+        } else {
+            if (saldoDisponibleContainer) saldoDisponibleContainer.style.display = 'none';
+        }
 
         if (editId) {
             if (header) header.style.background = 'linear-gradient(135deg, #d97706 0%, #b45309 100%)';
@@ -2132,7 +2225,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             movimientosManualesList = await res.json();
             movimientosPage = 1;
-            poblarDropdownsFiltrosMovimientos();
+            await poblarDropdownsFiltrosMovimientos();
             aplicarFiltrosMovimientos();
         } catch (error) {
             console.error('Error al cargar movimientos:', error);
@@ -2165,10 +2258,16 @@ document.addEventListener('DOMContentLoaded', function () {
                 const msg = cajaEstaAbierta ? "No se han registrado movimientos manuales en este turno." : "No hay una sesión de caja activa. Abra la caja para registrar movimientos.";
                 msgHtml = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 30px; font-style: italic;">${msg}</td></tr>`;
             } else {
-                // Filtro aplicado sin resultados (punto 4 - estado vacío diferenciado)
+                // Filtro aplicado sin resultados
+                const filtroCategoria = document.getElementById('movimientos-filtro-categoria');
+                const catValue = filtroCategoria ? filtroCategoria.value : '';
+                let extraMsg = 'Ningún movimiento coincide con los filtros aplicados.';
+                if (catValue) {
+                    extraMsg = 'No hay movimientos registrados para esta categoría.';
+                }
                 msgHtml = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 30px;">
                     <i class="fas fa-filter" style="font-size: 22px; opacity: 0.4; display: block; margin-bottom: 10px;"></i>
-                    <span style="font-style: italic; display: block;">Ningún movimiento coincide con los filtros aplicados.</span>
+                    <span style="font-style: italic; display: block;">${extraMsg}</span>
                 </td></tr>`;
             }
             tbody.innerHTML = msgHtml;
@@ -2303,34 +2402,49 @@ document.addEventListener('DOMContentLoaded', function () {
     // FILTROS DE MOVIMIENTOS MANUALES (punto 1)
     // ==========================================
 
-    function poblarDropdownsFiltrosMovimientos() {
+    async function poblarDropdownsFiltrosMovimientos() {
         const selectCategoria = document.getElementById('movimientos-filtro-categoria');
         const selectUsuario = document.getElementById('movimientos-filtro-usuario');
 
         if (selectCategoria) {
-            const categorias = [...new Set(movimientosManualesList.map(m => m.nombreCategoria).filter(Boolean))].sort();
-            const currentCat = selectCategoria.value;
-            selectCategoria.innerHTML = '<option value="">Todas las categor\u00edas</option>';
-            categorias.forEach(cat => {
-                const opt = document.createElement('option');
-                opt.value = cat;
-                opt.textContent = cat;
-                selectCategoria.appendChild(opt);
-            });
-            if (currentCat && categorias.includes(currentCat)) selectCategoria.value = currentCat;
+            try {
+                const res = await fetch('/api/categorias-movimiento');
+                if (res.ok) {
+                    const categorias = await res.json();
+                    const currentCat = selectCategoria.value;
+                    selectCategoria.innerHTML = '<option value="">Todas las categorías</option>';
+                    categorias.filter(c => c.activo).sort((a, b) => a.nombre.localeCompare(b.nombre)).forEach(cat => {
+                        const opt = document.createElement('option');
+                        opt.value = cat.nombre;
+                        opt.textContent = cat.nombre;
+                        selectCategoria.appendChild(opt);
+                    });
+                    if (currentCat) selectCategoria.value = currentCat;
+                }
+            } catch (error) {
+                console.error('Error al cargar categorias para filtro:', error);
+            }
         }
 
         if (selectUsuario) {
-            const usuarios = [...new Set(movimientosManualesList.map(m => m.nombreUsuario).filter(Boolean))].sort();
-            const currentUser = selectUsuario.value;
-            selectUsuario.innerHTML = '<option value="">Todos los usuarios</option>';
-            usuarios.forEach(user => {
-                const opt = document.createElement('option');
-                opt.value = user;
-                opt.textContent = user;
-                selectUsuario.appendChild(opt);
-            });
-            if (currentUser && usuarios.includes(currentUser)) selectUsuario.value = currentUser;
+            try {
+                const res = await fetch('/api/usuarios/select');
+                if (res.ok) {
+                    const usuarios = await res.json();
+                    const currentUser = selectUsuario.value;
+                    selectUsuario.innerHTML = '<option value="">Todos los usuarios</option>';
+                    usuarios.forEach(user => {
+                        const opt = document.createElement('option');
+                        const nombreCompleto = `${user.nombre} ${user.apellido || ''}`.trim();
+                        opt.value = user.nombre;
+                        opt.textContent = nombreCompleto;
+                        selectUsuario.appendChild(opt);
+                    });
+                    if (currentUser) selectUsuario.value = currentUser;
+                }
+            } catch (error) {
+                console.error('Error al cargar usuarios para filtro:', error);
+            }
         }
     }
 
@@ -2412,12 +2526,34 @@ document.addEventListener('DOMContentLoaded', function () {
     const movFiltroFechaHasta = document.getElementById('movimientos-filtro-fecha-hasta');
     const movSortFechaBtn = document.getElementById('mov-sort-fecha-btn');
 
+    const movBtnBuscar = document.getElementById('movimientos-btn-buscar');
+
     if (movSearchInput) movSearchInput.addEventListener('input', aplicarFiltrosMovimientos);
     if (movFiltroTipo) movFiltroTipo.addEventListener('change', aplicarFiltrosMovimientos);
     if (movFiltroCategoria) movFiltroCategoria.addEventListener('change', aplicarFiltrosMovimientos);
     if (movFiltroUsuario) movFiltroUsuario.addEventListener('change', aplicarFiltrosMovimientos);
-    if (movFiltroFechaDesde) movFiltroFechaDesde.addEventListener('change', aplicarFiltrosMovimientos);
-    if (movFiltroFechaHasta) movFiltroFechaHasta.addEventListener('change', aplicarFiltrosMovimientos);
+
+    if (movBtnBuscar) {
+        movBtnBuscar.addEventListener('click', () => {
+            const fDesde = movFiltroFechaDesde ? movFiltroFechaDesde.value : '';
+            const fHasta = movFiltroFechaHasta ? movFiltroFechaHasta.value : '';
+            const errorFechas = document.getElementById('error-movimientos-fechas');
+
+            if (errorFechas) errorFechas.style.display = 'none';
+
+            if (fDesde && fHasta && new Date(fDesde) > new Date(fHasta)) {
+                if (errorFechas) {
+                    errorFechas.textContent = 'La fecha de inicio no puede ser mayor que la fecha de fin';
+                    errorFechas.style.display = 'block';
+                    setTimeout(() => errorFechas.style.display = 'none', 3000);
+                }
+                return;
+            }
+
+            aplicarFiltrosMovimientos();
+        });
+    }
+
     if (movBtnLimpiar) movBtnLimpiar.addEventListener('click', window.limpiarFiltrosMovimientos);
 
     // Click en botón Fecha para toggle asc/desc
@@ -2499,27 +2635,37 @@ document.addEventListener('DOMContentLoaded', function () {
             const referencia = inputMovRef.value.trim();
             const descripcion = txtMovDesc.value.trim();
 
+            let esValido = true;
+            if (window.limpiarErroresInline) {
+                window.limpiarErroresInline('movimiento-monto');
+                window.limpiarErroresInline('movimiento-categoria');
+                window.limpiarErroresInline('movimiento-descripcion');
+            }
+
             if (isNaN(monto) || monto <= 0) {
-                if (errorMovMsg) {
-                    errorMovMsg.textContent = 'Por favor ingrese un monto positivo válido.';
-                    errorMovMsg.style.display = 'block';
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('movimiento-monto', isNaN(monto) ? 'El monto de efectivo es obligatorio.' : 'Por favor ingrese un monto positivo válido.');
                 }
-                return;
+                esValido = false;
             }
 
             if (!idCategoria) {
-                if (errorMovMsg) {
-                    errorMovMsg.textContent = 'Por favor seleccione una categoría.';
-                    errorMovMsg.style.display = 'block';
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('movimiento-categoria', 'La categoría es obligatoria.');
                 }
-                return;
+                esValido = false;
             }
 
             if (!descripcion) {
-                if (errorMovMsg) {
-                    errorMovMsg.textContent = 'Por favor describa el motivo.';
-                    errorMovMsg.style.display = 'block';
+                if (window.mostrarErrorInline) {
+                    window.mostrarErrorInline('movimiento-descripcion', 'Las observaciones son obligatorias.');
                 }
+                esValido = false;
+            }
+
+            if (!esValido) return;
+
+            if (tipo === 'EGRESO' && !validarSaldoEgreso()) {
                 return;
             }
 

@@ -4668,6 +4668,15 @@
                                 <!-- Separador visual -->
                                 <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
 
+                                <!-- Botón ordenar por fecha (igual a ver ventas) -->
+                                <button type="button" id="mov-sort-fecha-btn"
+                                    style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
+                                    Fecha <i class="fas fa-sort-down sort-arrow" id="mov-sort-fecha-icon"></i>
+                                </button>
+
+                                <!-- Separador visual -->
+                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
+
                                 <!-- Filtro Tipo -->
                                 <select id="movimientos-filtro-tipo" style="padding: 8px 14px; font-size: 13px; border: 1px solid #ddd; border-radius: 6px; background: white; cursor: pointer; color: #475569;">
                                     <option value="">Todos los tipos</option>
@@ -4694,15 +4703,6 @@
                                 <!-- Separador visual -->
                                 <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
 
-                                <!-- Botón ordenar por fecha (igual a ver ventas) -->
-                                <button type="button" id="mov-sort-fecha-btn"
-                                    style="padding: 8px 14px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; transition: all 0.2s;">
-                                    Fecha <i class="fas fa-sort-down sort-arrow" id="mov-sort-fecha-icon"></i>
-                                </button>
-
-                                <!-- Separador visual -->
-                                <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
-
                                 <!-- Rango de fechas (inline) -->
                                 <div style="display: flex; align-items: center; gap: 6px;">
                                     <label style="font-size: 12px; color: #6c757d; white-space: nowrap;">Desde</label>
@@ -4715,6 +4715,10 @@
                                         style="padding: 6px 8px; font-size: 13px; border: 1px solid #ddd; border-radius: 6px; background: white; color: #475569; cursor: pointer;">
                                 </div>
 
+                                <button type="button" id="movimientos-btn-buscar" class="btn-primary" style="padding: 8px 14px; font-size: 13px; white-space: nowrap;">
+                                    Buscar
+                                </button>
+
                                 <!-- Separador visual -->
                                 <div style="width: 1px; height: 28px; background: #ddd; margin: 0 2px;"></div>
 
@@ -4724,8 +4728,14 @@
                                 </button>
                             </div>
 
+                            <!-- Contenedor de Error para Fechas -->
+                            <div class="error-message" id="error-movimientos-fechas"
+                                style="position: absolute; top: 100%; left: 0; font-size: 12px; color: #ef4444; margin-top: 4px; display: none; z-index: 10; background: #fee2e2; padding: 4px 8px; border-radius: 4px; border: 1px solid #fca5a5; white-space: nowrap; box-shadow: 0 2px 5px rgba(239, 68, 68, 0.15);">
+                            </div>
+
                             <!-- Contador de resultados -->
                             <div id="movimientos-contador" style="font-size: 12px; color: #6c757d; margin-top: 8px;"></div>
+                        </div>
                         </div>
 
                         <!-- Tabla de Movimientos del Turno -->
@@ -6377,9 +6387,15 @@
                         <div style="position: relative;">
                             <span
                                 style="position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-weight: bold; color: #64748b; font-size: 16px;">$</span>
-                            <input type="text" id="movimiento-monto" required placeholder="0.00" autocomplete="off"
+                            <input type="text" id="movimiento-monto" placeholder="0.00" autocomplete="off"
                                 style="width: 100%; padding: 12px 12px 12px 30px; font-size: 18px; font-weight: 800; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: #f8fafc;"
-                                onfocus="this.style.borderColor='#6366f1'; this.style.background='white';">
+                                onfocus="this.style.background='white';">
+                        </div>
+                        <div class="error-message" id="error-movimiento-monto"></div>
+                        <!-- Saldo disponible en caja (Solo Egreso) -->
+                        <div id="movimiento-saldo-disponible-container"
+                            style="display: none; background: #e0f2fe; border: 1px solid #bae6fd; padding: 10px 14px; border-radius: 8px; font-size: 13px; color: #0369a1; font-weight: 600; margin-top: 8px;">
+                            <i class="fas fa-wallet" style="margin-right: 6px;"></i> Saldo disponible en caja: <span id="movimiento-saldo-disponible-valor">$0,00</span>
                         </div>
                     </div>
 
@@ -6388,11 +6404,11 @@
                         <label for="movimiento-categoria"
                             style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">Categoría
                             / Concepto <span style="color: #ef4444;">*</span></label>
-                        <select id="movimiento-categoria" required
-                            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: #f8fafc;"
-                            onfocus="this.style.borderColor='#6366f1';">
+                        <select id="movimiento-categoria"
+                            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: #f8fafc;">
                             <option value="">Cargando categorías...</option>
                         </select>
+                        <div class="error-message" id="error-movimiento-categoria"></div>
                     </div>
 
                     <!-- Referencia -->
@@ -6400,9 +6416,14 @@
                         <label for="movimiento-referencia"
                             style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">Nº
                             Referencia / Comprobante (Opcional)</label>
-                        <input type="text" id="movimiento-referencia" placeholder="Ej: Factura #1234" autocomplete="off"
-                            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: #f8fafc;"
-                            onfocus="this.style.borderColor='#6366f1';">
+                        <input type="text" id="movimiento-referencia" maxlength="50" placeholder="Ej: Factura #1234" autocomplete="off"
+                            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: #f8fafc;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 4px;">
+                            <div class="error-message" id="error-movimiento-referencia"></div>
+                            <div style="font-size: 11px; color: #94a3b8; margin-left: auto;">
+                                <span id="char-count-movimiento-ref">0</span>/50
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Descripción -->
@@ -6410,12 +6431,14 @@
                         <label for="movimiento-descripcion"
                             style="display: block; font-size: 13px; font-weight: 700; color: #475569; margin-bottom: 6px;">Observaciones
                             / Descripción <span style="color: #ef4444;">*</span></label>
-                        <textarea id="movimiento-descripcion" required rows="3" maxlength="255"
+                        <textarea id="movimiento-descripcion" rows="3" maxlength="125"
                             placeholder="Escribe el motivo detallado de esta transacción..."
-                            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: #f8fafc; resize: none; font-family: inherit;"
-                            onfocus="this.style.borderColor='#6366f1';"></textarea>
-                        <div style="text-align: right; font-size: 11px; color: #94a3b8; margin-top: 4px;">
-                            <span id="char-count-movimiento-desc">0</span>/255
+                            style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; font-size: 14px; background: #f8fafc; resize: none; font-family: inherit;"></textarea>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 4px;">
+                            <div class="error-message" id="error-movimiento-descripcion"></div>
+                            <div style="font-size: 11px; color: #94a3b8; margin-left: auto;">
+                                <span id="char-count-movimiento-desc">0</span>/125
+                            </div>
                         </div>
                     </div>
 
