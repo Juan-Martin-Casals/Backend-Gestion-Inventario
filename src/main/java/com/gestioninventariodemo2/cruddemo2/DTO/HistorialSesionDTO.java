@@ -29,6 +29,8 @@ public class HistorialSesionDTO {
     private Double egresosEfectivo;
     private Double saldoEsperado;
     private Double ventasTarjeta;
+    private Double ventasDebito;
+    private Double ventasCredito;
     private Double ventasTransferencia;
     private String observacionesApertura;
     private String observacionesCierre;

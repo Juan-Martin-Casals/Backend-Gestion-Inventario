@@ -24,6 +24,8 @@ public class CajaDetalleDTO {
     // Nuevas métricas para el Dashboard Analítico
     private Long cantidadVentas;
     private Double totalEfectivo;
+    private Double totalDebito;
+    private Double totalCredito;
     private Double totalTarjeta;
     private Double totalTransferencia;
 

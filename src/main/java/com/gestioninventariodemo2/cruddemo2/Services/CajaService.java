@@ -258,9 +258,13 @@ public class CajaService {
         Long cantidadVentasGlobal = 0L;
         Double totalComprasGlobal = 0.0;
         Double calcEfectivoGlobal = 0.0;
-        Double calcTarjetaGlobal = 0.0;
+        Double calcDebitoGlobal = 0.0;
+        Double calcCreditoGlobal = 0.0;
         Double calcTransferenciaGlobal = 0.0;
         Double calcEfectivoCajaPagosGlobal = 0.0;
+        Double totalIngresosManualesGlobal = 0.0;
+        Double totalEgresosManualesGlobal = 0.0;
+        Double totalMontoInicialGlobal = 0.0;
         
         LocalDateTime fechaAperturaGlobal = null;
         Map<String, DesgloseCobroDTO> desgloseGlobalMap = new LinkedHashMap<>();
@@ -270,7 +274,14 @@ public class CajaService {
             if (fechaAperturaGlobal == null || inicio.isBefore(fechaAperturaGlobal)) {
                 fechaAperturaGlobal = inicio;
             }
-            LocalDateTime fin = LocalDateTime.now();
+            if (sesion.getMontoInicialReal() != null) {
+                totalMontoInicialGlobal += sesion.getMontoInicialReal();
+            }
+
+            Double ingMan = movimientoCajaRepository.sumIngresosBySesion(sesion.getIdSesion());
+            Double egMan = movimientoCajaRepository.sumEgresosBySesion(sesion.getIdSesion());
+            if (ingMan != null) totalIngresosManualesGlobal += ingMan;
+            if (egMan != null) totalEgresosManualesGlobal += egMan;
 
             List<Object[]> resultadosCobros = cobroRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());
             for (Object[] row : resultadosCobros) {
@@ -294,8 +305,10 @@ public class CajaService {
                     String m = metodo.toLowerCase();
                     if (m.contains("efectivo") && !m.contains("aporte externo")) {
                         calcEfectivoGlobal += sumImporte;
-                    } else if (m.contains("tarjeta")) {
-                        calcTarjetaGlobal += sumImporte;
+                    } else if (m.contains("debito") || m.contains("débito")) {
+                        calcDebitoGlobal += sumImporte;
+                    } else if (m.contains("credito") || m.contains("crédito")) {
+                        calcCreditoGlobal += sumImporte;
                     } else if (m.contains("transferencia") || m.contains("mp") || m.contains("mercado")) {
                         calcTransferenciaGlobal += sumImporte;
                     }
@@ -334,18 +347,24 @@ public class CajaService {
             if (totalCompras != null) totalComprasGlobal = totalCompras;
         }
 
+        Double saldoEsperadoGlobal = totalMontoInicialGlobal + calcEfectivoGlobal - calcEfectivoCajaPagosGlobal + totalIngresosManualesGlobal - totalEgresosManualesGlobal;
+
         return CajaDetalleDTO.builder()
                 .idSesion(null)
-                .montoInicial(0.0) // Not applicable globally
+                .montoInicial(totalMontoInicialGlobal)
                 .totalVentas(totalVentasGlobal)
                 .totalCompras(totalComprasGlobal)
                 .totalComprasEfectivo(calcEfectivoCajaPagosGlobal)
-                .saldoEsperado(0.0) // Not applicable globally
+                .saldoEsperado(saldoEsperadoGlobal)
                 .fechaApertura(fechaAperturaGlobal)
                 .cantidadVentas(cantidadVentasGlobal)
                 .totalEfectivo(calcEfectivoGlobal)
-                .totalTarjeta(calcTarjetaGlobal)
+                .totalDebito(calcDebitoGlobal)
+                .totalCredito(calcCreditoGlobal)
+                .totalTarjeta(calcDebitoGlobal + calcCreditoGlobal)
                 .totalTransferencia(calcTransferenciaGlobal)
+                .ingresosManuales(totalIngresosManualesGlobal)
+                .egresosManuales(totalEgresosManualesGlobal)
                 .desgloseCobros(new ArrayList<>(desgloseGlobalMap.values()))
                 .build();
     }
@@ -502,7 +521,8 @@ public class CajaService {
 
             // Calcular desglose de ingresos y egresos
             Double ingresosEfectivo = 0.0;
-            Double ventasTarjeta = 0.0;
+            Double ventasDebito = 0.0;
+            Double ventasCredito = 0.0;
             Double ventasTransferencia = 0.0;
 
             List<Object[]> resultadosCobros = cobroRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());
@@ -519,13 +539,16 @@ public class CajaService {
                     String m = metodo.toLowerCase();
                     if (m.contains("efectivo") && !m.contains("aporte externo")) {
                         ingresosEfectivo += sumImporte;
-                    } else if (m.contains("tarjeta")) {
-                        ventasTarjeta += sumImporte;
+                    } else if (m.contains("debito") || m.contains("débito")) {
+                        ventasDebito += sumImporte;
+                    } else if (m.contains("credito") || m.contains("crédito")) {
+                        ventasCredito += sumImporte;
                     } else if (m.contains("transferencia") || m.contains("mp") || m.contains("mercado")) {
                         ventasTransferencia += sumImporte;
                     }
                 }
             }
+            Double ventasTarjeta = ventasDebito + ventasCredito;
 
             Double egresosEfectivo = 0.0;
             List<Object[]> resultadosPagos = pagoRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());
@@ -589,6 +612,8 @@ public class CajaService {
                     .egresosEfectivo(egresosEfectivo)
                     .saldoEsperado(saldoEsperado)
                     .ventasTarjeta(ventasTarjeta)
+                    .ventasDebito(ventasDebito)
+                    .ventasCredito(ventasCredito)
                     .ventasTransferencia(ventasTransferencia)
                     .observacionesApertura(sesion.getObservacionesApertura())
                     .observacionesCierre(sesion.getObservacionesCierre())

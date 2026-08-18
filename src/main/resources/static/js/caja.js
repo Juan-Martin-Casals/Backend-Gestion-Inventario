@@ -924,11 +924,18 @@ document.addEventListener('DOMContentLoaded', function () {
             // Ordenar de más reciente a más antigua
             ingresosSesion.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
 
-            // Funcion de renderizado
-            function renderLista(data) {
+            async function renderLista(data) {
+                const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+                listaIngresos.classList.add('loading');
+                await new Promise(resolve => setTimeout(resolve, 200));
+
                 listaIngresos.innerHTML = '';
                 if (data.length === 0) {
                     listaIngresos.innerHTML = '<div style="text-align: center; padding: 25px; color: #94a3b8; font-size: 13px;">No hay ingresos que coincidan con el filtro.</div>';
+                    requestAnimationFrame(() => {
+                        window.scrollTo(0, scrollPosition);
+                        listaIngresos.classList.remove('loading');
+                    });
                     return;
                 }
 
@@ -979,6 +986,11 @@ document.addEventListener('DOMContentLoaded', function () {
                         </div>
                     `;
                     listaIngresos.appendChild(item);
+                });
+
+                requestAnimationFrame(() => {
+                    window.scrollTo(0, scrollPosition);
+                    listaIngresos.classList.remove('loading');
                 });
             }
 
@@ -1308,15 +1320,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
         // Formatear Montos y Cálculos de Efectivo
         document.getElementById('detalle-sesion-inicial').textContent = sesion.montoInicial != null ? formatter.format(sesion.montoInicial) : '$0,00';
-        document.getElementById('detalle-sesion-ingresos-efectivo').textContent = sesion.ingresosEfectivo != null ? `+${formatter.format(sesion.ingresosEfectivo)}` : '+$0,00';
-        document.getElementById('detalle-sesion-egresos-efectivo').textContent = sesion.egresosEfectivo != null ? `-${formatter.format(sesion.egresosEfectivo)}` : '-$0,00';
+        const totalIngresosEfectivo = (sesion.ingresosEfectivo || 0) + (sesion.ingresosManuales || 0);
+        const totalEgresosEfectivo = (sesion.egresosEfectivo || 0) + (sesion.egresosManuales || 0);
+        document.getElementById('detalle-sesion-ingresos-efectivo').textContent = totalIngresosEfectivo > 0 ? `+${formatter.format(totalIngresosEfectivo)}` : '+$0,00';
+        document.getElementById('detalle-sesion-egresos-efectivo').textContent = totalEgresosEfectivo > 0 ? `-${formatter.format(totalEgresosEfectivo)}` : '-$0,00';
         document.getElementById('detalle-sesion-esperado').textContent = sesion.saldoEsperado != null ? formatter.format(sesion.saldoEsperado) : '$0,00';
         document.getElementById('detalle-sesion-fisico').textContent = sesion.montoFinalReal != null ? formatter.format(sesion.montoFinalReal) : 'En curso';
 
         // Rendimiento Comercial (Facturación)
         document.getElementById('detalle-sesion-total-facturado').textContent = sesion.totalFacturado != null ? formatter.format(sesion.totalFacturado) : '$0,00';
         document.getElementById('detalle-sesion-ventas-efectivo').textContent = sesion.ingresosEfectivo != null ? formatter.format(sesion.ingresosEfectivo) : '$0,00';
-        document.getElementById('detalle-sesion-ventas-tarjeta').textContent = sesion.ventasTarjeta != null ? formatter.format(sesion.ventasTarjeta) : '$0,00';
+        
+        const elDebito = document.getElementById('detalle-sesion-ventas-debito');
+        if (elDebito) elDebito.textContent = sesion.ventasDebito != null ? formatter.format(sesion.ventasDebito) : '$0,00';
+
+        const elCredito = document.getElementById('detalle-sesion-ventas-credito');
+        if (elCredito) elCredito.textContent = sesion.ventasCredito != null ? formatter.format(sesion.ventasCredito) : '$0,00';
+
         document.getElementById('detalle-sesion-ventas-transferencia').textContent = sesion.ventasTransferencia != null ? formatter.format(sesion.ventasTransferencia) : '$0,00';
 
         // Diferencia de Arqueo Estilizada
@@ -1627,110 +1647,74 @@ document.addEventListener('DOMContentLoaded', function () {
 
             const formatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-            document.getElementById('caja-global-total-ventas').textContent = formatter.format(data.totalVentas || 0);
-            document.getElementById('caja-global-cantidad-ventas').textContent = data.cantidadVentas || 0;
-            document.getElementById('caja-global-efectivo').textContent = formatter.format(data.totalEfectivo || 0);
-            document.getElementById('caja-global-tarjeta').textContent = formatter.format(data.totalTarjeta || 0);
-            document.getElementById('caja-global-transferencia').textContent = formatter.format(data.totalTransferencia || 0);
+            // 1. KPI Cards
+            const elSaldo = document.getElementById('caja-global-saldo-esperado');
+            if (elSaldo) elSaldo.textContent = formatter.format(data.saldoEsperado || 0);
 
-            const tbodyDesglose = document.getElementById('caja-global-tabla-desglose');
-            if (tbodyDesglose) {
-                tbodyDesglose.innerHTML = '';
-                const metodosBase = ['Efectivo', 'Débito', 'Crédito', 'Transferencia'];
-                const cobros = data.desgloseCobros || [];
+            const elVentas = document.getElementById('caja-global-total-ventas');
+            if (elVentas) elVentas.textContent = formatter.format(data.totalVentas || 0);
 
-                // Mapear los base
-                const cobrosCompletos = metodosBase.map(m => {
-                    let encontrado = cobros.find(c => {
-                        const cm = c.metodoPago.toLowerCase();
-                        if (m === 'Débito' && (cm.includes('débito') || cm.includes('debito'))) return true;
-                        if (m === 'Crédito' && (cm.includes('crédito') || cm.includes('credito'))) return true;
-                        if (m === 'Transferencia' && cm.includes('transferencia')) return true;
-                        if (m === 'Efectivo' && cm.includes('efectivo')) return true;
-                        return false;
-                    });
-                    if (encontrado) {
-                        // Forzamos el nombre capitalizado para que se vea bien
-                        return { ...encontrado, metodoPago: m };
-                    }
-                    return { metodoPago: m, cantidadOperaciones: 0, totalIngresado: 0 };
-                });
+            const elCantVentas = document.getElementById('caja-global-cantidad-ventas');
+            if (elCantVentas) elCantVentas.textContent = data.cantidadVentas || 0;
 
-                // Agregar otros métodos que no estén en la base
-                cobros.forEach(c => {
-                    const cm = c.metodoPago.toLowerCase();
-                    const esBase = metodosBase.some(m => {
-                        if (m === 'Débito' && (cm.includes('débito') || cm.includes('debito'))) return true;
-                        if (m === 'Crédito' && (cm.includes('crédito') || cm.includes('credito'))) return true;
-                        if (m === 'Transferencia' && cm.includes('transferencia')) return true;
-                        if (m === 'Efectivo' && cm.includes('efectivo')) return true;
-                        return false;
-                    });
-                    if (!esBase) cobrosCompletos.push(c);
-                });
-
-                if (cobrosCompletos.length > 0) {
-                    let sumTotal = 0;
-                    let sumOps = 0;
-
-                    cobrosCompletos.forEach(item => {
-                        sumTotal += (item.totalIngresado || 0);
-                        sumOps += (item.cantidadOperaciones || 0);
-
-                        let iconHtml = '<i class="fas fa-money-check-alt" style="color: #64748b; margin-right: 8px;"></i>';
-                        const nombreMetodo = (item.metodoPago || '').toLowerCase();
-                        if (nombreMetodo.includes('efectivo')) {
-                            iconHtml = '<i class="fas fa-money-bill-wave" style="color: #10b981; margin-right: 8px;"></i>';
-                        } else if (nombreMetodo.includes('débito') || nombreMetodo.includes('debito') || nombreMetodo.includes('crédito') || nombreMetodo.includes('credito') || nombreMetodo.includes('tarjeta')) {
-                            iconHtml = '<i class="fas fa-credit-card" style="color: #a855f7; margin-right: 8px;"></i>';
-                        } else if (nombreMetodo.includes('transferencia')) {
-                            iconHtml = '<i class="fas fa-exchange-alt" style="color: #f59e0b; margin-right: 8px;"></i>';
-                        }
-
-                        tbodyDesglose.innerHTML += `
-                            <tr>
-                                <td>
-                                    <div class="metodo-pago-label">
-                                        ${iconHtml}
-                                        ${item.metodoPago || 'Desconocido'}
-                                    </div>
-                                </td>
-                                <td style="text-align: center;">
-                                    <span style="background: #f1f5f9; padding: 2px 8px; border-radius: 12px; font-size: 12px; font-weight: 600; color: #475569;">
-                                        ${item.cantidadOperaciones || 0}
-                                    </span>
-                                </td>
-                                <td style="text-align: right; font-weight: 600; color: #0f172a;">
-                                    ${formatter.format(item.totalIngresado || 0)}
-                                </td>
-                            </tr>
-                        `;
-                    });
-
-                    // Fila de TOTAL
-                    tbodyDesglose.innerHTML += `
-                        <tr style="background-color: #f8fafc; border-top: 2px solid #e2e8f0;">
-                            <td>
-                                <div class="metodo-pago-label" style="font-weight: 800; color: #0f172a;">
-                                    Total
-                                </div>
-                            </td>
-                            <td style="text-align: center;">
-                                <span style="background: #e2e8f0; padding: 3px 10px; border-radius: 12px; font-size: 13px; font-weight: 700; color: #334155;">
-                                    ${sumOps}
-                                </span>
-                            </td>
-                            <td style="text-align: right; font-weight: 800; color: #10b981; font-size: 15px;">
-                                ${formatter.format(sumTotal)}
-                            </td>
-                        </tr>
-                    `;
+            const netManuales = (data.ingresosManuales || 0) - (data.egresosManuales || 0);
+            const elManuales = document.getElementById('caja-global-manuales');
+            if (elManuales) {
+                if (netManuales > 0) {
+                    elManuales.textContent = `+${formatter.format(netManuales)}`;
+                    elManuales.style.color = '#10b981';
+                } else if (netManuales < 0) {
+                    elManuales.textContent = formatter.format(netManuales);
+                    elManuales.style.color = '#ef4444';
                 } else {
-                    tbodyDesglose.innerHTML = '<tr><td colspan="3" style="text-align: center; color: #94a3b8;">No hay operaciones registradas</td></tr>';
+                    elManuales.textContent = '$0,00';
+                    elManuales.style.color = '#0f172a';
                 }
             }
 
-            // Llamamos a cargar los ingresos globales (ventas desde la apertura de sesión)
+            const elManualesSub = document.getElementById('caja-global-manuales-sub');
+            if (elManualesSub) {
+                elManualesSub.innerHTML = `<i class="fas fa-arrow-up" style="color:#10b981;"></i> +${formatter.format(data.ingresosManuales || 0)} | <i class="fas fa-arrow-down" style="color:#ef4444;"></i> -${formatter.format(data.egresosManuales || 0)}`;
+            }
+
+            // 2. Composición por Método de Pago
+            const totalEfectivo = data.totalEfectivo || 0;
+            const totalDebito = data.totalDebito || 0;
+            const totalCredito = data.totalCredito || 0;
+            const totalTransferencia = data.totalTransferencia || 0;
+            const totalMetodosSum = totalEfectivo + totalDebito + totalCredito + totalTransferencia;
+
+            const elTotalMetodos = document.getElementById('caja-global-total-metodos');
+            if (elTotalMetodos) elTotalMetodos.textContent = `Total: ${formatter.format(totalMetodosSum)}`;
+
+            const elEf = document.getElementById('caja-global-efectivo');
+            if (elEf) elEf.textContent = formatter.format(totalEfectivo);
+            const elDeb = document.getElementById('caja-global-debito');
+            if (elDeb) elDeb.textContent = formatter.format(totalDebito);
+            const elCred = document.getElementById('caja-global-credito');
+            if (elCred) elCred.textContent = formatter.format(totalCredito);
+            const elTrans = document.getElementById('caja-global-transferencia');
+            if (elTrans) elTrans.textContent = formatter.format(totalTransferencia);
+
+            // Animar la barra segmentada
+            const barEf = document.getElementById('bar-metodo-efectivo');
+            const barDeb = document.getElementById('bar-metodo-debito');
+            const barCred = document.getElementById('bar-metodo-credito');
+            const barTrans = document.getElementById('bar-metodo-transferencia');
+
+            if (totalMetodosSum > 0) {
+                if (barEf) barEf.style.width = `${((totalEfectivo / totalMetodosSum) * 100).toFixed(1)}%`;
+                if (barDeb) barDeb.style.width = `${((totalDebito / totalMetodosSum) * 100).toFixed(1)}%`;
+                if (barCred) barCred.style.width = `${((totalCredito / totalMetodosSum) * 100).toFixed(1)}%`;
+                if (barTrans) barTrans.style.width = `${((totalTransferencia / totalMetodosSum) * 100).toFixed(1)}%`;
+            } else {
+                if (barEf) barEf.style.width = '0%';
+                if (barDeb) barDeb.style.width = '0%';
+                if (barCred) barCred.style.width = '0%';
+                if (barTrans) barTrans.style.width = '0%';
+            }
+
+            // 3. Cargar Feed de Movimientos Globales
             cargarIngresosGlobales(data.fechaApertura);
 
         } catch (e) {
@@ -1742,31 +1726,35 @@ document.addEventListener('DOMContentLoaded', function () {
         const listaIngresosGlobal = document.getElementById('caja-global-lista-ingresos');
         const filtroSelect = document.getElementById('caja-global-filtro-ingresos');
         const filtroRol = document.getElementById('caja-global-filtro-rol');
+        const filtroTipoMov = document.getElementById('caja-global-filtro-tipo-mov');
         const buscarInput = document.getElementById('caja-global-buscar-ingresos');
 
         if (!listaIngresosGlobal) return;
 
         try {
-            listaIngresosGlobal.innerHTML = '<div style="text-align: center; padding: 25px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Cargando ingresos...</div>';
+            listaIngresosGlobal.innerHTML = '<div style="text-align: center; padding: 25px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Cargando movimientos globales...</div>';
 
-            const response = await fetch('/api/ventas/all');
-            if (!response.ok) throw new Error('Error obteniendo ventas globales');
-            const ventas = await response.json();
-
-            // Filtrar las ventas desde la fecha de apertura, o desde hoy si no hay sesiones
-            let fechaFiltro = new Date();
-            fechaFiltro.setHours(0, 0, 0, 0);
-            if (fechaAperturaGlobal) {
-                fechaFiltro = new Date(fechaAperturaGlobal);
+            // Cargar metodos de pago activos para el dropdown
+            if (filtroSelect && filtroSelect.options.length <= 1) {
+                try {
+                    const metodosRes = await fetch('/api/metodos-pago/activos');
+                    if (metodosRes.ok) {
+                        const metodosData = await metodosRes.json();
+                        filtroSelect.innerHTML = '<option value="Todos">Todos los métodos</option>';
+                        metodosData.forEach(m => {
+                            const opt = document.createElement('option');
+                            opt.value = m.nombre;
+                            opt.textContent = m.nombre;
+                            filtroSelect.appendChild(opt);
+                        });
+                    }
+                } catch (e) {
+                    console.error("Error cargando métodos de pago para filtro", e);
+                }
             }
 
-            let ingresosHoy = ventas.filter(v => new Date(v.fecha).getTime() >= fechaFiltro.getTime() && (!v.estado || v.estado === 'COBRADA'));
-            // Ordenar de más reciente a más antigua
-            ingresosHoy.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-            // Mostrar hasta los últimos 50 ingresos para no saturar la vista
-            ingresosHoy = ingresosHoy.slice(0, 50);
-
-            if (filtroRol) {
+            // Cargar roles activos para el dropdown
+            if (filtroRol && filtroRol.options.length <= 1) {
                 try {
                     const rolesResponse = await fetch('/api/roles');
                     if (rolesResponse.ok) {
@@ -1785,72 +1773,200 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
             }
 
-            function renderLista(data) {
+            // 1. Obtener ventas
+            let ventasData = [];
+            try {
+                const resVentas = await fetch('/api/ventas/all');
+                if (resVentas.ok) ventasData = await resVentas.json();
+            } catch(e) {}
+            const ventas = Array.isArray(ventasData) ? ventasData : (ventasData && Array.isArray(ventasData.content) ? ventasData.content : []);
+
+            // 2. Obtener compras
+            let comprasData = [];
+            try {
+                const resCompras = await fetch('/api/compras');
+                if (resCompras.ok) comprasData = await resCompras.json();
+            } catch(e) {}
+            const compras = Array.isArray(comprasData) ? comprasData : (comprasData && Array.isArray(comprasData.content) ? comprasData.content : []);
+
+            // 3. Obtener movimientos manuales
+            let movsData = [];
+            try {
+                const resMovs = await fetch('/api/movimientos-caja');
+                if (resMovs.ok) movsData = await resMovs.json();
+            } catch(e) {}
+            const movsManuales = Array.isArray(movsData) ? movsData : (movsData && Array.isArray(movsData.content) ? movsData.content : []);
+
+            let fechaFiltro = new Date();
+            fechaFiltro.setHours(0, 0, 0, 0);
+            if (fechaAperturaGlobal) {
+                fechaFiltro = new Date(fechaAperturaGlobal);
+            }
+
+            const movimientosUnificados = [];
+
+            // Mapear ventas (Ingresos - 🛍️)
+            ventas.forEach(v => {
+                const dt = new Date(v.fecha);
+                if (dt.getTime() >= fechaFiltro.getTime() && (!v.estado || v.estado === 'COBRADA')) {
+                    let titulo = 'Venta';
+                    if (v.productos && v.productos.length > 0) {
+                        const fp = v.productos[0];
+                        titulo = fp.nombreProducto || fp.nombre || 'Venta';
+                        if (v.productos.length > 1) titulo += ` (+${v.productos.length - 1})`;
+                    } else if (v.idVenta || v.id) {
+                        titulo = `Venta #${v.idVenta || v.id}`;
+                    }
+
+                    movimientosUnificados.push({
+                        tipo: 'VENTA',
+                        titulo: titulo,
+                        monto: v.total,
+                        metodo: v.metodoPago || 'Efectivo',
+                        fecha: dt,
+                        usuario: v.nombreVendedor || 'Vendedor',
+                        rol: v.rolVendedor || 'N/A',
+                        cliente: v.nombreCliente || null
+                    });
+                }
+            });
+
+            // Mapear compras (Egresos - 🚚)
+            compras.forEach(c => {
+                const dt = new Date(c.fecha || c.fechaCompra);
+                if (dt.getTime() >= fechaFiltro.getTime()) {
+                    let titulo = `Compra #${c.idCompra || c.id || ''}`;
+                    if (c.proveedorNombre || c.nombreProveedor) {
+                        titulo += ` - ${c.proveedorNombre || c.nombreProveedor}`;
+                    }
+
+                    movimientosUnificados.push({
+                        tipo: 'COMPRA',
+                        titulo: titulo,
+                        monto: c.total || c.montoTotal || 0,
+                        metodo: c.metodoPago || 'Efectivo',
+                        fecha: dt,
+                        usuario: c.nombreUsuario || c.usuario || 'Comprador',
+                        rol: c.rolUsuario || 'N/A',
+                        cliente: null
+                    });
+                }
+            });
+
+            // Mapear movimientos manuales (Ingresos ➕ / Retiros ➖)
+            movsManuales.forEach(m => {
+                const dt = new Date(m.fechaHora || m.fecha);
+                if (dt.getTime() >= fechaFiltro.getTime()) {
+                    movimientosUnificados.push({
+                        tipo: m.tipo === 'INGRESO' ? 'INGRESO_MANUAL' : 'EGRESO_MANUAL',
+                        titulo: m.concepto || (m.tipo === 'INGRESO' ? 'Ingreso Manual' : 'Retiro / Egreso'),
+                        monto: m.monto,
+                        metodo: m.metodoPago || 'Efectivo',
+                        fecha: dt,
+                        usuario: m.nombreUsuario || m.usuario || 'Operador',
+                        rol: m.rolUsuario || 'N/A',
+                        cliente: null
+                    });
+                }
+            });
+
+            // Ordenar cronológicamente (más reciente primero)
+            movimientosUnificados.sort((a, b) => b.fecha - a.fecha);
+            const ultimosMovimientos = movimientosUnificados.slice(0, 50);
+
+            async function renderLista(data) {
+                const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+                listaIngresosGlobal.classList.add('loading');
+                await new Promise(resolve => setTimeout(resolve, 200));
+
                 listaIngresosGlobal.innerHTML = '';
                 if (data.length === 0) {
-                    listaIngresosGlobal.innerHTML = '<div style="text-align: center; padding: 25px; color: #94a3b8; font-size: 13px;">No hay ingresos globales que coincidan.</div>';
+                    listaIngresosGlobal.innerHTML = '<div style="text-align: center; padding: 25px; color: #94a3b8; font-size: 13px;">No hay movimientos que coincidan con los filtros.</div>';
+                    requestAnimationFrame(() => {
+                        window.scrollTo(0, scrollPosition);
+                        listaIngresosGlobal.classList.remove('loading');
+                    });
                     return;
                 }
 
                 const formatter = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', minimumFractionDigits: 0, maximumFractionDigits: 0 });
 
-                data.forEach(venta => {
-                    const item = document.createElement('div');
-                    item.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 15px; border: 1px solid #f1f5f9; border-radius: 12px; background: white; transition: all 0.2s; margin-bottom: 10px;';
-                    item.onmouseover = () => item.style.borderColor = '#e2e8f0';
-                    item.onmouseout = () => item.style.borderColor = '#f1f5f9';
+                data.forEach(item => {
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border: 1px solid #f1f5f9; border-radius: 12px; background: white; transition: all 0.2s; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);';
+                    row.onmouseover = () => row.style.borderColor = '#cbd5e1';
+                    row.onmouseout = () => row.style.borderColor = '#f1f5f9';
 
-                    let iconoClass = 'fas fa-money-bill';
+                    let iconoClass = 'fas fa-shopping-bag';
                     let iconColor = '#10b981';
                     let iconBg = '#ecfdf5';
+                    let isIngreso = true;
+                    let badgeBg = '#ecfdf5';
+                    let badgeColor = '#047857';
 
-                    const mx = venta.metodoPago ? venta.metodoPago.toLowerCase() : '';
-                    if (mx.includes('tarjeta')) {
-                        iconoClass = 'fas fa-credit-card';
-                        iconColor = '#6366f1';
-                        iconBg = '#e0e7ff';
+                    const mx = (item.metodo || '').toLowerCase();
+                    if (mx.includes('debito') || mx.includes('débito')) {
+                        badgeBg = '#e0f2fe';
+                        badgeColor = '#0284c7';
+                    } else if (mx.includes('credito') || mx.includes('crédito')) {
+                        badgeBg = '#ffe4e6';
+                        badgeColor = '#e11d48';
                     } else if (mx.includes('transferencia') || mx.includes('mp') || mx.includes('mercado')) {
-                        iconoClass = 'fas fa-exchange-alt';
+                        badgeBg = '#fef3c7';
+                        badgeColor = '#d97706';
+                    }
+
+                    if (item.tipo === 'COMPRA') {
+                        isIngreso = false;
+                        iconoClass = 'fas fa-truck';
+                        iconColor = '#ef4444';
+                        iconBg = '#fef2f2';
+                    } else if (item.tipo === 'EGRESO_MANUAL') {
+                        isIngreso = false;
+                        iconoClass = 'fas fa-arrow-up';
+                        iconColor = '#ef4444';
+                        iconBg = '#fef2f2';
+                    } else if (item.tipo === 'INGRESO_MANUAL') {
+                        iconoClass = 'fas fa-hand-holding-usd';
                         iconColor = '#f59e0b';
-                        iconBg = '#fffbeb';
+                        iconBg = '#fff7ed';
                     }
 
-                    // Nombre del producto representativo
-                    let nombreDetalle = 'Venta Varios';
-                    if (venta.productos && venta.productos.length > 0) {
-                        const firstProd = venta.productos[0];
-                        nombreDetalle = firstProd.nombreProducto || firstProd.nombre || 'Producto';
-                        if (venta.productos.length > 1) nombreDetalle += ` (+${venta.productos.length - 1})`;
-                    } else if (venta.idVenta || venta.id) {
-                        nombreDetalle = `Venta #${venta.idVenta || venta.id}`;
-                    }
+                    const fechaStr = item.fecha.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
+                    const horaStr = item.fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+                    const hora = `${fechaStr} ${horaStr} hs`;
 
-                    const fechaObj = new Date(venta.fecha);
-                    const fechaStr = fechaObj.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: '2-digit' });
-                    const horaStr = fechaObj.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-                    const hora = `${fechaStr} ${horaStr} hrs`;
-
-                    item.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <div style="width: 44px; height: 44px; border-radius: 12px; background: ${iconBg}; color: ${iconColor}; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                    row.innerHTML = `
+                        <div style="display: flex; align-items: center; gap: 14px;">
+                            <div style="width: 42px; height: 42px; border-radius: 12px; background: ${iconBg}; color: ${iconColor}; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0;">
                                 <i class="${iconoClass}"></i>
                             </div>
                             <div>
-                                <h5 style="margin: 0 0 4px 0; font-size: 14px; color: #1e293b; font-weight: 700;">${nombreDetalle}</h5>
-                                <span style="color: #64748b; font-size: 12px;"><i class="far fa-clock" style="margin-right: 4px;"></i>${hora} &bull; ${venta.metodoPago || 'Efectivo'}</span>
+                                <h5 style="margin: 0 0 4px 0; font-size: 14px; color: #1e293b; font-weight: 700;">${item.titulo}</h5>
+                                <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                                    <span style="color: #64748b; font-size: 12px;"><i class="far fa-clock" style="margin-right: 4px;"></i>${hora}</span>
+                                    <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">${item.metodo}</span>
+                                </div>
                             </div>
                         </div>
                         <div style="text-align: right;">
-                            <span style="display: block; font-weight: 800; color: #10b981; font-size: 16px;">+${formatter.format(venta.total)}</span>
-                            ${venta.nombreCliente ? `<span style="display: block; font-size: 11px; color: #94a3b8; margin-top: 2px;"><i class="far fa-user" style="margin-right:3px;"></i>Cliente: ${venta.nombreCliente}</span>` : ''}
-                            ${venta.nombreVendedor ? `<span style="display: block; font-size: 11px; color: #64748b; margin-top: 2px;"><i class="fas fa-user-tag" style="margin-right:3px;"></i>Vend: ${venta.nombreVendedor} (${venta.rolVendedor || 'N/A'})</span>` : ''}
+                            <span style="display: block; font-weight: 800; color: ${isIngreso ? '#10b981' : '#ef4444'}; font-size: 16px;">
+                                ${isIngreso ? '+' : '-'}${formatter.format(item.monto)}
+                            </span>
+                            ${item.cliente ? `<span style="display: block; font-size: 11px; color: #94a3b8; margin-top: 2px;"><i class="far fa-user" style="margin-right:3px;"></i>Cliente: ${item.cliente}</span>` : ''}
+                            ${item.usuario ? `<span style="display: block; font-size: 11px; color: #64748b; margin-top: 2px;"><i class="fas fa-user-tag" style="margin-right:3px;"></i>${item.usuario} (${item.rol})</span>` : ''}
                         </div>
                     `;
-                    listaIngresosGlobal.appendChild(item);
+                    listaIngresosGlobal.appendChild(row);
+                });
+
+                requestAnimationFrame(() => {
+                    window.scrollTo(0, scrollPosition);
+                    listaIngresosGlobal.classList.remove('loading');
                 });
             }
 
-            renderLista(ingresosHoy);
+            renderLista(ultimosMovimientos);
 
             function aplicarFiltros() {
                 if (buscarInput && window.checkMaxLength) {
@@ -1859,24 +1975,29 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const metodo = filtroSelect ? filtroSelect.value : 'Todos';
                 const rol = filtroRol ? filtroRol.value : 'Todos';
+                const tipoMov = filtroTipoMov ? filtroTipoMov.value : 'Todos';
                 const texto = buscarInput ? normH(buscarInput.value) : '';
 
-                let resultado = ingresosHoy;
+                let resultado = ultimosMovimientos;
+
+                if (tipoMov !== 'Todos') {
+                    resultado = resultado.filter(v => v.tipo === tipoMov);
+                }
 
                 if (metodo !== 'Todos') {
-                    resultado = resultado.filter(v => v.metodoPago && v.metodoPago.toLowerCase().includes(metodo.toLowerCase()));
+                    resultado = resultado.filter(v => v.metodo && v.metodo.toLowerCase().includes(metodo.toLowerCase()));
                 }
 
                 if (rol !== 'Todos') {
-                    resultado = resultado.filter(v => v.rolVendedor && v.rolVendedor.toLowerCase() === rol.toLowerCase());
+                    resultado = resultado.filter(v => v.rol && v.rol.toLowerCase() === rol.toLowerCase());
                 }
 
                 if (texto) {
                     resultado = resultado.filter(v => {
-                        const clienteMatch = v.nombreCliente && normH(v.nombreCliente).includes(texto);
-                        const vendedorMatch = v.nombreVendedor && normH(v.nombreVendedor).includes(texto);
-                        const productoMatch = v.productos && v.productos.some(p => normH(p.nombreProducto || p.nombre || '').includes(texto));
-                        return clienteMatch || vendedorMatch || productoMatch;
+                        const tituloMatch = v.titulo && normH(v.titulo).includes(texto);
+                        const clienteMatch = v.cliente && normH(v.cliente).includes(texto);
+                        const usuarioMatch = v.usuario && normH(v.usuario).includes(texto);
+                        return tituloMatch || clienteMatch || usuarioMatch;
                     });
                 }
 
@@ -1884,7 +2005,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
 
             if (filtroSelect) {
-                // remove listener to avoid duplicates if called again
                 filtroSelect.removeEventListener('change', aplicarFiltros);
                 filtroSelect.addEventListener('change', aplicarFiltros);
             }
@@ -1892,6 +2012,11 @@ document.addEventListener('DOMContentLoaded', function () {
             if (filtroRol) {
                 filtroRol.removeEventListener('change', aplicarFiltros);
                 filtroRol.addEventListener('change', aplicarFiltros);
+            }
+
+            if (filtroTipoMov) {
+                filtroTipoMov.removeEventListener('change', aplicarFiltros);
+                filtroTipoMov.addEventListener('change', aplicarFiltros);
             }
 
             if (buscarInput) {
@@ -1904,14 +2029,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 btnLimpiar.onclick = () => {
                     if (filtroSelect) filtroSelect.value = 'Todos';
                     if (filtroRol) filtroRol.value = 'Todos';
+                    if (filtroTipoMov) filtroTipoMov.value = 'Todos';
                     if (buscarInput) buscarInput.value = '';
                     aplicarFiltros();
                 };
             }
 
         } catch (e) {
-            listaIngresosGlobal.innerHTML = '<div style="text-align: center; padding: 25px; color: #ef4444; font-size: 13px;">Error al cargar ingresos globales.</div>';
-            console.error('Error cargando ingresos globales:', e);
+            listaIngresosGlobal.innerHTML = '<div style="text-align: center; padding: 25px; color: #ef4444; font-size: 13px;">Error al cargar movimientos globales.</div>';
+            console.error('Error cargando movimientos globales:', e);
         }
     }
 
@@ -2233,9 +2359,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
-    function renderizarPaginaMovimientos() {
+    async function renderizarPaginaMovimientos() {
         const tbody = document.getElementById('lista-movimientos-admin-body');
         if (!tbody) return;
+
+        // 1. GUARDAR scroll y preparar animación (Fade Out)
+        const scrollPosition = window.scrollY || document.documentElement.scrollTop;
+        tbody.classList.add('loading');
+
+        // Esperar fade-out
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         // Actualizar contador de resultados (punto 4)
         const contador = document.getElementById('movimientos-contador');
@@ -2272,6 +2405,11 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             tbody.innerHTML = msgHtml;
             actualizarControlesPaginacionMovimientos(0);
+
+            requestAnimationFrame(() => {
+                window.scrollTo(0, scrollPosition);
+                tbody.classList.remove('loading');
+            });
             return;
         }
 
@@ -2361,6 +2499,11 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         actualizarControlesPaginacionMovimientos(totalPages);
+
+        requestAnimationFrame(() => {
+            window.scrollTo(0, scrollPosition);
+            tbody.classList.remove('loading');
+        });
     }
 
     function actualizarControlesPaginacionMovimientos(totalPages) {

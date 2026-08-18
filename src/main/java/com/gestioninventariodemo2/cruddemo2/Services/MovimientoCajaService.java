@@ -83,6 +83,13 @@ public class MovimientoCajaService {
                 .orElse(java.util.Collections.emptyList());
     }
 
+    @Transactional(readOnly = true)
+    public List<MovimientoCajaResponseDTO> listarTodos() {
+        return movimientoCajaRepository.findAll().stream()
+                .map(this::mapToDTO)
+                .collect(Collectors.toList());
+    }
+
     public Double calcularSaldoEfectivoActual(SesionCaja sesion) {
         Double calcEfectivoCobros = 0.0;
         List<Object[]> resultadosCobros = cobroRepository.obtenerTotalPorMetodoPagoPorSesion(sesion.getIdSesion());

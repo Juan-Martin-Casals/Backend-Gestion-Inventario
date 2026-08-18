@@ -29,6 +29,11 @@ public class MovimientoCajaController {
         }
     }
 
+    @GetMapping
+    public ResponseEntity<List<MovimientoCajaResponseDTO>> listarTodos() {
+        return ResponseEntity.ok(service.listarTodos());
+    }
+
     @GetMapping("/sesion/{idSesion}")
     public ResponseEntity<List<MovimientoCajaResponseDTO>> listarMovimientosDeSesion(@PathVariable Long idSesion) {
         return ResponseEntity.ok(service.listarMovimientosDeSesion(idSesion));

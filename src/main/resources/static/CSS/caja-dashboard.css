@@ -1643,3 +1643,18 @@
 .pos-btn-confirm:active {
     transform: translateY(0);
 }
+
+/* Transiciones de filtrado y carga (Fade out / Fade in) */
+#lista-movimientos-admin-body,
+#caja-global-lista-ingresos,
+#caja-lista-ingresos {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#lista-movimientos-admin-body.loading,
+#caja-global-lista-ingresos.loading,
+#caja-lista-ingresos.loading {
+    opacity: 0;
+    pointer-events: none;
+}
