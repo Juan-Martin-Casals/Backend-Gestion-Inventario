@@ -726,4 +726,62 @@ public class ProductoService {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Obtiene el historial de compras de un producto específico paginado y filtrado por proveedor y fechas.
+     */
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<com.gestioninventariodemo2.cruddemo2.DTO.HistorialCompraProductoDTO> obtenerHistorialCompras(
+            Long idProducto, Long proveedorId, java.time.LocalDateTime fechaInicio, java.time.LocalDateTime fechaFin, org.springframework.data.domain.Pageable pageable) {
+
+        if (!productoRepository.existsById(idProducto)) {
+            throw new jakarta.persistence.EntityNotFoundException("Producto no encontrado con id: " + idProducto);
+        }
+
+        org.springframework.data.domain.Page<DetalleCompra> paginaDetalles = detalleCompraRepository.findHistorialByProductoId(
+                idProducto, proveedorId, fechaInicio, fechaFin, pageable);
+
+        return paginaDetalles.map(dc -> {
+            String proveedorNombre = "Sin proveedor";
+            Long idCompra = null;
+            java.time.LocalDateTime fechaCompra = null;
+
+            if (dc.getCompra() != null) {
+                idCompra = dc.getCompra().getIdCompra();
+                fechaCompra = dc.getCompra().getFecha();
+                if (dc.getCompra().getProveedor() != null) {
+                    proveedorNombre = dc.getCompra().getProveedor().getNombre();
+                }
+            }
+
+            double subtotal = dc.getCantidad() * dc.getPrecioUnitario();
+
+            // Calcular porcentaje de variación estrictamente con respecto a la compra anterior del mismo proveedor
+            Double porcentajeVariacion = null;
+            if (dc.getIdDetalleCompra() != null) {
+                DetalleCompra anterior = null;
+                if (dc.getCompra() != null && dc.getCompra().getProveedor() != null) {
+                    Long idProv = dc.getCompra().getProveedor().getIdProveedor();
+                    anterior = detalleCompraRepository
+                            .findFirstByProductoIdProductoAndCompraProveedorIdProveedorAndIdDetalleCompraLessThanOrderByIdDetalleCompraDesc(
+                                    idProducto, idProv, dc.getIdDetalleCompra());
+                }
+
+                if (anterior != null && anterior.getPrecioUnitario() > 0) {
+                    double diff = dc.getPrecioUnitario() - anterior.getPrecioUnitario();
+                    porcentajeVariacion = (diff / anterior.getPrecioUnitario()) * 100.0;
+                }
+            }
+
+            return com.gestioninventariodemo2.cruddemo2.DTO.HistorialCompraProductoDTO.builder()
+                    .idCompra(idCompra)
+                    .fechaCompra(fechaCompra)
+                    .proveedorNombre(proveedorNombre)
+                    .cantidadComprada(dc.getCantidad())
+                    .precioUnitario(dc.getPrecioUnitario())
+                    .subtotal(subtotal)
+                    .porcentajeVariacion(porcentajeVariacion)
+                    .build();
+        });
+    }
+
 }

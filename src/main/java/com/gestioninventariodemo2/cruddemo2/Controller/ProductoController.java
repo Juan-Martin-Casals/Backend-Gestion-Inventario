@@ -112,6 +112,26 @@ public class ProductoController {
         return ResponseEntity.ok(proveedores);
     }
 
+    /**
+     * Obtiene el historial de compras de un producto con soporte para paginación, proveedor y rango de fechas.
+     */
+    @GetMapping("/{id}/historial-compras")
+    public ResponseEntity<Page<com.gestioninventariodemo2.cruddemo2.DTO.HistorialCompraProductoDTO>> obtenerHistorialCompras(
+            @PathVariable Long id,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) Long proveedorId,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fechaInicio,
+            @org.springframework.web.bind.annotation.RequestParam(required = false) @org.springframework.format.annotation.DateTimeFormat(iso = org.springframework.format.annotation.DateTimeFormat.ISO.DATE) java.time.LocalDate fechaFin,
+            @org.springframework.data.web.PageableDefault(size = 10, sort = "compra.fecha", direction = org.springframework.data.domain.Sort.Direction.DESC) Pageable pageable) {
+
+        java.time.LocalDateTime inicioTime = (fechaInicio != null) ? fechaInicio.atStartOfDay() : null;
+        java.time.LocalDateTime finTime = (fechaFin != null) ? fechaFin.atTime(23, 59, 59) : null;
+
+        Page<com.gestioninventariodemo2.cruddemo2.DTO.HistorialCompraProductoDTO> historial =
+                productoService.obtenerHistorialCompras(id, proveedorId, inicioTime, finTime, pageable);
+
+        return ResponseEntity.ok(historial);
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<String> eliminarProducto(@PathVariable Long id) {
         try {

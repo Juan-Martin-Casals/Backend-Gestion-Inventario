@@ -1528,6 +1528,9 @@
                             <i class="fas fa-truck"></i> Proveedores
                             <span id="product-detail-tab-proveedores-badge" class="product-detail-tab-badge">0</span>
                         </button>
+                        <button type="button" class="product-detail-tab" data-tab="product-detail-tab-compras">
+                            <i class="fas fa-history"></i> Historial de Compras
+                        </button>
                     </div>
 
                     <!-- Modal Body con scroll -->
@@ -1719,6 +1722,81 @@
                                                 </tr>
                                             </tbody>
                                         </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Historial de Compras -->
+                        <div id="product-detail-tab-compras" class="product-detail-tab-content" style="display: none;">
+                            <div style="padding: 24px 28px;">
+                                <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; min-height: 480px; display: flex; flex-direction: column; justify-content: space-between;">
+                                    <!-- Filtros de búsqueda por proveedor y fecha -->
+                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 12px; background: #f8fafc;">
+                                        <!-- Selector de Proveedor -->
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <select id="detail-historial-proveedor-select" style="height: 36px; padding: 0 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; color: #334155; font-weight: 500; outline: none;">
+                                                <option value="">🚚 Proveedor: Todos</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Rango de Fechas + Acciones -->
+                                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                            <!-- Separador -->
+                                            <div style="width: 1px; height: 26px; background: #cbd5e1;"></div>
+
+                                            <div style="display: flex; align-items: center; gap: 6px; background: white; padding: 3px 8px; border: 1px solid #ddd; border-radius: 6px; height: 36px;">
+                                                <i class="fas fa-calendar-alt" style="color: #64748b; font-size: 12px; margin-right: 2px;"></i>
+                                                <span style="font-size: 12px; color: #64748b; font-weight: 500;">Desde:</span>
+                                                <input type="date" id="detail-historial-fecha-inicio" style="border: none; outline: none; font-size: 12px; color: #334155; background: transparent; cursor: pointer;">
+                                                <span style="font-size: 12px; color: #94a3b8;">—</span>
+                                                <span style="font-size: 12px; color: #64748b; font-weight: 500;">Hasta:</span>
+                                                <input type="date" id="detail-historial-fecha-fin" style="border: none; outline: none; font-size: 12px; color: #334155; background: transparent; cursor: pointer;">
+                                            </div>
+
+                                            <!-- Separador -->
+                                            <div style="width: 1px; height: 26px; background: #cbd5e1;"></div>
+
+                                            <!-- Botones -->
+                                            <button type="button" class="btn-primary" id="detail-historial-btn-buscar" style="height: 36px; padding: 0 16px; font-size: 13px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; cursor: pointer;">
+                                                <i class="fas fa-search"></i> Buscar
+                                            </button>
+                                            <button type="button" class="btn-outline" id="detail-historial-btn-limpiar" style="height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; cursor: pointer;" title="Limpiar filtros">
+                                                <i class="fas fa-eraser"></i> Limpiar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <!-- Tabla de Historial -->
+                                    <div style="overflow-x: auto; min-height: 380px; transition: all 0.3s ease-in-out;">
+                                        <table class="data-table" style="width: 100%; margin: 0;">
+                                            <thead>
+                                                <tr style="background: #f8fafc;">
+                                                    <th style="padding: 12px 18px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">Fecha</th>
+                                                    <th style="padding: 12px 18px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #e2e8f0;">Proveedor</th>
+                                                    <th style="padding: 12px 18px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: center; border-bottom: 1px solid #e2e8f0;">Cantidad</th>
+                                                    <th style="padding: 12px 18px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: right; border-bottom: 1px solid #e2e8f0;">Precio Unitario</th>
+                                                    <th style="padding: 12px 18px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: center; border-bottom: 1px solid #e2e8f0;">Variación <i class="fas fa-question-circle" style="font-size: 11px; color: #94a3b8; cursor: help; margin-left: 2px;" title="Pasa el cursor sobre cualquier variación para ver el detalle de comparación"></i></th>
+                                                    <th style="padding: 12px 18px; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; text-align: right; border-bottom: 1px solid #e2e8f0;">Subtotal</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="detail-historial-body">
+                                                <tr>
+                                                    <td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;">
+                                                        <i class="fas fa-spinner fa-spin"></i> Cargando historial...
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <!-- Paginación Estándar -->
+                                    <div class="pagination-controls" style="text-align: right; padding: 12px 22px; border-top: 1px solid #f1f5f9; background: #fafafa;">
+                                        <span id="detail-historial-page-info" style="margin-right: 15px; font-size: 12px; color: #64748b;">Página 1 de 1</span>
+                                        <button type="button" class="btn-outline" id="detail-historial-prev-btn" disabled>
+                                            <i class="fas fa-arrow-left"></i>
+                                        </button>
+                                        <button type="button" class="btn-outline" id="detail-historial-next-btn" disabled>
+                                            <i class="fas fa-arrow-right"></i>
+                                        </button>
                                     </div>
                                 </div>
                             </div>

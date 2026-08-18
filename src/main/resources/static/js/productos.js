@@ -1226,21 +1226,213 @@ document.addEventListener('DOMContentLoaded', function () {
     const detailCloseBtn = document.getElementById('product-detail-close');
     const detailCloseBtnFooter = document.getElementById('product-detail-close-btn');
 
+    let currentHistoryProductId = null;
+    let currentHistoryPage = 0;
+    let currentHistoryTotalPages = 1;
+    let loadedSelectProductId = null;
+
     // Tab switching en el modal de detalle
     document.querySelectorAll('.product-detail-tab').forEach(tab => {
         tab.addEventListener('click', function () {
             document.querySelectorAll('.product-detail-tab').forEach(t => t.classList.remove('active'));
             this.classList.add('active');
             document.querySelectorAll('.product-detail-tab-content').forEach(c => c.style.display = 'none');
-            const target = document.getElementById(this.getAttribute('data-tab'));
+            const targetId = this.getAttribute('data-tab');
+            const target = document.getElementById(targetId);
             if (target) target.style.display = 'block';
+
+            if (targetId === 'product-detail-tab-compras' && currentHistoryProductId) {
+                loadedSelectProductId = null;
+                const selectProv = document.getElementById('detail-historial-proveedor-select');
+                if (selectProv) selectProv.value = '';
+                loadProductPurchaseHistory(currentHistoryProductId, 0);
+            }
         });
     });
+
+    /**
+     * Llena dinámicamente el selector desplegable de proveedores para el producto
+     */
+    async function populateSupplierSelect(productId) {
+        if (loadedSelectProductId === productId) return;
+        loadedSelectProductId = productId;
+
+        const select = document.getElementById('detail-historial-proveedor-select');
+        if (!select) return;
+
+        select.innerHTML = '<option value="">🚚 Proveedor: Todos</option>';
+
+        try {
+            const resp = await fetch(`${API_PRODUCTOS_URL}/${productId}/proveedores`, { cache: 'no-store' });
+            if (resp.ok) {
+                const proveedores = await resp.json();
+                proveedores.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.idProveedor;
+                    opt.textContent = p.nombre;
+                    select.appendChild(opt);
+                });
+            }
+        } catch (e) {
+            console.error('Error al cargar proveedores para el selector:', e);
+        }
+    }
+
+    /**
+     * Carga el historial de compras de un producto paginado y filtrado
+     */
+    async function loadProductPurchaseHistory(productId, page = 0) {
+        currentHistoryProductId = productId;
+        currentHistoryPage = page;
+        const body = document.getElementById('detail-historial-body');
+        const pageInfo = document.getElementById('detail-historial-page-info');
+        const prevBtn = document.getElementById('detail-historial-prev-btn');
+        const nextBtn = document.getElementById('detail-historial-next-btn');
+
+        if (!body) return;
+
+        // Cargar proveedores en el selector desplegable
+        populateSupplierSelect(productId);
+
+        // Transición suave al filtrar y altura mínima estable para evitar colapso de modal
+        body.style.transition = 'opacity 0.2s ease-in-out';
+        body.style.opacity = '0.35';
+
+        // Solo mostrar spinner si la tabla estaba totalmente vacía para evitar saltos
+        if (!body.innerHTML.trim()) {
+            body.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Cargando historial...</td></tr>';
+        }
+
+        const proveedorId = document.getElementById('detail-historial-proveedor-select')?.value || '';
+        const fechaInicio = document.getElementById('detail-historial-fecha-inicio')?.value || '';
+        const fechaFin = document.getElementById('detail-historial-fecha-fin')?.value || '';
+
+        let url = `${API_PRODUCTOS_URL}/${productId}/historial-compras?page=${page}&size=10`;
+        if (proveedorId) url += `&proveedorId=${proveedorId}`;
+        if (fechaInicio) url += `&fechaInicio=${fechaInicio}`;
+        if (fechaFin) url += `&fechaFin=${fechaFin}`;
+
+        try {
+            const response = await fetch(url, { cache: 'no-store' });
+            if (!response.ok) throw new Error('Error al cargar historial');
+
+            const pageData = await response.json();
+            const content = pageData.content || [];
+
+            if (content.length === 0) {
+                body.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">No hay compras registradas para este filtro.</td></tr>';
+            } else {
+                body.innerHTML = content.map(item => {
+                    let fechaStr = 'N/A';
+                    if (item.fechaCompra) {
+                        const parts = item.fechaCompra.split('T');
+                        const dateParts = parts[0].split('-');
+                        const timeParts = parts[1] ? parts[1].substring(0, 5) : '';
+                        fechaStr = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]} ${timeParts}`;
+                    }
+                    const precio = item.precioUnitario != null ? `$${item.precioUnitario.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00';
+                    const subtotal = item.subtotal != null ? `$${item.subtotal.toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '$0.00';
+
+                    // Badge de Variación de Precio armonizado con el sistema y pista visual de tooltip
+                    let variacionHtml = '<span title="Primera compra registrada con este proveedor" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; background: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; cursor: help;">Base <i class="fas fa-info-circle" style="font-size: 9px; opacity: 0.6;"></i></span>';
+                    if (item.porcentajeVariacion != null) {
+                        const val = item.porcentajeVariacion;
+                        if (val > 0) {
+                            variacionHtml = `<span title="Variación respecto a la última compra del mismo proveedor" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; cursor: help;"><i class="fas fa-arrow-up" style="font-size: 10px;"></i>+${val.toFixed(1)}% <i class="fas fa-info-circle" style="font-size: 9px; opacity: 0.6;"></i></span>`;
+                        } else if (val < 0) {
+                            variacionHtml = `<span title="Variación respecto a la última compra del mismo proveedor" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; cursor: help;"><i class="fas fa-arrow-down" style="font-size: 10px;"></i>${val.toFixed(1)}% <i class="fas fa-info-circle" style="font-size: 9px; opacity: 0.6;"></i></span>`;
+                        } else {
+                            variacionHtml = `<span title="Sin cambios respecto a la última compra del mismo proveedor" style="display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 12px; font-size: 11px; font-weight: 500; background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; cursor: help;"><i class="fas fa-minus" style="font-size: 9px;"></i> Sin cambio <i class="fas fa-info-circle" style="font-size: 9px; opacity: 0.6;"></i></span>`;
+                        }
+                    }
+
+                    const proveedorPill = `<span style="display: inline-flex; align-items: center; gap: 6px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 3px 10px; border-radius: 16px; font-size: 12px; font-weight: 500; color: #334155;"><i class="fas fa-truck" style="color: #64748b; font-size: 10px;"></i>${item.proveedorNombre || 'Sin proveedor'}</span>`;
+
+                    return `
+                        <tr style="transition: background 0.15s;">
+                            <td style="padding: 12px 18px; font-size: 13px; color: #475569;">${fechaStr}</td>
+                            <td style="padding: 12px 18px; font-size: 13px;">${proveedorPill}</td>
+                            <td style="padding: 12px 18px; font-size: 13px; text-align: center; font-weight: 500; color: #1e293b;">${item.cantidadComprada}</td>
+                            <td style="padding: 12px 18px; font-size: 13px; text-align: right; color: #0f172a;">${precio}</td>
+                            <td style="padding: 12px 18px; font-size: 13px; text-align: center;">${variacionHtml}</td>
+                            <td style="padding: 12px 18px; font-size: 13px; text-align: right; color: #0f172a;">${subtotal}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
+
+            const totalPages = pageData.totalPages || 1;
+            const currentPageNum = pageData.number || 0;
+            currentHistoryTotalPages = totalPages;
+            currentHistoryPage = currentPageNum;
+
+            if (pageInfo) pageInfo.textContent = `Página ${totalPages === 0 ? 0 : currentPageNum + 1} de ${totalPages}`;
+            if (prevBtn) prevBtn.disabled = pageData.first || currentPageNum === 0;
+            if (nextBtn) nextBtn.disabled = pageData.last || (currentPageNum + 1 >= totalPages);
+
+            body.style.opacity = '1';
+        } catch (err) {
+            console.error('Error al cargar historial de compras:', err);
+            body.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 30px;">Error al cargar el historial de compras.</td></tr>';
+            body.style.opacity = '1';
+        }
+    }
+
+    // Bind de eventos de filtro y paginación para el historial
+    const selectProveedorHistorial = document.getElementById('detail-historial-proveedor-select');
+    if (selectProveedorHistorial) {
+        selectProveedorHistorial.addEventListener('change', () => {
+            if (currentHistoryProductId) loadProductPurchaseHistory(currentHistoryProductId, 0);
+        });
+    }
+
+    const btnBuscarHistorial = document.getElementById('detail-historial-btn-buscar');
+    if (btnBuscarHistorial) {
+        btnBuscarHistorial.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentHistoryProductId) loadProductPurchaseHistory(currentHistoryProductId, 0);
+        });
+    }
+
+    const btnLimpiarHistorial = document.getElementById('detail-historial-btn-limpiar');
+    if (btnLimpiarHistorial) {
+        btnLimpiarHistorial.addEventListener('click', (e) => {
+            e.preventDefault();
+            const fechaIni = document.getElementById('detail-historial-fecha-inicio');
+            const fechaFin = document.getElementById('detail-historial-fecha-fin');
+            const selectProv = document.getElementById('detail-historial-proveedor-select');
+            if (fechaIni) fechaIni.value = '';
+            if (fechaFin) fechaFin.value = '';
+            if (selectProv) selectProv.value = '';
+            if (currentHistoryProductId) loadProductPurchaseHistory(currentHistoryProductId, 0);
+        });
+    }
+
+    const btnPrevHistorial = document.getElementById('detail-historial-prev-btn');
+    if (btnPrevHistorial) {
+        btnPrevHistorial.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentHistoryProductId && currentHistoryPage > 0) {
+                loadProductPurchaseHistory(currentHistoryProductId, currentHistoryPage - 1);
+            }
+        });
+    }
+
+    const btnNextHistorial = document.getElementById('detail-historial-next-btn');
+    if (btnNextHistorial) {
+        btnNextHistorial.addEventListener('click', (e) => {
+            e.preventDefault();
+            if (currentHistoryProductId && (currentHistoryPage + 1 < currentHistoryTotalPages)) {
+                loadProductPurchaseHistory(currentHistoryProductId, currentHistoryPage + 1);
+            }
+        });
+    }
 
     /**
      * Abre el modal y carga los detalles del producto
      */
     async function openDetailModal(productId, targetTabId = null) {
+        currentHistoryProductId = productId;
         try {
             // Cargar datos del producto desde el endpoint de inventario
             // Cargar datos del producto desde el endpoint de inventario
