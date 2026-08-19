@@ -1,4 +1,7 @@
+window.salesChannel = window.salesChannel || new BroadcastChannel('sales_channel');
+
 document.addEventListener('DOMContentLoaded', function () {
+    const salesChannel = window.salesChannel;
 
     // ===============================
     // URLs DE LA API
@@ -1053,25 +1056,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         const totalFinal = totalBase - descuentoMonto;
 
-        // Auto-registro de cobro pendiente en inputs
-        const cobroMetodoVal = cobroMetodoSelect?.value;
-        if (cobroMetodoVal) {
-            const added = intentarAgregarCobroAutomatico(totalFinal);
-            if (!added) {
-                isValid = false;
-            }
-        }
-
-        if (!isValid) return;
-
-        // Validar cobros
-        if (cobrosMixtos.length === 0) {
-            window.mostrarErrorInline('venta-cobro-metodo', 'Debe agregar al menos un cobro.');
-            isValid = false;
-        } else {
-            const sumaCobros = cobrosMixtos.reduce((acc, c) => acc + parseFloat(c.importe), 0);
-            if (Math.abs(sumaCobros - totalFinal) > 0.05) {
-                window.mostrarErrorInline('venta-cobro-monto', `Los cobros no cubren el total.`);
+        // Validar que el total no sea <= 0
+        if (totalFinal <= 0) {
+            if (errorDescuento) {
+                errorDescuento.textContent = 'El total debe ser mayor a $0.';
+                errorDescuento.style.display = 'block';
                 isValid = false;
             }
         }
@@ -1080,7 +1069,7 @@ document.addEventListener('DOMContentLoaded', function () {
             return;
         }
 
-        showConfirmationModal("¿Estás seguro de que deseas registrar esta venta?", async () => {
+        showConfirmationModal("¿Estás seguro de que deseas enviar esta venta a caja?", async () => {
 
             try {
                 const detallesParaBackend = detallesVenta.map(item => {
@@ -1095,13 +1084,8 @@ document.addEventListener('DOMContentLoaded', function () {
                     fecha: fechaVenta,
                     idCliente: parseInt(idCliente),
                     detalles: detallesParaBackend,
-                    cobros: cobrosMixtos.map(c => ({
-                        idMetodoPago: c.idMetodoPago,
-                        importe: c.importe,
-                        tipoTarjeta: c.tipoTarjeta || null,
-                        montoPagado: c.montoPagado || null,
-                        vuelto: c.vuelto || null
-                    })),
+                    cobros: null,
+                    idMetodoPago: null,
                     descuento: descuento,
                     tipoDescuento: tipoDescuento
                 };
@@ -1124,15 +1108,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const ventaCreada = await response.json();
 
-                // Mostrar modal de ticket inmediatamente después de que se cierre el modal de confirmación
-                setTimeout(() => {
-                    console.log('Intentando mostrar modal ticket...');
-                    try {
-                        mostrarModalTicket(ventaCreada.idVenta);
-                    } catch (e) {
-                        console.error('Error al mostrar modal:', e);
-                    }
-                }, 100);
+                // Mostrar banner de éxito
+                showSuccessBanner('Orden enviada a caja');
+
+                // Notificar al cajero mediante BroadcastChannel
+                salesChannel.postMessage({ type: 'nueva_orden' });
 
                 // Resetear formulario
                 detallesVenta = [];
@@ -1181,7 +1161,30 @@ document.addEventListener('DOMContentLoaded', function () {
         const productosTexto = formatProductosList(venta.productos);
         const nombreClienteTexto = venta.nombreCliente || 'Cliente N/A';
         const nombreVendedorTexto = venta.nombreVendedor || 'N/A';
-        const metodoPagoTexto = venta.metodoPago || 'No especificado';
+        let metodoPagoTexto = '';
+        if (venta.cobros && venta.cobros.length > 0) {
+            const getMetodoNormalizado = (m) => {
+                if (!m) return 'No especificado';
+                const lower = m.toLowerCase();
+                if (lower.includes('efectivo')) return 'Efectivo';
+                if (lower.includes('debito') || lower.includes('débito')) return 'Débito';
+                if (lower.includes('credito') || lower.includes('crédito')) return 'Crédito';
+                if (lower.includes('transferencia') || lower.includes('mercado')) return 'Transferencia';
+                return m.charAt(0).toUpperCase() + m.slice(1).toLowerCase();
+            };
+
+            const cobrosMetodos = venta.cobros.map(c => getMetodoNormalizado(c.metodoPago));
+            
+            if (cobrosMetodos.length === 1) {
+                metodoPagoTexto = cobrosMetodos[0];
+            } else if (cobrosMetodos.length === 2) {
+                metodoPagoTexto = `${cobrosMetodos[0]}, ${cobrosMetodos[1]}`;
+            } else {
+                metodoPagoTexto = `${cobrosMetodos[0]}, ${cobrosMetodos[1]} <span class="metodo-pago-badge" title="Ver desglose completo (+${cobrosMetodos.length - 2})" onclick="mostrarDetalleVenta(${venta.idVenta})">+${cobrosMetodos.length - 2}</span>`;
+            }
+        } else {
+            metodoPagoTexto = venta.metodoPago || 'No especificado';
+        }
 
         const estadoUpper = (venta.estado || '').toUpperCase();
         let estadoClass = 'pendiente';
@@ -1271,33 +1274,85 @@ document.addEventListener('DOMContentLoaded', function () {
             document.getElementById('modal-venta-fecha').textContent = fechaFormateada;
             document.getElementById('modal-venta-cliente').textContent = venta.nombreCliente || 'N/A';
             document.getElementById('modal-venta-vendedor').textContent = venta.nombreVendedor || 'N/A';
-            document.getElementById('modal-venta-metodo-pago').textContent = venta.metodoPago || 'No especificado';
 
-            // Totales
-            document.getElementById('modal-venta-subtotal').textContent = `$${formatoMoneda.format(venta.subtotal || 0)}`;
-
-            // Descuento
+            // Montos
+            const subtotalEl = document.getElementById('modal-venta-subtotal');
             const descuentoContainer = document.getElementById('modal-venta-descuento-container');
-            if (venta.descuentoMonto && venta.descuentoMonto > 0) {
-                descuentoContainer.style.display = 'flex';
-                document.getElementById('modal-venta-descuento').textContent = `-$${formatoMoneda.format(venta.descuentoMonto)}`;
-            } else {
-                descuentoContainer.style.display = 'none';
-            }
-
+            const descuentoEl = document.getElementById('modal-venta-descuento');
             const totalEl = document.getElementById('modal-venta-total');
-            if (totalEl) {
-                totalEl.textContent = `$${formatoMoneda.format(venta.total)}`;
+
+            if (subtotalEl) subtotalEl.textContent = `$${formatoMoneda.format(venta.subtotal)}`;
+            
+            // Descuento
+            if (venta.descuentoMonto && venta.descuentoMonto > 0) {
+                if (descuentoContainer) descuentoContainer.style.display = 'flex';
+                if (descuentoEl) descuentoEl.textContent = `-$${formatoMoneda.format(venta.descuentoMonto)}`;
+            } else {
+                if (descuentoContainer) descuentoContainer.style.display = 'none';
             }
 
-            // Resumen pago efectivo
-            const resumenPago = document.getElementById('modal-venta-resumen-pago');
-            if (venta.metodoPago === 'Efectivo' && venta.montoPagado && venta.vuelto !== null) {
-                resumenPago.style.display = 'block';
-                document.getElementById('modal-venta-pago-con').textContent = `$${formatoMoneda.format(venta.montoPagado)}`;
-                document.getElementById('modal-venta-vuelto').textContent = `$${formatoMoneda.format(venta.vuelto)}`;
-            } else {
-                resumenPago.style.display = 'none';
+            if (totalEl) totalEl.textContent = `$${formatoMoneda.format(venta.total)}`;
+
+            // Desglose de Cobros Múltiples
+            const cobrosContainer = document.getElementById('modal-venta-cobros-container');
+            const cobrosSection = document.getElementById('modal-venta-cobros-section');
+            if (cobrosContainer && cobrosSection) {
+                if (venta.cobros && venta.cobros.length > 0) {
+                    cobrosSection.style.display = 'block';
+                    let cobrosHtml = '';
+                    venta.cobros.forEach(cobro => {
+                        let iconClass = 'fa-money-bill-wave';
+                        let iconBgClass = 'efectivo';
+                        let methodUpper = (cobro.metodoPago || '').toUpperCase();
+                        
+                        if (methodUpper.includes('DEBITO') || methodUpper.includes('DÉBITO')) {
+                            iconClass = 'fa-credit-card';
+                            iconBgClass = 'debito';
+                        } else if (methodUpper.includes('CREDITO') || methodUpper.includes('CRÉDITO')) {
+                            iconClass = 'fa-credit-card';
+                            iconBgClass = 'credito';
+                        } else if (methodUpper.includes('TRANSFERENCIA') || methodUpper.includes('MERCADO')) {
+                            iconClass = 'fa-mobile-alt';
+                            iconBgClass = 'transferencia';
+                        }
+
+                        let subinfoHtml = '';
+                        if (methodUpper.includes('EFECTIVO')) {
+                            if (cobro.montoPagado && cobro.vuelto !== null) {
+                                subinfoHtml = `
+                                    <div class="vd-payment-subinfo" style="margin-top: 4px;">
+                                        <span><em>Abonó con:</em> <strong>$${formatoMoneda.format(cobro.montoPagado)}</strong></span>
+                                        <span><em>Vuelto:</em> <strong>$${formatoMoneda.format(cobro.vuelto)}</strong></span>
+                                    </div>
+                                `;
+                            }
+                        }
+
+                        cobrosHtml += `
+                            <div class="vd-payment-card">
+                                <div class="vd-payment-icon ${iconBgClass}">
+                                    <i class="fas ${iconClass}"></i>
+                                </div>
+                                <div class="vd-payment-details">
+                                    <div class="vd-payment-method">
+                                        <span>${cobro.metodoPago || 'No especificado'}</span>
+                                        <span class="vd-payment-amount">$${formatoMoneda.format(cobro.importe)}</span>
+                                    </div>
+                                    ${subinfoHtml}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    cobrosContainer.innerHTML = cobrosHtml;
+                } else {
+                    // Si la venta está pendiente o no tiene cobros
+                    cobrosSection.style.display = 'block';
+                    cobrosContainer.innerHTML = `
+                        <div style="font-size: 12px; color: #64748b; text-align: center; padding: 12px; background: #f8fafc; border-radius: 8px; border: 1px dashed #cbd5e1; font-weight: 500;">
+                            <i class="fas fa-hourglass-half" style="margin-right: 5px; color: #f59e0b;"></i> Esperando pago en caja
+                        </div>
+                    `;
+                }
             }
 
             // Remover banner antiguo de la parte superior si existiera
@@ -2308,6 +2363,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Exponer globalmente
     window.showVentasSubsection = showSubsection;
+    window.mostrarModalTicket = mostrarModalTicket;
 
     // Cerrar modal de detalle al hacer clic fuera del contenido
     const ventaDetailModal = document.getElementById('venta-detail-modal');
@@ -2341,5 +2397,30 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     });
+
+    // Funciones para Banners de Éxito/Error
+    function showSuccessBanner(msg) {
+        const banner = document.getElementById('success-banner') || crearBannerExito();
+        const textEl = document.getElementById('success-banner-text');
+        if (textEl) textEl.textContent = msg;
+        banner.style.backgroundColor = '#28a745';
+        banner.classList.add('show');
+        setTimeout(() => {
+            banner.classList.remove('show');
+            setTimeout(() => { banner.style.backgroundColor = ''; }, 300);
+        }, 3000);
+    }
+
+    function crearBannerExito() {
+        const banner = document.createElement('div');
+        banner.id = 'success-banner';
+        banner.className = 'success-banner';
+        banner.innerHTML = `
+            <i class="fas fa-check-circle" style="margin-right: 10px;"></i>
+            <span id="success-banner-text"></span>
+        `;
+        document.body.appendChild(banner);
+        return banner;
+    }
 
 });

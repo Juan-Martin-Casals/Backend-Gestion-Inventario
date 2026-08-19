@@ -1296,7 +1296,7 @@
     padding: 20px 24px;
     flex: 1;
     display: grid;
-    grid-template-columns: 1fr 1.25fr;
+    grid-template-columns: 1fr 1.45fr;
     gap: 24px;
     overflow-y: auto;
 }
@@ -1406,7 +1406,7 @@
     gap: 12px;
     align-items: flex-end;
     background: #f8fafc;
-    padding: 14px;
+    padding: 16px 16px 28px 16px;
     border-radius: 14px;
     border: 1px solid #e2e8f0;
 }
@@ -1493,6 +1493,29 @@
     box-shadow: 0 6px 16px rgba(79, 70, 229, 0.3);
 }
 
+.pos-light-btn-clear {
+    height: 42px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 700;
+    border-radius: 10px;
+    background: transparent;
+    color: #64748b;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pos-light-btn-clear:hover {
+    background: #f1f5f9;
+    color: #334155;
+    border-color: #94a3b8;
+}
+
 /* Payments list inside Light Card */
 .pos-payments-summary-box-light {
     background: #f8fafc;
@@ -1515,8 +1538,6 @@
     display: flex;
     flex-direction: column;
     gap: 6px;
-    max-height: 110px;
-    overflow-y: auto;
 }
 
 .pos-payment-tag-light {
@@ -1543,6 +1564,71 @@
 
 .pos-payment-tag-light .btn-remove-cobro:hover {
     color: #b91c1c;
+}
+
+.pos-payment-tag-light .btn-edit-cobro {
+    color: #6366f1;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 13px;
+    padding: 2px 4px;
+    transition: color 0.2s, transform 0.1s;
+}
+
+.pos-payment-tag-light .btn-edit-cobro:hover {
+    color: #4f46e5;
+    transform: scale(1.15);
+}
+
+.pos-payment-tag-light .btn-confirm-cobro {
+    color: #10b981;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 13px;
+    padding: 2px 4px;
+    transition: color 0.2s, transform 0.1s;
+}
+
+.pos-payment-tag-light .btn-confirm-cobro:hover {
+    color: #059669;
+    transform: scale(1.15);
+}
+
+.pos-payment-tag-light .btn-cancel-cobro {
+    color: #64748b;
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 13px;
+    padding: 2px 4px;
+    transition: color 0.2s, transform 0.1s;
+}
+
+.pos-payment-tag-light .btn-cancel-cobro:hover {
+    color: #475569;
+    transform: scale(1.15);
+}
+
+.pos-edit-input {
+    width: 90px;
+    text-align: right;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 2px 6px;
+    outline: none;
+    font-size: 12px;
+    font-weight: 700;
+    color: #0f172a;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #f8fafc;
+}
+
+.pos-edit-input:focus {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+    background: #ffffff;
 }
 
 /* Quick Bills Keyboard in Light Theme */

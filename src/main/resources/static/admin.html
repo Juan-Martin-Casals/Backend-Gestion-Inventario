@@ -127,6 +127,8 @@
                                     class="text">Operaciones / Mi Caja</span></a></li>
                         <li><a href="#" data-section="caja" data-subsection="caja-movimientos"><span
                                     class="text">Ingresos / Egresos</span></a></li>
+                        <li><a href="#" data-section="caja" data-subsection="ventas-cobrar"><span
+                                    class="text">Cobrar Ventas</span></a></li>
                         <li><a href="#" data-section="caja" data-subsection="caja-historial"><span
                                     class="text">Historial de Sesiones</span></a></li>
                     </ul>
@@ -3460,7 +3462,6 @@
                                             <h2 id="total-venta">$0.00</h2>
 
                                             <div class="resumen-divider"></div>
-                                            <div id="venta-cobro-balance-indicator"></div>
                                         </div>
 
                                         <!-- Resto de controles -->
@@ -3485,90 +3486,13 @@
                                                     style="margin-top: 4px;"></div>
                                             </div>
 
-                                            <hr style="margin: 15px 0; border: none; border-top: 1px solid #eee;">
-                                            <h5 style="font-size: 1rem; color: #334155; margin-bottom: 12px;"><i
-                                                    class="fas fa-cash-register"></i> Cobro</h5>
-
-                                            <!-- 3. Fila Agregar Cobro -->
-                                            <div id="venta-cobro-row"
-                                                style="display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;">
-                                                <div class="form-group"
-                                                    style="flex: 2; margin: 0; min-width: 120px; position: relative; margin-bottom: 15px;">
-                                                    <label for="venta-cobro-metodo"
-                                                        style="font-size: 0.85rem; margin-bottom: 4px;">Método</label>
-                                                    <select id="venta-cobro-metodo" class="form-control"
-                                                        style="padding: 6px 10px; font-size: 0.9rem; height: 36px;">
-                                                        <option value="">Seleccionar</option>
-                                                    </select>
-                                                    <div class="error-message" id="error-venta-cobro-metodo"
-                                                        style="position: absolute; top: 100%; left: 0; margin-top: 4px; z-index: 10; white-space: nowrap;">
-                                                    </div>
-                                                </div>
-                                                <div class="form-group" id="venta-tipo-tarjeta-container"
-                                                    style="flex: 2; margin: 0; min-width: 110px; display: none; position: relative; margin-bottom: 15px;">
-                                                    <label for="venta-cobro-tipo-tarjeta"
-                                                        style="font-size: 0.85rem; margin-bottom: 4px;">Tipo
-                                                        Tarjeta</label>
-                                                    <select id="venta-cobro-tipo-tarjeta" class="form-control"
-                                                        style="padding: 6px 10px; font-size: 0.9rem; height: 36px;">
-                                                        <option value="">Seleccionar</option>
-                                                        <option value="Débito">Débito</option>
-                                                        <option value="Crédito">Crédito</option>
-                                                    </select>
-                                                </div>
-                                                <div class="form-group"
-                                                    style="flex: 2; margin: 0; min-width: 100px; position: relative; margin-bottom: 15px;">
-                                                    <label for="venta-cobro-monto"
-                                                        style="font-size: 0.85rem; margin-bottom: 4px;">Importe</label>
-                                                    <input type="text" id="venta-cobro-monto" class="form-control"
-                                                        placeholder="0" maxlength="10"
-                                                        oninput="if(window.checkMaxLength) window.checkMaxLength(this, 10);"
-                                                        style="padding: 6px 10px; font-size: 0.9rem; height: 36px;">
-                                                    <div class="error-message" id="error-venta-cobro-monto"
-                                                        style="position: absolute; top: 100%; left: 0; margin-top: 4px; z-index: 10; white-space: nowrap;">
-                                                    </div>
-                                                </div>
-                                                <button type="button" id="btn-add-cobro-mixto" class="btn-primary"
-                                                    style="padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; height: 36px; min-width: 36px; max-width: 36px; flex-shrink: 0; margin-bottom: 15px;"
-                                                    title="Añadir Cobro">
-                                                    <i class="fas fa-plus" style="margin: 0;"></i>
-                                                </button>
-                                            </div>
-
-                                            <!-- Efectivo: Paga con + Vuelto -->
-                                            <div id="venta-paga-con-container" style="display: none; margin-top: 10px;">
-                                                <label for="venta-paga-con"
-                                                    style="font-size: 0.85rem; margin-bottom: 4px; display: block;">Paga
-                                                    con
-                                                    (efectivo)</label>
-                                                <input type="text" id="venta-paga-con" placeholder="0" maxlength="10"
-                                                    oninput="if(window.checkMaxLength) window.checkMaxLength(this, 10);"
-                                                    style="width: 100%; padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.9rem;">
-                                                <div class="error-message" id="error-venta-paga-con"
-                                                    style="margin-top: 4px;"></div>
-                                            </div>
-                                            <div id="venta-vuelto-display"
-                                                style="display: none; text-align: center; padding: 10px 12px; background: #e8f5e9; border-radius: 8px; margin-top: 8px;">
-                                                <div
-                                                    style="font-size: 0.7rem; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px;">
-                                                    Vuelto</div>
-                                                <div id="venta-vuelto-amount"
-                                                    style="font-size: 1.4rem; font-weight: 700; color: #2e7d32;">$0
-                                                </div>
-                                            </div>
-
-                                        </div>
-
-                                        <!-- 4. Lista de cobros -->
-                                        <div id="cobros-mixtos-container"
-                                            style="margin-top: 15px; display: flex; flex-direction: column; gap: 8px;">
                                         </div>
 
                                         <div class="action-buttons"
                                             style="flex-direction: column; align-items: center; gap: 12px; border-top: 1px solid #eee; padding-top: 20px; margin-top: 20px;">
                                             <button type="submit" class="btn-primary"
                                                 style="width: 85%; padding: 16px 20px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 8px;">
-                                                <i class="fas fa-check-circle"></i> Registrar Venta
+                                                <i class="fas fa-check-circle"></i> Enviar a Caja
                                             </button>
                                             <button type="button" class="btn-outline" id="limpiar-form-venta"
                                                 style="width: 85%; padding: 16px 20px; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 8px; border-radius: 8px;">
@@ -3743,22 +3667,14 @@
                                         <div class="vd-meta-value"><i class="fas fa-id-badge"></i> <span
                                                 id="modal-venta-vendedor"></span></div>
                                     </div>
-                                    <div class="vd-meta-item">
-                                        <span class="vd-meta-label">Método de Pago</span>
-                                        <div class="vd-meta-value"><i class="fas fa-credit-card"></i> <span
-                                                id="modal-venta-metodo-pago"></span></div>
-                                    </div>
-                                </div>
-
-                                <!-- Resumen Pago Efectivo -->
-                                <div id="modal-venta-resumen-pago" class="vd-cash-summary" style="display: none;">
-                                    <div class="vd-cash-item">
-                                        <span class="vd-cash-label">Pagó con</span>
-                                        <span id="modal-venta-pago-con" class="vd-cash-value"></span>
-                                    </div>
-                                    <div class="vd-cash-item">
-                                        <span class="vd-cash-label">Vuelto</span>
-                                        <span id="modal-venta-vuelto" class="vd-cash-value"></span>
+                                    <!-- Pagos Registrados (Cobros Múltiples) -->
+                                    <div class="vd-payments-section" id="modal-venta-cobros-section" style="display: none;">
+                                        <div class="vd-payments-header">
+                                            <i class="fas fa-wallet"></i> <span>Pagos Registrados</span>
+                                        </div>
+                                        <div class="vd-payments-list" id="modal-venta-cobros-container">
+                                            <!-- Renderizado dinámico desde JS -->
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -4971,6 +4887,191 @@
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- TAB: COBRAR VENTAS (PROCESO POS) -->
+                <div id="ventas-cobrar-container" class="caja-tab-content" style="display:none; padding: 0;">
+                    <div style="width: 100%; max-width: 1600px; margin: 0 auto;">
+                        
+                        <!-- Contenedor con Caja Cerrada Warning Overlay (si no hay caja activa) -->
+                        <div id="cajero-ventas-container" style="position: relative; min-height: 500px;">
+                            
+                            <!-- Layout Principal POS Grid -->
+                            <div class="pos-layout-grid">
+                                
+                                <!-- COLUMNA IZQUIERDA: LISTA DE VENTAS PENDIENTES -->
+                                <div class="pos-queue-panel">
+                                    <div class="pos-queue-header">
+                                        <h4 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b; display: flex; align-items: center; gap: 8px;">
+                                            <i class="fas fa-receipt" style="color: #6366f1; font-size: 14px;"></i>
+                                            Cola de Espera
+                                        </h4>
+                                        <span id="cajero-pendientes-count" class="pos-badge-count">0 Órdenes</span>
+                                    </div>
+
+                                    <!-- Contenedor de la lista con Scroll -->
+                                    <div id="cajero-lista-pendientes" class="pos-queue-body">
+                                        <div style="text-align: center; color: #94a3b8; padding: 40px 20px;">
+                                            <i class="fas fa-spinner fa-spin" style="font-size: 24px; margin-bottom: 12px;"></i>
+                                            <p style="margin: 0; font-size: 13px;">Buscando órdenes pendientes...</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- COLUMNA DERECHA: DETALLE Y PANEL DE COBRO (POS) -->
+                                <div class="pos-checkout-panel">
+                                    
+                                    <!-- Estado Vacío (Default) -->
+                                    <div id="pos-vacio-state" class="pos-empty-state">
+                                        <div class="pos-empty-icon">
+                                            <i class="fas fa-cash-register"></i>
+                                        </div>
+                                        <h4 style="margin: 0 0 8px; color: #0f172a; font-size: 18px; font-weight: 800;">Terminal Lista para Cobrar</h4>
+                                        <p style="margin: 0; color: #64748b; font-size: 14px; max-width: 360px; line-height: 1.6;">Selecciona una orden de venta de la lista de espera para habilitar los métodos de pago y procesar el cobro.</p>
+                                    </div>
+
+                                    <!-- Panel de Cobro Activo (Oculto al inicio) -->
+                                    <div id="pos-activo-panel" class="pos-active-container" style="display: none;">
+                                        
+                                        <!-- Cabecera de la Orden Seleccionada -->
+                                        <div class="pos-header-bar">
+                                            <div style="display: flex; align-items: center; gap: 12px;">
+                                                <div class="pos-order-badge">
+                                                    <i class="fas fa-shopping-bag"></i>
+                                                </div>
+                                                <div>
+                                                    <h4 style="margin: 0 0 2px; font-size: 16px; font-weight: 800; color: #0f172a; letter-spacing: -0.3px;">Orden <span id="pos-orden-id">#00</span></h4>
+                                                    <span style="font-size: 12px; color: #64748b;">Vendedor: <strong id="pos-orden-vendedor" style="color: #334155;">-</strong></span>
+                                                </div>
+                                            </div>
+                                            <div style="text-align: right; background: #f8fafc; padding: 8px 16px; border-radius: 10px; border: 1px solid #e2e8f0;">
+                                                <span style="display: block; font-size: 10px; color: #64748b; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">Cliente</span>
+                                                <strong id="pos-orden-cliente" style="color: #0f172a; font-size: 14px;">-</strong>
+                                            </div>
+                                        </div>
+
+                                        <!-- Layout Interno del Checkout: Productos (Izquierda) + Finanzas Oscuro (Derecha) -->
+                                        <div class="pos-checkout-body-grid">
+                                            
+                                            <!-- COLUMNA CHECKOUT IZQ: DETALLE PRODUCTOS -->
+                                            <div class="pos-products-column">
+                                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #f1f5f9;">
+                                                    <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase; letter-spacing: 0.8px;"><i class="fas fa-boxes" style="margin-right: 6px;"></i> Detalle de Items</span>
+                                                </div>
+                                                
+                                                <div class="pos-products-scroll">
+                                                    <table class="pos-products-table">
+                                                        <thead>
+                                                            <tr>
+                                                                <th>Producto</th>
+                                                                <th style="text-align: center; width: 60px;">Cant.</th>
+                                                                <th style="text-align: right; width: 90px;">Precio</th>
+                                                                <th style="text-align: right; width: 90px;">Subtotal</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody id="pos-productos-body">
+                                                            <!-- Se renderiza por JS -->
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                <div id="pos-descuento-detalle" class="pos-discount-banner">
+                                                    <i class="fas fa-tag"></i> Descuento aplicado: <span id="pos-descuento-monto">-$0</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- COLUMNA CHECKOUT DER: HERO PANEL FINANCIERO LIGHT PREMIUM -->
+                                            <div class="pos-financial-light-card">
+                                                
+                                                <!-- DISPLAY PRINCIPAL TOTAL -->
+                                                <div class="pos-hero-total-box-light">
+                                                    <span class="pos-hero-total-label-light">TOTAL A COBRAR</span>
+                                                    <h2 id="pos-total-display" class="pos-hero-total-amount-light">$0</h2>
+                                                </div>
+
+                                                <!-- INGRESO PAGO Y SELECCIÓN MÉTODO -->
+                                                <div class="pos-payment-inputs-group-light">
+                                                    <div style="flex: 1;">
+                                                        <label class="pos-light-label">Método de Pago</label>
+                                                        <select id="pos-metodo-pago" class="pos-light-select">
+                                                            <!-- Se llena por JS -->
+                                                        </select>
+                                                    </div>
+
+                                                    <div style="flex: 1; position: relative;">
+                                                        <label class="pos-light-label">Monto a Ingresar</label>
+                                                        <div style="position: relative;">
+                                                            <span class="pos-light-currency">$</span>
+                                                            <input type="text" id="pos-monto-recibido" placeholder="0" maxlength="10" class="pos-light-input">
+                                                        </div>
+                                                        <div class="error-message" id="error-pos-monto-recibido" style="display: none; position: absolute; top: 100%; left: 0; z-index: 10; white-space: nowrap; font-size: 11px;"></div>
+                                                    </div>
+
+                                                    <button type="button" id="btn-pos-agregar-pago" class="pos-light-btn-add">
+                                                        <i class="fas fa-plus"></i> Agregar
+                                                    </button>
+                                                    <button type="button" id="btn-pos-limpiar-campos" class="btn-outline pos-light-btn-clear" title="Limpiar campos">
+                                                        <i class="fas fa-eraser"></i> Limpiar
+                                                    </button>
+                                                </div>
+
+                                                <!-- RESUMEN DE PAGOS Y SALDO PENDIENTES (Oculto por defecto si es 1 solo pago sin presionar agregar) -->
+                                                <div id="pos-contenedor-pagos-agregados" class="pos-payments-summary-box-light" style="display: none;">
+                                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                                        <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Cobros Cargados</span>
+                                                        <span style="font-size: 12px; font-weight: 700; color: #475569;">Pendiente: <strong id="pos-saldo-pendiente" class="pos-pending-highlight">$0</strong></span>
+                                                    </div>
+                                                    <div id="pos-lista-cobros" class="pos-payments-list-light">
+                                                        <!-- Se llena por JS -->
+                                                    </div>
+                                                </div>
+
+                                                <!-- BOTONES RÁPIDOS DE EFECTIVO -->
+                                                <div id="pos-efectivo-panel" class="pos-bill-panel-light">
+                                                    <span style="font-size: 10px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; display: block;">Ingreso Rápido Efectivo</span>
+                                                    <div class="pos-bill-keyboard">
+                                                        <button type="button" class="btn-pos-bill" data-amount="1000">+$1k</button>
+                                                        <button type="button" class="btn-pos-bill" data-amount="2000">+$2k</button>
+                                                        <button type="button" class="btn-pos-bill" data-amount="5000">+$5k</button>
+                                                        <button type="button" class="btn-pos-bill" data-amount="10000">+$10k</button>
+                                                        <button type="button" class="btn-pos-bill" data-amount="20000">+$20k</button>
+                                                        <button type="button" id="btn-pos-exacto" class="btn-pos-bill-exact">Exacto</button>
+                                                    </div>
+                                                </div>
+
+                                                <!-- DISPLAY VUELTO (Oculto por defecto, solo se activa si vuelto > 0) -->
+                                                <div id="pos-vuelto-container" class="pos-vuelto-card-light" style="display: none;">
+                                                    <div style="display: flex; align-items: center; gap: 8px;">
+                                                        <i class="fas fa-hand-holding-usd" style="font-size: 18px; color: #059669;"></i>
+                                                        <span style="font-size: 12px; font-weight: 800; color: #065f46; text-transform: uppercase; letter-spacing: 0.8px;">Vuelto a Entregar</span>
+                                                    </div>
+                                                    <span id="pos-vuelto-display" class="pos-vuelto-amount-light">$0</span>
+                                                </div>
+
+                                                <div id="pos-error-message" class="error-message" style="display: none; padding: 10px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #ef4444; font-size: 12px; font-weight: 600; text-align: center; margin-top: 10px;"></div>
+                                            </div>
+
+                                        </div>
+
+                                        <!-- Footer Acciones de POS -->
+                                        <div class="pos-actions-footer">
+                                            <button type="button" id="btn-pos-anular-orden" style="padding: 12px 18px; font-size: 13px; font-weight: 600; border-radius: 10px; color: #ef4444; background: #fef2f2; border: 1px solid #fecaca; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;" onmouseover="this.style.background='#fee2e2';" onmouseout="this.style.background='#fef2f2';">
+                                                <i class="fas fa-trash-alt"></i> Anular Orden
+                                            </button>
+                                            <button type="button" id="btn-pos-cobrar" class="pos-btn-confirm">
+                                                <i class="fas fa-check-circle" style="font-size: 18px;"></i> Confirmar y Registrar Cobro
+                                            </button>
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
                     </div>
                 </div>
 
@@ -6344,6 +6445,56 @@
         <script src="js/ordenCompra.js"></script>
         <script src="js/stock.js"></script>
         <script src="js/cliente.js"></script>
+
+        <!-- Modal Confirmar Anulación de Orden -->
+        <div id="modal-anular-orden" class="modal-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 99999;">
+            <div class="modal-content" style="background: white; border-radius: 20px; width: 90%; max-width: 520px; padding: 28px; border: 1px solid #e2e8f0; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25); text-align: left;">
+                <div style="text-align: center;">
+                    <div style="width: 60px; height: 60px; background: #fef2f2; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 1px solid #fecaca;">
+                        <i class="fas fa-exclamation-triangle" style="font-size: 26px; color: #ef4444;"></i>
+                    </div>
+                    <h3 style="margin: 0 0 8px; font-size: 20px; font-weight: 800; color: #0f172a;">¿Anular esta Orden?</h3>
+                    <p style="margin: 0 0 16px; font-size: 13px; color: #64748b; line-height: 1.5;">
+                        La orden <strong id="modal-anular-orden-id" style="color: #0f172a;">#--</strong> será descartada y los productos regresarán automáticamente al inventario.
+                    </p>
+                </div>
+
+                <div style="margin-bottom: 16px;">
+                    <label for="anular-motivo-select" style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                        Motivo de Anulación <span style="color: #ef4444;">*</span>
+                    </label>
+                    <select id="anular-motivo-select" style="width: 100%; padding: 10px 12px; font-size: 13px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: #f8fafc; color: #1e293b; transition: all 0.2s;" onfocus="if(this.style.borderColor!=='rgb(239, 68, 68)') { this.style.borderColor='#2563eb'; }" onblur="if(this.style.borderColor!=='rgb(239, 68, 68)') { this.style.borderColor='#cbd5e1'; }">
+                        <option value="" disabled selected>-- Seleccione un motivo --</option>
+                        <option value="Cliente se arrepintió / No concretó">Cliente se arrepintió / No concretó</option>
+                        <option value="Error en la carga del pedido">Error en la carga del pedido</option>
+                        <option value="Medio de pago rechazado">Medio de pago rechazado</option>
+                        <option value="Otro (especificar en observaciones)">Otro (especificar en observaciones)</option>
+                    </select>
+                    <div id="error-anular-motivo" class="error-message" style="display: none; color: #ef4444; margin-top: 6px; font-size: 12px; font-weight: 600; align-items: center; gap: 6px;">
+                        <i class="fas fa-exclamation-circle"></i> Debe seleccionar un motivo de anulación.
+                    </div>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label for="anular-obs-text" style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">
+                        Observaciones Adicionales (Opcional)
+                    </label>
+                    <textarea id="anular-obs-text" rows="3" maxlength="150" placeholder="Detalles de la anulación (máx. 150 caracteres)..." style="width: 100%; padding: 10px 12px; font-size: 13px; border-radius: 8px; border: 1px solid #cbd5e1; outline: none; background: #f8fafc; color: #1e293b; resize: none; font-family: inherit; transition: all 0.2s;" onfocus="this.style.borderColor='#2563eb'; this.style.background='white';" onblur="this.style.borderColor='#cbd5e1'; this.style.background='#f8fafc';"></textarea>
+                    <div style="text-align: right; font-size: 11px; color: #94a3b8; margin-top: 4px;">
+                        <span id="anular-obs-count">0</span>/150
+                    </div>
+                </div>
+
+                <div style="display: flex; gap: 12px; justify-content: center;">
+                    <button type="button" id="btn-confirmar-anular-modal" style="padding: 9px 18px; font-size: 13.5px; font-weight: 700; border-radius: 10px; background: #ef4444; color: white; border: none; cursor: pointer; flex: 1; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);">
+                        <i class="fas fa-trash-alt" style="margin-right: 6px;"></i> Confirmar Anulación
+                    </button>
+                    <button type="button" id="btn-cancelar-anular-modal" class="btn-outline" style="padding: 9px 18px; font-size: 13.5px; font-weight: 600; border-radius: 10px; flex: 1;">
+                        Volver
+                    </button>
+                </div>
+            </div>
+        </div>
 
         <!-- Modal Ticket de Venta - FUERA DE CUALQUIER SECTION -->
         <div id="modal-ticket-overlay" style="display: none;">

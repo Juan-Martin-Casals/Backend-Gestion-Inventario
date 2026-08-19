@@ -5195,3 +5195,127 @@ textarea.auto-expand {
         margin-top: 10px;
     }
 }
+
+/* ========================================= */
+/* DETALLES DE PAGOS (UX Premium) */
+/* ========================================= */
+.vd-payments-section {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px dashed rgba(0, 0, 0, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.vd-payments-header {
+    font-size: 11px;
+    font-weight: 800;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.vd-payments-header i {
+    color: #0284c7;
+}
+.vd-payments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.vd-payment-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    border-radius: 12px;
+    padding: 12px 14px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.02);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.vd-payment-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(15, 23, 42, 0.05);
+}
+.vd-payment-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: white;
+    font-size: 14px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+}
+.vd-payment-icon.efectivo { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+.vd-payment-icon.debito { background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); }
+.vd-payment-icon.credito { background: linear-gradient(135deg, #e11d48 0%, #be123c 100%); }
+.vd-payment-icon.transferencia { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+
+.vd-payment-details {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.vd-payment-method {
+    font-size: 13px;
+    font-weight: 700;
+    color: #1e293b;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.vd-payment-amount {
+    font-size: 14px;
+    font-weight: 800;
+    color: #0f172a;
+    letter-spacing: -0.5px;
+    font-family: monospace;
+}
+.vd-payment-subinfo {
+    font-size: 11px;
+    color: #64748b;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+.vd-payment-subinfo span {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid rgba(0,0,0,0.03);
+    padding-top: 2px;
+}
+
+/* Badge para método de pago múltiple en tabla de ventas */
+.metodo-pago-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f1f5f9;
+    color: #475569;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 9999px;
+    margin-left: 5px;
+    vertical-align: middle;
+    border: 1px solid #cbd5e1;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.metodo-pago-badge:hover {
+    background-color: #cbd5e1;
+    color: #0f172a;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.metodo-pago-badge:active {
+    transform: translateY(0);
+}

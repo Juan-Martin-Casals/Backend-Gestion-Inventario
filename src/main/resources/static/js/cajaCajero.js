@@ -1412,22 +1412,151 @@ document.addEventListener('DOMContentLoaded', function () {
                 <div class="pos-payment-tag-light">
                     <div>
                         <strong style="color: #0f172a;">${cobro.nombreMetodo}</strong>
-                        ${cobro.vuelto > 0 ? `<span style="font-size: 11px; color: #059669; margin-left: 6px;">(Vuelto: ${formatter.format(cobro.vuelto)})</span>` : ''}
+                        ${cobro.vuelto > 0 ? `<span id="vuelto-label-${idx}" style="font-size: 11px; color: #059669; margin-left: 6px;">(Vuelto: ${formatter.format(cobro.vuelto)})</span>` : ''}
                     </div>
-                    <div style="display: flex; align-items: center; gap: 10px;">
+                    <!-- MODO VISTA -->
+                    <div id="view-mode-${idx}" style="display: flex; align-items: center; gap: 10px;">
                         <span style="font-weight: 800; color: #0f172a;">${formatter.format(cobro.monto)}</span>
-                        <button type="button" data-idx="${idx}" class="btn-eliminar-cobro-pos btn-remove-cobro" title="Eliminar pago">
+                        <button type="button" data-idx="${idx}" class="btn-editar-cobro-pos btn-edit-cobro" title="Editar monto">
+                            <i class="fas fa-pencil-alt"></i>
+                        </button>
+                        <button type="button" data-idx="${idx}" class="btn-eliminar-cobro-pos btn-remove-cobro" title="Eliminar cobro">
                             <i class="fas fa-trash-alt"></i>
                         </button>
+                    </div>
+                    <!-- MODO EDICIÓN -->
+                    <div id="edit-mode-${idx}" style="display: none; flex-direction: column; gap: 4px; align-items: flex-end;">
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <input type="text" id="input-edit-monto-${idx}" class="pos-edit-input" value="${new Intl.NumberFormat('es-AR').format(cobro.montoPagado || cobro.monto)}" maxlength="10">
+                            <button type="button" data-idx="${idx}" class="btn-confirmar-edit-pos btn-confirm-cobro" title="Confirmar">
+                                <i class="fas fa-check"></i>
+                            </button>
+                            <button type="button" data-idx="${idx}" class="btn-cancelar-edit-pos btn-cancel-cobro" title="Cancelar">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div class="error-message" id="error-input-edit-monto-${idx}" style="display: none; font-size: 10px;"></div>
                     </div>
                 </div>
             `).join('');
 
-            // Event listener para botones de eliminar
             listaEl.querySelectorAll('.btn-eliminar-cobro-pos').forEach(btn => {
                 btn.addEventListener('click', function () {
                     const index = parseInt(this.dataset.idx);
                     cobrosCajero.splice(index, 1);
+                    renderCobrosCajero();
+                });
+            });
+
+            listaEl.querySelectorAll('.btn-editar-cobro-pos').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    clearErrorPOS();
+                    const index = parseInt(this.dataset.idx);
+                    const viewMode = document.getElementById(`view-mode-${index}`);
+                    const editMode = document.getElementById(`edit-mode-${index}`);
+                    const inputEdit = document.getElementById(`input-edit-monto-${index}`);
+                    
+                    if (viewMode && editMode && inputEdit) {
+                        cobrosCajero.forEach((_, i) => {
+                            if (i !== index) {
+                                const vm = document.getElementById(`view-mode-${i}`);
+                                const em = document.getElementById(`edit-mode-${i}`);
+                                if (vm) vm.style.display = 'flex';
+                                if (em) em.style.display = 'none';
+                            }
+                        });
+
+                        viewMode.style.display = 'none';
+                        editMode.style.display = 'flex';
+                        inputEdit.focus();
+                        inputEdit.select();
+                    }
+                });
+            });
+
+            listaEl.querySelectorAll('.btn-cancelar-edit-pos').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    clearErrorPOS();
+                    const index = parseInt(this.dataset.idx);
+                    const viewMode = document.getElementById(`view-mode-${index}`);
+                    const editMode = document.getElementById(`edit-mode-${index}`);
+                    if (viewMode && editMode) {
+                        viewMode.style.display = 'flex';
+                        editMode.style.display = 'none';
+                    }
+                });
+            });
+
+            listaEl.querySelectorAll('.pos-edit-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    clearErrorPOS();
+                    let raw = this.value.replace(/\D/g, '');
+                    if (raw === '') {
+                        this.value = '';
+                        if (window.limpiarErroresInline) window.limpiarErroresInline(this.id);
+                        return;
+                    }
+                    this.value = new Intl.NumberFormat('es-AR').format(parseFloat(raw));
+                    
+                    if (this.value.length >= 10) {
+                        if (window.mostrarErrorInline) window.mostrarErrorInline(this.id, "Límite de 10 caracteres alcanzado.");
+                    } else {
+                        if (window.limpiarErroresInline) window.limpiarErroresInline(this.id);
+                    }
+                });
+                
+                input.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        const index = this.id.split('-').pop();
+                        const confirmBtn = listaEl.querySelector(`.btn-confirmar-edit-pos[data-idx="${index}"]`);
+                        if (confirmBtn) confirmBtn.click();
+                    } else if (e.key === 'Escape') {
+                        const index = this.id.split('-').pop();
+                        const cancelBtn = listaEl.querySelector(`.btn-cancelar-edit-pos[data-idx="${index}"]`);
+                        if (cancelBtn) cancelBtn.click();
+                    }
+                });
+            });
+
+            listaEl.querySelectorAll('.btn-confirmar-edit-pos').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const index = parseInt(this.dataset.idx);
+                    const inputEdit = document.getElementById(`input-edit-monto-${index}`);
+                    if (!inputEdit) return;
+
+                    const raw = inputEdit.value.replace(/\D/g, '');
+                    const nuevoMonto = parseFloat(raw);
+
+                    if (isNaN(nuevoMonto) || nuevoMonto <= 0) {
+                        showErrorPOS('Debe ingresar un monto válido.');
+                        return;
+                    }
+
+                    const cobro = cobrosCajero[index];
+                    const esEfectivo = cobro.nombreMetodo.toLowerCase().includes('efectivo');
+                    const totalVenta = ventaSeleccionada.total || 0;
+                    const totalAportadoOtros = cobrosCajero.reduce((acc, c, i) => acc + (i !== index ? (c.monto || 0) : 0), 0);
+                    const saldoPendienteSinEste = Math.max(0, totalVenta - totalAportadoOtros);
+
+                    let montoAplicado = nuevoMonto;
+                    let vueltoCalculado = 0;
+
+                    if (esEfectivo) {
+                        if (nuevoMonto > saldoPendienteSinEste) {
+                            vueltoCalculado = nuevoMonto - saldoPendienteSinEste;
+                            montoAplicado = saldoPendienteSinEste;
+                        }
+                    } else {
+                        if (nuevoMonto > saldoPendienteSinEste + 0.05) {
+                            showErrorPOS(`El monto ingresado supera el saldo pendiente de ${formatter.format(saldoPendienteSinEste)}.`);
+                            return;
+                        }
+                    }
+
+                    cobro.monto = montoAplicado;
+                    cobro.montoPagado = nuevoMonto;
+                    cobro.vuelto = vueltoCalculado;
+
                     renderCobrosCajero();
                 });
             });
@@ -1524,14 +1653,21 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        cobrosCajero.push({
-            idMetodoPago: parseInt(idMetodo),
-            nombreMetodo: nombreMetodo,
-            tipoTarjeta: tipoTarjeta,
-            monto: montoAplicado,
-            montoPagado: montoIngresado,
-            vuelto: vueltoCalculado
-        });
+        const indexExistente = cobrosCajero.findIndex(c => c.idMetodoPago === parseInt(idMetodo));
+        if (indexExistente !== -1) {
+            cobrosCajero[indexExistente].monto += montoAplicado;
+            cobrosCajero[indexExistente].montoPagado += montoIngresado;
+            cobrosCajero[indexExistente].vuelto += vueltoCalculado;
+        } else {
+            cobrosCajero.push({
+                idMetodoPago: parseInt(idMetodo),
+                nombreMetodo: nombreMetodo,
+                tipoTarjeta: tipoTarjeta,
+                monto: montoAplicado,
+                montoPagado: montoIngresado,
+                vuelto: vueltoCalculado
+            });
+        }
 
         if (inputRecibido) inputRecibido.value = '';
         if (selectMetodo) {
@@ -1545,6 +1681,20 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnAgregarPago = document.getElementById('btn-pos-agregar-pago');
     if (btnAgregarPago) {
         btnAgregarPago.addEventListener('click', agregarPagoCajero);
+    }
+
+    const btnPosLimpiarCamposEl = document.getElementById('btn-pos-limpiar-campos');
+    if (btnPosLimpiarCamposEl) {
+        btnPosLimpiarCamposEl.addEventListener('click', function () {
+            const selectMetodo = document.getElementById('pos-metodo-pago');
+            const inputRecibido = document.getElementById('pos-monto-recibido');
+            if (inputRecibido) inputRecibido.value = '';
+            if (selectMetodo) {
+                selectMetodo.value = '';
+                selectMetodo.dispatchEvent(new Event('change'));
+            }
+            clearErrorPOS();
+        });
     }
 
     // Cargar métodos de pago activos en el selector del POS
@@ -1767,6 +1917,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectMetodo = document.getElementById('pos-metodo-pago');
     if (selectMetodo) {
         selectMetodo.addEventListener('change', function () {
+            clearErrorPOS();
             const nombre = (this.options[this.selectedIndex]?.text || this.options[this.selectedIndex]?.textContent || '').toLowerCase();
             const esEfectivo = nombre.includes('efectivo');
             
@@ -1780,13 +1931,21 @@ document.addEventListener('DOMContentLoaded', function () {
     const posMontoRecibido = document.getElementById('pos-monto-recibido');
     if (posMontoRecibido) {
         posMontoRecibido.addEventListener('input', function () {
+            clearErrorPOS();
             let raw = this.value.replace(/[^0-9]/g, '');
             if (raw === '') {
                 this.value = '';
+                if (window.limpiarErroresInline) window.limpiarErroresInline(this.id);
                 renderCobrosCajero();
                 return;
             }
             this.value = new Intl.NumberFormat('es-AR').format(parseInt(raw, 10));
+            
+            if (this.value.length >= 10) {
+                if (window.mostrarErrorInline) window.mostrarErrorInline(this.id, "Límite de 10 caracteres alcanzado.");
+            } else {
+                if (window.limpiarErroresInline) window.limpiarErroresInline(this.id);
+            }
             renderCobrosCajero();
         });
     }
@@ -1794,6 +1953,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Billetes Rápidos del POS
     document.querySelectorAll('.btn-pos-bill').forEach(btn => {
         btn.addEventListener('click', function () {
+            clearErrorPOS();
             const bill = parseInt(this.dataset.amount);
             const input = document.getElementById('pos-monto-recibido');
             if (!input) return;
@@ -1810,6 +1970,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnPosExacto = document.getElementById('btn-pos-exacto');
     if (btnPosExacto) {
         btnPosExacto.addEventListener('click', function () {
+            clearErrorPOS();
             const input = document.getElementById('pos-monto-recibido');
             if (!input || !ventaSeleccionada) return;
 
@@ -2041,6 +2202,16 @@ document.addEventListener('DOMContentLoaded', function () {
             errorMsg.textContent = msg;
             errorMsg.style.display = 'block';
             errorMsg.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+
+    function clearErrorPOS() {
+        const errorMsg = document.getElementById('pos-error-message');
+        if (errorMsg) {
+            errorMsg.style.display = 'none';
+        }
+        if (window.limpiarErroresInline) {
+            window.limpiarErroresInline('pos-monto-recibido');
         }
     }
 

@@ -1256,25 +1256,18 @@
                                         <span class="vd-meta-label">Vendedor</span>
                                         <div class="vd-meta-value"><i class="fas fa-id-badge"></i> <span
                                                 id="modal-venta-vendedor"></span></div>
-                                    </div>
-                                    <div class="vd-meta-item">
-                                        <span class="vd-meta-label">Método de Pago</span>
-                                        <div class="vd-meta-value"><i class="fas fa-credit-card"></i> <span
-                                                id="modal-venta-metodo-pago"></span></div>
-                                    </div>
-                                </div>
+                                              </div>
 
-                                <!-- Resumen Pago Efectivo -->
-                                <div id="modal-venta-resumen-pago" class="vd-cash-summary" style="display: none;">
-                                    <div class="vd-cash-item">
-                                        <span class="vd-cash-label">Pagó con</span>
-                                        <span id="modal-venta-pago-con" class="vd-cash-value"></span>
-                                    </div>
-                                    <div class="vd-cash-item">
-                                        <span class="vd-cash-label">Vuelto</span>
-                                        <span id="modal-venta-vuelto" class="vd-cash-value"></span>
-                                    </div>
-                                </div>
+                                 <!-- Pagos Registrados (Cobros Múltiples) -->
+                                 <div class="vd-payments-section" id="modal-venta-cobros-section" style="display: none;">
+                                     <div class="vd-payments-header">
+                                         <i class="fas fa-wallet"></i> <span>Pagos Registrados</span>
+                                     </div>
+                                     <div class="vd-payments-list" id="modal-venta-cobros-container">
+                                         <!-- Renderizado dinámico desde JS -->
+                                     </div>
+                                 </div>
+                             </div>
                             </div>
 
                             <!-- Columna Derecha: Productos -->

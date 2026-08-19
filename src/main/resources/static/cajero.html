@@ -1124,7 +1124,7 @@
 
     <!-- SECCIÓN COBRAR VENTAS (NUEVA - POS PREMIUM) -->
     <section id="ventas-cobrar-section" class="spa-section" style="display:none; padding: 40px;">
-        <div style="max-width: 1400px; margin: 0 auto 0 0;">
+        <div style="max-width: 1600px; margin: 0 auto;">
             
             <!-- Contenedor con Caja Cerrada Warning Overlay (si no hay caja activa) -->
             <div id="cajero-ventas-container" style="position: relative; min-height: 500px;">
@@ -1231,23 +1231,27 @@
                                             </select>
                                         </div>
 
-                                        <div style="flex: 1;">
+                                        <div style="flex: 1; position: relative;">
                                             <label class="pos-light-label">Monto a Ingresar</label>
                                             <div style="position: relative;">
                                                 <span class="pos-light-currency">$</span>
                                                 <input type="text" id="pos-monto-recibido" placeholder="0" maxlength="10" class="pos-light-input">
                                             </div>
+                                            <div class="error-message" id="error-pos-monto-recibido" style="display: none; position: absolute; top: 100%; left: 0; z-index: 10; white-space: nowrap; font-size: 11px;"></div>
                                         </div>
 
                                         <button type="button" id="btn-pos-agregar-pago" class="pos-light-btn-add">
                                             <i class="fas fa-plus"></i> Agregar
+                                        </button>
+                                        <button type="button" id="btn-pos-limpiar-campos" class="btn-outline pos-light-btn-clear" title="Limpiar campos">
+                                            <i class="fas fa-eraser"></i> Limpiar
                                         </button>
                                     </div>
 
                                     <!-- RESUMEN DE PAGOS Y SALDO PENDIENTES (Oculto por defecto si es 1 solo pago sin presionar agregar) -->
                                     <div id="pos-contenedor-pagos-agregados" class="pos-payments-summary-box-light" style="display: none;">
                                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Pagos Cargados</span>
+                                            <span style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px;">Cobros Cargados</span>
                                             <span style="font-size: 12px; font-weight: 700; color: #475569;">Pendiente: <strong id="pos-saldo-pendiente" class="pos-pending-highlight">$0</strong></span>
                                         </div>
                                         <div id="pos-lista-cobros" class="pos-payments-list-light">
