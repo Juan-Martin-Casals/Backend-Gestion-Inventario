@@ -1333,7 +1333,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // Rendimiento Comercial (Facturación)
         document.getElementById('detalle-sesion-total-facturado').textContent = sesion.totalFacturado != null ? formatter.format(sesion.totalFacturado) : '$0,00';
         document.getElementById('detalle-sesion-ventas-efectivo').textContent = sesion.ingresosEfectivo != null ? formatter.format(sesion.ingresosEfectivo) : '$0,00';
-        
+
         const elDebito = document.getElementById('detalle-sesion-ventas-debito');
         if (elDebito) elDebito.textContent = sesion.ventasDebito != null ? formatter.format(sesion.ventasDebito) : '$0,00';
 
@@ -1790,7 +1790,7 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 const resVentas = await fetch('/api/ventas/all');
                 if (resVentas.ok) ventasData = await resVentas.json();
-            } catch(e) {}
+            } catch (e) { }
             const ventas = Array.isArray(ventasData) ? ventasData : (ventasData && Array.isArray(ventasData.content) ? ventasData.content : []);
 
             // 2. Obtener compras
@@ -1798,7 +1798,7 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 const resCompras = await fetch('/api/compras');
                 if (resCompras.ok) comprasData = await resCompras.json();
-            } catch(e) {}
+            } catch (e) { }
             const compras = Array.isArray(comprasData) ? comprasData : (comprasData && Array.isArray(comprasData.content) ? comprasData.content : []);
 
             // 3. Obtener movimientos manuales
@@ -1806,7 +1806,7 @@ document.addEventListener('DOMContentLoaded', function () {
             try {
                 const resMovs = await fetch('/api/movimientos-caja');
                 if (resMovs.ok) movsData = await resMovs.json();
-            } catch(e) {}
+            } catch (e) { }
             const movsManuales = Array.isArray(movsData) ? movsData : (movsData && Array.isArray(movsData.content) ? movsData.content : []);
 
             let fechaFiltro = new Date();
@@ -2161,10 +2161,15 @@ document.addEventListener('DOMContentLoaded', function () {
                 val = parts[0] + '.' + parts.slice(1).join('');
             }
             e.target.value = val;
-            if (parseFloat(val) > 0) {
+
+            const confirmBtn = document.getElementById('btn-confirmar-movimiento');
+            if (confirmBtn) confirmBtn.disabled = false;
+
+            if (val.length >= 10) {
+                if (window.mostrarErrorInline) window.mostrarErrorInline('movimiento-monto', 'Límite de 10 caracteres alcanzado.');
+            } else {
                 if (window.limpiarErroresInline) window.limpiarErroresInline('movimiento-monto');
             }
-            validarSaldoEgreso();
         });
     }
 
@@ -2298,7 +2303,7 @@ document.addEventListener('DOMContentLoaded', function () {
         modalMovCaja.style.setProperty('display', 'flex', 'important');
         modalMovCaja.style.setProperty('z-index', '99999', 'important');
         modalMovCaja.classList.add('modal-visible');
-        
+
 
     }
 
@@ -3285,7 +3290,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const viewMode = document.getElementById(`view-mode-${index}`);
                     const editMode = document.getElementById(`edit-mode-${index}`);
                     const inputEdit = document.getElementById(`input-edit-monto-${index}`);
-                    
+
                     if (viewMode && editMode && inputEdit) {
                         cobrosCajero.forEach((_, i) => {
                             if (i !== index) {
@@ -3318,7 +3323,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             listaEl.querySelectorAll('.pos-edit-input').forEach(input => {
-                input.addEventListener('input', function() {
+                input.addEventListener('input', function () {
                     clearErrorPOS();
                     let raw = this.value.replace(/\D/g, '');
                     if (raw === '') {
@@ -3327,15 +3332,15 @@ document.addEventListener('DOMContentLoaded', function () {
                         return;
                     }
                     this.value = new Intl.NumberFormat('es-AR').format(parseFloat(raw));
-                    
+
                     if (this.value.length >= 10) {
                         if (window.mostrarErrorInline) window.mostrarErrorInline(this.id, "Límite de 10 caracteres alcanzado.");
                     } else {
                         if (window.limpiarErroresInline) window.limpiarErroresInline(this.id);
                     }
                 });
-                
-                input.addEventListener('keydown', function(e) {
+
+                input.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter') {
                         const index = this.id.split('-').pop();
                         const confirmBtn = listaEl.querySelector(`.btn-confirmar-edit-pos[data-idx="${index}"]`);
@@ -3514,7 +3519,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const res = await fetch('/api/metodos-pago/activos');
             if (!res.ok) throw new Error('Error al cargar métodos de pago');
             metodosPagoList = await res.json();
-            
+
             select.innerHTML = '<option value="">Seleccionar método</option>';
             metodosPagoList.forEach(m => {
                 if (!m.nombre.toLowerCase().includes('caja') && !m.nombre.toLowerCase().includes('aporte externo')) {
@@ -3571,7 +3576,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const res = await fetch('/api/ventas/pendientes', { cache: 'no-store' });
             if (!res.ok) throw new Error('Error al cargar pendientes');
             const pendientes = await res.json();
-            
+
             if (countBadge) countBadge.textContent = `${pendientes.length} Órdenes`;
 
             if (pendientes.length === 0) {
@@ -3593,7 +3598,7 @@ document.addEventListener('DOMContentLoaded', function () {
             pendientes.forEach(venta => {
                 const date = new Date(venta.fecha);
                 const timeStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0') + ' hs';
-                
+
                 const card = document.createElement('div');
                 card.className = `pos-order-card ${ventaSeleccionada && ventaSeleccionada.idVenta === venta.idVenta ? 'selected' : ''}`;
 
@@ -3635,12 +3640,12 @@ document.addEventListener('DOMContentLoaded', function () {
     function seleccionarVenta(venta) {
         ventaSeleccionada = venta;
         cobrosCajero = [];
-        
+
         document.getElementById('pos-orden-id').textContent = `#${venta.idVenta}`;
         document.getElementById('pos-orden-cliente').textContent = venta.nombreCliente || 'Cliente N/A';
         document.getElementById('pos-orden-vendedor').textContent = venta.nombreVendedor || '-';
         document.getElementById('pos-total-display').textContent = formatter.format(venta.total);
-        
+
         const descDiv = document.getElementById('pos-descuento-detalle');
         const descMonto = document.getElementById('pos-descuento-monto');
         if (venta.descuentoMonto && venta.descuentoMonto > 0) {
@@ -3670,13 +3675,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const selectMetodo = document.getElementById('pos-metodo-pago');
         if (selectMetodo) {
             selectMetodo.value = '';
-            
+
             const cleanStr = str => {
                 if (!str) return '';
                 return str.toLowerCase()
-                          .normalize("NFD")
-                          .replace(/[\u0300-\u036f]/g, "")
-                          .trim();
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .trim();
             };
 
             const targetMethod = cleanStr(venta.metodoPago || 'efectivo');
@@ -3684,7 +3689,7 @@ document.addEventListener('DOMContentLoaded', function () {
             for (let i = 0; i < selectMetodo.options.length; i++) {
                 const opt = selectMetodo.options[i];
                 const optText = cleanStr(opt.text || opt.textContent);
-                
+
                 if (optText.includes(targetMethod) || targetMethod.includes(optText)) {
                     selectMetodo.value = opt.value;
                     break;
@@ -3696,7 +3701,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const inputRecibido = document.getElementById('pos-monto-recibido');
         if (inputRecibido) inputRecibido.value = '';
         document.getElementById('pos-error-message').style.display = 'none';
-        
+
         renderCobrosCajero();
 
         document.getElementById('pos-vacio-state').style.display = 'none';
@@ -3758,7 +3763,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
             this.value = new Intl.NumberFormat('es-AR').format(parseInt(raw, 10));
-            
+
             if (this.value.length >= 10) {
                 if (window.mostrarErrorInline) window.mostrarErrorInline(this.id, "Límite de 10 caracteres alcanzado.");
             } else {
@@ -3908,7 +3913,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (modalAnularOrden) modalAnularOrden.style.display = 'none';
                 showSuccessBanner('Orden anulada exitosamente. El stock fue devuelto.');
-                
+
                 salesChannel.postMessage({ type: 'venta_anulada', idVenta: ventaSeleccionada.idVenta });
 
                 deseleccionarVenta();
@@ -3990,17 +3995,17 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const ventaCobrada = await res.json();
-                
+
                 showSuccessBanner('Venta cobrada con éxito.');
                 cobrosCajero = [];
-                
+
                 if (typeof window.mostrarModalTicket === 'function') {
                     window.mostrarModalTicket(ventaCobrada.idVenta);
                 }
 
                 document.dispatchEvent(new CustomEvent('ventaRegistrada'));
                 salesChannel.postMessage({ type: 'venta_cobrada', idVenta: ventaCobrada.idVenta });
- 
+
                 deseleccionarVenta();
 
             } catch (err) {

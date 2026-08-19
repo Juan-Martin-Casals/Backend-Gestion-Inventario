@@ -1038,7 +1038,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setInterval(() => {
         const modalResumen = document.getElementById('modal-resumen-cierre');
         if (modalResumen && modalResumen.style.display === 'flex') return;
-        
+
         const sectionCaja = document.getElementById('caja-section');
         if (sectionCaja && sectionCaja.style.display !== 'none') {
             verificarEstadoCaja(true);
@@ -1134,14 +1134,14 @@ document.addEventListener('DOMContentLoaded', function () {
             let fechaAperturaVal = fmtFechaSoloFecha(sesion.fechaApertura);
             let horaAperturaVal = fmtHoraSoloHora(sesion.fechaApertura);
             let horaCierreVal = sesion.fechaCierre ? fmtHoraSoloHora(sesion.fechaCierre) : 'En curso';
-            
+
             let duracionBadge = '';
             if (sesion.estado === 'CERRADA' && sesion.duracion) {
                 duracionBadge = `<span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; padding: 2px 6px; background: #e0e7ff; color: #4f46e5; border-radius: 4px; font-size: 10px; font-weight: 600;">
                     <i class="far fa-clock"></i> ${sesion.duracion}
                 </span>`;
             }
-            
+
             let turnoDetalleHtml = `
                 <div style="font-weight: 600; color: #1e293b;">${fechaAperturaVal}</div>
                 <div style="font-size: 11px; color: #64748b; margin-top: 2px; display: flex; align-items: center; gap: 4px;">
@@ -1154,13 +1154,13 @@ document.addEventListener('DOMContentLoaded', function () {
             const obsAp = (sesion.observacionesApertura || '').trim();
             const obsMatch = (sesion.observacionesCierre || '').match(/Obs=(.+)$/);
             const obsCi = obsMatch ? obsMatch[1].trim() : '';
-            
+
             let notasHtml = '';
             if (obsAp || obsCi) {
                 let tooltipText = '';
                 if (obsAp) tooltipText += `<div style="margin-bottom: 6px;"><strong style="color: #fbbf24;"><i class="fas fa-lock-open"></i> Apertura:</strong> ${obsAp}</div>`;
                 if (obsCi) tooltipText += `<div><strong style="color: #f87171;"><i class="fas fa-lock"></i> Cierre:</strong> ${obsCi}</div>`;
-                
+
                 notasHtml = `
                     <div class="custom-tooltip" style="cursor: help;">
                         <i class="fas fa-sticky-note" style="color: #334155; font-size: 16px; transition: all 0.2s;" 
@@ -1455,7 +1455,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     const viewMode = document.getElementById(`view-mode-${index}`);
                     const editMode = document.getElementById(`edit-mode-${index}`);
                     const inputEdit = document.getElementById(`input-edit-monto-${index}`);
-                    
+
                     if (viewMode && editMode && inputEdit) {
                         cobrosCajero.forEach((_, i) => {
                             if (i !== index) {
@@ -1488,7 +1488,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
 
             listaEl.querySelectorAll('.pos-edit-input').forEach(input => {
-                input.addEventListener('input', function() {
+                input.addEventListener('input', function () {
                     clearErrorPOS();
                     let raw = this.value.replace(/\D/g, '');
                     if (raw === '') {
@@ -1497,15 +1497,15 @@ document.addEventListener('DOMContentLoaded', function () {
                         return;
                     }
                     this.value = new Intl.NumberFormat('es-AR').format(parseFloat(raw));
-                    
+
                     if (this.value.length >= 10) {
                         if (window.mostrarErrorInline) window.mostrarErrorInline(this.id, "Límite de 10 caracteres alcanzado.");
                     } else {
                         if (window.limpiarErroresInline) window.limpiarErroresInline(this.id);
                     }
                 });
-                
-                input.addEventListener('keydown', function(e) {
+
+                input.addEventListener('keydown', function (e) {
                     if (e.key === 'Enter') {
                         const index = this.id.split('-').pop();
                         const confirmBtn = listaEl.querySelector(`.btn-confirmar-edit-pos[data-idx="${index}"]`);
@@ -1705,7 +1705,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const res = await fetch('/api/metodos-pago/activos');
             if (!res.ok) throw new Error('Error al cargar métodos de pago');
             metodosPagoList = await res.json();
-            
+
             select.innerHTML = '<option value="">Seleccionar método</option>';
             metodosPagoList.forEach(m => {
                 if (!m.nombre.toLowerCase().includes('caja') && !m.nombre.toLowerCase().includes('aporte externo')) {
@@ -1762,7 +1762,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const res = await fetch('/api/ventas/pendientes', { cache: 'no-store' });
             if (!res.ok) throw new Error('Error al cargar pendientes');
             const pendientes = await res.json();
-            
+
             if (countBadge) countBadge.textContent = `${pendientes.length} Órdenes`;
 
             if (pendientes.length === 0) {
@@ -1784,7 +1784,7 @@ document.addEventListener('DOMContentLoaded', function () {
             pendientes.forEach(venta => {
                 const date = new Date(venta.fecha);
                 const timeStr = date.getHours().toString().padStart(2, '0') + ':' + date.getMinutes().toString().padStart(2, '0') + ' hs';
-                
+
                 const card = document.createElement('div');
                 card.className = `pos-order-card ${ventaSeleccionada && ventaSeleccionada.idVenta === venta.idVenta ? 'selected' : ''}`;
 
@@ -1826,13 +1826,13 @@ document.addEventListener('DOMContentLoaded', function () {
     function seleccionarVenta(venta) {
         ventaSeleccionada = venta;
         cobrosCajero = [];
-        
+
         // Cargar datos en el panel POS
         document.getElementById('pos-orden-id').textContent = `#${venta.idVenta}`;
         document.getElementById('pos-orden-cliente').textContent = venta.nombreCliente || 'Cliente N/A';
         document.getElementById('pos-orden-vendedor').textContent = venta.nombreVendedor || '-';
         document.getElementById('pos-total-display').textContent = formatter.format(venta.total);
-        
+
         // Mostrar descuento si aplica
         const descDiv = document.getElementById('pos-descuento-detalle');
         const descMonto = document.getElementById('pos-descuento-monto');
@@ -1865,13 +1865,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const selectMetodo = document.getElementById('pos-metodo-pago');
         if (selectMetodo) {
             selectMetodo.value = '';
-            
+
             const cleanStr = str => {
                 if (!str) return '';
                 return str.toLowerCase()
-                          .normalize("NFD")
-                          .replace(/[\u0300-\u036f]/g, "")
-                          .trim();
+                    .normalize("NFD")
+                    .replace(/[\u0300-\u036f]/g, "")
+                    .trim();
             };
 
             const targetMethod = cleanStr(venta.metodoPago || 'efectivo');
@@ -1879,7 +1879,7 @@ document.addEventListener('DOMContentLoaded', function () {
             for (let i = 0; i < selectMetodo.options.length; i++) {
                 const opt = selectMetodo.options[i];
                 const optText = cleanStr(opt.text || opt.textContent);
-                
+
                 if (optText.includes(targetMethod) || targetMethod.includes(optText)) {
                     selectMetodo.value = opt.value;
                     break;
@@ -1892,7 +1892,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const inputRecibido = document.getElementById('pos-monto-recibido');
         if (inputRecibido) inputRecibido.value = '';
         document.getElementById('pos-error-message').style.display = 'none';
-        
+
         // Renderizar cobros y estado financiero
         renderCobrosCajero();
 
@@ -1920,7 +1920,7 @@ document.addEventListener('DOMContentLoaded', function () {
             clearErrorPOS();
             const nombre = (this.options[this.selectedIndex]?.text || this.options[this.selectedIndex]?.textContent || '').toLowerCase();
             const esEfectivo = nombre.includes('efectivo');
-            
+
             const efPanel = document.getElementById('pos-efectivo-panel');
             if (efPanel) efPanel.style.display = esEfectivo ? 'flex' : 'none';
             renderCobrosCajero();
@@ -1940,7 +1940,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
             this.value = new Intl.NumberFormat('es-AR').format(parseInt(raw, 10));
-            
+
             if (this.value.length >= 10) {
                 if (window.mostrarErrorInline) window.mostrarErrorInline(this.id, "Límite de 10 caracteres alcanzado.");
             } else {
@@ -2086,7 +2086,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 if (modalAnularOrden) modalAnularOrden.style.display = 'none';
                 showSuccessBanner('Orden anulada exitosamente. El stock fue devuelto.');
-                
+
                 salesChannel.postMessage({ type: 'venta_anulada', idVenta: ventaSeleccionada.idVenta });
 
                 deseleccionarVenta();
@@ -2170,10 +2170,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 const ventaCobrada = await res.json();
-                
+
                 showSuccessBanner('Venta cobrada con éxito.');
                 cobrosCajero = [];
-                
+
                 // Mostrar modal para generar el ticket en PDF opcionalmente
                 mostrarModalTicket(ventaCobrada.idVenta);
 
@@ -2182,7 +2182,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Notificar al empleado mediante BroadcastChannel
                 salesChannel.postMessage({ type: 'venta_cobrada', idVenta: ventaCobrada.idVenta });
- 
+
                 // Limpiar estado
                 deseleccionarVenta();
 
@@ -2245,12 +2245,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const inputMovRef = document.getElementById('movimiento-referencia');
     const txtMovDesc = document.getElementById('movimiento-descripcion');
     const errorMovMsg = document.getElementById('movimiento-error-msg');
-    
+
     const btnNuevoIngreso = document.getElementById('btn-nuevo-ingreso');
     const btnNuevoEgreso = document.getElementById('btn-nuevo-egreso');
     const btnCerrarModalMov = document.getElementById('btn-cerrar-modal-movimiento');
     const btnCancelarMov = document.getElementById('btn-cancelar-movimiento');
-    
+
     const charCountMovDesc = document.getElementById('char-count-movimiento-desc');
     const charCountMovRef = document.getElementById('char-count-movimiento-ref');
 
@@ -2292,7 +2292,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 e.preventDefault();
             }
         });
-        
+
         inputMovMonto.addEventListener('input', (e) => {
             let val = e.target.value;
             val = val.replace(/[^0-9.]/g, '');
@@ -2301,7 +2301,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 val = parts[0] + '.' + parts.slice(1).join('');
             }
             e.target.value = val;
-            if (parseFloat(val) > 0) {
+
+            if (val.length >= 10) {
+                if (window.mostrarErrorInline) window.mostrarErrorInline('movimiento-monto', 'Límite de 10 caracteres alcanzado.');
+            } else {
                 if (window.limpiarErroresInline) window.limpiarErroresInline('movimiento-monto');
             }
         });
@@ -2309,7 +2312,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     async function abrirModalMovimiento(tipo) {
         if (!modalMovCaja || !formMovCaja) return;
-        
+
         // Reset form
         formMovCaja.reset();
         if (charCountMovDesc) charCountMovDesc.textContent = '0';
@@ -2349,8 +2352,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const infoFecha = document.getElementById('movimiento-info-fecha');
 
         if (infoSesion) {
-            infoSesion.textContent = resumenCajaActual && resumenCajaActual.idSesion 
-                ? `#${resumenCajaActual.idSesion}` 
+            infoSesion.textContent = resumenCajaActual && resumenCajaActual.idSesion
+                ? `#${resumenCajaActual.idSesion}`
                 : 'Sin sesión activa';
         }
 
@@ -2429,7 +2432,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const res = await fetch(`/api/categorias-movimiento/tipo/${tipo}`);
             if (!res.ok) throw new Error('Error al cargar categorías');
             const cats = await res.json();
-            
+
             selectMovCat.innerHTML = '<option value="">Seleccione una categoría...</option>';
             cats.forEach(c => {
                 const opt = document.createElement('option');
@@ -2493,7 +2496,7 @@ document.addEventListener('DOMContentLoaded', function () {
         pageItems.forEach(m => {
             const tr = document.createElement('tr');
             tr.style.borderBottom = '1px solid #f1f5f9';
-            
+
             const fechaHoraFormatted = new Date(m.fechaHora).toLocaleString('es-AR', {
                 day: '2-digit',
                 month: '2-digit',
@@ -2506,7 +2509,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const badgeColor = m.estado === 'ANULADO' ? '#64748b' : (isIngreso ? '#059669' : '#e11d48');
             const badgeText = m.estado === 'ANULADO' ? 'ANULADO' : m.tipo;
             const badgeIcon = m.estado === 'ANULADO' ? 'fa-ban' : (isIngreso ? 'fa-arrow-up' : 'fa-arrow-down');
-            
+
             if (m.estado === 'ANULADO') {
                 tr.style.opacity = '0.6';
                 tr.style.background = '#fafafa';
