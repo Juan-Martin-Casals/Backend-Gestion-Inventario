@@ -1206,7 +1206,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 alertCerrador = `
                     <div style="font-size: 11px; color: #d97706; margin-top: 2px; display: flex; align-items: center; gap: 4px;" title="Cerrado por: ${sesion.operadorCierre} (${sesion.rolCierre || 'N/A'})">
                         <i class="fas fa-exclamation-triangle"></i>
-                        <span>Cerrado por Admin</span>
+                        <span>Cerrado por ${sesion.operadorCierre} (${sesion.rolCierre || 'N/A'})</span>
                     </div>
                 `;
             }
@@ -1417,7 +1417,7 @@ document.addEventListener('DOMContentLoaded', function () {
             ? todasLasSesiones.filter(s => {
                 const rawCierre = s.observacionesCierre || '';
                 const obsMatch = rawCierre.match(/Obs=(.+)$/);
-                const campos = normH([s.operador, s.estado, s.observacionesApertura, obsMatch ? obsMatch[1] : '', s.duracion].join(' '));
+                const campos = normH([String(s.idSesion || ''), s.operador, s.estado, s.observacionesApertura, obsMatch ? obsMatch[1] : '', s.duracion].join(' '));
                 return campos.includes(texto);
             })
             : todasLasSesiones;
@@ -1742,6 +1742,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const buscarInput = document.getElementById('caja-global-buscar-ingresos');
 
         if (!listaIngresosGlobal) return;
+
+        if (!fechaAperturaGlobal) {
+            listaIngresosGlobal.innerHTML = '<div style="text-align: center; padding: 25px; color: #94a3b8; font-size: 13px;">No hay sesión de caja activa actualmente.</div>';
+            listaIngresosGlobal.classList.remove('loading');
+            return;
+        }
 
         try {
             listaIngresosGlobal.innerHTML = '<div style="text-align: center; padding: 25px; color: #94a3b8;"><i class="fas fa-spinner fa-spin"></i> Cargando movimientos globales...</div>';
@@ -2357,12 +2363,12 @@ document.addEventListener('DOMContentLoaded', function () {
         const tbody = document.getElementById('lista-movimientos-admin-body');
         if (!tbody) return;
         // Loading state (punto 5)
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 24px;"><i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Cargando movimientos...</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #94a3b8; padding: 24px;"><i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>Cargando movimientos...</td></tr>`;
         try {
-            const res = await fetch('/api/movimientos-caja/sesion/activa');
+            const res = await fetch('/api/movimientos-caja');
             if (!res.ok) {
-                const msg = cajaEstaAbierta ? "No se pudieron cargar los movimientos." : "No hay una sesión de caja activa. Abra la caja para registrar movimientos.";
-                tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">${msg}</td></tr>`;
+                const msg = "No se pudieron cargar los movimientos.";
+                tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">${msg}</td></tr>`;
                 actualizarControlesPaginacionMovimientos(0);
                 return;
             }
@@ -2372,7 +2378,7 @@ document.addEventListener('DOMContentLoaded', function () {
             aplicarFiltrosMovimientos();
         } catch (error) {
             console.error('Error al cargar movimientos:', error);
-            tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: #ef4444; padding: 24px;"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>Error al cargar movimientos.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; color: #ef4444; padding: 24px;"><i class="fas fa-exclamation-triangle" style="margin-right: 8px;"></i>Error al cargar movimientos.</td></tr>`;
         }
     }
 
@@ -2405,8 +2411,8 @@ document.addEventListener('DOMContentLoaded', function () {
             let msgHtml;
             if (movimientosManualesList.length === 0) {
                 // Sin datos reales
-                const msg = cajaEstaAbierta ? "No se han registrado movimientos manuales en este turno." : "No hay una sesión de caja activa. Abra la caja para registrar movimientos.";
-                msgHtml = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 30px; font-style: italic;">${msg}</td></tr>`;
+                const msg = "No se han registrado movimientos manuales en el historial.";
+                msgHtml = `<tr><td colspan="10" style="text-align: center; color: #94a3b8; padding: 30px; font-style: italic;">${msg}</td></tr>`;
             } else {
                 // Filtro aplicado sin resultados
                 const filtroCategoria = document.getElementById('movimientos-filtro-categoria');
@@ -2415,7 +2421,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 if (catValue) {
                     extraMsg = 'No hay movimientos registrados para esta categoría.';
                 }
-                msgHtml = `<tr><td colspan="9" style="text-align: center; color: #94a3b8; padding: 30px;">
+                msgHtml = `<tr><td colspan="10" style="text-align: center; color: #94a3b8; padding: 30px;">
                     <i class="fas fa-filter" style="font-size: 22px; opacity: 0.4; display: block; margin-bottom: 10px;"></i>
                     <span style="font-style: italic; display: block;">${extraMsg}</span>
                 </td></tr>`;
@@ -2482,8 +2488,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 tr.style.background = '#fafafa';
             }
 
+            const sesionBadge = m.idSesion ? `<span style="background: #f1f5f9; color: #475569; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; border: 1px solid #cbd5e1;">#${m.idSesion}</span>` : '<span style="color: #cbd5e1;">-</span>';
+
             tr.innerHTML = `
                 <td style="padding: 12px; font-size: 13px; font-weight: 500; color: #334155;">${fechaHoraFormatted}</td>
+                <td style="padding: 12px;">${sesionBadge}</td>
                 <td style="padding: 12px;">
                     <span style="background: ${badgeBg}; color: ${badgeColor}; padding: 4px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">
                         <i class="fas ${isIngreso ? 'fa-arrow-up' : 'fa-arrow-down'}"></i> ${m.tipo}
@@ -2593,13 +2602,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     const usuarios = await res.json();
                     const currentUser = selectUsuario.value;
                     selectUsuario.innerHTML = '<option value="">Todos los usuarios</option>';
-                    usuarios.forEach(user => {
-                        const opt = document.createElement('option');
-                        const nombreCompleto = `${user.nombre} ${user.apellido || ''}`.trim();
-                        opt.value = user.nombre;
-                        opt.textContent = nombreCompleto;
-                        selectUsuario.appendChild(opt);
-                    });
+                    usuarios
+                        .filter(user => {
+                            const rol = (user.descripcionRol || '').toLowerCase();
+                            return rol.includes('cajero') || rol.includes('administrador') || rol.includes('admin');
+                        })
+                        .forEach(user => {
+                            const opt = document.createElement('option');
+                            const nombreCompleto = `${user.nombre} ${user.apellido || ''}`.trim();
+                            opt.value = user.nombre;
+                            opt.textContent = nombreCompleto;
+                            selectUsuario.appendChild(opt);
+                        });
                     if (currentUser) selectUsuario.value = currentUser;
                 }
             } catch (error) {

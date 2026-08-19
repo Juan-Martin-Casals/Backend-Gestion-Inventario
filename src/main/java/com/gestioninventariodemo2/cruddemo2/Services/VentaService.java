@@ -309,7 +309,7 @@ public class VentaService {
         if (venta.getUsuario() != null) {
             nombreVendedor = venta.getUsuario().getNombre();
             if (venta.getUsuario().getRol() != null) {
-                rolVendedor = venta.getUsuario().getRol().getDescripcion();
+                rolVendedor = capitalizar(venta.getUsuario().getRol().getDescripcion());
             }
         }
         // --- FIN DE LA LÓGICA SEGURA ---
@@ -351,13 +351,24 @@ public class VentaService {
                 .nombreUsuarioAnulacion(venta.getUsuarioAnulacion() != null ? 
                     (venta.getUsuarioAnulacion().getNombre() + (venta.getUsuarioAnulacion().getApellido() != null ? " " + venta.getUsuarioAnulacion().getApellido() : "")) : null)
                 .rolUsuarioAnulacion(venta.getUsuarioAnulacion() != null && venta.getUsuarioAnulacion().getRol() != null ? 
-                    venta.getUsuarioAnulacion().getRol().getDescripcion() : null)
+                    capitalizar(venta.getUsuarioAnulacion().getRol().getDescripcion()) : null)
                 .metodoPago(metodoPago)
                 .montoPagado(montoPagado)
                 .vuelto(vuelto)
                 .cobros(cobrosDTO)
                 .build();
 
+    }
+
+    private String capitalizar(String text) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        String t = text.trim();
+        if (t.equalsIgnoreCase("N/A")) {
+            return "N/A";
+        }
+        return t.substring(0, 1).toUpperCase() + t.substring(1).toLowerCase();
     }
 
     /**

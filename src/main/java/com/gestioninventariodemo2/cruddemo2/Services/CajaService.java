@@ -448,10 +448,10 @@ public class CajaService {
                 .idSesion(caja.getIdSesion())
                 .idUsuario(caja.getUsuario().getIdUsuario())
                 .nombreUsuario(caja.getUsuario().getNombre() + " " + caja.getUsuario().getApellido())
-                .rolUsuario(caja.getUsuario().getRol() != null ? caja.getUsuario().getRol().getDescripcion() : "N/A")
+                .rolUsuario(caja.getUsuario().getRol() != null ? capitalizar(caja.getUsuario().getRol().getDescripcion()) : "N/A")
                 .idUsuarioCierre(caja.getUsuarioCierre() != null ? caja.getUsuarioCierre().getIdUsuario() : null)
                 .nombreUsuarioCierre(caja.getUsuarioCierre() != null ? caja.getUsuarioCierre().getNombre() + " " + caja.getUsuarioCierre().getApellido() : null)
-                .rolUsuarioCierre(caja.getUsuarioCierre() != null && caja.getUsuarioCierre().getRol() != null ? caja.getUsuarioCierre().getRol().getDescripcion() : null)
+                .rolUsuarioCierre(caja.getUsuarioCierre() != null && caja.getUsuarioCierre().getRol() != null ? capitalizar(caja.getUsuarioCierre().getRol().getDescripcion()) : null)
                 .fechaApertura(caja.getFechaApertura())
                 .fechaCierre(caja.getFechaCierre())
                 .saldoAnterior(caja.getSaldoAnterior())
@@ -464,15 +464,27 @@ public class CajaService {
                 .build();
     }
 
+    private String capitalizar(String text) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        String t = text.trim();
+        if (t.equalsIgnoreCase("N/A")) {
+            return "N/A";
+        }
+        return t.substring(0, 1).toUpperCase() + t.substring(1).toLowerCase();
+    }
+
     @Transactional(readOnly = true)
     public List<Map<String, Object>> obtenerOperadores() {
         return sesionCajaRepository.findDistinctOperadores().stream()
+                .filter(u -> u.getRol() == null || (!"empleado".equalsIgnoreCase(u.getRol().getDescripcion()) && !"rol_empleado".equalsIgnoreCase(u.getRol().getDescripcion())))
                 .sorted((a, b) -> a.getNombre().compareToIgnoreCase(b.getNombre()))
                 .map(u -> {
                     Map<String, Object> m = new LinkedHashMap<>();
                     m.put("id", u.getIdUsuario());
                     m.put("nombre", u.getNombre() + " " + u.getApellido());
-                    m.put("rol", u.getRol() != null ? u.getRol().getDescripcion() : "Cajero");
+                    m.put("rol", u.getRol() != null ? capitalizar(u.getRol().getDescripcion()) : "Cajero");
                     return m;
                 })
                 .collect(Collectors.toList());
@@ -500,13 +512,13 @@ public class CajaService {
         return sesiones.map(sesion -> {
             String operador = sesion.getUsuario().getNombre() + " " + sesion.getUsuario().getApellido();
             String rolOperador = sesion.getUsuario().getRol() != null 
-                    ? sesion.getUsuario().getRol().getDescripcion() 
+                    ? capitalizar(sesion.getUsuario().getRol().getDescripcion()) 
                     : "N/A";
             String operadorCierre = sesion.getUsuarioCierre() != null 
                     ? sesion.getUsuarioCierre().getNombre() + " " + sesion.getUsuarioCierre().getApellido()
                     : operador;
             String rolCierre = sesion.getUsuarioCierre() != null && sesion.getUsuarioCierre().getRol() != null 
-                    ? sesion.getUsuarioCierre().getRol().getDescripcion() 
+                    ? capitalizar(sesion.getUsuarioCierre().getRol().getDescripcion()) 
                     : rolOperador;
 
             // Calcular duración

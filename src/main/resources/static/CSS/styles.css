@@ -2373,6 +2373,16 @@ body {
     /* Oculta la tabla de historial mientras carga */
 }
 
+#detail-historial-body {
+    opacity: 1;
+    transition: opacity 0.2s ease-in-out;
+}
+
+#detail-historial-body.loading {
+    opacity: 0;
+    pointer-events: none;
+}
+
 /* * IMPORTANTE: Previene que la paginación "salte"
  * cuando la tabla se oculta al cargar.
  * Usamos un selector específico para el contenedor de esa tabla.

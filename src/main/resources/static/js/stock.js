@@ -344,7 +344,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     const detailModal = document.getElementById('product-detail-modal');
     const detailCloseBtn = document.getElementById('product-detail-close');
-    const detailCloseBtnFooter = document.getElementById('product-detail-close-btn');
     const API_PRODUCTOS_INVENTARIO_URL = '/api/productos/inventario';
 
     // --- Lógica de Pestañas (idéntica al admin) ---
@@ -503,7 +502,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     if (detailCloseBtn) detailCloseBtn.addEventListener('click', closeDetailModal);
-    if (detailCloseBtnFooter) detailCloseBtnFooter.addEventListener('click', closeDetailModal);
     if (detailModal) {
         detailModal.addEventListener('click', (e) => { if (e.target === detailModal) closeDetailModal(); });
     }

@@ -27,7 +27,7 @@ public interface SesionCajaRepository extends JpaRepository<SesionCaja, Long> {
         "(CAST(:fechaCierreInicio AS java.time.LocalDateTime) IS NULL OR (s.fechaCierre >= :fechaCierreInicio AND s.fechaCierre <= :fechaCierreFin)) AND " +
         "(:estado IS NULL OR s.estado = :estado) AND " +
         "(CAST(:operadorId AS java.lang.Long) IS NULL OR s.usuario.idUsuario = :operadorId) AND " +
-        "(:busqueda IS NULL OR LOWER(s.usuario.nombre) LIKE :busqueda OR LOWER(s.usuario.apellido) LIKE :busqueda)")
+        "(:busqueda IS NULL OR LOWER(s.usuario.nombre) LIKE :busqueda OR LOWER(s.usuario.apellido) LIKE :busqueda OR CAST(s.idSesion AS string) LIKE :busqueda)")
     Page<SesionCaja> findFiltered(
         @Param("fechaAperturaInicio") LocalDateTime fechaAperturaInicio,
         @Param("fechaAperturaFin") LocalDateTime fechaAperturaFin,
@@ -43,7 +43,7 @@ public interface SesionCajaRepository extends JpaRepository<SesionCaja, Long> {
         "(CAST(:fechaCierreInicio AS java.time.LocalDateTime) IS NULL OR (s.fechaCierre >= :fechaCierreInicio AND s.fechaCierre <= :fechaCierreFin)) AND " +
         "(:estado IS NULL OR s.estado = :estado) AND " +
         "(CAST(:operadorId AS java.lang.Long) IS NULL OR s.usuario.idUsuario = :operadorId) AND " +
-        "(:busqueda IS NULL OR LOWER(s.usuario.nombre) LIKE :busqueda OR LOWER(s.usuario.apellido) LIKE :busqueda) AND " +
+        "(:busqueda IS NULL OR LOWER(s.usuario.nombre) LIKE :busqueda OR LOWER(s.usuario.apellido) LIKE :busqueda OR CAST(s.idSesion AS string) LIKE :busqueda) AND " +
         "s.montoFinalReal IS NOT NULL AND (" +
         "(s.diferenciaCierre IS NOT NULL AND ABS(s.diferenciaCierre) >= 0.01) OR " +
         "(s.diferenciaCierre IS NULL AND ABS(s.montoFinalReal - s.montoInicialReal) >= 0.01)" +

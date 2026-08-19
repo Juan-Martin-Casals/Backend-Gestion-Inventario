@@ -121,14 +121,14 @@
                             class="fas fa-chevron-down arrow-icon"></i>
                     </a>
                     <ul class="submenu">
-                        <li><a href="#" data-section="caja" data-subsection="caja-dashboard"><span class="text">Métricas
-                                    de Caja</span></a></li>
                         <li><a href="#" data-section="caja" data-subsection="caja-operaciones"><span
                                     class="text">Operaciones / Mi Caja</span></a></li>
-                        <li><a href="#" data-section="caja" data-subsection="caja-movimientos"><span
-                                    class="text">Ingresos / Egresos</span></a></li>
+                        <li><a href="#" data-section="caja" data-subsection="caja-dashboard"><span class="text">Métricas
+                                    de Caja</span></a></li>
                         <li><a href="#" data-section="caja" data-subsection="ventas-cobrar"><span
                                     class="text">Cobrar Ventas</span></a></li>
+                        <li><a href="#" data-section="caja" data-subsection="caja-movimientos"><span
+                                    class="text">Ingresos / Egresos</span></a></li>
                         <li><a href="#" data-section="caja" data-subsection="caja-historial"><span
                                     class="text">Historial de Sesiones</span></a></li>
                     </ul>
@@ -324,7 +324,7 @@
                                 style="margin: 0; color: #212529; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 10px;">
                                 <span
                                     style="width: 4px; height: 20px; background: linear-gradient(180deg, #6c757d, #495057); border-radius: 2px;"></span>
-                                Métodos de Pago
+                                Métodos de Cobro
                             </h3>
                             <select id="metodos-pago-filtro"
                                 style="padding: 4px 8px; border-radius: 6px; border: 1px solid #ced4da; font-size: 12px; color: #495057; outline: none; cursor: pointer; background-color: #f8f9fa;">
@@ -1732,44 +1732,47 @@
                         <!-- Tab 3: Historial de Compras -->
                         <div id="product-detail-tab-compras" class="product-detail-tab-content" style="display: none;">
                             <div style="padding: 24px 28px;">
-                                <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; min-height: 480px; display: flex; flex-direction: column; justify-content: space-between;">
+                                <div style="background: white; border-radius: 12px; border: 1px solid #e2e8f0; overflow: hidden; min-height: 580px; display: flex; flex-direction: column; justify-content: space-between;">
                                     <!-- Filtros de búsqueda por proveedor y fecha -->
-                                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 22px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 12px; background: #f8fafc;">
-                                        <!-- Selector de Proveedor -->
-                                        <div style="display: flex; align-items: center; gap: 8px;">
-                                            <select id="detail-historial-proveedor-select" style="height: 36px; padding: 0 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; color: #334155; font-weight: 500; outline: none;">
-                                                <option value="">🚚 Proveedor: Todos</option>
-                                            </select>
-                                        </div>
-
-                                        <!-- Rango de Fechas + Acciones -->
-                                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
-                                            <!-- Separador -->
-                                            <div style="width: 1px; height: 26px; background: #cbd5e1;"></div>
-
-                                            <div style="display: flex; align-items: center; gap: 6px; background: white; padding: 3px 8px; border: 1px solid #ddd; border-radius: 6px; height: 36px;">
-                                                <i class="fas fa-calendar-alt" style="color: #64748b; font-size: 12px; margin-right: 2px;"></i>
-                                                <span style="font-size: 12px; color: #64748b; font-weight: 500;">Desde:</span>
-                                                <input type="date" id="detail-historial-fecha-inicio" style="border: none; outline: none; font-size: 12px; color: #334155; background: transparent; cursor: pointer;">
-                                                <span style="font-size: 12px; color: #94a3b8;">—</span>
-                                                <span style="font-size: 12px; color: #64748b; font-weight: 500;">Hasta:</span>
-                                                <input type="date" id="detail-historial-fecha-fin" style="border: none; outline: none; font-size: 12px; color: #334155; background: transparent; cursor: pointer;">
+                                    <div style="display: flex; flex-direction: column; gap: 8px; padding: 14px 22px; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+                                        <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; width: 100%;">
+                                            <!-- Selector de Proveedor -->
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <select id="detail-historial-proveedor-select" style="height: 36px; padding: 0 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; cursor: pointer; color: #334155; font-weight: 500; outline: none;">
+                                                    <option value="">🚚 Proveedor: Todos</option>
+                                                </select>
                                             </div>
 
-                                            <!-- Separador -->
-                                            <div style="width: 1px; height: 26px; background: #cbd5e1;"></div>
+                                            <!-- Rango de Fechas + Acciones -->
+                                            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                                <!-- Separador -->
+                                                <div style="width: 1px; height: 26px; background: #cbd5e1;"></div>
 
-                                            <!-- Botones -->
-                                            <button type="button" class="btn-primary" id="detail-historial-btn-buscar" style="height: 36px; padding: 0 16px; font-size: 13px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; cursor: pointer;">
-                                                <i class="fas fa-search"></i> Buscar
-                                            </button>
-                                            <button type="button" class="btn-outline" id="detail-historial-btn-limpiar" style="height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; cursor: pointer;" title="Limpiar filtros">
-                                                <i class="fas fa-eraser"></i> Limpiar
-                                            </button>
+                                                <i class="fas fa-calendar-alt" style="color: #667eea; font-size: 14px;"></i>
+                                                <input type="date" id="detail-historial-fecha-inicio" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; height: 36px; color: #334155;">
+                                                <span style="color: #666; font-size: 13px;">→</span>
+                                                <input type="date" id="detail-historial-fecha-fin" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white; height: 36px; color: #334155;">
+
+                                                <!-- Separador -->
+                                                <div style="width: 1px; height: 26px; background: #cbd5e1;"></div>
+
+                                                <!-- Botones -->
+                                                <button type="button" class="btn-primary" id="detail-historial-btn-buscar" style="height: 36px; padding: 0 16px; font-size: 13px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; cursor: pointer;">
+                                                    <i class="fas fa-search"></i> Buscar
+                                                </button>
+                                                <button type="button" class="btn-outline" id="detail-historial-btn-limpiar" style="height: 36px; padding: 0 12px; font-size: 13px; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; font-weight: 500; cursor: pointer;" title="Limpiar filtros">
+                                                    <i class="fas fa-eraser"></i> Limpiar
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <!-- Mensaje de error para filtros -->
+                                        <div id="detail-historial-filtro-error" class="error-message" style="display: none; align-items: center; gap: 6px; font-size: 13px; color: #ef4444; margin-top: 4px; font-weight: 500;">
+                                            <i class="fas fa-exclamation-circle" style="color: #ef4444;"></i>
+                                            <span id="detail-historial-filtro-error-text"></span>
                                         </div>
                                     </div>
                                     <!-- Tabla de Historial -->
-                                    <div style="overflow-x: auto; min-height: 380px; transition: all 0.3s ease-in-out;">
+                                    <div style="overflow-x: auto; min-height: 460px; transition: all 0.3s ease-in-out;">
                                         <table class="data-table" style="width: 100%; margin: 0;">
                                             <thead>
                                                 <tr style="background: #f8fafc;">
@@ -1804,15 +1807,6 @@
                             </div>
                         </div>
 
-                    </div>
-
-                    <!-- Footer -->
-                    <div class="modal-footer"
-                        style="border-top: 1px solid #e2e8f0; padding: 16px 28px; background: white; border-radius: 0 0 16px 16px;">
-                        <button class="btn-outline" id="product-detail-close-btn"
-                            style="padding: 10px 28px; border-radius: 10px; font-weight: 600; font-size: 14px;">
-                            Cerrar
-                        </button>
                     </div>
                 </div>
             </div>
@@ -4144,7 +4138,7 @@
                                 <span style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.8px;">Efectivo Físico Esperado (Global)</span>
                                 <h3 id="caja-global-saldo-esperado" style="font-size: 28px; font-weight: 800; color: #ffffff; margin: 6px 0 0 0; letter-spacing: -0.5px;">$0,00</h3>
                                 <span style="font-size: 11px; color: #34d399; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 6px;">
-                                    <i class="fas fa-shield-alt"></i> Sesiones Activas en Tiempo Real
+                                    <i class="fas fa-shield-alt"></i> Sesión Activa en Tiempo Real
                                 </span>
                             </div>
                             <div style="width: 52px; height: 52px; border-radius: 12px; background: rgba(255, 255, 255, 0.1); color: #34d399; display: flex; align-items: center; justify-content: center; font-size: 22px; backdrop-filter: blur(5px); border: 1px solid rgba(255, 255, 255, 0.15);">
@@ -4185,7 +4179,7 @@
                     <div style="background: white; border-radius: 14px; padding: 20px 24px; border: 1px solid #e2e8f0; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 24px;">
                         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
                             <h4 style="margin: 0; font-size: 14px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-chart-pie" style="color: #6366f1;"></i> Composición por Método de Pago (Sesiones Activas)
+                                <i class="fas fa-chart-pie" style="color: #6366f1;"></i> Composición por Método de Pago (Sesión Activa)
                             </h4>
                             <span id="caja-global-total-metodos" style="font-size: 13px; font-weight: 700; color: #475569;">Total: $0,00</span>
                         </div>
@@ -4228,7 +4222,7 @@
                         <div class="caja-card-header"
                             style="display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; gap: 15px;">
                             <h4 style="margin: 0; font-size: 15px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-list-alt" style="color: #6366f1;"></i> Feed de Movimientos Globales (Sesiones Activas)
+                                <i class="fas fa-list-alt" style="color: #6366f1;"></i> Historial de Actividad Reciente (Sesión Activa)
                             </h4>
                             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
                                 <div style="position: relative;">
@@ -4705,6 +4699,9 @@
                                             FECHA / HORA</th>
                                         <th
                                             style="padding: 12px; font-size: 12px; font-weight: 700; color: #64748b; width: 8%;">
+                                            SESIÓN</th>
+                                        <th
+                                            style="padding: 12px; font-size: 12px; font-weight: 700; color: #64748b; width: 8%;">
                                             TIPO</th>
                                         <th
                                             style="padding: 12px; font-size: 12px; font-weight: 700; color: #64748b; width: 12%;">
@@ -4776,7 +4773,7 @@
                                     <div style="position: relative;">
                                         <i class="fas fa-search"
                                             style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #666;"></i>
-                                        <input type="text" placeholder="Buscar por operador o notas..."
+                                        <input type="text" placeholder="Buscar por ID, operador o notas..."
                                             id="historial-busqueda" maxlength="100"
                                             oninput="if(window.checkMaxLength) window.checkMaxLength(this, 100);"
                                             style="width: 100%; padding: 8px 12px 8px 38px; border: 1px solid #ddd; border-radius: 6px; font-size: 13px; background: white;">

@@ -20,6 +20,7 @@ public class MovimientoCajaResponseDTO {
     private LocalDateTime fechaHora;
     private Long idSesion;
     private String nombreUsuario;
+    private String rolUsuario;
     private String nombreCategoria;
     private String estado;
     private String nombreUsuarioModificador;

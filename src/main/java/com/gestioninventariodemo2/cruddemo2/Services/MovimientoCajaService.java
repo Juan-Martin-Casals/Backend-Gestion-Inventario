@@ -235,6 +235,8 @@ public class MovimientoCajaService {
                 .idSesion(m.getSesionCaja() != null ? m.getSesionCaja().getIdSesion() : null)
                 .nombreUsuario(m.getUsuario() != null ? 
                         m.getUsuario().getNombre() + " " + m.getUsuario().getApellido() : "Sistema")
+                .rolUsuario(m.getUsuario() != null && m.getUsuario().getRol() != null ? 
+                        capitalizar(m.getUsuario().getRol().getDescripcion()) : "N/A")
                 .nombreCategoria(m.getCategoriaMovimiento() != null ? 
                         m.getCategoriaMovimiento().getNombre() : "General")
                 .estado(m.getEstado() != null ? m.getEstado() : "ACTIVO")
@@ -242,5 +244,16 @@ public class MovimientoCajaService {
                         m.getUsuarioModificador().getNombre() + " " + m.getUsuarioModificador().getApellido() : null)
                 .fechaModificacion(m.getFechaModificacion())
                 .build();
+    }
+
+    private String capitalizar(String text) {
+        if (text == null || text.isBlank()) {
+            return "";
+        }
+        String t = text.trim();
+        if (t.equalsIgnoreCase("N/A")) {
+            return "N/A";
+        }
+        return t.substring(0, 1).toUpperCase() + t.substring(1).toLowerCase();
     }
 }

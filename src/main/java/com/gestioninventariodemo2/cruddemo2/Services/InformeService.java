@@ -30,6 +30,7 @@ import com.gestioninventariodemo2.cruddemo2.Repository.CompraRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.StockRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.VentaRepository;
 import com.gestioninventariodemo2.cruddemo2.Repository.PagoRepository;
+import com.gestioninventariodemo2.cruddemo2.Repository.MovimientoCajaRepository;
 import com.itextpdf.io.exceptions.IOException;
 import com.itextpdf.io.source.ByteArrayOutputStream;
 import com.itextpdf.kernel.pdf.PdfDocument;
@@ -48,6 +49,7 @@ public class InformeService {
         private final StockRepository stockRepository;
         private final CobroRepository cobroRepository;
         private final PagoRepository pagoRepository;
+        private final MovimientoCajaRepository movimientoCajaRepository;
 
         public InformeResponseDTO generarInforme(LocalDate inicio, LocalDate fin) {
                 LocalDateTime start = inicio.atStartOfDay();
@@ -263,6 +265,18 @@ public class InformeService {
                 if (totalCompras == null)
                         totalCompras = 0.0;
 
+                // Sumar ingresos y egresos manuales de caja en el rango
+                Double ingresosManuales = movimientoCajaRepository.sumMovimientosEnRango("INGRESO", start, end);
+                if (ingresosManuales == null)
+                        ingresosManuales = 0.0;
+
+                Double egresosManuales = movimientoCajaRepository.sumMovimientosEnRango("EGRESO", start, end);
+                if (egresosManuales == null)
+                        egresosManuales = 0.0;
+
+                totalVentas += ingresosManuales;
+                totalCompras += egresosManuales;
+
                 // Ganancia
                 Double ganancia = totalVentas - totalCompras;
 
@@ -347,6 +361,36 @@ public class InformeService {
                                         : (LocalDate) row[0];
                         Double total = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
                         comprasMap.put(fecha, total);
+                }
+
+                // Sumar ingresos manuales agrupados por día
+                List<Object[]> ingresosManualesPorDia = movimientoCajaRepository.sumMovimientosPorDiaYTipo("INGRESO", start, end);
+                for (Object[] row : ingresosManualesPorDia) {
+                        LocalDate fecha;
+                        if (row[0] instanceof java.sql.Date) {
+                                fecha = ((java.sql.Date) row[0]).toLocalDate();
+                        } else if (row[0] instanceof java.sql.Timestamp) {
+                                fecha = ((java.sql.Timestamp) row[0]).toLocalDateTime().toLocalDate();
+                        } else {
+                                fecha = (LocalDate) row[0];
+                        }
+                        Double total = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
+                        ventasMap.put(fecha, ventasMap.getOrDefault(fecha, 0.0) + total);
+                }
+
+                // Sumar egresos manuales agrupados por día
+                List<Object[]> egresosManualesPorDia = movimientoCajaRepository.sumMovimientosPorDiaYTipo("EGRESO", start, end);
+                for (Object[] row : egresosManualesPorDia) {
+                        LocalDate fecha;
+                        if (row[0] instanceof java.sql.Date) {
+                                fecha = ((java.sql.Date) row[0]).toLocalDate();
+                        } else if (row[0] instanceof java.sql.Timestamp) {
+                                fecha = ((java.sql.Timestamp) row[0]).toLocalDateTime().toLocalDate();
+                        } else {
+                                fecha = (LocalDate) row[0];
+                        }
+                        Double total = row[1] != null ? ((Number) row[1]).doubleValue() : 0.0;
+                        comprasMap.put(fecha, comprasMap.getOrDefault(fecha, 0.0) + total);
                 }
 
                 // Combinar ambos mapas en una lista de DTOs

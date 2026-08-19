@@ -1224,7 +1224,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // ===============================
     const detailModal = document.getElementById('product-detail-modal');
     const detailCloseBtn = document.getElementById('product-detail-close');
-    const detailCloseBtnFooter = document.getElementById('product-detail-close-btn');
 
     let currentHistoryProductId = null;
     let currentHistoryPage = 0;
@@ -1278,6 +1277,29 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    // Funciones helper para mostrar/ocultar mensajes de error de fecha en historial
+    function mostrarErrorFiltroHistorial(mensaje) {
+        const errorEl = document.getElementById('detail-historial-filtro-error');
+        const textEl = document.getElementById('detail-historial-filtro-error-text');
+        if (textEl) {
+            textEl.textContent = mensaje;
+        }
+        if (errorEl) {
+            errorEl.style.display = 'flex';
+        }
+    }
+
+    function ocultarErrorFiltroHistorial() {
+        const errorEl = document.getElementById('detail-historial-filtro-error');
+        const textEl = document.getElementById('detail-historial-filtro-error-text');
+        if (errorEl) {
+            errorEl.style.display = 'none';
+        }
+        if (textEl) {
+            textEl.textContent = '';
+        }
+    }
+
     /**
      * Carga el historial de compras de un producto paginado y filtrado
      */
@@ -1294,26 +1316,40 @@ document.addEventListener('DOMContentLoaded', function () {
         // Cargar proveedores en el selector desplegable
         populateSupplierSelect(productId);
 
-        // Transición suave al filtrar y altura mínima estable para evitar colapso de modal
-        body.style.transition = 'opacity 0.2s ease-in-out';
-        body.style.opacity = '0.35';
-
-        // Solo mostrar spinner si la tabla estaba totalmente vacía para evitar saltos
-        if (!body.innerHTML.trim()) {
-            body.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> Cargando historial...</td></tr>';
-        }
-
         const proveedorId = document.getElementById('detail-historial-proveedor-select')?.value || '';
         const fechaInicio = document.getElementById('detail-historial-fecha-inicio')?.value || '';
         const fechaFin = document.getElementById('detail-historial-fecha-fin')?.value || '';
+
+        // VALIDACIÓN DE FECHAS
+        // 1. Si se ingresa una fecha pero no la otra, es error
+        if ((fechaInicio && !fechaFin) || (!fechaInicio && fechaFin)) {
+            mostrarErrorFiltroHistorial('Por favor selecciona ambas fechas');
+            return;
+        }
+        // 2. Si fecha inicio es mayor a fecha fin, es error
+        if (fechaInicio && fechaFin && new Date(fechaInicio) > new Date(fechaFin)) {
+            mostrarErrorFiltroHistorial('La fecha de inicio no puede ser mayor que la fecha de fin');
+            return;
+        }
+
+        // Si pasa la validación, ocultamos el error
+        ocultarErrorFiltroHistorial();
+
+        // Transición suave al filtrar usando la clase loading estándar (Fade Out)
+        body.classList.add('loading');
 
         let url = `${API_PRODUCTOS_URL}/${productId}/historial-compras?page=${page}&size=10`;
         if (proveedorId) url += `&proveedorId=${proveedorId}`;
         if (fechaInicio) url += `&fechaInicio=${fechaInicio}`;
         if (fechaFin) url += `&fechaFin=${fechaFin}`;
 
+        // Lanzar fetch en paralelo con la animación de desvanecimiento
+        const fetchPromise = fetch(url, { cache: 'no-store' });
+        const delayPromise = new Promise(resolve => setTimeout(resolve, 200));
+
         try {
-            const response = await fetch(url, { cache: 'no-store' });
+            // Esperar que termine la llamada HTTP y que pasen los 200ms del fade out
+            const [response] = await Promise.all([fetchPromise, delayPromise]);
             if (!response.ok) throw new Error('Error al cargar historial');
 
             const pageData = await response.json();
@@ -1322,7 +1358,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (content.length === 0) {
                 body.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #94a3b8; padding: 20px; font-style: italic;">No hay compras registradas para este filtro.</td></tr>';
             } else {
-                body.innerHTML = content.map(item => {
+                let rowsHtml = content.map(item => {
                     let fechaStr = 'N/A';
                     if (item.fechaCompra) {
                         const parts = item.fechaCompra.split('T');
@@ -1359,6 +1395,24 @@ document.addEventListener('DOMContentLoaded', function () {
                         </tr>
                     `;
                 }).join('');
+
+                const itemsPerPage = 10;
+                const ghostRowsNeeded = itemsPerPage - content.length;
+                if (ghostRowsNeeded > 0) {
+                    for (let i = 0; i < ghostRowsNeeded; i++) {
+                        rowsHtml += `
+                            <tr style="visibility: hidden; border-bottom: none;">
+                                <td style="padding: 12px 18px;">-</td>
+                                <td style="padding: 12px 18px;">-</td>
+                                <td style="padding: 12px 18px;">-</td>
+                                <td style="padding: 12px 18px;">-</td>
+                                <td style="padding: 12px 18px;">-</td>
+                                <td style="padding: 12px 18px;">-</td>
+                            </tr>
+                        `;
+                    }
+                }
+                body.innerHTML = rowsHtml;
             }
 
             const totalPages = pageData.totalPages || 1;
@@ -1370,11 +1424,14 @@ document.addEventListener('DOMContentLoaded', function () {
             if (prevBtn) prevBtn.disabled = pageData.first || currentPageNum === 0;
             if (nextBtn) nextBtn.disabled = pageData.last || (currentPageNum + 1 >= totalPages);
 
-            body.style.opacity = '1';
+            // Iniciar Fade-in suave en el siguiente frame
+            requestAnimationFrame(() => {
+                body.classList.remove('loading');
+            });
         } catch (err) {
             console.error('Error al cargar historial de compras:', err);
             body.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #ef4444; padding: 30px;">Error al cargar el historial de compras.</td></tr>';
-            body.style.opacity = '1';
+            body.classList.remove('loading');
         }
     }
 
@@ -1404,9 +1461,16 @@ document.addEventListener('DOMContentLoaded', function () {
             if (fechaIni) fechaIni.value = '';
             if (fechaFin) fechaFin.value = '';
             if (selectProv) selectProv.value = '';
+            ocultarErrorFiltroHistorial();
             if (currentHistoryProductId) loadProductPurchaseHistory(currentHistoryProductId, 0);
         });
     }
+
+    // Ocultar error cuando el usuario modifica las fechas
+    const fechaIniHistorial = document.getElementById('detail-historial-fecha-inicio');
+    const fechaFinHistorial = document.getElementById('detail-historial-fecha-fin');
+    if (fechaIniHistorial) fechaIniHistorial.addEventListener('change', ocultarErrorFiltroHistorial);
+    if (fechaFinHistorial) fechaFinHistorial.addEventListener('change', ocultarErrorFiltroHistorial);
 
     const btnPrevHistorial = document.getElementById('detail-historial-prev-btn');
     if (btnPrevHistorial) {
@@ -1586,9 +1650,6 @@ document.addEventListener('DOMContentLoaded', function () {
     // Event listeners del modal
     if (detailCloseBtn) {
         detailCloseBtn.addEventListener('click', closeDetailModal);
-    }
-    if (detailCloseBtnFooter) {
-        detailCloseBtnFooter.addEventListener('click', closeDetailModal);
     }
 
     // Cerrar modal al hacer clic fuera
